@@ -54,6 +54,12 @@
             <artifactId>yu-generator</artifactId>
         </dependency>
 
+        <!-- 基础资源管理-->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-brm</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

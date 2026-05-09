@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.brm.mapper.BrmTeacherMapper">
+    <resultMap type="BrmTeacher" id="BrmTeacherResult">
+        <result property="teacherId"     column="teacher_id"     />
+        <result property="teacherCode"   column="teacher_code"   />
+        <result property="teacherName"   column="teacher_name"   />
+        <result property="deptId"        column="dept_id"        />
+        <result property="gender"        column="gender"         />
+        <result property="phone"         column="phone"          />
+        <result property="email"         column="email"          />
+        <result property="title"         column="title"          />
+        <result property="education"     column="education"      />
+        <result property="status"        column="status"         />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"        column="remark"         />
+    </resultMap>
+    <resultMap type="BrmTeacherPosition" id="BrmTeacherPositionResult">
+        <result property="posId"          column="pos_id"         />
+        <result property="teacherId"      column="teacher_id"     />
+        <result property="deptId"         column="dept_id"        />
+        <result property="positionTitle"  column="position_title" />
+        <result property="startDate"      column="start_date"     />
+        <result property="endDate"        column="end_date"       />
+        <result property="isCurrent"      column="is_current"     />
+        <result property="createBy"       column="create_by"      />
+        <result property="createTime"     column="create_time"    />
+        <result property="updateBy"       column="update_by"      />
+        <result property="updateTime"     column="update_time"    />
+        <result property="remark"         column="remark"         />
+    </resultMap>
+    <resultMap type="BrmTeacherQualification" id="BrmTeacherQualificationResult">
+        <result property="qualId"            column="qual_id"             />
+        <result property="teacherId"         column="teacher_id"          />
+        <result property="courseCategory"    column="course_category"     />
+        <result property="certifyAuthority"  column="certify_authority"   />
+        <result property="qualifyDate"       column="qualify_date"        />
+        <result property="expireDate"        column="expire_date"         />
+        <result property="status"            column="status"              />
+        <result property="createBy"          column="create_by"           />
+        <result property="createTime"        column="create_time"         />
+        <result property="updateBy"          column="update_by"           />
+        <result property="updateTime"        column="update_time"         />
+        <result property="remark"            column="remark"              />
+    </resultMap>
+    <sql id="selectBrmTeacherVo">select teacher_id, teacher_code, teacher_name, dept_id, gender, phone, email, title, education, status, create_by, create_time, update_by, update_time, remark from brm_teacher</sql>
+    <select id="selectBrmTeacherList" parameterType="BrmTeacher" resultMap="BrmTeacherResult">
+        <include refid="selectBrmTeacherVo"/><where>
+            <if test="teacherName != null and teacherName.trim() != ''"> and teacher_name like concat('%', #{teacherName}, '%')</if>
+            <if test="teacherCode != null and teacherCode.trim() != ''"> and teacher_code like concat('%', #{teacherCode}, '%')</if>
+            <if test="deptId != null"> and dept_id = #{deptId}</if>
+            <if test="title != null and title.trim() != ''"> and title = #{title}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectBrmTeacherByTeacherId" parameterType="Long" resultMap="BrmTeacherResult"><include refid="selectBrmTeacherVo"/> where teacher_id = #{teacherId}</select>
+    <insert id="insertBrmTeacher" parameterType="BrmTeacher" useGeneratedKeys="true" keyProperty="teacherId">insert into brm_teacher
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="teacherCode != null and teacherCode != ''">teacher_code,</if><if test="teacherName != null and teacherName != ''">teacher_name,</if>
+            <if test="deptId != null">dept_id,</if><if test="gender != null">gender,</if>
+            <if test="phone != null">phone,</if><if test="email != null">email,</if>
+            <if test="title != null">title,</if><if test="education != null">education,</if>
+            <if test="status != null">status,</if><if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if><if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="teacherCode != null and teacherCode != ''">#{teacherCode},</if><if test="teacherName != null and teacherName != ''">#{teacherName},</if>
+            <if test="deptId != null">#{deptId},</if><if test="gender != null">#{gender},</if>
+            <if test="phone != null">#{phone},</if><if test="email != null">#{email},</if>
+            <if test="title != null">#{title},</if><if test="education != null">#{education},</if>
+            <if test="status != null">#{status},</if><if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if><if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateBrmTeacher" parameterType="BrmTeacher">update brm_teacher
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="teacherCode != null and teacherCode != ''">teacher_code = #{teacherCode},</if><if test="teacherName != null and teacherName != ''">teacher_name = #{teacherName},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if><if test="gender != null">gender = #{gender},</if>
+            <if test="phone != null">phone = #{phone},</if><if test="email != null">email = #{email},</if>
+            <if test="title != null">title = #{title},</if><if test="education != null">education = #{education},</if>
+            <if test="status != null">status = #{status},</if><if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if><if test="remark != null">remark = #{remark},</if>
+        </trim> where teacher_id = #{teacherId}
+    </update>
+    <delete id="deleteBrmTeacherByTeacherId" parameterType="Long">delete from brm_teacher where teacher_id = #{teacherId}</delete>
+    <delete id="deleteBrmTeacherByTeacherIds" parameterType="String">delete from brm_teacher where teacher_id in <foreach item="teacherId" collection="array" open="(" separator="," close=")">#{teacherId}</foreach></delete>
+    <delete id="deleteBrmTeacherPositionByTeacherIds" parameterType="String">delete from brm_teacher_position where teacher_id in <foreach item="teacherId" collection="array" open="(" separator="," close=")">#{teacherId}</foreach></delete>
+    <delete id="deleteBrmTeacherQualificationByTeacherIds" parameterType="String">delete from brm_teacher_qualification where teacher_id in <foreach item="teacherId" collection="array" open="(" separator="," close=")">#{teacherId}</foreach></delete>
+    <delete id="deleteBrmTeacherPositionByTeacherId" parameterType="Long">delete from brm_teacher_position where teacher_id = #{teacherId}</delete>
+    <delete id="deleteBrmTeacherQualificationByTeacherId" parameterType="Long">delete from brm_teacher_qualification where teacher_id = #{teacherId}</delete>
+    <insert id="batchBrmTeacherPosition">insert into brm_teacher_position(pos_id, teacher_id, dept_id, position_title, start_date, end_date, is_current, create_by, create_time, update_by, update_time, remark) values
+        <foreach item="item" index="index" collection="list" separator=",">
+        (#{item.posId}, #{item.teacherId}, #{item.deptId}, #{item.positionTitle}, #{item.startDate}, #{item.endDate}, #{item.isCurrent}, #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.remark})
+        </foreach>
+    </insert>
+    <insert id="batchBrmTeacherQualification">insert into brm_teacher_qualification(qual_id, teacher_id, course_category, certify_authority, qualify_date, expire_date, status, create_by, create_time, update_by, update_time, remark) values
+        <foreach item="item" index="index" collection="list" separator=",">
+        (#{item.qualId}, #{item.teacherId}, #{item.courseCategory}, #{item.certifyAuthority}, #{item.qualifyDate}, #{item.expireDate}, #{item.status}, #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.remark})
+        </foreach>
+    </insert>
+</mapper>

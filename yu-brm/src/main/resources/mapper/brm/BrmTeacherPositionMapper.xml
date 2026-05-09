@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.brm.mapper.BrmTeacherPositionMapper">
+    <resultMap type="BrmTeacherPosition" id="BrmTeacherPositionResult">
+        <result property="posId"          column="pos_id"         />
+        <result property="teacherId"      column="teacher_id"     />
+        <result property="deptId"         column="dept_id"        />
+        <result property="positionTitle"  column="position_title" />
+        <result property="startDate"      column="start_date"     />
+        <result property="endDate"        column="end_date"       />
+        <result property="isCurrent"      column="is_current"     />
+        <result property="createBy"       column="create_by"      />
+        <result property="createTime"     column="create_time"    />
+        <result property="updateBy"       column="update_by"      />
+        <result property="updateTime"     column="update_time"    />
+        <result property="remark"         column="remark"         />
+    </resultMap>
+    <sql id="selectBrmTeacherPositionVo">
+        select pos_id, teacher_id, dept_id, position_title, start_date, end_date, is_current, create_by, create_time, update_by, update_time, remark from brm_teacher_position
+    </sql>
+    <select id="selectBrmTeacherPositionList" parameterType="BrmTeacherPosition" resultMap="BrmTeacherPositionResult">
+        <include refid="selectBrmTeacherPositionVo"/>
+        <where>
+            <if test="teacherId != null"> and teacher_id = #{teacherId}</if>
+            <if test="positionTitle != null and positionTitle.trim() != ''"> and position_title like concat('%', #{positionTitle}, '%')</if>
+            <if test="deptId != null"> and dept_id = #{deptId}</if>
+        </where>
+    </select>
+    <select id="selectBrmTeacherPositionByPosId" parameterType="Long" resultMap="BrmTeacherPositionResult">
+        <include refid="selectBrmTeacherPositionVo"/> where pos_id = #{posId}
+    </select>
+    <insert id="insertBrmTeacherPosition" parameterType="BrmTeacherPosition" useGeneratedKeys="true" keyProperty="posId">
+        insert into brm_teacher_position
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="teacherId != null">teacher_id,</if>
+            <if test="deptId != null">dept_id,</if>
+            <if test="positionTitle != null and positionTitle != ''">position_title,</if>
+            <if test="startDate != null">start_date,</if>
+            <if test="endDate != null">end_date,</if>
+            <if test="isCurrent != null">is_current,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="teacherId != null">#{teacherId},</if>
+            <if test="deptId != null">#{deptId},</if>
+            <if test="positionTitle != null and positionTitle != ''">#{positionTitle},</if>
+            <if test="startDate != null">#{startDate},</if>
+            <if test="endDate != null">#{endDate},</if>
+            <if test="isCurrent != null">#{isCurrent},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateBrmTeacherPosition" parameterType="BrmTeacherPosition">
+        update brm_teacher_position
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="teacherId != null">teacher_id = #{teacherId},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="positionTitle != null and positionTitle != ''">position_title = #{positionTitle},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+            <if test="isCurrent != null">is_current = #{isCurrent},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where pos_id = #{posId}
+    </update>
+    <delete id="deleteBrmTeacherPositionByPosId" parameterType="Long">
+        delete from brm_teacher_position where pos_id = #{posId}
+    </delete>
+    <delete id="deleteBrmTeacherPositionByPosIds" parameterType="String">
+        delete from brm_teacher_position where pos_id in
+        <foreach item="posId" collection="array" open="(" separator="," close=")">#{posId}</foreach>
+    </delete>
+</mapper>

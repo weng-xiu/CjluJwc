@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.brm.mapper.BrmCampusMapper">
+    <resultMap type="BrmCampus" id="BrmCampusResult">
+        <result property="campusId"       column="campus_id"       />
+        <result property="campusName"     column="campus_name"     />
+        <result property="campusAddress"  column="campus_address"  />
+        <result property="orderNum"       column="order_num"       />
+        <result property="status"         column="status"          />
+        <result property="createBy"       column="create_by"       />
+        <result property="createTime"     column="create_time"     />
+        <result property="updateBy"       column="update_by"       />
+        <result property="updateTime"     column="update_time"     />
+        <result property="remark"         column="remark"          />
+    </resultMap>
+    <sql id="selectBrmCampusVo">select campus_id, campus_name, campus_address, order_num, status, create_by, create_time, update_by, update_time, remark from brm_campus</sql>
+    <select id="selectBrmCampusList" parameterType="BrmCampus" resultMap="BrmCampusResult">
+        <include refid="selectBrmCampusVo"/><where>
+            <if test="campusName != null and campusName.trim() != ''"> and campus_name like concat('%', #{campusName}, '%')</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where> order by order_num
+    </select>
+    <select id="selectBrmCampusByCampusId" parameterType="Long" resultMap="BrmCampusResult"><include refid="selectBrmCampusVo"/> where campus_id = #{campusId}</select>
+    <insert id="insertBrmCampus" parameterType="BrmCampus" useGeneratedKeys="true" keyProperty="campusId">insert into brm_campus
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="campusName != null and campusName != ''">campus_name,</if><if test="campusAddress != null">campus_address,</if>
+            <if test="orderNum != null">order_num,</if><if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if><if test="createTime != null">create_time,</if><if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="campusName != null and campusName != ''">#{campusName},</if><if test="campusAddress != null">#{campusAddress},</if>
+            <if test="orderNum != null">#{orderNum},</if><if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if><if test="createTime != null">#{createTime},</if><if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateBrmCampus" parameterType="BrmCampus">update brm_campus
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="campusName != null and campusName != ''">campus_name = #{campusName},</if><if test="campusAddress != null">campus_address = #{campusAddress},</if>
+            <if test="orderNum != null">order_num = #{orderNum},</if><if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if><if test="updateTime != null">update_time = #{updateTime},</if><if test="remark != null">remark = #{remark},</if>
+        </trim> where campus_id = #{campusId}
+    </update>
+    <delete id="deleteBrmCampusByCampusId" parameterType="Long">delete from brm_campus where campus_id = #{campusId}</delete>
+    <delete id="deleteBrmCampusByCampusIds" parameterType="String">delete from brm_campus where campus_id in <foreach item="campusId" collection="array" open="(" separator="," close=")">#{campusId}</foreach></delete>
+</mapper>

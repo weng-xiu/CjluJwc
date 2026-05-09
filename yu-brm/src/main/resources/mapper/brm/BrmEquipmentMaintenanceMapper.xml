@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.brm.mapper.BrmEquipmentMaintenanceMapper">
+    <resultMap type="BrmEquipmentMaintenance" id="BrmEquipmentMaintenanceResult">
+        <result property="maintenanceId"  column="maintenance_id"  />
+        <result property="equipId"        column="equip_id"        />
+        <result property="faultDesc"      column="fault_desc"      />
+        <result property="repairDate"     column="repair_date"     />
+        <result property="repairBy"       column="repair_by"       />
+        <result property="repairCost"     column="repair_cost"     />
+        <result property="result"         column="result"          />
+        <result property="status"         column="status"          />
+        <result property="createBy"       column="create_by"       />
+        <result property="createTime"     column="create_time"     />
+        <result property="updateBy"       column="update_by"       />
+        <result property="updateTime"     column="update_time"     />
+        <result property="remark"         column="remark"          />
+    </resultMap>
+    <sql id="selectBrmEquipmentMaintenanceVo">
+        select maintenance_id, equip_id, fault_desc, repair_date, repair_by, repair_cost, result, status, create_by, create_time, update_by, update_time, remark from brm_equipment_maintenance
+    </sql>
+    <select id="selectBrmEquipmentMaintenanceList" parameterType="BrmEquipmentMaintenance" resultMap="BrmEquipmentMaintenanceResult">
+        <include refid="selectBrmEquipmentMaintenanceVo"/>
+        <where>
+            <if test="equipId != null"> and equip_id = #{equipId}</if>
+            <if test="faultDesc != null and faultDesc.trim() != ''"> and fault_desc like concat('%', #{faultDesc}, '%')</if>
+            <if test="repairBy != null and repairBy.trim() != ''"> and repair_by like concat('%', #{repairBy}, '%')</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectBrmEquipmentMaintenanceByMaintenanceId" parameterType="Long" resultMap="BrmEquipmentMaintenanceResult">
+        <include refid="selectBrmEquipmentMaintenanceVo"/> where maintenance_id = #{maintenanceId}
+    </select>
+    <insert id="insertBrmEquipmentMaintenance" parameterType="BrmEquipmentMaintenance" useGeneratedKeys="true" keyProperty="maintenanceId">
+        insert into brm_equipment_maintenance
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="equipId != null">equip_id,</if>
+            <if test="faultDesc != null and faultDesc != ''">fault_desc,</if>
+            <if test="repairDate != null">repair_date,</if>
+            <if test="repairBy != null">repair_by,</if>
+            <if test="repairCost != null">repair_cost,</if>
+            <if test="result != null">result,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="equipId != null">#{equipId},</if>
+            <if test="faultDesc != null and faultDesc != ''">#{faultDesc},</if>
+            <if test="repairDate != null">#{repairDate},</if>
+            <if test="repairBy != null">#{repairBy},</if>
+            <if test="repairCost != null">#{repairCost},</if>
+            <if test="result != null">#{result},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateBrmEquipmentMaintenance" parameterType="BrmEquipmentMaintenance">
+        update brm_equipment_maintenance
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="equipId != null">equip_id = #{equipId},</if>
+            <if test="faultDesc != null and faultDesc != ''">fault_desc = #{faultDesc},</if>
+            <if test="repairDate != null">repair_date = #{repairDate},</if>
+            <if test="repairBy != null">repair_by = #{repairBy},</if>
+            <if test="repairCost != null">repair_cost = #{repairCost},</if>
+            <if test="result != null">result = #{result},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where maintenance_id = #{maintenanceId}
+    </update>
+    <delete id="deleteBrmEquipmentMaintenanceByMaintenanceId" parameterType="Long">
+        delete from brm_equipment_maintenance where maintenance_id = #{maintenanceId}
+    </delete>
+    <delete id="deleteBrmEquipmentMaintenanceByMaintenanceIds" parameterType="String">
+        delete from brm_equipment_maintenance where maintenance_id in
+        <foreach item="maintenanceId" collection="array" open="(" separator="," close=")">#{maintenanceId}</foreach>
+    </delete>
+</mapper>

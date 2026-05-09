@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.brm.mapper.BrmMajorMapper">
+    <resultMap type="BrmMajor" id="BrmMajorResult">
+        <result property="majorId"       column="major_id"        />
+        <result property="majorCode"     column="major_code"      />
+        <result property="majorName"     column="major_name"      />
+        <result property="deptId"        column="dept_id"         />
+        <result property="educationLevel" column="education_level"/>
+        <result property="duration"      column="duration"        />
+        <result property="status"        column="status"          />
+        <result property="createBy"      column="create_by"       />
+        <result property="createTime"    column="create_time"     />
+        <result property="updateBy"      column="update_by"       />
+        <result property="updateTime"    column="update_time"     />
+        <result property="remark"        column="remark"          />
+    </resultMap>
+    <sql id="selectBrmMajorVo">select major_id, major_code, major_name, dept_id, education_level, duration, status, create_by, create_time, update_by, update_time, remark from brm_major</sql>
+    <select id="selectBrmMajorList" parameterType="BrmMajor" resultMap="BrmMajorResult">
+        <include refid="selectBrmMajorVo"/>
+        <where>
+            <if test="majorName != null and majorName.trim() != ''"> and major_name like concat('%', #{majorName}, '%')</if>
+            <if test="majorCode != null and majorCode.trim() != ''"> and major_code like concat('%', #{majorCode}, '%')</if>
+            <if test="deptId != null"> and dept_id = #{deptId}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectBrmMajorByMajorId" parameterType="Long" resultMap="BrmMajorResult"><include refid="selectBrmMajorVo"/> where major_id = #{majorId}</select>
+    <insert id="insertBrmMajor" parameterType="BrmMajor" useGeneratedKeys="true" keyProperty="majorId">insert into brm_major
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="majorCode != null and majorCode != ''">major_code,</if><if test="majorName != null and majorName != ''">major_name,</if>
+            <if test="deptId != null">dept_id,</if><if test="educationLevel != null">education_level,</if>
+            <if test="duration != null">duration,</if><if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if><if test="createTime != null">create_time,</if><if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="majorCode != null and majorCode != ''">#{majorCode},</if><if test="majorName != null and majorName != ''">#{majorName},</if>
+            <if test="deptId != null">#{deptId},</if><if test="educationLevel != null">#{educationLevel},</if>
+            <if test="duration != null">#{duration},</if><if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if><if test="createTime != null">#{createTime},</if><if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateBrmMajor" parameterType="BrmMajor">update brm_major
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="majorCode != null and majorCode != ''">major_code = #{majorCode},</if><if test="majorName != null and majorName != ''">major_name = #{majorName},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if><if test="educationLevel != null">education_level = #{educationLevel},</if>
+            <if test="duration != null">duration = #{duration},</if><if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if><if test="updateTime != null">update_time = #{updateTime},</if><if test="remark != null">remark = #{remark},</if>
+        </trim> where major_id = #{majorId}
+    </update>
+    <delete id="deleteBrmMajorByMajorId" parameterType="Long">delete from brm_major where major_id = #{majorId}</delete>
+    <delete id="deleteBrmMajorByMajorIds" parameterType="String">delete from brm_major where major_id in <foreach item="majorId" collection="array" open="(" separator="," close=")">#{majorId}</foreach></delete>
+</mapper>

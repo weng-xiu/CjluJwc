@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.brm.mapper.BrmSemesterMapper">
+    <resultMap type="BrmSemester" id="BrmSemesterResult">
+        <result property="semesterId"        column="semester_id"         />
+        <result property="semesterName"      column="semester_name"       />
+        <result property="academicYearId"    column="academic_year_id"    />
+        <result property="startDate"         column="start_date"          />
+        <result property="endDate"           column="end_date"            />
+        <result property="semesterOrder"     column="semester_order"      />
+        <result property="status"            column="status"              />
+        <result property="createBy"          column="create_by"           />
+        <result property="createTime"        column="create_time"         />
+        <result property="updateBy"          column="update_by"           />
+        <result property="updateTime"        column="update_time"         />
+        <result property="remark"            column="remark"              />
+    </resultMap>
+    <sql id="selectBrmSemesterVo">
+        select semester_id, semester_name, academic_year_id, start_date, end_date, semester_order, status, create_by, create_time, update_by, update_time, remark from brm_semester
+    </sql>
+    <select id="selectBrmSemesterList" parameterType="BrmSemester" resultMap="BrmSemesterResult">
+        <include refid="selectBrmSemesterVo"/>
+        <where>
+            <if test="semesterName != null and semesterName.trim() != ''"> and semester_name like concat('%', #{semesterName}, '%')</if>
+            <if test="academicYearId != null"> and academic_year_id = #{academicYearId}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectBrmSemesterBySemesterId" parameterType="Long" resultMap="BrmSemesterResult">
+        <include refid="selectBrmSemesterVo"/> where semester_id = #{semesterId}
+    </select>
+    <insert id="insertBrmSemester" parameterType="BrmSemester" useGeneratedKeys="true" keyProperty="semesterId">
+        insert into brm_semester
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="semesterName != null and semesterName != ''">semester_name,</if>
+            <if test="academicYearId != null">academic_year_id,</if>
+            <if test="startDate != null">start_date,</if>
+            <if test="endDate != null">end_date,</if>
+            <if test="semesterOrder != null">semester_order,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="semesterName != null and semesterName != ''">#{semesterName},</if>
+            <if test="academicYearId != null">#{academicYearId},</if>
+            <if test="startDate != null">#{startDate},</if>
+            <if test="endDate != null">#{endDate},</if>
+            <if test="semesterOrder != null">#{semesterOrder},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateBrmSemester" parameterType="BrmSemester">
+        update brm_semester
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="semesterName != null and semesterName != ''">semester_name = #{semesterName},</if>
+            <if test="academicYearId != null">academic_year_id = #{academicYearId},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+            <if test="semesterOrder != null">semester_order = #{semesterOrder},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where semester_id = #{semesterId}
+    </update>
+    <delete id="deleteBrmSemesterBySemesterId" parameterType="Long">
+        delete from brm_semester where semester_id = #{semesterId}
+    </delete>
+    <delete id="deleteBrmSemesterBySemesterIds" parameterType="String">
+        delete from brm_semester where semester_id in
+        <foreach item="semesterId" collection="array" open="(" separator="," close=")">#{semesterId}</foreach>
+    </delete>
+</mapper>

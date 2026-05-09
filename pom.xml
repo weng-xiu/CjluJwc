@@ -170,6 +170,13 @@
                 <version>${yu.version}</version>
             </dependency>
 
+            <!-- 基础资源管理-->
+            <dependency>
+                <groupId>com.yu</groupId>
+                <artifactId>yu-brm</artifactId>
+                <version>${yu.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -180,6 +187,7 @@
         <module>yu-quartz</module>
         <module>yu-generator</module>
         <module>yu-common</module>
+        <module>yu-brm</module>
     </modules>
     <packaging>pom</packaging>
 
