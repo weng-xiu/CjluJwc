@@ -177,6 +177,13 @@
                 <version>${yu.version}</version>
             </dependency>
 
+            <!-- 培养过程管理-->
+            <dependency>
+                <groupId>com.yu</groupId>
+                <artifactId>yu-tpm</artifactId>
+                <version>${yu.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -188,6 +195,7 @@
         <module>yu-generator</module>
         <module>yu-common</module>
         <module>yu-brm</module>
+        <module>yu-tpm</module>
     </modules>
     <packaging>pom</packaging>
 

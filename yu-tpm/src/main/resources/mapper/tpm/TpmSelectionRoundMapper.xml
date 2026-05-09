@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.tpm.mapper.TpmSelectionRoundMapper">
+    <resultMap type="TpmSelectionRound" id="TpmSelectionRoundResult">
+        <result property="roundId"              column="round_id"                />
+        <result property="semesterId"           column="semester_id"             />
+        <result property="roundName"            column="round_name"              />
+        <result property="roundOrder"           column="round_order"             />
+        <result property="startTime"            column="start_time"              />
+        <result property="endTime"              column="end_time"                />
+        <result property="maxCoursesPerStudent" column="max_courses_per_student" />
+        <result property="roundStatus"          column="round_status"            />
+        <result property="status"               column="status"                  />
+        <result property="createBy"             column="create_by"               />
+        <result property="createTime"           column="create_time"             />
+        <result property="updateBy"             column="update_by"               />
+        <result property="updateTime"           column="update_time"             />
+        <result property="remark"               column="remark"                  />
+    </resultMap>
+    <sql id="selectTpmSelectionRoundVo">
+        select round_id, semester_id, round_name, round_order, start_time, end_time, max_courses_per_student, round_status, status, create_by, create_time, update_by, update_time, remark from tpm_selection_round
+    </sql>
+    <select id="selectTpmSelectionRoundList" parameterType="TpmSelectionRound" resultMap="TpmSelectionRoundResult">
+        <include refid="selectTpmSelectionRoundVo"/>
+        <where>
+            <if test="semesterId != null"> and semester_id = #{semesterId}</if>
+            <if test="roundName != null and roundName.trim() != ''"> and round_name like concat('%', #{roundName}, '%')</if>
+            <if test="roundStatus != null and roundStatus.trim() != ''"> and round_status = #{roundStatus}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectTpmSelectionRoundByRoundId" parameterType="Long" resultMap="TpmSelectionRoundResult">
+        <include refid="selectTpmSelectionRoundVo"/> where round_id = #{roundId}
+    </select>
+    <insert id="insertTpmSelectionRound" parameterType="TpmSelectionRound" useGeneratedKeys="true" keyProperty="roundId">
+        insert into tpm_selection_round
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="semesterId != null">semester_id,</if>
+            <if test="roundName != null and roundName != ''">round_name,</if>
+            <if test="roundOrder != null">round_order,</if>
+            <if test="startTime != null">start_time,</if>
+            <if test="endTime != null">end_time,</if>
+            <if test="maxCoursesPerStudent != null">max_courses_per_student,</if>
+            <if test="roundStatus != null">round_status,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="semesterId != null">#{semesterId},</if>
+            <if test="roundName != null and roundName != ''">#{roundName},</if>
+            <if test="roundOrder != null">#{roundOrder},</if>
+            <if test="startTime != null">#{startTime},</if>
+            <if test="endTime != null">#{endTime},</if>
+            <if test="maxCoursesPerStudent != null">#{maxCoursesPerStudent},</if>
+            <if test="roundStatus != null">#{roundStatus},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateTpmSelectionRound" parameterType="TpmSelectionRound">
+        update tpm_selection_round
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="semesterId != null">semester_id = #{semesterId},</if>
+            <if test="roundName != null and roundName != ''">round_name = #{roundName},</if>
+            <if test="roundOrder != null">round_order = #{roundOrder},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="maxCoursesPerStudent != null">max_courses_per_student = #{maxCoursesPerStudent},</if>
+            <if test="roundStatus != null">round_status = #{roundStatus},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where round_id = #{roundId}
+    </update>
+    <delete id="deleteTpmSelectionRoundByRoundId" parameterType="Long">
+        delete from tpm_selection_round where round_id = #{roundId}
+    </delete>
+    <delete id="deleteTpmSelectionRoundByRoundIds" parameterType="String">
+        delete from tpm_selection_round where round_id in
+        <foreach item="roundId" collection="array" open="(" separator="," close=")">#{roundId}</foreach>
+    </delete>
+</mapper>

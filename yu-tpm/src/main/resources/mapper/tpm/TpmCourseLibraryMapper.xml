@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.tpm.mapper.TpmCourseLibraryMapper">
+    <resultMap type="TpmCourseLibrary" id="TpmCourseLibraryResult">
+        <result property="courseId"         column="course_id"         />
+        <result property="courseCode"       column="course_code"       />
+        <result property="courseName"       column="course_name"       />
+        <result property="courseNameEn"     column="course_name_en"    />
+        <result property="credit"           column="credit"            />
+        <result property="theoryHours"      column="theory_hours"      />
+        <result property="practiceHours"    column="practice_hours"    />
+        <result property="totalHours"       column="total_hours"       />
+        <result property="courseType"       column="course_type"       />
+        <result property="courseCategory"   column="course_category"   />
+        <result property="assessmentMethod" column="assessment_method" />
+        <result property="semesterOrder"    column="semester_order"    />
+        <result property="planId"           column="plan_id"           />
+        <result property="status"           column="status"            />
+        <result property="createBy"         column="create_by"         />
+        <result property="createTime"       column="create_time"       />
+        <result property="updateBy"         column="update_by"         />
+        <result property="updateTime"       column="update_time"       />
+        <result property="remark"           column="remark"            />
+    </resultMap>
+    <sql id="selectTpmCourseLibraryVo">
+        select course_id, course_code, course_name, course_name_en, credit, theory_hours, practice_hours, total_hours, course_type, course_category, assessment_method, semester_order, plan_id, status, create_by, create_time, update_by, update_time, remark from tpm_course_library
+    </sql>
+    <select id="selectTpmCourseLibraryList" parameterType="TpmCourseLibrary" resultMap="TpmCourseLibraryResult">
+        <include refid="selectTpmCourseLibraryVo"/>
+        <where>
+            <if test="courseCode != null and courseCode.trim() != ''"> and course_code like concat('%', #{courseCode}, '%')</if>
+            <if test="courseName != null and courseName.trim() != ''"> and course_name like concat('%', #{courseName}, '%')</if>
+            <if test="courseType != null and courseType.trim() != ''"> and course_type = #{courseType}</if>
+            <if test="courseCategory != null and courseCategory.trim() != ''"> and course_category = #{courseCategory}</if>
+            <if test="planId != null"> and plan_id = #{planId}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectTpmCourseLibraryByCourseId" parameterType="Long" resultMap="TpmCourseLibraryResult">
+        <include refid="selectTpmCourseLibraryVo"/> where course_id = #{courseId}
+    </select>
+    <insert id="insertTpmCourseLibrary" parameterType="TpmCourseLibrary" useGeneratedKeys="true" keyProperty="courseId">
+        insert into tpm_course_library
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="courseCode != null and courseCode != ''">course_code,</if>
+            <if test="courseName != null and courseName != ''">course_name,</if>
+            <if test="courseNameEn != null">course_name_en,</if>
+            <if test="credit != null">credit,</if>
+            <if test="theoryHours != null">theory_hours,</if>
+            <if test="practiceHours != null">practice_hours,</if>
+            <if test="totalHours != null">total_hours,</if>
+            <if test="courseType != null">course_type,</if>
+            <if test="courseCategory != null">course_category,</if>
+            <if test="assessmentMethod != null">assessment_method,</if>
+            <if test="semesterOrder != null">semester_order,</if>
+            <if test="planId != null">plan_id,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="courseCode != null and courseCode != ''">#{courseCode},</if>
+            <if test="courseName != null and courseName != ''">#{courseName},</if>
+            <if test="courseNameEn != null">#{courseNameEn},</if>
+            <if test="credit != null">#{credit},</if>
+            <if test="theoryHours != null">#{theoryHours},</if>
+            <if test="practiceHours != null">#{practiceHours},</if>
+            <if test="totalHours != null">#{totalHours},</if>
+            <if test="courseType != null">#{courseType},</if>
+            <if test="courseCategory != null">#{courseCategory},</if>
+            <if test="assessmentMethod != null">#{assessmentMethod},</if>
+            <if test="semesterOrder != null">#{semesterOrder},</if>
+            <if test="planId != null">#{planId},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateTpmCourseLibrary" parameterType="TpmCourseLibrary">
+        update tpm_course_library
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="courseCode != null and courseCode != ''">course_code = #{courseCode},</if>
+            <if test="courseName != null and courseName != ''">course_name = #{courseName},</if>
+            <if test="courseNameEn != null">course_name_en = #{courseNameEn},</if>
+            <if test="credit != null">credit = #{credit},</if>
+            <if test="theoryHours != null">theory_hours = #{theoryHours},</if>
+            <if test="practiceHours != null">practice_hours = #{practiceHours},</if>
+            <if test="totalHours != null">total_hours = #{totalHours},</if>
+            <if test="courseType != null">course_type = #{courseType},</if>
+            <if test="courseCategory != null">course_category = #{courseCategory},</if>
+            <if test="assessmentMethod != null">assessment_method = #{assessmentMethod},</if>
+            <if test="semesterOrder != null">semester_order = #{semesterOrder},</if>
+            <if test="planId != null">plan_id = #{planId},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where course_id = #{courseId}
+    </update>
+    <delete id="deleteTpmCourseLibraryByCourseId" parameterType="Long">
+        delete from tpm_course_library where course_id = #{courseId}
+    </delete>
+    <delete id="deleteTpmCourseLibraryByCourseIds" parameterType="String">
+        delete from tpm_course_library where course_id in
+        <foreach item="courseId" collection="array" open="(" separator="," close=")">#{courseId}</foreach>
+    </delete>
+</mapper>

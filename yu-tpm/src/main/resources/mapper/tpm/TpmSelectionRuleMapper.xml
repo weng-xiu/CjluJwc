@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.tpm.mapper.TpmSelectionRuleMapper">
+    <resultMap type="TpmSelectionRule" id="TpmSelectionRuleResult">
+        <result property="ruleId"         column="rule_id"          />
+        <result property="roundId"        column="round_id"         />
+        <result property="ruleName"       column="rule_name"        />
+        <result property="ruleType"       column="rule_type"        />
+        <result property="restrictTarget" column="restrict_target"  />
+        <result property="restrictValue"  column="restrict_value"   />
+        <result property="priority"       column="priority"         />
+        <result property="status"         column="status"           />
+        <result property="createBy"       column="create_by"        />
+        <result property="createTime"     column="create_time"      />
+        <result property="updateBy"       column="update_by"        />
+        <result property="updateTime"     column="update_time"      />
+        <result property="remark"         column="remark"           />
+    </resultMap>
+    <sql id="selectTpmSelectionRuleVo">
+        select rule_id, round_id, rule_name, rule_type, restrict_target, restrict_value, priority, status, create_by, create_time, update_by, update_time, remark from tpm_selection_rule
+    </sql>
+    <select id="selectTpmSelectionRuleList" parameterType="TpmSelectionRule" resultMap="TpmSelectionRuleResult">
+        <include refid="selectTpmSelectionRuleVo"/>
+        <where>
+            <if test="roundId != null"> and round_id = #{roundId}</if>
+            <if test="ruleName != null and ruleName.trim() != ''"> and rule_name like concat('%', #{ruleName}, '%')</if>
+            <if test="ruleType != null and ruleType.trim() != ''"> and rule_type = #{ruleType}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectTpmSelectionRuleByRuleId" parameterType="Long" resultMap="TpmSelectionRuleResult">
+        <include refid="selectTpmSelectionRuleVo"/> where rule_id = #{ruleId}
+    </select>
+    <insert id="insertTpmSelectionRule" parameterType="TpmSelectionRule" useGeneratedKeys="true" keyProperty="ruleId">
+        insert into tpm_selection_rule
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="roundId != null">round_id,</if>
+            <if test="ruleName != null and ruleName != ''">rule_name,</if>
+            <if test="ruleType != null and ruleType != ''">rule_type,</if>
+            <if test="restrictTarget != null">restrict_target,</if>
+            <if test="restrictValue != null">restrict_value,</if>
+            <if test="priority != null">priority,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="roundId != null">#{roundId},</if>
+            <if test="ruleName != null and ruleName != ''">#{ruleName},</if>
+            <if test="ruleType != null and ruleType != ''">#{ruleType},</if>
+            <if test="restrictTarget != null">#{restrictTarget},</if>
+            <if test="restrictValue != null">#{restrictValue},</if>
+            <if test="priority != null">#{priority},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateTpmSelectionRule" parameterType="TpmSelectionRule">
+        update tpm_selection_rule
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="roundId != null">round_id = #{roundId},</if>
+            <if test="ruleName != null and ruleName != ''">rule_name = #{ruleName},</if>
+            <if test="ruleType != null and ruleType != ''">rule_type = #{ruleType},</if>
+            <if test="restrictTarget != null">restrict_target = #{restrictTarget},</if>
+            <if test="restrictValue != null">restrict_value = #{restrictValue},</if>
+            <if test="priority != null">priority = #{priority},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where rule_id = #{ruleId}
+    </update>
+    <delete id="deleteTpmSelectionRuleByRuleId" parameterType="Long">
+        delete from tpm_selection_rule where rule_id = #{ruleId}
+    </delete>
+    <delete id="deleteTpmSelectionRuleByRuleIds" parameterType="String">
+        delete from tpm_selection_rule where rule_id in
+        <foreach item="ruleId" collection="array" open="(" separator="," close=")">#{ruleId}</foreach>
+    </delete>
+</mapper>

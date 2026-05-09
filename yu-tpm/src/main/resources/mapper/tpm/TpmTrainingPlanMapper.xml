@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.tpm.mapper.TpmTrainingPlanMapper">
+    <resultMap type="TpmTrainingPlan" id="TpmTrainingPlanResult">
+        <result property="planId"         column="plan_id"         />
+        <result property="planName"       column="plan_name"       />
+        <result property="majorId"        column="major_id"        />
+        <result property="deptId"         column="dept_id"         />
+        <result property="educationLevel" column="education_level" />
+        <result property="planYear"       column="plan_year"       />
+        <result property="totalCredits"   column="total_credits"   />
+        <result property="publishStatus"  column="publish_status"  />
+        <result property="publishDate"    column="publish_date"    />
+        <result property="version"        column="version"         />
+        <result property="status"         column="status"          />
+        <result property="createBy"       column="create_by"       />
+        <result property="createTime"     column="create_time"     />
+        <result property="updateBy"       column="update_by"       />
+        <result property="updateTime"     column="update_time"     />
+        <result property="remark"         column="remark"          />
+    </resultMap>
+    <sql id="selectTpmTrainingPlanVo">
+        select plan_id, plan_name, major_id, dept_id, education_level, plan_year, total_credits, publish_status, publish_date, version, status, create_by, create_time, update_by, update_time, remark from tpm_training_plan
+    </sql>
+    <select id="selectTpmTrainingPlanList" parameterType="TpmTrainingPlan" resultMap="TpmTrainingPlanResult">
+        <include refid="selectTpmTrainingPlanVo"/>
+        <where>
+            <if test="planName != null and planName.trim() != ''"> and plan_name like concat('%', #{planName}, '%')</if>
+            <if test="majorId != null"> and major_id = #{majorId}</if>
+            <if test="deptId != null"> and dept_id = #{deptId}</if>
+            <if test="educationLevel != null and educationLevel.trim() != ''"> and education_level = #{educationLevel}</if>
+            <if test="publishStatus != null and publishStatus.trim() != ''"> and publish_status = #{publishStatus}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectTpmTrainingPlanByPlanId" parameterType="Long" resultMap="TpmTrainingPlanResult">
+        <include refid="selectTpmTrainingPlanVo"/> where plan_id = #{planId}
+    </select>
+    <insert id="insertTpmTrainingPlan" parameterType="TpmTrainingPlan" useGeneratedKeys="true" keyProperty="planId">
+        insert into tpm_training_plan
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="planName != null and planName != ''">plan_name,</if>
+            <if test="majorId != null">major_id,</if>
+            <if test="deptId != null">dept_id,</if>
+            <if test="educationLevel != null">education_level,</if>
+            <if test="planYear != null">plan_year,</if>
+            <if test="totalCredits != null">total_credits,</if>
+            <if test="publishStatus != null">publish_status,</if>
+            <if test="publishDate != null">publish_date,</if>
+            <if test="version != null">version,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="planName != null and planName != ''">#{planName},</if>
+            <if test="majorId != null">#{majorId},</if>
+            <if test="deptId != null">#{deptId},</if>
+            <if test="educationLevel != null">#{educationLevel},</if>
+            <if test="planYear != null">#{planYear},</if>
+            <if test="totalCredits != null">#{totalCredits},</if>
+            <if test="publishStatus != null">#{publishStatus},</if>
+            <if test="publishDate != null">#{publishDate},</if>
+            <if test="version != null">#{version},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateTpmTrainingPlan" parameterType="TpmTrainingPlan">
+        update tpm_training_plan
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="planName != null and planName != ''">plan_name = #{planName},</if>
+            <if test="majorId != null">major_id = #{majorId},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="educationLevel != null">education_level = #{educationLevel},</if>
+            <if test="planYear != null">plan_year = #{planYear},</if>
+            <if test="totalCredits != null">total_credits = #{totalCredits},</if>
+            <if test="publishStatus != null">publish_status = #{publishStatus},</if>
+            <if test="publishDate != null">publish_date = #{publishDate},</if>
+            <if test="version != null">version = #{version},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where plan_id = #{planId}
+    </update>
+    <delete id="deleteTpmTrainingPlanByPlanId" parameterType="Long">
+        delete from tpm_training_plan where plan_id = #{planId}
+    </delete>
+    <delete id="deleteTpmTrainingPlanByPlanIds" parameterType="String">
+        delete from tpm_training_plan where plan_id in
+        <foreach item="planId" collection="array" open="(" separator="," close=")">#{planId}</foreach>
+    </delete>
+</mapper>

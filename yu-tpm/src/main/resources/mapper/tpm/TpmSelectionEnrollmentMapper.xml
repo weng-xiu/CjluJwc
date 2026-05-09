@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.tpm.mapper.TpmSelectionEnrollmentMapper">
+    <resultMap type="TpmSelectionEnrollment" id="TpmSelectionEnrollmentResult">
+        <result property="enrollId"         column="enroll_id"           />
+        <result property="roundId"          column="round_id"            />
+        <result property="studentId"        column="student_id"          />
+        <result property="courseOfferingId" column="course_offering_id"  />
+        <result property="selectTime"       column="select_time"         />
+        <result property="lotteryResult"    column="lottery_result"      />
+        <result property="resultStatus"     column="result_status"       />
+        <result property="dropTime"         column="drop_time"           />
+        <result property="status"           column="status"              />
+        <result property="createBy"         column="create_by"           />
+        <result property="createTime"       column="create_time"         />
+        <result property="updateBy"         column="update_by"           />
+        <result property="updateTime"       column="update_time"         />
+        <result property="remark"           column="remark"              />
+    </resultMap>
+    <sql id="selectTpmSelectionEnrollmentVo">
+        select enroll_id, round_id, student_id, course_offering_id, select_time, lottery_result, result_status, drop_time, status, create_by, create_time, update_by, update_time, remark from tpm_selection_enrollment
+    </sql>
+    <select id="selectTpmSelectionEnrollmentList" parameterType="TpmSelectionEnrollment" resultMap="TpmSelectionEnrollmentResult">
+        <include refid="selectTpmSelectionEnrollmentVo"/>
+        <where>
+            <if test="roundId != null"> and round_id = #{roundId}</if>
+            <if test="studentId != null"> and student_id = #{studentId}</if>
+            <if test="courseOfferingId != null"> and course_offering_id = #{courseOfferingId}</if>
+            <if test="resultStatus != null and resultStatus.trim() != ''"> and result_status = #{resultStatus}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectTpmSelectionEnrollmentByEnrollId" parameterType="Long" resultMap="TpmSelectionEnrollmentResult">
+        <include refid="selectTpmSelectionEnrollmentVo"/> where enroll_id = #{enrollId}
+    </select>
+    <insert id="insertTpmSelectionEnrollment" parameterType="TpmSelectionEnrollment" useGeneratedKeys="true" keyProperty="enrollId">
+        insert into tpm_selection_enrollment
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="roundId != null">round_id,</if>
+            <if test="studentId != null">student_id,</if>
+            <if test="courseOfferingId != null">course_offering_id,</if>
+            <if test="selectTime != null">select_time,</if>
+            <if test="lotteryResult != null">lottery_result,</if>
+            <if test="resultStatus != null">result_status,</if>
+            <if test="dropTime != null">drop_time,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="roundId != null">#{roundId},</if>
+            <if test="studentId != null">#{studentId},</if>
+            <if test="courseOfferingId != null">#{courseOfferingId},</if>
+            <if test="selectTime != null">#{selectTime},</if>
+            <if test="lotteryResult != null">#{lotteryResult},</if>
+            <if test="resultStatus != null">#{resultStatus},</if>
+            <if test="dropTime != null">#{dropTime},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateTpmSelectionEnrollment" parameterType="TpmSelectionEnrollment">
+        update tpm_selection_enrollment
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="roundId != null">round_id = #{roundId},</if>
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="courseOfferingId != null">course_offering_id = #{courseOfferingId},</if>
+            <if test="selectTime != null">select_time = #{selectTime},</if>
+            <if test="lotteryResult != null">lottery_result = #{lotteryResult},</if>
+            <if test="resultStatus != null">result_status = #{resultStatus},</if>
+            <if test="dropTime != null">drop_time = #{dropTime},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where enroll_id = #{enrollId}
+    </update>
+    <delete id="deleteTpmSelectionEnrollmentByEnrollId" parameterType="Long">
+        delete from tpm_selection_enrollment where enroll_id = #{enrollId}
+    </delete>
+    <delete id="deleteTpmSelectionEnrollmentByEnrollIds" parameterType="String">
+        delete from tpm_selection_enrollment where enroll_id in
+        <foreach item="enrollId" collection="array" open="(" separator="," close=")">#{enrollId}</foreach>
+    </delete>
+</mapper>

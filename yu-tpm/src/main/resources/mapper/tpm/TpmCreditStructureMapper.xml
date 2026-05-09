@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.tpm.mapper.TpmCreditStructureMapper">
+    <resultMap type="TpmCreditStructure" id="TpmCreditStructureResult">
+        <result property="structId"        column="struct_id"         />
+        <result property="planId"          column="plan_id"           />
+        <result property="creditType"      column="credit_type"       />
+        <result property="creditTypeName"  column="credit_type_name"  />
+        <result property="requiredCredit"  column="required_credit"   />
+        <result property="minCredit"       column="min_credit"        />
+        <result property="description"     column="description"       />
+        <result property="status"          column="status"            />
+        <result property="createBy"        column="create_by"         />
+        <result property="createTime"      column="create_time"       />
+        <result property="updateBy"        column="update_by"         />
+        <result property="updateTime"      column="update_time"       />
+        <result property="remark"          column="remark"            />
+    </resultMap>
+    <sql id="selectTpmCreditStructureVo">
+        select struct_id, plan_id, credit_type, credit_type_name, required_credit, min_credit, description, status, create_by, create_time, update_by, update_time, remark from tpm_credit_structure
+    </sql>
+    <select id="selectTpmCreditStructureList" parameterType="TpmCreditStructure" resultMap="TpmCreditStructureResult">
+        <include refid="selectTpmCreditStructureVo"/>
+        <where>
+            <if test="planId != null"> and plan_id = #{planId}</if>
+            <if test="creditType != null and creditType.trim() != ''"> and credit_type = #{creditType}</if>
+            <if test="creditTypeName != null and creditTypeName.trim() != ''"> and credit_type_name like concat('%', #{creditTypeName}, '%')</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectTpmCreditStructureByStructId" parameterType="Long" resultMap="TpmCreditStructureResult">
+        <include refid="selectTpmCreditStructureVo"/> where struct_id = #{structId}
+    </select>
+    <insert id="insertTpmCreditStructure" parameterType="TpmCreditStructure" useGeneratedKeys="true" keyProperty="structId">
+        insert into tpm_credit_structure
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="planId != null">plan_id,</if>
+            <if test="creditType != null and creditType != ''">credit_type,</if>
+            <if test="creditTypeName != null and creditTypeName != ''">credit_type_name,</if>
+            <if test="requiredCredit != null">required_credit,</if>
+            <if test="minCredit != null">min_credit,</if>
+            <if test="description != null">description,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="planId != null">#{planId},</if>
+            <if test="creditType != null and creditType != ''">#{creditType},</if>
+            <if test="creditTypeName != null and creditTypeName != ''">#{creditTypeName},</if>
+            <if test="requiredCredit != null">#{requiredCredit},</if>
+            <if test="minCredit != null">#{minCredit},</if>
+            <if test="description != null">#{description},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateTpmCreditStructure" parameterType="TpmCreditStructure">
+        update tpm_credit_structure
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="planId != null">plan_id = #{planId},</if>
+            <if test="creditType != null and creditType != ''">credit_type = #{creditType},</if>
+            <if test="creditTypeName != null and creditTypeName != ''">credit_type_name = #{creditTypeName},</if>
+            <if test="requiredCredit != null">required_credit = #{requiredCredit},</if>
+            <if test="minCredit != null">min_credit = #{minCredit},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where struct_id = #{structId}
+    </update>
+    <delete id="deleteTpmCreditStructureByStructId" parameterType="Long">
+        delete from tpm_credit_structure where struct_id = #{structId}
+    </delete>
+    <delete id="deleteTpmCreditStructureByStructIds" parameterType="String">
+        delete from tpm_credit_structure where struct_id in
+        <foreach item="structId" collection="array" open="(" separator="," close=")">#{structId}</foreach>
+    </delete>
+</mapper>

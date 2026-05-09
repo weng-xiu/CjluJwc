@@ -60,6 +60,12 @@
             <artifactId>yu-brm</artifactId>
         </dependency>
 
+        <!-- 培养过程管理-->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-tpm</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.tpm.mapper.TpmCourseOfferingMapper">
+    <resultMap type="TpmCourseOffering" id="TpmCourseOfferingResult">
+        <result property="offeringId"     column="offering_id"      />
+        <result property="semesterId"     column="semester_id"      />
+        <result property="courseId"       column="course_id"        />
+        <result property="teacherId"      column="teacher_id"       />
+        <result property="campusId"       column="campus_id"        />
+        <result property="classCount"     column="class_count"      />
+        <result property="maxStudents"    column="max_students"     />
+        <result property="offeringStatus" column="offering_status"  />
+        <result property="status"         column="status"           />
+        <result property="createBy"       column="create_by"        />
+        <result property="createTime"     column="create_time"      />
+        <result property="updateBy"       column="update_by"        />
+        <result property="updateTime"     column="update_time"      />
+        <result property="remark"         column="remark"           />
+    </resultMap>
+    <sql id="selectTpmCourseOfferingVo">
+        select offering_id, semester_id, course_id, teacher_id, campus_id, class_count, max_students, offering_status, status, create_by, create_time, update_by, update_time, remark from tpm_course_offering
+    </sql>
+    <select id="selectTpmCourseOfferingList" parameterType="TpmCourseOffering" resultMap="TpmCourseOfferingResult">
+        <include refid="selectTpmCourseOfferingVo"/>
+        <where>
+            <if test="semesterId != null"> and semester_id = #{semesterId}</if>
+            <if test="courseId != null"> and course_id = #{courseId}</if>
+            <if test="teacherId != null"> and teacher_id = #{teacherId}</if>
+            <if test="campusId != null"> and campus_id = #{campusId}</if>
+            <if test="offeringStatus != null and offeringStatus.trim() != ''"> and offering_status = #{offeringStatus}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectTpmCourseOfferingByOfferingId" parameterType="Long" resultMap="TpmCourseOfferingResult">
+        <include refid="selectTpmCourseOfferingVo"/> where offering_id = #{offeringId}
+    </select>
+    <insert id="insertTpmCourseOffering" parameterType="TpmCourseOffering" useGeneratedKeys="true" keyProperty="offeringId">
+        insert into tpm_course_offering
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="semesterId != null">semester_id,</if>
+            <if test="courseId != null">course_id,</if>
+            <if test="teacherId != null">teacher_id,</if>
+            <if test="campusId != null">campus_id,</if>
+            <if test="classCount != null">class_count,</if>
+            <if test="maxStudents != null">max_students,</if>
+            <if test="offeringStatus != null">offering_status,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="semesterId != null">#{semesterId},</if>
+            <if test="courseId != null">#{courseId},</if>
+            <if test="teacherId != null">#{teacherId},</if>
+            <if test="campusId != null">#{campusId},</if>
+            <if test="classCount != null">#{classCount},</if>
+            <if test="maxStudents != null">#{maxStudents},</if>
+            <if test="offeringStatus != null">#{offeringStatus},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateTpmCourseOffering" parameterType="TpmCourseOffering">
+        update tpm_course_offering
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="semesterId != null">semester_id = #{semesterId},</if>
+            <if test="courseId != null">course_id = #{courseId},</if>
+            <if test="teacherId != null">teacher_id = #{teacherId},</if>
+            <if test="campusId != null">campus_id = #{campusId},</if>
+            <if test="classCount != null">class_count = #{classCount},</if>
+            <if test="maxStudents != null">max_students = #{maxStudents},</if>
+            <if test="offeringStatus != null">offering_status = #{offeringStatus},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where offering_id = #{offeringId}
+    </update>
+    <delete id="deleteTpmCourseOfferingByOfferingId" parameterType="Long">
+        delete from tpm_course_offering where offering_id = #{offeringId}
+    </delete>
+    <delete id="deleteTpmCourseOfferingByOfferingIds" parameterType="String">
+        delete from tpm_course_offering where offering_id in
+        <foreach item="offeringId" collection="array" open="(" separator="," close=")">#{offeringId}</foreach>
+    </delete>
+</mapper>

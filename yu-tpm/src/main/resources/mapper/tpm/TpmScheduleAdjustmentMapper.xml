@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.tpm.mapper.TpmScheduleAdjustmentMapper">
+    <resultMap type="TpmScheduleAdjustment" id="TpmScheduleAdjustmentResult">
+        <result property="adjustId"        column="adjust_id"          />
+        <result property="scheduleId"      column="schedule_id"        />
+        <result property="adjustType"      column="adjust_type"        />
+        <result property="originalDate"    column="original_date"      />
+        <result property="newDate"         column="new_date"           />
+        <result property="newClassroomId"  column="new_classroom_id"   />
+        <result property="newWeekDay"      column="new_week_day"       />
+        <result property="newStartPeriod"  column="new_start_period"   />
+        <result property="newEndPeriod"    column="new_end_period"     />
+        <result property="reason"          column="reason"             />
+        <result property="applicant"       column="applicant"          />
+        <result property="approveStatus"   column="approve_status"     />
+        <result property="approveBy"       column="approve_by"         />
+        <result property="approveTime"     column="approve_time"       />
+        <result property="status"          column="status"             />
+        <result property="createBy"        column="create_by"          />
+        <result property="createTime"      column="create_time"        />
+        <result property="updateBy"        column="update_by"          />
+        <result property="updateTime"      column="update_time"        />
+        <result property="remark"          column="remark"             />
+    </resultMap>
+    <sql id="selectTpmScheduleAdjustmentVo">
+        select adjust_id, schedule_id, adjust_type, original_date, new_date, new_classroom_id, new_week_day, new_start_period, new_end_period, reason, applicant, approve_status, approve_by, approve_time, status, create_by, create_time, update_by, update_time, remark from tpm_schedule_adjustment
+    </sql>
+    <select id="selectTpmScheduleAdjustmentList" parameterType="TpmScheduleAdjustment" resultMap="TpmScheduleAdjustmentResult">
+        <include refid="selectTpmScheduleAdjustmentVo"/>
+        <where>
+            <if test="scheduleId != null"> and schedule_id = #{scheduleId}</if>
+            <if test="adjustType != null and adjustType.trim() != ''"> and adjust_type = #{adjustType}</if>
+            <if test="applicant != null and applicant.trim() != ''"> and applicant like concat('%', #{applicant}, '%')</if>
+            <if test="approveStatus != null and approveStatus.trim() != ''"> and approve_status = #{approveStatus}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectTpmScheduleAdjustmentByAdjustId" parameterType="Long" resultMap="TpmScheduleAdjustmentResult">
+        <include refid="selectTpmScheduleAdjustmentVo"/> where adjust_id = #{adjustId}
+    </select>
+    <insert id="insertTpmScheduleAdjustment" parameterType="TpmScheduleAdjustment" useGeneratedKeys="true" keyProperty="adjustId">
+        insert into tpm_schedule_adjustment
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="scheduleId != null">schedule_id,</if>
+            <if test="adjustType != null and adjustType != ''">adjust_type,</if>
+            <if test="originalDate != null">original_date,</if>
+            <if test="newDate != null">new_date,</if>
+            <if test="newClassroomId != null">new_classroom_id,</if>
+            <if test="newWeekDay != null">new_week_day,</if>
+            <if test="newStartPeriod != null">new_start_period,</if>
+            <if test="newEndPeriod != null">new_end_period,</if>
+            <if test="reason != null">reason,</if>
+            <if test="applicant != null">applicant,</if>
+            <if test="approveStatus != null">approve_status,</if>
+            <if test="approveBy != null">approve_by,</if>
+            <if test="approveTime != null">approve_time,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="scheduleId != null">#{scheduleId},</if>
+            <if test="adjustType != null and adjustType != ''">#{adjustType},</if>
+            <if test="originalDate != null">#{originalDate},</if>
+            <if test="newDate != null">#{newDate},</if>
+            <if test="newClassroomId != null">#{newClassroomId},</if>
+            <if test="newWeekDay != null">#{newWeekDay},</if>
+            <if test="newStartPeriod != null">#{newStartPeriod},</if>
+            <if test="newEndPeriod != null">#{newEndPeriod},</if>
+            <if test="reason != null">#{reason},</if>
+            <if test="applicant != null">#{applicant},</if>
+            <if test="approveStatus != null">#{approveStatus},</if>
+            <if test="approveBy != null">#{approveBy},</if>
+            <if test="approveTime != null">#{approveTime},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateTpmScheduleAdjustment" parameterType="TpmScheduleAdjustment">
+        update tpm_schedule_adjustment
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="scheduleId != null">schedule_id = #{scheduleId},</if>
+            <if test="adjustType != null and adjustType != ''">adjust_type = #{adjustType},</if>
+            <if test="originalDate != null">original_date = #{originalDate},</if>
+            <if test="newDate != null">new_date = #{newDate},</if>
+            <if test="newClassroomId != null">new_classroom_id = #{newClassroomId},</if>
+            <if test="newWeekDay != null">new_week_day = #{newWeekDay},</if>
+            <if test="newStartPeriod != null">new_start_period = #{newStartPeriod},</if>
+            <if test="newEndPeriod != null">new_end_period = #{newEndPeriod},</if>
+            <if test="reason != null">reason = #{reason},</if>
+            <if test="applicant != null">applicant = #{applicant},</if>
+            <if test="approveStatus != null">approve_status = #{approveStatus},</if>
+            <if test="approveBy != null">approve_by = #{approveBy},</if>
+            <if test="approveTime != null">approve_time = #{approveTime},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where adjust_id = #{adjustId}
+    </update>
+    <delete id="deleteTpmScheduleAdjustmentByAdjustId" parameterType="Long">
+        delete from tpm_schedule_adjustment where adjust_id = #{adjustId}
+    </delete>
+    <delete id="deleteTpmScheduleAdjustmentByAdjustIds" parameterType="String">
+        delete from tpm_schedule_adjustment where adjust_id in
+        <foreach item="adjustId" collection="array" open="(" separator="," close=")">#{adjustId}</foreach>
+    </delete>
+</mapper>
