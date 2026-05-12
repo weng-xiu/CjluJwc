@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.aem.mapper.AemSupervisionRecordMapper">
+    <resultMap type="AemSupervisionRecord" id="AemSupervisionRecordResult">
+        <result property="recordId"          column="record_id"           />
+        <result property="courseId"          column="course_id"           />
+        <result property="teacherId"         column="teacher_id"          />
+        <result property="supervisor"        column="supervisor"          />
+        <result property="visitDate"         column="visit_date"          />
+        <result property="classHours"        column="class_hours"         />
+        <result property="teachingContent"   column="teaching_content"    />
+        <result property="evaluationScore"   column="evaluation_score"    />
+        <result property="evaluationLevel"   column="evaluation_level"    />
+        <result property="suggestion"        column="suggestion"          />
+        <result property="recordType"        column="record_type"         />
+        <result property="status"            column="status"              />
+        <result property="createBy"          column="create_by"           />
+        <result property="createTime"        column="create_time"         />
+        <result property="updateBy"          column="update_by"           />
+        <result property="updateTime"        column="update_time"         />
+        <result property="remark"            column="remark"              />
+    </resultMap>
+    <sql id="selectAemSupervisionRecordVo">
+        select record_id, course_id, teacher_id, supervisor, visit_date, class_hours, teaching_content, evaluation_score, evaluation_level, suggestion, record_type, status, create_by, create_time, update_by, update_time, remark from aem_supervision_record
+    </sql>
+    <select id="selectAemSupervisionRecordList" parameterType="AemSupervisionRecord" resultMap="AemSupervisionRecordResult">
+        <include refid="selectAemSupervisionRecordVo"/>
+        <where>
+            <if test="courseId != null"> and course_id = #{courseId}</if>
+            <if test="teacherId != null"> and teacher_id = #{teacherId}</if>
+            <if test="supervisor != null and supervisor.trim() != ''"> and supervisor like concat('%', #{supervisor}, '%')</if>
+            <if test="recordType != null and recordType.trim() != ''"> and record_type = #{recordType}</if>
+            <if test="evaluationLevel != null and evaluationLevel.trim() != ''"> and evaluation_level = #{evaluationLevel}</if>
+        </where>
+    </select>
+    <select id="selectAemSupervisionRecordByRecordId" parameterType="Long" resultMap="AemSupervisionRecordResult">
+        <include refid="selectAemSupervisionRecordVo"/> where record_id = #{recordId}
+    </select>
+    <insert id="insertAemSupervisionRecord" parameterType="AemSupervisionRecord" useGeneratedKeys="true" keyProperty="recordId">
+        insert into aem_supervision_record
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">course_id,</if>
+            <if test="teacherId != null">teacher_id,</if>
+            <if test="supervisor != null and supervisor != ''">supervisor,</if>
+            <if test="visitDate != null">visit_date,</if>
+            <if test="classHours != null">class_hours,</if>
+            <if test="teachingContent != null">teaching_content,</if>
+            <if test="evaluationScore != null">evaluation_score,</if>
+            <if test="evaluationLevel != null">evaluation_level,</if>
+            <if test="suggestion != null">suggestion,</if>
+            <if test="recordType != null">record_type,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">#{courseId},</if>
+            <if test="teacherId != null">#{teacherId},</if>
+            <if test="supervisor != null and supervisor != ''">#{supervisor},</if>
+            <if test="visitDate != null">#{visitDate},</if>
+            <if test="classHours != null">#{classHours},</if>
+            <if test="teachingContent != null">#{teachingContent},</if>
+            <if test="evaluationScore != null">#{evaluationScore},</if>
+            <if test="evaluationLevel != null">#{evaluationLevel},</if>
+            <if test="suggestion != null">#{suggestion},</if>
+            <if test="recordType != null">#{recordType},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateAemSupervisionRecord" parameterType="AemSupervisionRecord">
+        update aem_supervision_record
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="courseId != null">course_id = #{courseId},</if>
+            <if test="teacherId != null">teacher_id = #{teacherId},</if>
+            <if test="supervisor != null and supervisor != ''">supervisor = #{supervisor},</if>
+            <if test="visitDate != null">visit_date = #{visitDate},</if>
+            <if test="classHours != null">class_hours = #{classHours},</if>
+            <if test="teachingContent != null">teaching_content = #{teachingContent},</if>
+            <if test="evaluationScore != null">evaluation_score = #{evaluationScore},</if>
+            <if test="evaluationLevel != null">evaluation_level = #{evaluationLevel},</if>
+            <if test="suggestion != null">suggestion = #{suggestion},</if>
+            <if test="recordType != null">record_type = #{recordType},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where record_id = #{recordId}
+    </update>
+    <delete id="deleteAemSupervisionRecordByRecordId" parameterType="Long">
+        delete from aem_supervision_record where record_id = #{recordId}
+    </delete>
+    <delete id="deleteAemSupervisionRecordByRecordIds" parameterType="String">
+        delete from aem_supervision_record where record_id in
+        <foreach item="recordId" collection="array" open="(" separator="," close=")">#{recordId}</foreach>
+    </delete>
+</mapper>

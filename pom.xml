@@ -184,6 +184,13 @@
                 <version>${yu.version}</version>
             </dependency>
 
+            <!-- 考核与评价管理-->
+            <dependency>
+                <groupId>com.yu</groupId>
+                <artifactId>yu-aem</artifactId>
+                <version>${yu.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -196,6 +203,7 @@
         <module>yu-common</module>
         <module>yu-brm</module>
         <module>yu-tpm</module>
+        <module>yu-aem</module>
     </modules>
     <packaging>pom</packaging>
 

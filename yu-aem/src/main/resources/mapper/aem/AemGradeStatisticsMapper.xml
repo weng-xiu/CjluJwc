@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.aem.mapper.AemGradeStatisticsMapper">
+    <resultMap type="AemGradeStatistics" id="AemGradeStatisticsResult">
+        <result property="statId"          column="stat_id"           />
+        <result property="courseId"        column="course_id"         />
+        <result property="semesterId"      column="semester_id"       />
+        <result property="classId"         column="class_id"          />
+        <result property="totalStudents"   column="total_students"    />
+        <result property="maxScore"        column="max_score"         />
+        <result property="minScore"        column="min_score"         />
+        <result property="avgScore"        column="avg_score"         />
+        <result property="passCount"       column="pass_count"        />
+        <result property="failCount"       column="fail_count"        />
+        <result property="passRate"        column="pass_rate"         />
+        <result property="excellentCount"  column="excellent_count"   />
+        <result property="excellentRate"   column="excellent_rate"    />
+        <result property="status"          column="status"            />
+        <result property="createBy"        column="create_by"         />
+        <result property="createTime"      column="create_time"       />
+        <result property="updateBy"        column="update_by"         />
+        <result property="updateTime"      column="update_time"       />
+        <result property="remark"          column="remark"            />
+    </resultMap>
+    <sql id="selectAemGradeStatisticsVo">
+        select stat_id, course_id, semester_id, class_id, total_students, max_score, min_score, avg_score, pass_count, fail_count, pass_rate, excellent_count, excellent_rate, status, create_by, create_time, update_by, update_time, remark from aem_grade_statistics
+    </sql>
+    <select id="selectAemGradeStatisticsList" parameterType="AemGradeStatistics" resultMap="AemGradeStatisticsResult">
+        <include refid="selectAemGradeStatisticsVo"/>
+        <where>
+            <if test="courseId != null"> and course_id = #{courseId}</if>
+            <if test="semesterId != null"> and semester_id = #{semesterId}</if>
+            <if test="classId != null"> and class_id = #{classId}</if>
+        </where>
+    </select>
+    <select id="selectAemGradeStatisticsByStatId" parameterType="Long" resultMap="AemGradeStatisticsResult">
+        <include refid="selectAemGradeStatisticsVo"/> where stat_id = #{statId}
+    </select>
+    <insert id="insertAemGradeStatistics" parameterType="AemGradeStatistics" useGeneratedKeys="true" keyProperty="statId">
+        insert into aem_grade_statistics
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">course_id,</if>
+            <if test="semesterId != null">semester_id,</if>
+            <if test="classId != null">class_id,</if>
+            <if test="totalStudents != null">total_students,</if>
+            <if test="maxScore != null">max_score,</if>
+            <if test="minScore != null">min_score,</if>
+            <if test="avgScore != null">avg_score,</if>
+            <if test="passCount != null">pass_count,</if>
+            <if test="failCount != null">fail_count,</if>
+            <if test="passRate != null">pass_rate,</if>
+            <if test="excellentCount != null">excellent_count,</if>
+            <if test="excellentRate != null">excellent_rate,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">#{courseId},</if>
+            <if test="semesterId != null">#{semesterId},</if>
+            <if test="classId != null">#{classId},</if>
+            <if test="totalStudents != null">#{totalStudents},</if>
+            <if test="maxScore != null">#{maxScore},</if>
+            <if test="minScore != null">#{minScore},</if>
+            <if test="avgScore != null">#{avgScore},</if>
+            <if test="passCount != null">#{passCount},</if>
+            <if test="failCount != null">#{failCount},</if>
+            <if test="passRate != null">#{passRate},</if>
+            <if test="excellentCount != null">#{excellentCount},</if>
+            <if test="excellentRate != null">#{excellentRate},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateAemGradeStatistics" parameterType="AemGradeStatistics">
+        update aem_grade_statistics
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="courseId != null">course_id = #{courseId},</if>
+            <if test="semesterId != null">semester_id = #{semesterId},</if>
+            <if test="classId != null">class_id = #{classId},</if>
+            <if test="totalStudents != null">total_students = #{totalStudents},</if>
+            <if test="maxScore != null">max_score = #{maxScore},</if>
+            <if test="minScore != null">min_score = #{minScore},</if>
+            <if test="avgScore != null">avg_score = #{avgScore},</if>
+            <if test="passCount != null">pass_count = #{passCount},</if>
+            <if test="failCount != null">fail_count = #{failCount},</if>
+            <if test="passRate != null">pass_rate = #{passRate},</if>
+            <if test="excellentCount != null">excellent_count = #{excellentCount},</if>
+            <if test="excellentRate != null">excellent_rate = #{excellentRate},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where stat_id = #{statId}
+    </update>
+    <delete id="deleteAemGradeStatisticsByStatId" parameterType="Long">
+        delete from aem_grade_statistics where stat_id = #{statId}
+    </delete>
+    <delete id="deleteAemGradeStatisticsByStatIds" parameterType="String">
+        delete from aem_grade_statistics where stat_id in
+        <foreach item="statId" collection="array" open="(" separator="," close=")">#{statId}</foreach>
+    </delete>
+</mapper>

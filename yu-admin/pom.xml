@@ -66,6 +66,12 @@
             <artifactId>yu-tpm</artifactId>
         </dependency>
 
+        <!-- 考核与评价管理-->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-aem</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

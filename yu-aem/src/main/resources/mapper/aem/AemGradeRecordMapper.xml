@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.aem.mapper.AemGradeRecordMapper">
+    <resultMap type="AemGradeRecord" id="AemGradeRecordResult">
+        <result property="gradeId"        column="grade_id"         />
+        <result property="studentId"      column="student_id"       />
+        <result property="courseId"       column="course_id"        />
+        <result property="semesterId"     column="semester_id"      />
+        <result property="examType"       column="exam_type"        />
+        <result property="regularScore"   column="regular_score"    />
+        <result property="examScore"      column="exam_score"       />
+        <result property="totalScore"     column="total_score"      />
+        <result property="gradePoint"     column="grade_point"      />
+        <result property="gradeLevel"     column="grade_level"      />
+        <result property="isPass"         column="is_pass"          />
+        <result property="isReviewed"     column="is_reviewed"      />
+        <result property="status"         column="status"           />
+        <result property="createBy"       column="create_by"        />
+        <result property="createTime"     column="create_time"      />
+        <result property="updateBy"       column="update_by"        />
+        <result property="updateTime"     column="update_time"      />
+        <result property="remark"         column="remark"           />
+    </resultMap>
+    <sql id="selectAemGradeRecordVo">
+        select grade_id, student_id, course_id, semester_id, exam_type, regular_score, exam_score, total_score, grade_point, grade_level, is_pass, is_reviewed, status, create_by, create_time, update_by, update_time, remark from aem_grade_record
+    </sql>
+    <select id="selectAemGradeRecordList" parameterType="AemGradeRecord" resultMap="AemGradeRecordResult">
+        <include refid="selectAemGradeRecordVo"/>
+        <where>
+            <if test="studentId != null"> and student_id = #{studentId}</if>
+            <if test="courseId != null"> and course_id = #{courseId}</if>
+            <if test="semesterId != null"> and semester_id = #{semesterId}</if>
+            <if test="examType != null and examType.trim() != ''"> and exam_type = #{examType}</if>
+            <if test="isPass != null and isPass.trim() != ''"> and is_pass = #{isPass}</if>
+        </where>
+    </select>
+    <select id="selectAemGradeRecordByGradeId" parameterType="Long" resultMap="AemGradeRecordResult">
+        <include refid="selectAemGradeRecordVo"/> where grade_id = #{gradeId}
+    </select>
+    <insert id="insertAemGradeRecord" parameterType="AemGradeRecord" useGeneratedKeys="true" keyProperty="gradeId">
+        insert into aem_grade_record
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="courseId != null">course_id,</if>
+            <if test="semesterId != null">semester_id,</if>
+            <if test="examType != null">exam_type,</if>
+            <if test="regularScore != null">regular_score,</if>
+            <if test="examScore != null">exam_score,</if>
+            <if test="totalScore != null">total_score,</if>
+            <if test="gradePoint != null">grade_point,</if>
+            <if test="gradeLevel != null">grade_level,</if>
+            <if test="isPass != null">is_pass,</if>
+            <if test="isReviewed != null">is_reviewed,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="courseId != null">#{courseId},</if>
+            <if test="semesterId != null">#{semesterId},</if>
+            <if test="examType != null">#{examType},</if>
+            <if test="regularScore != null">#{regularScore},</if>
+            <if test="examScore != null">#{examScore},</if>
+            <if test="totalScore != null">#{totalScore},</if>
+            <if test="gradePoint != null">#{gradePoint},</if>
+            <if test="gradeLevel != null">#{gradeLevel},</if>
+            <if test="isPass != null">#{isPass},</if>
+            <if test="isReviewed != null">#{isReviewed},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateAemGradeRecord" parameterType="AemGradeRecord">
+        update aem_grade_record
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="courseId != null">course_id = #{courseId},</if>
+            <if test="semesterId != null">semester_id = #{semesterId},</if>
+            <if test="examType != null">exam_type = #{examType},</if>
+            <if test="regularScore != null">regular_score = #{regularScore},</if>
+            <if test="examScore != null">exam_score = #{examScore},</if>
+            <if test="totalScore != null">total_score = #{totalScore},</if>
+            <if test="gradePoint != null">grade_point = #{gradePoint},</if>
+            <if test="gradeLevel != null">grade_level = #{gradeLevel},</if>
+            <if test="isPass != null">is_pass = #{isPass},</if>
+            <if test="isReviewed != null">is_reviewed = #{isReviewed},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where grade_id = #{gradeId}
+    </update>
+    <delete id="deleteAemGradeRecordByGradeId" parameterType="Long">
+        delete from aem_grade_record where grade_id = #{gradeId}
+    </delete>
+    <delete id="deleteAemGradeRecordByGradeIds" parameterType="String">
+        delete from aem_grade_record where grade_id in
+        <foreach item="gradeId" collection="array" open="(" separator="," close=")">#{gradeId}</foreach>
+    </delete>
+</mapper>

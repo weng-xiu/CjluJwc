@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.aem.mapper.AemExamSeatMapper">
+    <resultMap type="AemExamSeat" id="AemExamSeatResult">
+        <result property="seatId"         column="seat_id"          />
+        <result property="examId"         column="exam_id"          />
+        <result property="classroomId"    column="classroom_id"     />
+        <result property="studentId"      column="student_id"       />
+        <result property="seatNumber"     column="seat_number"      />
+        <result property="rowNumber"      column="row_number"       />
+        <result property="colNumber"      column="col_number"       />
+        <result property="status"         column="status"           />
+        <result property="createBy"       column="create_by"        />
+        <result property="createTime"     column="create_time"      />
+        <result property="updateBy"       column="update_by"        />
+        <result property="updateTime"     column="update_time"      />
+        <result property="remark"         column="remark"           />
+    </resultMap>
+    <sql id="selectAemExamSeatVo">
+        select seat_id, exam_id, classroom_id, student_id, seat_number, row_number, col_number, status, create_by, create_time, update_by, update_time, remark from aem_exam_seat
+    </sql>
+    <select id="selectAemExamSeatList" parameterType="AemExamSeat" resultMap="AemExamSeatResult">
+        <include refid="selectAemExamSeatVo"/>
+        <where>
+            <if test="examId != null"> and exam_id = #{examId}</if>
+            <if test="classroomId != null"> and classroom_id = #{classroomId}</if>
+            <if test="studentId != null"> and student_id = #{studentId}</if>
+            <if test="seatNumber != null"> and seat_number = #{seatNumber}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectAemExamSeatBySeatId" parameterType="Long" resultMap="AemExamSeatResult">
+        <include refid="selectAemExamSeatVo"/> where seat_id = #{seatId}
+    </select>
+    <insert id="insertAemExamSeat" parameterType="AemExamSeat" useGeneratedKeys="true" keyProperty="seatId">
+        insert into aem_exam_seat
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="examId != null">exam_id,</if>
+            <if test="classroomId != null">classroom_id,</if>
+            <if test="studentId != null">student_id,</if>
+            <if test="seatNumber != null">seat_number,</if>
+            <if test="rowNumber != null">row_number,</if>
+            <if test="colNumber != null">col_number,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="examId != null">#{examId},</if>
+            <if test="classroomId != null">#{classroomId},</if>
+            <if test="studentId != null">#{studentId},</if>
+            <if test="seatNumber != null">#{seatNumber},</if>
+            <if test="rowNumber != null">#{rowNumber},</if>
+            <if test="colNumber != null">#{colNumber},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateAemExamSeat" parameterType="AemExamSeat">
+        update aem_exam_seat
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="examId != null">exam_id = #{examId},</if>
+            <if test="classroomId != null">classroom_id = #{classroomId},</if>
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="seatNumber != null">seat_number = #{seatNumber},</if>
+            <if test="rowNumber != null">row_number = #{rowNumber},</if>
+            <if test="colNumber != null">col_number = #{colNumber},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where seat_id = #{seatId}
+    </update>
+    <delete id="deleteAemExamSeatBySeatId" parameterType="Long">
+        delete from aem_exam_seat where seat_id = #{seatId}
+    </delete>
+    <delete id="deleteAemExamSeatBySeatIds" parameterType="String">
+        delete from aem_exam_seat where seat_id in
+        <foreach item="seatId" collection="array" open="(" separator="," close=")">#{seatId}</foreach>
+    </delete>
+</mapper>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.aem.mapper.AemEvaluationQuestionMapper">
+    <resultMap type="AemEvaluationQuestion" id="AemEvaluationQuestionResult">
+        <result property="questionId"        column="question_id"         />
+        <result property="questionnaireId"   column="questionnaire_id"    />
+        <result property="questionType"      column="question_type"       />
+        <result property="questionContent"   column="question_content"    />
+        <result property="sortOrder"         column="sort_order"          />
+        <result property="maxScore"          column="max_score"           />
+        <result property="optionsJson"       column="options_json"        />
+        <result property="status"            column="status"              />
+        <result property="createBy"          column="create_by"           />
+        <result property="createTime"        column="create_time"         />
+        <result property="updateBy"          column="update_by"           />
+        <result property="updateTime"        column="update_time"         />
+        <result property="remark"            column="remark"              />
+    </resultMap>
+    <sql id="selectAemEvaluationQuestionVo">
+        select question_id, questionnaire_id, question_type, question_content, sort_order, max_score, options_json, status, create_by, create_time, update_by, update_time, remark from aem_evaluation_question
+    </sql>
+    <select id="selectAemEvaluationQuestionList" parameterType="AemEvaluationQuestion" resultMap="AemEvaluationQuestionResult">
+        <include refid="selectAemEvaluationQuestionVo"/>
+        <where>
+            <if test="questionnaireId != null"> and questionnaire_id = #{questionnaireId}</if>
+            <if test="questionType != null and questionType.trim() != ''"> and question_type = #{questionType}</if>
+            <if test="questionContent != null and questionContent.trim() != ''"> and question_content like concat('%', #{questionContent}, '%')</if>
+        </where>
+    </select>
+    <select id="selectAemEvaluationQuestionByQuestionId" parameterType="Long" resultMap="AemEvaluationQuestionResult">
+        <include refid="selectAemEvaluationQuestionVo"/> where question_id = #{questionId}
+    </select>
+    <insert id="insertAemEvaluationQuestion" parameterType="AemEvaluationQuestion" useGeneratedKeys="true" keyProperty="questionId">
+        insert into aem_evaluation_question
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="questionnaireId != null">questionnaire_id,</if>
+            <if test="questionType != null">question_type,</if>
+            <if test="questionContent != null and questionContent != ''">question_content,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="maxScore != null">max_score,</if>
+            <if test="optionsJson != null">options_json,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="questionnaireId != null">#{questionnaireId},</if>
+            <if test="questionType != null">#{questionType},</if>
+            <if test="questionContent != null and questionContent != ''">#{questionContent},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="maxScore != null">#{maxScore},</if>
+            <if test="optionsJson != null">#{optionsJson},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateAemEvaluationQuestion" parameterType="AemEvaluationQuestion">
+        update aem_evaluation_question
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="questionnaireId != null">questionnaire_id = #{questionnaireId},</if>
+            <if test="questionType != null">question_type = #{questionType},</if>
+            <if test="questionContent != null and questionContent != ''">question_content = #{questionContent},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="maxScore != null">max_score = #{maxScore},</if>
+            <if test="optionsJson != null">options_json = #{optionsJson},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where question_id = #{questionId}
+    </update>
+    <delete id="deleteAemEvaluationQuestionByQuestionId" parameterType="Long">
+        delete from aem_evaluation_question where question_id = #{questionId}
+    </delete>
+    <delete id="deleteAemEvaluationQuestionByQuestionIds" parameterType="String">
+        delete from aem_evaluation_question where question_id in
+        <foreach item="questionId" collection="array" open="(" separator="," close=")">#{questionId}</foreach>
+    </delete>
+</mapper>

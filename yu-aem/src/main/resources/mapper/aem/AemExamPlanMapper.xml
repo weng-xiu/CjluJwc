@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.aem.mapper.AemExamPlanMapper">
+    <resultMap type="AemExamPlan" id="AemExamPlanResult">
+        <result property="examId"         column="exam_id"          />
+        <result property="examName"       column="exam_name"        />
+        <result property="semesterId"     column="semester_id"      />
+        <result property="examType"       column="exam_type"        />
+        <result property="courseId"       column="course_id"        />
+        <result property="examDate"       column="exam_date"        />
+        <result property="startTime"      column="start_time"       />
+        <result property="endTime"        column="end_time"         />
+        <result property="duration"       column="duration"         />
+        <result property="totalStudents"  column="total_students"   />
+        <result property="planStatus"     column="plan_status"      />
+        <result property="status"         column="status"           />
+        <result property="createBy"       column="create_by"        />
+        <result property="createTime"     column="create_time"      />
+        <result property="updateBy"       column="update_by"        />
+        <result property="updateTime"     column="update_time"      />
+        <result property="remark"         column="remark"           />
+    </resultMap>
+    <sql id="selectAemExamPlanVo">
+        select exam_id, exam_name, semester_id, exam_type, course_id, exam_date, start_time, end_time, duration, total_students, plan_status, status, create_by, create_time, update_by, update_time, remark from aem_exam_plan
+    </sql>
+    <select id="selectAemExamPlanList" parameterType="AemExamPlan" resultMap="AemExamPlanResult">
+        <include refid="selectAemExamPlanVo"/>
+        <where>
+            <if test="examName != null and examName.trim() != ''"> and exam_name like concat('%', #{examName}, '%')</if>
+            <if test="semesterId != null"> and semester_id = #{semesterId}</if>
+            <if test="examType != null and examType.trim() != ''"> and exam_type = #{examType}</if>
+            <if test="courseId != null"> and course_id = #{courseId}</if>
+            <if test="planStatus != null and planStatus.trim() != ''"> and plan_status = #{planStatus}</if>
+        </where>
+    </select>
+    <select id="selectAemExamPlanByExamId" parameterType="Long" resultMap="AemExamPlanResult">
+        <include refid="selectAemExamPlanVo"/> where exam_id = #{examId}
+    </select>
+    <insert id="insertAemExamPlan" parameterType="AemExamPlan" useGeneratedKeys="true" keyProperty="examId">
+        insert into aem_exam_plan
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="examName != null and examName != ''">exam_name,</if>
+            <if test="semesterId != null">semester_id,</if>
+            <if test="examType != null">exam_type,</if>
+            <if test="courseId != null">course_id,</if>
+            <if test="examDate != null">exam_date,</if>
+            <if test="startTime != null">start_time,</if>
+            <if test="endTime != null">end_time,</if>
+            <if test="duration != null">duration,</if>
+            <if test="totalStudents != null">total_students,</if>
+            <if test="planStatus != null">plan_status,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="examName != null and examName != ''">#{examName},</if>
+            <if test="semesterId != null">#{semesterId},</if>
+            <if test="examType != null">#{examType},</if>
+            <if test="courseId != null">#{courseId},</if>
+            <if test="examDate != null">#{examDate},</if>
+            <if test="startTime != null">#{startTime},</if>
+            <if test="endTime != null">#{endTime},</if>
+            <if test="duration != null">#{duration},</if>
+            <if test="totalStudents != null">#{totalStudents},</if>
+            <if test="planStatus != null">#{planStatus},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateAemExamPlan" parameterType="AemExamPlan">
+        update aem_exam_plan
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="examName != null and examName != ''">exam_name = #{examName},</if>
+            <if test="semesterId != null">semester_id = #{semesterId},</if>
+            <if test="examType != null">exam_type = #{examType},</if>
+            <if test="courseId != null">course_id = #{courseId},</if>
+            <if test="examDate != null">exam_date = #{examDate},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="duration != null">duration = #{duration},</if>
+            <if test="totalStudents != null">total_students = #{totalStudents},</if>
+            <if test="planStatus != null">plan_status = #{planStatus},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where exam_id = #{examId}
+    </update>
+    <delete id="deleteAemExamPlanByExamId" parameterType="Long">
+        delete from aem_exam_plan where exam_id = #{examId}
+    </delete>
+    <delete id="deleteAemExamPlanByExamIds" parameterType="String">
+        delete from aem_exam_plan where exam_id in
+        <foreach item="examId" collection="array" open="(" separator="," close=")">#{examId}</foreach>
+    </delete>
+</mapper>
