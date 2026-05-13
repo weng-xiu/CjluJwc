@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamStatusChangeMapper">
+    <resultMap type="SamStatusChange" id="SamStatusChangeResult">
+        <result property="changeId"        column="change_id"         />
+        <result property="studentId"       column="student_id"        />
+        <result property="changeType"      column="change_type"       />
+        <result property="changeDate"      column="change_date"       />
+        <result property="originalStatus"  column="original_status"   />
+        <result property="newStatus"       column="new_status"        />
+        <result property="reason"          column="reason"            />
+        <result property="applicant"       column="applicant"         />
+        <result property="approveStatus"   column="approve_status"    />
+        <result property="approveBy"       column="approve_by"        />
+        <result property="approveTime"     column="approve_time"      />
+        <result property="approveOpinion"  column="approve_opinion"   />
+        <result property="status"          column="status"            />
+        <result property="createBy"        column="create_by"         />
+        <result property="createTime"      column="create_time"       />
+        <result property="updateBy"        column="update_by"         />
+        <result property="updateTime"      column="update_time"       />
+        <result property="remark"          column="remark"            />
+    </resultMap>
+    <sql id="selectSamStatusChangeVo">
+        select change_id, student_id, change_type, change_date, original_status, new_status, reason, applicant, approve_status, approve_by, approve_time, approve_opinion, status, create_by, create_time, update_by, update_time, remark from sam_status_change
+    </sql>
+    <select id="selectSamStatusChangeList" parameterType="SamStatusChange" resultMap="SamStatusChangeResult">
+        <include refid="selectSamStatusChangeVo"/>
+        <where>
+            <if test="studentId != null"> and student_id = #{studentId}</if>
+            <if test="changeType != null and changeType.trim() != ''"> and change_type = #{changeType}</if>
+            <if test="approveStatus != null and approveStatus.trim() != ''"> and approve_status = #{approveStatus}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectSamStatusChangeByChangeId" parameterType="Long" resultMap="SamStatusChangeResult">
+        <include refid="selectSamStatusChangeVo"/> where change_id = #{changeId}
+    </select>
+    <insert id="insertSamStatusChange" parameterType="SamStatusChange" useGeneratedKeys="true" keyProperty="changeId">
+        insert into sam_status_change
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="changeType != null">change_type,</if>
+            <if test="changeDate != null">change_date,</if>
+            <if test="originalStatus != null">original_status,</if>
+            <if test="newStatus != null">new_status,</if>
+            <if test="reason != null">reason,</if>
+            <if test="applicant != null">applicant,</if>
+            <if test="approveStatus != null">approve_status,</if>
+            <if test="approveBy != null">approve_by,</if>
+            <if test="approveTime != null">approve_time,</if>
+            <if test="approveOpinion != null">approve_opinion,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="changeType != null">#{changeType},</if>
+            <if test="changeDate != null">#{changeDate},</if>
+            <if test="originalStatus != null">#{originalStatus},</if>
+            <if test="newStatus != null">#{newStatus},</if>
+            <if test="reason != null">#{reason},</if>
+            <if test="applicant != null">#{applicant},</if>
+            <if test="approveStatus != null">#{approveStatus},</if>
+            <if test="approveBy != null">#{approveBy},</if>
+            <if test="approveTime != null">#{approveTime},</if>
+            <if test="approveOpinion != null">#{approveOpinion},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateSamStatusChange" parameterType="SamStatusChange">
+        update sam_status_change
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="changeType != null">change_type = #{changeType},</if>
+            <if test="changeDate != null">change_date = #{changeDate},</if>
+            <if test="originalStatus != null">original_status = #{originalStatus},</if>
+            <if test="newStatus != null">new_status = #{newStatus},</if>
+            <if test="reason != null">reason = #{reason},</if>
+            <if test="applicant != null">applicant = #{applicant},</if>
+            <if test="approveStatus != null">approve_status = #{approveStatus},</if>
+            <if test="approveBy != null">approve_by = #{approveBy},</if>
+            <if test="approveTime != null">approve_time = #{approveTime},</if>
+            <if test="approveOpinion != null">approve_opinion = #{approveOpinion},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where change_id = #{changeId}
+    </update>
+    <delete id="deleteSamStatusChangeByChangeId" parameterType="Long">
+        delete from sam_status_change where change_id = #{changeId}
+    </delete>
+    <delete id="deleteSamStatusChangeByChangeIds" parameterType="String">
+        delete from sam_status_change where change_id in
+        <foreach item="changeId" collection="array" open="(" separator="," close=")">#{changeId}</foreach>
+    </delete>
+</mapper>

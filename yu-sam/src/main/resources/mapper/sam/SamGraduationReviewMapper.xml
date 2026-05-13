@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamGraduationReviewMapper">
+    <resultMap type="SamGraduationReview" id="SamGraduationReviewResult">
+        <result property="reviewId"            column="review_id"             />
+        <result property="studentId"           column="student_id"            />
+        <result property="totalCreditsEarned"  column="total_credits_earned"  />
+        <result property="requiredCredits"     column="required_credits"      />
+        <result property="isCreditQualified"   column="is_credit_qualified"   />
+        <result property="isCourseQualified"   column="is_course_qualified"   />
+        <result property="isEnglishQualified"  column="is_english_qualified"  />
+        <result property="isPeQualified"       column="is_pe_qualified"       />
+        <result property="reviewStatus"        column="review_status"         />
+        <result property="reviewDate"          column="review_date"           />
+        <result property="reviewer"            column="reviewer"              />
+        <result property="reviewOpinion"       column="review_opinion"        />
+        <result property="status"              column="status"                />
+        <result property="createBy"            column="create_by"             />
+        <result property="createTime"          column="create_time"           />
+        <result property="updateBy"            column="update_by"             />
+        <result property="updateTime"          column="update_time"           />
+        <result property="remark"              column="remark"                />
+    </resultMap>
+    <sql id="selectSamGraduationReviewVo">
+        select review_id, student_id, total_credits_earned, required_credits, is_credit_qualified, is_course_qualified, is_english_qualified, is_pe_qualified, review_status, review_date, reviewer, review_opinion, status, create_by, create_time, update_by, update_time, remark from sam_graduation_review
+    </sql>
+    <select id="selectSamGraduationReviewList" parameterType="SamGraduationReview" resultMap="SamGraduationReviewResult">
+        <include refid="selectSamGraduationReviewVo"/>
+        <where>
+            <if test="studentId != null"> and student_id = #{studentId}</if>
+            <if test="reviewStatus != null and reviewStatus.trim() != ''"> and review_status = #{reviewStatus}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectSamGraduationReviewByReviewId" parameterType="Long" resultMap="SamGraduationReviewResult">
+        <include refid="selectSamGraduationReviewVo"/> where review_id = #{reviewId}
+    </select>
+    <insert id="insertSamGraduationReview" parameterType="SamGraduationReview" useGeneratedKeys="true" keyProperty="reviewId">
+        insert into sam_graduation_review
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="totalCreditsEarned != null">total_credits_earned,</if>
+            <if test="requiredCredits != null">required_credits,</if>
+            <if test="isCreditQualified != null">is_credit_qualified,</if>
+            <if test="isCourseQualified != null">is_course_qualified,</if>
+            <if test="isEnglishQualified != null">is_english_qualified,</if>
+            <if test="isPeQualified != null">is_pe_qualified,</if>
+            <if test="reviewStatus != null">review_status,</if>
+            <if test="reviewDate != null">review_date,</if>
+            <if test="reviewer != null">reviewer,</if>
+            <if test="reviewOpinion != null">review_opinion,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="totalCreditsEarned != null">#{totalCreditsEarned},</if>
+            <if test="requiredCredits != null">#{requiredCredits},</if>
+            <if test="isCreditQualified != null">#{isCreditQualified},</if>
+            <if test="isCourseQualified != null">#{isCourseQualified},</if>
+            <if test="isEnglishQualified != null">#{isEnglishQualified},</if>
+            <if test="isPeQualified != null">#{isPeQualified},</if>
+            <if test="reviewStatus != null">#{reviewStatus},</if>
+            <if test="reviewDate != null">#{reviewDate},</if>
+            <if test="reviewer != null">#{reviewer},</if>
+            <if test="reviewOpinion != null">#{reviewOpinion},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateSamGraduationReview" parameterType="SamGraduationReview">
+        update sam_graduation_review
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="totalCreditsEarned != null">total_credits_earned = #{totalCreditsEarned},</if>
+            <if test="requiredCredits != null">required_credits = #{requiredCredits},</if>
+            <if test="isCreditQualified != null">is_credit_qualified = #{isCreditQualified},</if>
+            <if test="isCourseQualified != null">is_course_qualified = #{isCourseQualified},</if>
+            <if test="isEnglishQualified != null">is_english_qualified = #{isEnglishQualified},</if>
+            <if test="isPeQualified != null">is_pe_qualified = #{isPeQualified},</if>
+            <if test="reviewStatus != null">review_status = #{reviewStatus},</if>
+            <if test="reviewDate != null">review_date = #{reviewDate},</if>
+            <if test="reviewer != null">reviewer = #{reviewer},</if>
+            <if test="reviewOpinion != null">review_opinion = #{reviewOpinion},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where review_id = #{reviewId}
+    </update>
+    <delete id="deleteSamGraduationReviewByReviewId" parameterType="Long">
+        delete from sam_graduation_review where review_id = #{reviewId}
+    </delete>
+    <delete id="deleteSamGraduationReviewByReviewIds" parameterType="String">
+        delete from sam_graduation_review where review_id in
+        <foreach item="reviewId" collection="array" open="(" separator="," close=")">#{reviewId}</foreach>
+    </delete>
+</mapper>

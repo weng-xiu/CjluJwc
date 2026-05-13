@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamStudentMapper">
+    <resultMap type="SamStudent" id="SamStudentResult">
+        <result property="studentId"         column="student_id"         />
+        <result property="studentNo"         column="student_no"         />
+        <result property="studentName"       column="student_name"       />
+        <result property="gender"            column="gender"             />
+        <result property="birthDate"         column="birth_date"         />
+        <result property="idCard"            column="id_card"            />
+        <result property="majorId"           column="major_id"           />
+        <result property="deptId"            column="dept_id"            />
+        <result property="classId"           column="class_id"           />
+        <result property="enrollmentYear"    column="enrollment_year"    />
+        <result property="educationLevel"    column="education_level"    />
+        <result property="studentStatus"     column="student_status"     />
+        <result property="status"            column="status"             />
+        <result property="createBy"          column="create_by"          />
+        <result property="createTime"        column="create_time"        />
+        <result property="updateBy"          column="update_by"          />
+        <result property="updateTime"        column="update_time"        />
+        <result property="remark"            column="remark"             />
+    </resultMap>
+    <sql id="selectSamStudentVo">
+        select student_id, student_no, student_name, gender, birth_date, id_card, major_id, dept_id, class_id, enrollment_year, education_level, student_status, status, create_by, create_time, update_by, update_time, remark from sam_student
+    </sql>
+    <select id="selectSamStudentList" parameterType="SamStudent" resultMap="SamStudentResult">
+        <include refid="selectSamStudentVo"/>
+        <where>
+            <if test="studentNo != null and studentNo.trim() != ''"> and student_no like concat('%', #{studentNo}, '%')</if>
+            <if test="studentName != null and studentName.trim() != ''"> and student_name like concat('%', #{studentName}, '%')</if>
+            <if test="gender != null and gender.trim() != ''"> and gender = #{gender}</if>
+            <if test="majorId != null"> and major_id = #{majorId}</if>
+            <if test="deptId != null"> and dept_id = #{deptId}</if>
+            <if test="classId != null"> and class_id = #{classId}</if>
+            <if test="studentStatus != null and studentStatus.trim() != ''"> and student_status = #{studentStatus}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectSamStudentByStudentId" parameterType="Long" resultMap="SamStudentResult">
+        <include refid="selectSamStudentVo"/> where student_id = #{studentId}
+    </select>
+    <insert id="insertSamStudent" parameterType="SamStudent" useGeneratedKeys="true" keyProperty="studentId">
+        insert into sam_student
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentNo != null and studentNo != ''">student_no,</if>
+            <if test="studentName != null and studentName != ''">student_name,</if>
+            <if test="gender != null">gender,</if>
+            <if test="birthDate != null">birth_date,</if>
+            <if test="idCard != null">id_card,</if>
+            <if test="majorId != null">major_id,</if>
+            <if test="deptId != null">dept_id,</if>
+            <if test="classId != null">class_id,</if>
+            <if test="enrollmentYear != null">enrollment_year,</if>
+            <if test="educationLevel != null">education_level,</if>
+            <if test="studentStatus != null">student_status,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentNo != null and studentNo != ''">#{studentNo},</if>
+            <if test="studentName != null and studentName != ''">#{studentName},</if>
+            <if test="gender != null">#{gender},</if>
+            <if test="birthDate != null">#{birthDate},</if>
+            <if test="idCard != null">#{idCard},</if>
+            <if test="majorId != null">#{majorId},</if>
+            <if test="deptId != null">#{deptId},</if>
+            <if test="classId != null">#{classId},</if>
+            <if test="enrollmentYear != null">#{enrollmentYear},</if>
+            <if test="educationLevel != null">#{educationLevel},</if>
+            <if test="studentStatus != null">#{studentStatus},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateSamStudent" parameterType="SamStudent">
+        update sam_student
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentNo != null and studentNo != ''">student_no = #{studentNo},</if>
+            <if test="studentName != null and studentName != ''">student_name = #{studentName},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="birthDate != null">birth_date = #{birthDate},</if>
+            <if test="idCard != null">id_card = #{idCard},</if>
+            <if test="majorId != null">major_id = #{majorId},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="classId != null">class_id = #{classId},</if>
+            <if test="enrollmentYear != null">enrollment_year = #{enrollmentYear},</if>
+            <if test="educationLevel != null">education_level = #{educationLevel},</if>
+            <if test="studentStatus != null">student_status = #{studentStatus},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where student_id = #{studentId}
+    </update>
+    <delete id="deleteSamStudentByStudentId" parameterType="Long">
+        delete from sam_student where student_id = #{studentId}
+    </delete>
+    <delete id="deleteSamStudentByStudentIds" parameterType="String">
+        delete from sam_student where student_id in
+        <foreach item="studentId" collection="array" open="(" separator="," close=")">#{studentId}</foreach>
+    </delete>
+</mapper>

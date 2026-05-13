@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>yu</artifactId>
+        <groupId>com.yu</groupId>
+        <version>3.9.2</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>yu-sam</artifactId>
+
+    <description>
+        学籍与学位管理模块
+    </description>
+
+    <dependencies>
+
+        <!-- 通用工具-->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-common</artifactId>
+        </dependency>
+
+        <!-- 基础资源管理模块（关联院系、专业、班级、教师、学生等）-->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-brm</artifactId>
+        </dependency>
+
+    </dependencies>
+
+</project>

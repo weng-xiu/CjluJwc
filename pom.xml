@@ -191,6 +191,13 @@
                 <version>${yu.version}</version>
             </dependency>
 
+            <!-- 学籍与学位管理-->
+            <dependency>
+                <groupId>com.yu</groupId>
+                <artifactId>yu-sam</artifactId>
+                <version>${yu.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -204,6 +211,7 @@
         <module>yu-brm</module>
         <module>yu-tpm</module>
         <module>yu-aem</module>
+        <module>yu-sam</module>
     </modules>
     <packaging>pom</packaging>
 

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamDegreeReviewMapper">
+    <resultMap type="SamDegreeReview" id="SamDegreeReviewResult">
+        <result property="reviewId"                column="review_id"                 />
+        <result property="studentId"               column="student_id"                />
+        <result property="graduationReviewId"      column="graduation_review_id"      />
+        <result property="gpa"                     column="gpa"                       />
+        <result property="isGpaQualified"          column="is_gpa_qualified"          />
+        <result property="isDegreeCourseQualified" column="is_degree_course_qualified" />
+        <result property="isThesisQualified"       column="is_thesis_qualified"       />
+        <result property="degreeType"              column="degree_type"               />
+        <result property="degreeField"             column="degree_field"              />
+        <result property="reviewStatus"            column="review_status"             />
+        <result property="reviewDate"              column="review_date"               />
+        <result property="reviewer"                column="reviewer"                  />
+        <result property="reviewOpinion"           column="review_opinion"            />
+        <result property="status"                  column="status"                    />
+        <result property="createBy"                column="create_by"                 />
+        <result property="createTime"              column="create_time"               />
+        <result property="updateBy"                column="update_by"                 />
+        <result property="updateTime"              column="update_time"               />
+        <result property="remark"                  column="remark"                    />
+    </resultMap>
+    <sql id="selectSamDegreeReviewVo">
+        select review_id, student_id, graduation_review_id, gpa, is_gpa_qualified, is_degree_course_qualified, is_thesis_qualified, degree_type, degree_field, review_status, review_date, reviewer, review_opinion, status, create_by, create_time, update_by, update_time, remark from sam_degree_review
+    </sql>
+    <select id="selectSamDegreeReviewList" parameterType="SamDegreeReview" resultMap="SamDegreeReviewResult">
+        <include refid="selectSamDegreeReviewVo"/>
+        <where>
+            <if test="studentId != null"> and student_id = #{studentId}</if>
+            <if test="degreeType != null and degreeType.trim() != ''"> and degree_type = #{degreeType}</if>
+            <if test="reviewStatus != null and reviewStatus.trim() != ''"> and review_status = #{reviewStatus}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectSamDegreeReviewByReviewId" parameterType="Long" resultMap="SamDegreeReviewResult">
+        <include refid="selectSamDegreeReviewVo"/> where review_id = #{reviewId}
+    </select>
+    <insert id="insertSamDegreeReview" parameterType="SamDegreeReview" useGeneratedKeys="true" keyProperty="reviewId">
+        insert into sam_degree_review
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="graduationReviewId != null">graduation_review_id,</if>
+            <if test="gpa != null">gpa,</if>
+            <if test="isGpaQualified != null">is_gpa_qualified,</if>
+            <if test="isDegreeCourseQualified != null">is_degree_course_qualified,</if>
+            <if test="isThesisQualified != null">is_thesis_qualified,</if>
+            <if test="degreeType != null">degree_type,</if>
+            <if test="degreeField != null">degree_field,</if>
+            <if test="reviewStatus != null">review_status,</if>
+            <if test="reviewDate != null">review_date,</if>
+            <if test="reviewer != null">reviewer,</if>
+            <if test="reviewOpinion != null">review_opinion,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="graduationReviewId != null">#{graduationReviewId},</if>
+            <if test="gpa != null">#{gpa},</if>
+            <if test="isGpaQualified != null">#{isGpaQualified},</if>
+            <if test="isDegreeCourseQualified != null">#{isDegreeCourseQualified},</if>
+            <if test="isThesisQualified != null">#{isThesisQualified},</if>
+            <if test="degreeType != null">#{degreeType},</if>
+            <if test="degreeField != null">#{degreeField},</if>
+            <if test="reviewStatus != null">#{reviewStatus},</if>
+            <if test="reviewDate != null">#{reviewDate},</if>
+            <if test="reviewer != null">#{reviewer},</if>
+            <if test="reviewOpinion != null">#{reviewOpinion},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateSamDegreeReview" parameterType="SamDegreeReview">
+        update sam_degree_review
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="graduationReviewId != null">graduation_review_id = #{graduationReviewId},</if>
+            <if test="gpa != null">gpa = #{gpa},</if>
+            <if test="isGpaQualified != null">is_gpa_qualified = #{isGpaQualified},</if>
+            <if test="isDegreeCourseQualified != null">is_degree_course_qualified = #{isDegreeCourseQualified},</if>
+            <if test="isThesisQualified != null">is_thesis_qualified = #{isThesisQualified},</if>
+            <if test="degreeType != null">degree_type = #{degreeType},</if>
+            <if test="degreeField != null">degree_field = #{degreeField},</if>
+            <if test="reviewStatus != null">review_status = #{reviewStatus},</if>
+            <if test="reviewDate != null">review_date = #{reviewDate},</if>
+            <if test="reviewer != null">reviewer = #{reviewer},</if>
+            <if test="reviewOpinion != null">review_opinion = #{reviewOpinion},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where review_id = #{reviewId}
+    </update>
+    <delete id="deleteSamDegreeReviewByReviewId" parameterType="Long">
+        delete from sam_degree_review where review_id = #{reviewId}
+    </delete>
+    <delete id="deleteSamDegreeReviewByReviewIds" parameterType="String">
+        delete from sam_degree_review where review_id in
+        <foreach item="reviewId" collection="array" open="(" separator="," close=")">#{reviewId}</foreach>
+    </delete>
+</mapper>

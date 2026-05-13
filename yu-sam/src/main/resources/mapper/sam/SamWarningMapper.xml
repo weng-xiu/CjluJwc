@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamWarningMapper">
+    <resultMap type="SamWarning" id="SamWarningResult">
+        <result property="warningId"       column="warning_id"        />
+        <result property="studentId"       column="student_id"        />
+        <result property="semesterId"      column="semester_id"       />
+        <result property="warningType"     column="warning_type"      />
+        <result property="warningLevel"    column="warning_level"     />
+        <result property="warningReason"   column="warning_reason"    />
+        <result property="warningDate"     column="warning_date"      />
+        <result property="isResolved"      column="is_resolved"       />
+        <result property="resolveDate"     column="resolve_date"      />
+        <result property="resolveRemark"   column="resolve_remark"    />
+        <result property="status"          column="status"            />
+        <result property="createBy"        column="create_by"         />
+        <result property="createTime"      column="create_time"       />
+        <result property="updateBy"        column="update_by"         />
+        <result property="updateTime"      column="update_time"       />
+        <result property="remark"          column="remark"            />
+    </resultMap>
+    <sql id="selectSamWarningVo">
+        select warning_id, student_id, semester_id, warning_type, warning_level, warning_reason, warning_date, is_resolved, resolve_date, resolve_remark, status, create_by, create_time, update_by, update_time, remark from sam_warning
+    </sql>
+    <select id="selectSamWarningList" parameterType="SamWarning" resultMap="SamWarningResult">
+        <include refid="selectSamWarningVo"/>
+        <where>
+            <if test="studentId != null"> and student_id = #{studentId}</if>
+            <if test="semesterId != null"> and semester_id = #{semesterId}</if>
+            <if test="warningType != null and warningType.trim() != ''"> and warning_type = #{warningType}</if>
+            <if test="warningLevel != null and warningLevel.trim() != ''"> and warning_level = #{warningLevel}</if>
+            <if test="isResolved != null and isResolved.trim() != ''"> and is_resolved = #{isResolved}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectSamWarningByWarningId" parameterType="Long" resultMap="SamWarningResult">
+        <include refid="selectSamWarningVo"/> where warning_id = #{warningId}
+    </select>
+    <insert id="insertSamWarning" parameterType="SamWarning" useGeneratedKeys="true" keyProperty="warningId">
+        insert into sam_warning
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="semesterId != null">semester_id,</if>
+            <if test="warningType != null">warning_type,</if>
+            <if test="warningLevel != null">warning_level,</if>
+            <if test="warningReason != null">warning_reason,</if>
+            <if test="warningDate != null">warning_date,</if>
+            <if test="isResolved != null">is_resolved,</if>
+            <if test="resolveDate != null">resolve_date,</if>
+            <if test="resolveRemark != null">resolve_remark,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="semesterId != null">#{semesterId},</if>
+            <if test="warningType != null">#{warningType},</if>
+            <if test="warningLevel != null">#{warningLevel},</if>
+            <if test="warningReason != null">#{warningReason},</if>
+            <if test="warningDate != null">#{warningDate},</if>
+            <if test="isResolved != null">#{isResolved},</if>
+            <if test="resolveDate != null">#{resolveDate},</if>
+            <if test="resolveRemark != null">#{resolveRemark},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateSamWarning" parameterType="SamWarning">
+        update sam_warning
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="semesterId != null">semester_id = #{semesterId},</if>
+            <if test="warningType != null">warning_type = #{warningType},</if>
+            <if test="warningLevel != null">warning_level = #{warningLevel},</if>
+            <if test="warningReason != null">warning_reason = #{warningReason},</if>
+            <if test="warningDate != null">warning_date = #{warningDate},</if>
+            <if test="isResolved != null">is_resolved = #{isResolved},</if>
+            <if test="resolveDate != null">resolve_date = #{resolveDate},</if>
+            <if test="resolveRemark != null">resolve_remark = #{resolveRemark},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where warning_id = #{warningId}
+    </update>
+    <delete id="deleteSamWarningByWarningId" parameterType="Long">
+        delete from sam_warning where warning_id = #{warningId}
+    </delete>
+    <delete id="deleteSamWarningByWarningIds" parameterType="String">
+        delete from sam_warning where warning_id in
+        <foreach item="warningId" collection="array" open="(" separator="," close=")">#{warningId}</foreach>
+    </delete>
+</mapper>

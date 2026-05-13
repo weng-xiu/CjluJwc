@@ -1,0 +1,68 @@
+<template>
+  <div class="app-container">
+    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+      <el-form-item label="学生ID" prop="studentId"><el-input v-model="queryParams.studentId" placeholder="请输入学生ID" clearable/></el-form-item>
+      <el-form-item label="预警类型" prop="warningType"><el-select v-model="queryParams.warningType" placeholder="请选择" clearable><el-option label="成绩预警" value="0"/><el-option label="学分预警" value="1"/><el-option label="出勤预警" value="2"/><el-option label="综合预警" value="3"/></el-select></el-form-item>
+      <el-form-item label="预警级别" prop="warningLevel"><el-select v-model="queryParams.warningLevel" placeholder="请选择" clearable><el-option label="一般" value="0"/><el-option label="严重" value="1"/><el-option label="高危" value="2"/></el-select></el-form-item>
+      <el-form-item><el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button><el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button></el-form-item>
+    </el-form>
+    <el-row :gutter="10" class="mb8">
+      <el-col :span="1.5"><el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['sam:warning:add']">新增</el-button></el-col>
+      <el-col :span="1.5"><el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['sam:warning:edit']">修改</el-button></el-col>
+      <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['sam:warning:remove']">删除</el-button></el-col>
+      <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['sam:warning:export']">导出</el-button></el-col>
+      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
+    </el-row>
+    <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
+      <el-table-column type="selection" width="55" align="center" />
+      <el-table-column label="学生ID" align="center" prop="studentId" />
+      <el-table-column label="预警类型" align="center" prop="warningType"><template slot-scope="scope"><dict-tag :options="[{dictValue:'0',dictLabel:'成绩预警'},{dictValue:'1',dictLabel:'学分预警'},{dictValue:'2',dictLabel:'出勤预警'},{dictValue:'3',dictLabel:'综合预警'}]" :value="scope.row.warningType"/></template></el-table-column>
+      <el-table-column label="预警级别" align="center" prop="warningLevel"><template slot-scope="scope"><dict-tag :options="[{dictValue:'0',dictLabel:'一般'},{dictValue:'1',dictLabel:'严重'},{dictValue:'2',dictLabel:'高危'}]" :value="scope.row.warningLevel"/></template></el-table-column>
+      <el-table-column label="预警日期" align="center" prop="warningDate" width="180"><template slot-scope="scope"><span>{{ parseTime(scope.row.warningDate, '{y}-{m}-{d}') }}</span></template></el-table-column>
+      <el-table-column label="是否解除" align="center" prop="isResolved"><template slot-scope="scope"><dict-tag :options="[{dictValue:'0',dictLabel:'否'},{dictValue:'1',dictLabel:'是'}]" :value="scope.row.isResolved"/></template></el-table-column>
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+        <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['sam:warning:edit']">修改</el-button>
+          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['sam:warning:remove']">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
+    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="学生ID" prop="studentId"><el-input v-model="form.studentId" placeholder="请输入学生ID" /></el-form-item>
+        <el-form-item label="学期ID" prop="semesterId"><el-input v-model="form.semesterId" placeholder="请输入学期ID" /></el-form-item>
+        <el-form-item label="预警类型"><el-select v-model="form.warningType"><el-option label="成绩预警" value="0"/><el-option label="学分预警" value="1"/><el-option label="出勤预警" value="2"/><el-option label="综合预警" value="3"/></el-select></el-form-item>
+        <el-form-item label="预警级别"><el-select v-model="form.warningLevel"><el-option label="一般" value="0"/><el-option label="严重" value="1"/><el-option label="高危" value="2"/></el-select></el-form-item>
+        <el-form-item label="预警原因" prop="warningReason"><el-input v-model="form.warningReason" type="textarea" placeholder="请输入预警原因" /></el-form-item>
+        <el-form-item label="预警日期" prop="warningDate"><el-date-picker clearable v-model="form.warningDate" type="date" value-format="yyyy-MM-dd" placeholder="请选择" /></el-form-item>
+        <el-form-item label="是否解除"><el-radio-group v-model="form.isResolved"><el-radio label="0">否</el-radio><el-radio label="1">是</el-radio></el-radio-group></el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+    </el-dialog>
+  </div>
+</template>
+<script>
+import { listWarning, getWarning, delWarning, addWarning, updateWarning } from "@/api/sam/warning"
+export default {
+  name: "Warning",
+  data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, list: [], title: "", open: false,
+    queryParams: { pageNum: 1, pageSize: 10, studentId: null, warningType: null, warningLevel: null },
+    form: {}, rules: { studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }] } }
+  },
+  created() { this.getList() },
+  methods: {
+    getList() { this.loading = true; listWarning(this.queryParams).then(response => { this.list = response.rows; this.total = response.total; this.loading = false }) },
+    cancel() { this.open = false; this.reset() },
+    reset() { this.form = { warningId: null, studentId: null, semesterId: null, warningType: null, warningLevel: null, warningReason: null, warningDate: null, isResolved: "0", resolveDate: null, resolveRemark: null, status: "0" }; this.resetForm("form") },
+    handleQuery() { this.queryParams.pageNum = 1; this.getList() },
+    resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
+    handleSelectionChange(selection) { this.ids = selection.map(item => item.warningId); this.single = selection.length !== 1; this.multiple = !selection.length },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加学籍预警" },
+    handleUpdate(row) { this.reset(); const id = row.warningId || this.ids; getWarning(id).then(response => { this.form = response.data; this.open = true; this.title = "修改学籍预警" }) },
+    submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.warningId != null) { updateWarning(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addWarning(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
+    handleDelete(row) { const ids = row.warningId || this.ids; this.$modal.confirm('是否确认删除？').then(function() { return delWarning(ids) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
+    handleExport() { this.download('sam/warning/export', { ...this.queryParams }, `warning_${new Date().getTime()}.xlsx`) }
+  }
+}
+</script>

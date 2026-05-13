@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamGraduationProcedureMapper">
+    <resultMap type="SamGraduationProcedure" id="SamGraduationProcedureResult">
+        <result property="procedureId"        column="procedure_id"         />
+        <result property="studentId"          column="student_id"           />
+        <result property="libraryCleared"     column="library_cleared"      />
+        <result property="financeCleared"     column="finance_cleared"      />
+        <result property="dormitoryCleared"   column="dormitory_cleared"    />
+        <result property="cardReturned"       column="card_returned"        />
+        <result property="procedureStatus"    column="procedure_status"     />
+        <result property="completeDate"       column="complete_date"        />
+        <result property="status"             column="status"               />
+        <result property="createBy"           column="create_by"            />
+        <result property="createTime"         column="create_time"          />
+        <result property="updateBy"           column="update_by"            />
+        <result property="updateTime"         column="update_time"          />
+        <result property="remark"             column="remark"               />
+    </resultMap>
+    <sql id="selectSamGraduationProcedureVo">
+        select procedure_id, student_id, library_cleared, finance_cleared, dormitory_cleared, card_returned, procedure_status, complete_date, status, create_by, create_time, update_by, update_time, remark from sam_graduation_procedure
+    </sql>
+    <select id="selectSamGraduationProcedureList" parameterType="SamGraduationProcedure" resultMap="SamGraduationProcedureResult">
+        <include refid="selectSamGraduationProcedureVo"/>
+        <where>
+            <if test="studentId != null"> and student_id = #{studentId}</if>
+            <if test="procedureStatus != null and procedureStatus.trim() != ''"> and procedure_status = #{procedureStatus}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectSamGraduationProcedureByProcedureId" parameterType="Long" resultMap="SamGraduationProcedureResult">
+        <include refid="selectSamGraduationProcedureVo"/> where procedure_id = #{procedureId}
+    </select>
+    <insert id="insertSamGraduationProcedure" parameterType="SamGraduationProcedure" useGeneratedKeys="true" keyProperty="procedureId">
+        insert into sam_graduation_procedure
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="libraryCleared != null">library_cleared,</if>
+            <if test="financeCleared != null">finance_cleared,</if>
+            <if test="dormitoryCleared != null">dormitory_cleared,</if>
+            <if test="cardReturned != null">card_returned,</if>
+            <if test="procedureStatus != null">procedure_status,</if>
+            <if test="completeDate != null">complete_date,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="libraryCleared != null">#{libraryCleared},</if>
+            <if test="financeCleared != null">#{financeCleared},</if>
+            <if test="dormitoryCleared != null">#{dormitoryCleared},</if>
+            <if test="cardReturned != null">#{cardReturned},</if>
+            <if test="procedureStatus != null">#{procedureStatus},</if>
+            <if test="completeDate != null">#{completeDate},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateSamGraduationProcedure" parameterType="SamGraduationProcedure">
+        update sam_graduation_procedure
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="libraryCleared != null">library_cleared = #{libraryCleared},</if>
+            <if test="financeCleared != null">finance_cleared = #{financeCleared},</if>
+            <if test="dormitoryCleared != null">dormitory_cleared = #{dormitoryCleared},</if>
+            <if test="cardReturned != null">card_returned = #{cardReturned},</if>
+            <if test="procedureStatus != null">procedure_status = #{procedureStatus},</if>
+            <if test="completeDate != null">complete_date = #{completeDate},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where procedure_id = #{procedureId}
+    </update>
+    <delete id="deleteSamGraduationProcedureByProcedureId" parameterType="Long">
+        delete from sam_graduation_procedure where procedure_id = #{procedureId}
+    </delete>
+    <delete id="deleteSamGraduationProcedureByProcedureIds" parameterType="String">
+        delete from sam_graduation_procedure where procedure_id in
+        <foreach item="procedureId" collection="array" open="(" separator="," close=")">#{procedureId}</foreach>
+    </delete>
+</mapper>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamCertificateMapper">
+    <resultMap type="SamCertificate" id="SamCertificateResult">
+        <result property="certId"          column="cert_id"           />
+        <result property="studentId"       column="student_id"        />
+        <result property="certType"        column="cert_type"         />
+        <result property="certNumber"      column="cert_number"       />
+        <result property="certDate"        column="cert_date"         />
+        <result property="majorId"         column="major_id"          />
+        <result property="educationLevel"  column="education_level"   />
+        <result property="isIssued"        column="is_issued"         />
+        <result property="issueDate"       column="issue_date"        />
+        <result property="receiver"        column="receiver"          />
+        <result property="status"          column="status"            />
+        <result property="createBy"        column="create_by"         />
+        <result property="createTime"      column="create_time"       />
+        <result property="updateBy"        column="update_by"         />
+        <result property="updateTime"      column="update_time"       />
+        <result property="remark"          column="remark"            />
+    </resultMap>
+    <sql id="selectSamCertificateVo">
+        select cert_id, student_id, cert_type, cert_number, cert_date, major_id, education_level, is_issued, issue_date, receiver, status, create_by, create_time, update_by, update_time, remark from sam_certificate
+    </sql>
+    <select id="selectSamCertificateList" parameterType="SamCertificate" resultMap="SamCertificateResult">
+        <include refid="selectSamCertificateVo"/>
+        <where>
+            <if test="studentId != null"> and student_id = #{studentId}</if>
+            <if test="certType != null and certType.trim() != ''"> and cert_type = #{certType}</if>
+            <if test="certNumber != null and certNumber.trim() != ''"> and cert_number like concat('%', #{certNumber}, '%')</if>
+            <if test="isIssued != null and isIssued.trim() != ''"> and is_issued = #{isIssued}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+    </select>
+    <select id="selectSamCertificateByCertId" parameterType="Long" resultMap="SamCertificateResult">
+        <include refid="selectSamCertificateVo"/> where cert_id = #{certId}
+    </select>
+    <insert id="insertSamCertificate" parameterType="SamCertificate" useGeneratedKeys="true" keyProperty="certId">
+        insert into sam_certificate
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="certType != null">cert_type,</if>
+            <if test="certNumber != null">cert_number,</if>
+            <if test="certDate != null">cert_date,</if>
+            <if test="majorId != null">major_id,</if>
+            <if test="educationLevel != null">education_level,</if>
+            <if test="isIssued != null">is_issued,</if>
+            <if test="issueDate != null">issue_date,</if>
+            <if test="receiver != null">receiver,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="certType != null">#{certType},</if>
+            <if test="certNumber != null">#{certNumber},</if>
+            <if test="certDate != null">#{certDate},</if>
+            <if test="majorId != null">#{majorId},</if>
+            <if test="educationLevel != null">#{educationLevel},</if>
+            <if test="isIssued != null">#{isIssued},</if>
+            <if test="issueDate != null">#{issueDate},</if>
+            <if test="receiver != null">#{receiver},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateSamCertificate" parameterType="SamCertificate">
+        update sam_certificate
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="certType != null">cert_type = #{certType},</if>
+            <if test="certNumber != null">cert_number = #{certNumber},</if>
+            <if test="certDate != null">cert_date = #{certDate},</if>
+            <if test="majorId != null">major_id = #{majorId},</if>
+            <if test="educationLevel != null">education_level = #{educationLevel},</if>
+            <if test="isIssued != null">is_issued = #{isIssued},</if>
+            <if test="issueDate != null">issue_date = #{issueDate},</if>
+            <if test="receiver != null">receiver = #{receiver},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where cert_id = #{certId}
+    </update>
+    <delete id="deleteSamCertificateByCertId" parameterType="Long">
+        delete from sam_certificate where cert_id = #{certId}
+    </delete>
+    <delete id="deleteSamCertificateByCertIds" parameterType="String">
+        delete from sam_certificate where cert_id in
+        <foreach item="certId" collection="array" open="(" separator="," close=")">#{certId}</foreach>
+    </delete>
+</mapper>
