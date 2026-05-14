@@ -198,6 +198,13 @@
                 <version>${yu.version}</version>
             </dependency>
 
+            <!-- 数据对接与共享-->
+            <dependency>
+                <groupId>com.yu</groupId>
+                <artifactId>yu-dis</artifactId>
+                <version>${yu.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -212,6 +219,7 @@
         <module>yu-tpm</module>
         <module>yu-aem</module>
         <module>yu-sam</module>
+        <module>yu-dis</module>
     </modules>
     <packaging>pom</packaging>
 

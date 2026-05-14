@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.dis.mapper.DisInterfaceConfigMapper">
+    <resultMap type="DisInterfaceConfig" id="DisInterfaceConfigResult">
+        <result property="interfaceId"       column="interface_id"       />
+        <result property="systemId"          column="system_id"          />
+        <result property="interfaceName"     column="interface_name"     />
+        <result property="interfaceCode"     column="interface_code"     />
+        <result property="requestMethod"     column="request_method"     />
+        <result property="requestPath"       column="request_path"       />
+        <result property="requestTemplate"   column="request_template"   />
+        <result property="responseTemplate"  column="response_template"  />
+        <result property="timeoutSeconds"    column="timeout_seconds"    />
+        <result property="retryCount"        column="retry_count"        />
+        <result property="description"       column="description"        />
+        <result property="status"            column="status"             />
+        <result property="createBy"          column="create_by"          />
+        <result property="createTime"        column="create_time"        />
+        <result property="updateBy"          column="update_by"          />
+        <result property="updateTime"        column="update_time"        />
+        <result property="remark"            column="remark"             />
+    </resultMap>
+    <sql id="selectDisInterfaceConfigVo">select interface_id, system_id, interface_name, interface_code, request_method, request_path, request_template, response_template, timeout_seconds, retry_count, description, status, create_by, create_time, update_by, update_time, remark from dis_interface_config</sql>
+    <select id="selectDisInterfaceConfigList" parameterType="DisInterfaceConfig" resultMap="DisInterfaceConfigResult">
+        <include refid="selectDisInterfaceConfigVo"/><where>
+            <if test="systemId != null"> and system_id = #{systemId}</if>
+            <if test="interfaceName != null and interfaceName.trim() != ''"> and interface_name like concat('%', #{interfaceName}, '%')</if>
+            <if test="interfaceCode != null and interfaceCode.trim() != ''"> and interface_code = #{interfaceCode}</if>
+            <if test="requestMethod != null and requestMethod.trim() != ''"> and request_method = #{requestMethod}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where> order by interface_id
+    </select>
+    <select id="selectDisInterfaceConfigByInterfaceId" parameterType="Long" resultMap="DisInterfaceConfigResult"><include refid="selectDisInterfaceConfigVo"/> where interface_id = #{interfaceId}</select>
+    <insert id="insertDisInterfaceConfig" parameterType="DisInterfaceConfig" useGeneratedKeys="true" keyProperty="interfaceId">insert into dis_interface_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="systemId != null">system_id,</if><if test="interfaceName != null and interfaceName != ''">interface_name,</if>
+            <if test="interfaceCode != null and interfaceCode != ''">interface_code,</if><if test="requestMethod != null">request_method,</if>
+            <if test="requestPath != null">request_path,</if><if test="requestTemplate != null">request_template,</if>
+            <if test="responseTemplate != null">response_template,</if><if test="timeoutSeconds != null">timeout_seconds,</if>
+            <if test="retryCount != null">retry_count,</if><if test="description != null">description,</if>
+            <if test="status != null">status,</if><if test="createBy != null">create_by,</if><if test="createTime != null">create_time,</if><if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="systemId != null">#{systemId},</if><if test="interfaceName != null and interfaceName != ''">#{interfaceName},</if>
+            <if test="interfaceCode != null and interfaceCode != ''">#{interfaceCode},</if><if test="requestMethod != null">#{requestMethod},</if>
+            <if test="requestPath != null">#{requestPath},</if><if test="requestTemplate != null">#{requestTemplate},</if>
+            <if test="responseTemplate != null">#{responseTemplate},</if><if test="timeoutSeconds != null">#{timeoutSeconds},</if>
+            <if test="retryCount != null">#{retryCount},</if><if test="description != null">#{description},</if>
+            <if test="status != null">#{status},</if><if test="createBy != null">#{createBy},</if><if test="createTime != null">#{createTime},</if><if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateDisInterfaceConfig" parameterType="DisInterfaceConfig">update dis_interface_config
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="systemId != null">system_id = #{systemId},</if><if test="interfaceName != null and interfaceName != ''">interface_name = #{interfaceName},</if>
+            <if test="interfaceCode != null and interfaceCode != ''">interface_code = #{interfaceCode},</if><if test="requestMethod != null">request_method = #{requestMethod},</if>
+            <if test="requestPath != null">request_path = #{requestPath},</if><if test="requestTemplate != null">request_template = #{requestTemplate},</if>
+            <if test="responseTemplate != null">response_template = #{responseTemplate},</if><if test="timeoutSeconds != null">timeout_seconds = #{timeoutSeconds},</if>
+            <if test="retryCount != null">retry_count = #{retryCount},</if><if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if><if test="updateBy != null">update_by = #{updateBy},</if><if test="updateTime != null">update_time = #{updateTime},</if><if test="remark != null">remark = #{remark},</if>
+        </trim> where interface_id = #{interfaceId}
+    </update>
+    <delete id="deleteDisInterfaceConfigByInterfaceId" parameterType="Long">delete from dis_interface_config where interface_id = #{interfaceId}</delete>
+    <delete id="deleteDisInterfaceConfigByInterfaceIds" parameterType="String">delete from dis_interface_config where interface_id in <foreach item="interfaceId" collection="array" open="(" separator="," close=")">#{interfaceId}</foreach></delete>
+</mapper>

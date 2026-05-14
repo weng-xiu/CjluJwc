@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.dis.mapper.DisDataExchangeLogMapper">
+    <resultMap type="DisDataExchangeLog" id="DisDataExchangeLogResult">
+        <result property="logId"         column="log_id"          />
+        <result property="systemId"      column="system_id"       />
+        <result property="interfaceId"   column="interface_id"    />
+        <result property="requestUrl"    column="request_url"     />
+        <result property="requestMethod" column="request_method"  />
+        <result property="requestData"   column="request_data"    />
+        <result property="responseData"  column="response_data"   />
+        <result property="responseCode"  column="response_code"   />
+        <result property="status"        column="status"          />
+        <result property="errorMsg"      column="error_msg"       />
+        <result property="executeTime"   column="execute_time"    />
+        <result property="costTime"      column="cost_time"       />
+        <result property="operator"      column="operator"        />
+        <result property="createTime"    column="create_time"     />
+    </resultMap>
+    <sql id="selectDisDataExchangeLogVo">select log_id, system_id, interface_id, request_url, request_method, request_data, response_data, response_code, status, error_msg, execute_time, cost_time, operator, create_time from dis_data_exchange_log</sql>
+    <select id="selectDisDataExchangeLogList" parameterType="DisDataExchangeLog" resultMap="DisDataExchangeLogResult">
+        <include refid="selectDisDataExchangeLogVo"/><where>
+            <if test="systemId != null"> and system_id = #{systemId}</if>
+            <if test="interfaceId != null"> and interface_id = #{interfaceId}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            <if test="requestMethod != null and requestMethod.trim() != ''"> and request_method = #{requestMethod}</if>
+        </where> order by log_id desc
+    </select>
+    <select id="selectDisDataExchangeLogByLogId" parameterType="Long" resultMap="DisDataExchangeLogResult"><include refid="selectDisDataExchangeLogVo"/> where log_id = #{logId}</select>
+    <insert id="insertDisDataExchangeLog" parameterType="DisDataExchangeLog" useGeneratedKeys="true" keyProperty="logId">insert into dis_data_exchange_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="systemId != null">system_id,</if><if test="interfaceId != null">interface_id,</if>
+            <if test="requestUrl != null">request_url,</if><if test="requestMethod != null">request_method,</if>
+            <if test="requestData != null">request_data,</if><if test="responseData != null">response_data,</if>
+            <if test="responseCode != null">response_code,</if><if test="status != null">status,</if>
+            <if test="errorMsg != null">error_msg,</if><if test="executeTime != null">execute_time,</if>
+            <if test="costTime != null">cost_time,</if><if test="operator != null">operator,</if><if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="systemId != null">#{systemId},</if><if test="interfaceId != null">#{interfaceId},</if>
+            <if test="requestUrl != null">#{requestUrl},</if><if test="requestMethod != null">#{requestMethod},</if>
+            <if test="requestData != null">#{requestData},</if><if test="responseData != null">#{responseData},</if>
+            <if test="responseCode != null">#{responseCode},</if><if test="status != null">#{status},</if>
+            <if test="errorMsg != null">#{errorMsg},</if><if test="executeTime != null">#{executeTime},</if>
+            <if test="costTime != null">#{costTime},</if><if test="operator != null">#{operator},</if><if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+    <delete id="deleteDisDataExchangeLogByLogId" parameterType="Long">delete from dis_data_exchange_log where log_id = #{logId}</delete>
+    <delete id="deleteDisDataExchangeLogByLogIds" parameterType="String">delete from dis_data_exchange_log where log_id in <foreach item="logId" collection="array" open="(" separator="," close=")">#{logId}</foreach></delete>
+    <delete id="cleanDisDataExchangeLog">delete from dis_data_exchange_log</delete>
+</mapper>

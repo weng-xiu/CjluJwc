@@ -78,6 +78,12 @@
             <artifactId>yu-sam</artifactId>
         </dependency>
 
+        <!-- 数据对接与共享-->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-dis</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.dis.mapper.DisExternalSystemMapper">
+    <resultMap type="DisExternalSystem" id="DisExternalSystemResult">
+        <result property="systemId"      column="system_id"      />
+        <result property="systemName"    column="system_name"    />
+        <result property="systemCode"    column="system_code"    />
+        <result property="systemType"    column="system_type"    />
+        <result property="baseUrl"       column="base_url"       />
+        <result property="authType"      column="auth_type"      />
+        <result property="authConfig"    column="auth_config"    />
+        <result property="description"   column="description"    />
+        <result property="contactName"   column="contact_name"   />
+        <result property="contactPhone"  column="contact_phone"  />
+        <result property="status"        column="status"         />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"        column="remark"         />
+    </resultMap>
+    <sql id="selectDisExternalSystemVo">select system_id, system_name, system_code, system_type, base_url, auth_type, auth_config, description, contact_name, contact_phone, status, create_by, create_time, update_by, update_time, remark from dis_external_system</sql>
+    <select id="selectDisExternalSystemList" parameterType="DisExternalSystem" resultMap="DisExternalSystemResult">
+        <include refid="selectDisExternalSystemVo"/><where>
+            <if test="systemName != null and systemName.trim() != ''"> and system_name like concat('%', #{systemName}, '%')</if>
+            <if test="systemCode != null and systemCode.trim() != ''"> and system_code = #{systemCode}</if>
+            <if test="systemType != null and systemType.trim() != ''"> and system_type = #{systemType}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where> order by system_id
+    </select>
+    <select id="selectDisExternalSystemBySystemId" parameterType="Long" resultMap="DisExternalSystemResult"><include refid="selectDisExternalSystemVo"/> where system_id = #{systemId}</select>
+    <insert id="insertDisExternalSystem" parameterType="DisExternalSystem" useGeneratedKeys="true" keyProperty="systemId">insert into dis_external_system
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="systemName != null and systemName != ''">system_name,</if><if test="systemCode != null and systemCode != ''">system_code,</if>
+            <if test="systemType != null">system_type,</if><if test="baseUrl != null">base_url,</if>
+            <if test="authType != null">auth_type,</if><if test="authConfig != null">auth_config,</if>
+            <if test="description != null">description,</if><if test="contactName != null">contact_name,</if>
+            <if test="contactPhone != null">contact_phone,</if><if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if><if test="createTime != null">create_time,</if><if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="systemName != null and systemName != ''">#{systemName},</if><if test="systemCode != null and systemCode != ''">#{systemCode},</if>
+            <if test="systemType != null">#{systemType},</if><if test="baseUrl != null">#{baseUrl},</if>
+            <if test="authType != null">#{authType},</if><if test="authConfig != null">#{authConfig},</if>
+            <if test="description != null">#{description},</if><if test="contactName != null">#{contactName},</if>
+            <if test="contactPhone != null">#{contactPhone},</if><if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if><if test="createTime != null">#{createTime},</if><if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateDisExternalSystem" parameterType="DisExternalSystem">update dis_external_system
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="systemName != null and systemName != ''">system_name = #{systemName},</if><if test="systemCode != null and systemCode != ''">system_code = #{systemCode},</if>
+            <if test="systemType != null">system_type = #{systemType},</if><if test="baseUrl != null">base_url = #{baseUrl},</if>
+            <if test="authType != null">auth_type = #{authType},</if><if test="authConfig != null">auth_config = #{authConfig},</if>
+            <if test="description != null">description = #{description},</if><if test="contactName != null">contact_name = #{contactName},</if>
+            <if test="contactPhone != null">contact_phone = #{contactPhone},</if><if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if><if test="updateTime != null">update_time = #{updateTime},</if><if test="remark != null">remark = #{remark},</if>
+        </trim> where system_id = #{systemId}
+    </update>
+    <delete id="deleteDisExternalSystemBySystemId" parameterType="Long">delete from dis_external_system where system_id = #{systemId}</delete>
+    <delete id="deleteDisExternalSystemBySystemIds" parameterType="String">delete from dis_external_system where system_id in <foreach item="systemId" collection="array" open="(" separator="," close=")">#{systemId}</foreach></delete>
+</mapper>
