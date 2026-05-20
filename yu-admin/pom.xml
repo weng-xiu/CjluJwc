@@ -84,6 +84,12 @@
             <artifactId>yu-dis</artifactId>
         </dependency>
 
+        <!-- 师生互动服务门户-->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-portal</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

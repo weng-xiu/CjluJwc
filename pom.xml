@@ -205,6 +205,13 @@
                 <version>${yu.version}</version>
             </dependency>
 
+            <!-- 师生互动服务门户-->
+            <dependency>
+                <groupId>com.yu</groupId>
+                <artifactId>yu-portal</artifactId>
+                <version>${yu.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -220,6 +227,7 @@
         <module>yu-aem</module>
         <module>yu-sam</module>
         <module>yu-dis</module>
+        <module>yu-portal</module>
     </modules>
     <packaging>pom</packaging>
 
