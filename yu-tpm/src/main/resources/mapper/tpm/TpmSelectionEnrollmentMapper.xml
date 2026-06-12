@@ -28,6 +28,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="roundId != null"> and round_id = #{roundId}</if>
             <if test="studentId != null"> and student_id = #{studentId}</if>
             <if test="courseOfferingId != null"> and course_offering_id = #{courseOfferingId}</if>
+            <if test="lotteryResult != null and lotteryResult.trim() != ''"> and lottery_result = #{lotteryResult}</if>
             <if test="resultStatus != null and resultStatus.trim() != ''"> and result_status = #{resultStatus}</if>
             <if test="status != null and status.trim() != ''"> and status = #{status}</if>
         </where>

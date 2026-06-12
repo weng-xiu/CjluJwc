@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "timestamp": 1781173877360,
+  "projectRoot": "d:\\project\\CjluJwc\\CjluJwc",
+  "entries": [
+    {
+      "path": "yu-common\\target\\classes\\com\\yu\\common\\config\\RuoYiConfig.class",
+      "mtime": 1781169416140.4744,
+      "size": 2632
+    },
+    {
+      "path": "yu-generator\\target\\classes\\com\\yu\\generator\\config\\GenConfig.class",
+      "mtime": 1781169424747.1294,
+      "size": 1923
+    },
+    {
+      "path": "yu-dis\\target\\classes\\com\\yu\\dis\\domain\\DisInterfaceConfig.class",
+      "mtime": 1781171867262.5747,
+      "size": 5562
+    }
+  ]
+}

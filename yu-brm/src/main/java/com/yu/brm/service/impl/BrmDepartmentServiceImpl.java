@@ -4,12 +4,16 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.brm.mapper.BrmDepartmentMapper;
+import com.yu.brm.mapper.BrmMajorMapper;
 import com.yu.brm.domain.BrmDepartment;
+import com.yu.brm.domain.BrmMajor;
 import com.yu.brm.service.IBrmDepartmentService;
 
 /**
@@ -23,6 +27,9 @@ public class BrmDepartmentServiceImpl implements IBrmDepartmentService
 {
     @Autowired
     private BrmDepartmentMapper brmDepartmentMapper;
+
+    @Autowired
+    private BrmMajorMapper brmMajorMapper;
 
     @Override
     public BrmDepartment selectBrmDepartmentByDeptId(Long deptId)
@@ -62,12 +69,19 @@ public class BrmDepartmentServiceImpl implements IBrmDepartmentService
     }
 
     @Override
+    @Transactional
     public int insertBrmDepartment(BrmDepartment dept)
     {
-        BrmDepartment info = brmDepartmentMapper.selectBrmDepartmentByDeptId(dept.getParentId());
+        // 唯一性校验：院系名称不能重复
+        BrmDepartment info = brmDepartmentMapper.checkDeptNameUnique(dept.getDeptName(), dept.getParentId());
         if (StringUtils.isNotNull(info))
         {
-            dept.setAncestors(info.getAncestors() + "," + dept.getParentId());
+            throw new ServiceException("院系名称'" + dept.getDeptName() + "'已存在");
+        }
+        BrmDepartment parentDept = brmDepartmentMapper.selectBrmDepartmentByDeptId(dept.getParentId());
+        if (StringUtils.isNotNull(parentDept))
+        {
+            dept.setAncestors(parentDept.getAncestors() + "," + dept.getParentId());
         }
         else
         {
@@ -78,8 +92,15 @@ public class BrmDepartmentServiceImpl implements IBrmDepartmentService
     }
 
     @Override
+    @Transactional
     public int updateBrmDepartment(BrmDepartment dept)
     {
+        // 唯一性校验：院系名称不能重复（排除自身）
+        BrmDepartment info = brmDepartmentMapper.checkDeptNameUnique(dept.getDeptName(), dept.getParentId());
+        if (StringUtils.isNotNull(info) && !info.getDeptId().equals(dept.getDeptId()))
+        {
+            throw new ServiceException("院系名称'" + dept.getDeptName() + "'已存在");
+        }
         BrmDepartment newParentDept = brmDepartmentMapper.selectBrmDepartmentByDeptId(dept.getParentId());
         BrmDepartment oldDept = brmDepartmentMapper.selectBrmDepartmentByDeptId(dept.getDeptId());
         if (StringUtils.isNotNull(newParentDept) && StringUtils.isNotNull(oldDept))
@@ -107,14 +128,33 @@ public class BrmDepartmentServiceImpl implements IBrmDepartmentService
     }
 
     @Override
+    @Transactional
     public int deleteBrmDepartmentByDeptId(Long deptId)
     {
+        BrmMajor query = new BrmMajor();
+        query.setDeptId(deptId);
+        List<BrmMajor> majors = brmMajorMapper.selectBrmMajorList(query);
+        if (majors != null && !majors.isEmpty())
+        {
+            throw new ServiceException("该院系下存在专业，不允许删除");
+        }
         return brmDepartmentMapper.deleteBrmDepartmentByDeptId(deptId);
     }
 
     @Override
+    @Transactional
     public int deleteBrmDepartmentByDeptIds(Long[] deptIds)
     {
+        for (Long deptId : deptIds)
+        {
+            BrmMajor query = new BrmMajor();
+            query.setDeptId(deptId);
+            List<BrmMajor> majors = brmMajorMapper.selectBrmMajorList(query);
+            if (majors != null && !majors.isEmpty())
+            {
+                throw new ServiceException("该院系下存在专业，不允许删除");
+            }
+        }
         return brmDepartmentMapper.deleteBrmDepartmentByDeptIds(deptIds);
     }
 }

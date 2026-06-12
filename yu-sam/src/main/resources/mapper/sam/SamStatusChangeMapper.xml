@@ -27,12 +27,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select change_id, student_id, change_type, change_date, original_status, new_status, reason, applicant, approve_status, approve_by, approve_time, approve_opinion, status, create_by, create_time, update_by, update_time, remark from sam_status_change
     </sql>
     <select id="selectSamStatusChangeList" parameterType="SamStatusChange" resultMap="SamStatusChangeResult">
-        <include refid="selectSamStatusChangeVo"/>
+        select sc.change_id, sc.student_id, sc.change_type, sc.change_date, sc.original_status, sc.new_status, sc.reason, sc.applicant, sc.approve_status, sc.approve_by, sc.approve_time, sc.approve_opinion, sc.status, sc.create_by, sc.create_time, sc.update_by, sc.update_time, sc.remark
+        from sam_status_change sc
+        left join sam_student s on sc.student_id = s.student_id
+        left join sys_dept d on s.dept_id = d.dept_id
         <where>
-            <if test="studentId != null"> and student_id = #{studentId}</if>
-            <if test="changeType != null and changeType.trim() != ''"> and change_type = #{changeType}</if>
-            <if test="approveStatus != null and approveStatus.trim() != ''"> and approve_status = #{approveStatus}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            <if test="studentId != null"> and sc.student_id = #{studentId}</if>
+            <if test="changeType != null and changeType.trim() != ''"> and sc.change_type = #{changeType}</if>
+            <if test="approveStatus != null and approveStatus.trim() != ''"> and sc.approve_status = #{approveStatus}</if>
+            <if test="status != null and status.trim() != ''"> and sc.status = #{status}</if>
+            <!-- 数据范围过滤 -->
+            ${params.dataScope}
         </where>
     </select>
     <select id="selectSamStatusChangeByChangeId" parameterType="Long" resultMap="SamStatusChangeResult">

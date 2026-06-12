@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.aem.mapper.AemEvaluationResultMapper;
 import com.yu.aem.domain.AemEvaluationResult;
 import com.yu.aem.service.IAemEvaluationResultService;
@@ -33,6 +34,7 @@ public class AemEvaluationResultServiceImpl implements IAemEvaluationResultServi
     }
 
     @Override
+    @Transactional
     public int insertAemEvaluationResult(AemEvaluationResult aemEvaluationResult)
     {
         aemEvaluationResult.setCreateTime(DateUtils.getNowDate());
@@ -40,6 +42,7 @@ public class AemEvaluationResultServiceImpl implements IAemEvaluationResultServi
     }
 
     @Override
+    @Transactional
     public int updateAemEvaluationResult(AemEvaluationResult aemEvaluationResult)
     {
         aemEvaluationResult.setUpdateTime(DateUtils.getNowDate());
@@ -47,12 +50,14 @@ public class AemEvaluationResultServiceImpl implements IAemEvaluationResultServi
     }
 
     @Override
+    @Transactional
     public int deleteAemEvaluationResultByResultId(Long resultId)
     {
         return aemEvaluationResultMapper.deleteAemEvaluationResultByResultId(resultId);
     }
 
     @Override
+    @Transactional
     public int deleteAemEvaluationResultByResultIds(Long[] resultIds)
     {
         return aemEvaluationResultMapper.deleteAemEvaluationResultByResultIds(resultIds);

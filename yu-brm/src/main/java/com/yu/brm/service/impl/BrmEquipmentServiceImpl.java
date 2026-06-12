@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.brm.mapper.BrmEquipmentMapper;
 import com.yu.brm.domain.BrmEquipment;
 import com.yu.brm.service.IBrmEquipmentService;
@@ -33,6 +34,7 @@ public class BrmEquipmentServiceImpl implements IBrmEquipmentService
     }
 
     @Override
+    @Transactional
     public int insertBrmEquipment(BrmEquipment brmEquipment)
     {
         brmEquipment.setCreateTime(DateUtils.getNowDate());
@@ -40,6 +42,7 @@ public class BrmEquipmentServiceImpl implements IBrmEquipmentService
     }
 
     @Override
+    @Transactional
     public int updateBrmEquipment(BrmEquipment brmEquipment)
     {
         brmEquipment.setUpdateTime(DateUtils.getNowDate());
@@ -47,12 +50,14 @@ public class BrmEquipmentServiceImpl implements IBrmEquipmentService
     }
 
     @Override
+    @Transactional
     public int deleteBrmEquipmentByEquipId(Long equipId)
     {
         return brmEquipmentMapper.deleteBrmEquipmentByEquipId(equipId);
     }
 
     @Override
+    @Transactional
     public int deleteBrmEquipmentByEquipIds(Long[] equipIds)
     {
         return brmEquipmentMapper.deleteBrmEquipmentByEquipIds(equipIds);

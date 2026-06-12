@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -58,7 +59,7 @@ public class BrmDepartmentController extends BaseController
     @PreAuthorize("@ss.hasPermi('brm:dept:add')")
     @Log(title = "院系", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody BrmDepartment dept)
+    public AjaxResult add(@Validated @RequestBody BrmDepartment dept)
     {
         if ("0".equals(brmDepartmentService.checkDeptNameUnique(dept)))
         {
@@ -70,7 +71,7 @@ public class BrmDepartmentController extends BaseController
     @PreAuthorize("@ss.hasPermi('brm:dept:edit')")
     @Log(title = "院系", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody BrmDepartment dept)
+    public AjaxResult edit(@Validated @RequestBody BrmDepartment dept)
     {
         Long deptId = dept.getDeptId();
         if ("0".equals(brmDepartmentService.checkDeptNameUnique(dept)))

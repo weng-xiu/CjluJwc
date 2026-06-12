@@ -76,6 +76,8 @@ public class PortalNotice extends BaseEntity
     public String getNoticeTitle() { return noticeTitle; }
     public void setNoticeTitle(String noticeTitle) { this.noticeTitle = noticeTitle; }
 
+    @NotBlank(message = "通知类型不能为空")
+    @Size(min = 0, max = 1, message = "通知类型长度不能超过1个字符")
     public String getNoticeType() { return noticeType; }
     public void setNoticeType(String noticeType) { this.noticeType = noticeType; }
 
@@ -88,21 +90,28 @@ public class PortalNotice extends BaseEntity
     public String getPublishDeptName() { return publishDeptName; }
     public void setPublishDeptName(String publishDeptName) { this.publishDeptName = publishDeptName; }
 
+    @NotBlank(message = "发布状态不能为空")
+    @Size(min = 0, max = 1, message = "发布状态长度不能超过1个字符")
     public String getPublishStatus() { return publishStatus; }
     public void setPublishStatus(String publishStatus) { this.publishStatus = publishStatus; }
 
     public Date getPublishDate() { return publishDate; }
     public void setPublishDate(Date publishDate) { this.publishDate = publishDate; }
 
+    @NotBlank(message = "目标角色不能为空")
+    @Size(min = 0, max = 1, message = "目标角色长度不能超过1个字符")
     public String getTargetRole() { return targetRole; }
     public void setTargetRole(String targetRole) { this.targetRole = targetRole; }
 
+    @NotBlank(message = "是否置顶不能为空")
+    @Size(min = 0, max = 1, message = "是否置顶长度不能超过1个字符")
     public String getIsTop() { return isTop; }
     public void setIsTop(String isTop) { this.isTop = isTop; }
 
     public Integer getViewCount() { return viewCount; }
     public void setViewCount(Integer viewCount) { this.viewCount = viewCount; }
 
+    @Size(min = 0, max = 1, message = "状态长度不能超过1个字符")
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 

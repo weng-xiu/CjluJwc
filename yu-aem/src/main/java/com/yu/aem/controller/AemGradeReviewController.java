@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -63,7 +64,7 @@ public class AemGradeReviewController extends BaseController
     @PreAuthorize("@ss.hasPermi('aem:gradeReview:add')")
     @Log(title = "成绩复核审批", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody AemGradeReview aemGradeReview)
+    public AjaxResult add(@Validated @RequestBody AemGradeReview aemGradeReview)
     {
         return toAjax(aemGradeReviewService.insertAemGradeReview(aemGradeReview));
     }
@@ -71,7 +72,7 @@ public class AemGradeReviewController extends BaseController
     @PreAuthorize("@ss.hasPermi('aem:gradeReview:edit')")
     @Log(title = "成绩复核审批", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody AemGradeReview aemGradeReview)
+    public AjaxResult edit(@Validated @RequestBody AemGradeReview aemGradeReview)
     {
         return toAjax(aemGradeReviewService.updateAemGradeReview(aemGradeReview));
     }

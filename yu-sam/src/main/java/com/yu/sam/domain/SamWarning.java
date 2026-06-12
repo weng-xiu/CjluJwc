@@ -1,5 +1,8 @@
 package com.yu.sam.domain;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -66,18 +69,22 @@ public class SamWarning extends BaseEntity
     public Long getWarningId() { return warningId; }
     public void setWarningId(Long warningId) { this.warningId = warningId; }
 
+    @NotNull(message = "学生ID不能为空")
     public Long getStudentId() { return studentId; }
     public void setStudentId(Long studentId) { this.studentId = studentId; }
 
     public Long getSemesterId() { return semesterId; }
     public void setSemesterId(Long semesterId) { this.semesterId = semesterId; }
 
+    @NotBlank(message = "预警类型不能为空")
+    @Size(min = 0, max = 1, message = "预警类型长度不能超过1个字符")
     public String getWarningType() { return warningType; }
     public void setWarningType(String warningType) { this.warningType = warningType; }
 
     public String getWarningLevel() { return warningLevel; }
     public void setWarningLevel(String warningLevel) { this.warningLevel = warningLevel; }
 
+    @Size(min = 0, max = 500, message = "预警原因长度不能超过500个字符")
     public String getWarningReason() { return warningReason; }
     public void setWarningReason(String warningReason) { this.warningReason = warningReason; }
 

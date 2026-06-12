@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -57,7 +58,7 @@ public class BrmTeacherController extends BaseController
     @PreAuthorize("@ss.hasPermi('brm:teacher:add')")
     @Log(title = "教师", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody BrmTeacher brmTeacher)
+    public AjaxResult add(@Validated @RequestBody BrmTeacher brmTeacher)
     {
         return toAjax(brmTeacherService.insertBrmTeacher(brmTeacher));
     }
@@ -65,7 +66,7 @@ public class BrmTeacherController extends BaseController
     @PreAuthorize("@ss.hasPermi('brm:teacher:edit')")
     @Log(title = "教师", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody BrmTeacher brmTeacher)
+    public AjaxResult edit(@Validated @RequestBody BrmTeacher brmTeacher)
     {
         return toAjax(brmTeacherService.updateBrmTeacher(brmTeacher));
     }

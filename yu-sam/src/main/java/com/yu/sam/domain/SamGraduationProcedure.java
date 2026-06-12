@@ -1,5 +1,6 @@
 package com.yu.sam.domain;
 
+import jakarta.validation.constraints.NotNull;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -57,6 +58,7 @@ public class SamGraduationProcedure extends BaseEntity
     public Long getProcedureId() { return procedureId; }
     public void setProcedureId(Long procedureId) { this.procedureId = procedureId; }
 
+    @NotNull(message = "学生ID不能为空")
     public Long getStudentId() { return studentId; }
     public void setStudentId(Long studentId) { this.studentId = studentId; }
 

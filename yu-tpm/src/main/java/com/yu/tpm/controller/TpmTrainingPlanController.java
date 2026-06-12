@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -63,7 +64,7 @@ public class TpmTrainingPlanController extends BaseController
     @PreAuthorize("@ss.hasPermi('tpm:plan:add')")
     @Log(title = "培养方案", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody TpmTrainingPlan tpmTrainingPlan)
+    public AjaxResult add(@Validated @RequestBody TpmTrainingPlan tpmTrainingPlan)
     {
         return toAjax(tpmTrainingPlanService.insertTpmTrainingPlan(tpmTrainingPlan));
     }
@@ -71,7 +72,7 @@ public class TpmTrainingPlanController extends BaseController
     @PreAuthorize("@ss.hasPermi('tpm:plan:edit')")
     @Log(title = "培养方案", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody TpmTrainingPlan tpmTrainingPlan)
+    public AjaxResult edit(@Validated @RequestBody TpmTrainingPlan tpmTrainingPlan)
     {
         return toAjax(tpmTrainingPlanService.updateTpmTrainingPlan(tpmTrainingPlan));
     }

@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.brm.mapper.BrmTeacherPositionMapper;
 import com.yu.brm.domain.BrmTeacherPosition;
 import com.yu.brm.service.IBrmTeacherPositionService;
@@ -33,6 +34,7 @@ public class BrmTeacherPositionServiceImpl implements IBrmTeacherPositionService
     }
 
     @Override
+    @Transactional
     public int insertBrmTeacherPosition(BrmTeacherPosition brmTeacherPosition)
     {
         brmTeacherPosition.setCreateTime(DateUtils.getNowDate());
@@ -40,6 +42,7 @@ public class BrmTeacherPositionServiceImpl implements IBrmTeacherPositionService
     }
 
     @Override
+    @Transactional
     public int updateBrmTeacherPosition(BrmTeacherPosition brmTeacherPosition)
     {
         brmTeacherPosition.setUpdateTime(DateUtils.getNowDate());
@@ -47,12 +50,14 @@ public class BrmTeacherPositionServiceImpl implements IBrmTeacherPositionService
     }
 
     @Override
+    @Transactional
     public int deleteBrmTeacherPositionByPosId(Long posId)
     {
         return brmTeacherPositionMapper.deleteBrmTeacherPositionByPosId(posId);
     }
 
     @Override
+    @Transactional
     public int deleteBrmTeacherPositionByPosIds(Long[] posIds)
     {
         return brmTeacherPositionMapper.deleteBrmTeacherPositionByPosIds(posIds);

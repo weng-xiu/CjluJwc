@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -63,7 +64,7 @@ public class TpmSelectionRuleController extends BaseController
     @PreAuthorize("@ss.hasPermi('tpm:rule:add')")
     @Log(title = "选课规则", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody TpmSelectionRule tpmSelectionRule)
+    public AjaxResult add(@Validated @RequestBody TpmSelectionRule tpmSelectionRule)
     {
         return toAjax(tpmSelectionRuleService.insertTpmSelectionRule(tpmSelectionRule));
     }
@@ -71,7 +72,7 @@ public class TpmSelectionRuleController extends BaseController
     @PreAuthorize("@ss.hasPermi('tpm:rule:edit')")
     @Log(title = "选课规则", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody TpmSelectionRule tpmSelectionRule)
+    public AjaxResult edit(@Validated @RequestBody TpmSelectionRule tpmSelectionRule)
     {
         return toAjax(tpmSelectionRuleService.updateTpmSelectionRule(tpmSelectionRule));
     }

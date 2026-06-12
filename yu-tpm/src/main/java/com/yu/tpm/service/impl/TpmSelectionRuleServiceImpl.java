@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.tpm.mapper.TpmSelectionRuleMapper;
 import com.yu.tpm.domain.TpmSelectionRule;
 import com.yu.tpm.service.ITpmSelectionRuleService;
@@ -32,6 +33,7 @@ public class TpmSelectionRuleServiceImpl implements ITpmSelectionRuleService
         return tpmSelectionRuleMapper.selectTpmSelectionRuleList(tpmSelectionRule);
     }
 
+    @Transactional
     @Override
     public int insertTpmSelectionRule(TpmSelectionRule tpmSelectionRule)
     {
@@ -39,6 +41,7 @@ public class TpmSelectionRuleServiceImpl implements ITpmSelectionRuleService
         return tpmSelectionRuleMapper.insertTpmSelectionRule(tpmSelectionRule);
     }
 
+    @Transactional
     @Override
     public int updateTpmSelectionRule(TpmSelectionRule tpmSelectionRule)
     {
@@ -46,12 +49,14 @@ public class TpmSelectionRuleServiceImpl implements ITpmSelectionRuleService
         return tpmSelectionRuleMapper.updateTpmSelectionRule(tpmSelectionRule);
     }
 
+    @Transactional
     @Override
     public int deleteTpmSelectionRuleByRuleId(Long ruleId)
     {
         return tpmSelectionRuleMapper.deleteTpmSelectionRuleByRuleId(ruleId);
     }
 
+    @Transactional
     @Override
     public int deleteTpmSelectionRuleByRuleIds(Long[] ruleIds)
     {

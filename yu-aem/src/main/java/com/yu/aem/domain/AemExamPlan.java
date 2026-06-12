@@ -1,6 +1,7 @@
 package com.yu.aem.domain;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -76,9 +77,12 @@ public class AemExamPlan extends BaseEntity
     public String getExamName() { return examName; }
     public void setExamName(String examName) { this.examName = examName; }
 
+    @NotNull(message = "学期ID不能为空")
     public Long getSemesterId() { return semesterId; }
     public void setSemesterId(Long semesterId) { this.semesterId = semesterId; }
 
+    @NotBlank(message = "考试类型不能为空")
+    @Size(min = 0, max = 1, message = "考试类型长度不能超过1个字符")
     public String getExamType() { return examType; }
     public void setExamType(String examType) { this.examType = examType; }
 

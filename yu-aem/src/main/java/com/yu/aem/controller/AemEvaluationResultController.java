@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -63,7 +64,7 @@ public class AemEvaluationResultController extends BaseController
     @PreAuthorize("@ss.hasPermi('aem:evaluationResult:add')")
     @Log(title = "评教结果", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody AemEvaluationResult aemEvaluationResult)
+    public AjaxResult add(@Validated @RequestBody AemEvaluationResult aemEvaluationResult)
     {
         return toAjax(aemEvaluationResultService.insertAemEvaluationResult(aemEvaluationResult));
     }
@@ -71,7 +72,7 @@ public class AemEvaluationResultController extends BaseController
     @PreAuthorize("@ss.hasPermi('aem:evaluationResult:edit')")
     @Log(title = "评教结果", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody AemEvaluationResult aemEvaluationResult)
+    public AjaxResult edit(@Validated @RequestBody AemEvaluationResult aemEvaluationResult)
     {
         return toAjax(aemEvaluationResultService.updateAemEvaluationResult(aemEvaluationResult));
     }

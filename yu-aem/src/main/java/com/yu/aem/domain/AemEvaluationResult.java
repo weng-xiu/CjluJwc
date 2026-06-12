@@ -1,5 +1,7 @@
 package com.yu.aem.domain;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -57,12 +59,15 @@ public class AemEvaluationResult extends BaseEntity
     public Long getResultId() { return resultId; }
     public void setResultId(Long resultId) { this.resultId = resultId; }
 
+    @NotNull(message = "问卷ID不能为空")
     public Long getQuestionnaireId() { return questionnaireId; }
     public void setQuestionnaireId(Long questionnaireId) { this.questionnaireId = questionnaireId; }
 
+    @NotNull(message = "课程ID不能为空")
     public Long getCourseId() { return courseId; }
     public void setCourseId(Long courseId) { this.courseId = courseId; }
 
+    @NotNull(message = "教师ID不能为空")
     public Long getTeacherId() { return teacherId; }
     public void setTeacherId(Long teacherId) { this.teacherId = teacherId; }
 
@@ -75,6 +80,7 @@ public class AemEvaluationResult extends BaseEntity
     public Date getEvalDate() { return evalDate; }
     public void setEvalDate(Date evalDate) { this.evalDate = evalDate; }
 
+    @Size(min = 0, max = 500, message = "评语建议长度不能超过500个字符")
     public String getComment() { return comment; }
     public void setComment(String comment) { this.comment = comment; }
 

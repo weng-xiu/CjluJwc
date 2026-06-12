@@ -2,6 +2,7 @@ package com.yu.brm.service.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.yu.common.annotation.DataScope;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,7 @@ public class BrmTeacherServiceImpl implements IBrmTeacherService
     }
 
     @Override
+    @DataScope(deptAlias = "d")
     public List<BrmTeacher> selectBrmTeacherList(BrmTeacher brmTeacher)
     {
         return brmTeacherMapper.selectBrmTeacherList(brmTeacher);

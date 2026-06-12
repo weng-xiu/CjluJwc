@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -57,7 +58,7 @@ public class BrmMajorController extends BaseController
     @PreAuthorize("@ss.hasPermi('brm:major:add')")
     @Log(title = "专业", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody BrmMajor brmMajor)
+    public AjaxResult add(@Validated @RequestBody BrmMajor brmMajor)
     {
         return toAjax(brmMajorService.insertBrmMajor(brmMajor));
     }
@@ -65,7 +66,7 @@ public class BrmMajorController extends BaseController
     @PreAuthorize("@ss.hasPermi('brm:major:edit')")
     @Log(title = "专业", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody BrmMajor brmMajor)
+    public AjaxResult edit(@Validated @RequestBody BrmMajor brmMajor)
     {
         return toAjax(brmMajorService.updateBrmMajor(brmMajor));
     }

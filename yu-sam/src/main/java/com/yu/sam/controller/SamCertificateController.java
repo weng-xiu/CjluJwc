@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -44,12 +45,12 @@ public class SamCertificateController extends BaseController
     @PreAuthorize("@ss.hasPermi('sam:certificate:add')")
     @Log(title = "证书管理", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody SamCertificate samCertificate) { return toAjax(samCertificateService.insertSamCertificate(samCertificate)); }
+    public AjaxResult add(@Validated @RequestBody SamCertificate samCertificate) { return toAjax(samCertificateService.insertSamCertificate(samCertificate)); }
 
     @PreAuthorize("@ss.hasPermi('sam:certificate:edit')")
     @Log(title = "证书管理", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody SamCertificate samCertificate) { return toAjax(samCertificateService.updateSamCertificate(samCertificate)); }
+    public AjaxResult edit(@Validated @RequestBody SamCertificate samCertificate) { return toAjax(samCertificateService.updateSamCertificate(samCertificate)); }
 
     @PreAuthorize("@ss.hasPermi('sam:certificate:remove')")
     @Log(title = "证书管理", businessType = BusinessType.DELETE)

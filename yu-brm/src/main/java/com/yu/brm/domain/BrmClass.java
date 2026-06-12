@@ -1,6 +1,7 @@
 package com.yu.brm.domain;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -57,6 +58,7 @@ public class BrmClass extends BaseEntity
     public String getClassName() { return className; }
     public void setClassName(String className) { this.className = className; }
 
+    @NotNull(message = "所属专业不能为空")
     public Long getMajorId() { return majorId; }
     public void setMajorId(Long majorId) { this.majorId = majorId; }
 

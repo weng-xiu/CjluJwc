@@ -98,6 +98,7 @@ public class DisExternalSystem extends BaseEntity
     public String getContactPhone() { return contactPhone; }
     public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
 
+    @Size(min = 0, max = 1, message = "状态长度不能超过1个字符")
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 

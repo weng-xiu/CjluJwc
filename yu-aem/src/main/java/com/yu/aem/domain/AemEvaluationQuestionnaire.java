@@ -76,6 +76,7 @@ public class AemEvaluationQuestionnaire extends BaseEntity
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
 
+    @Size(min = 0, max = 500, message = "问卷说明长度不能超过500个字符")
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 

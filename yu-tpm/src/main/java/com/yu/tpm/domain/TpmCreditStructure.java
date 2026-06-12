@@ -1,6 +1,7 @@
 package com.yu.tpm.domain;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -51,6 +52,7 @@ public class TpmCreditStructure extends BaseEntity
     public Long getStructId() { return structId; }
     public void setStructId(Long structId) { this.structId = structId; }
 
+    @NotNull(message = "所属方案ID不能为空")
     public Long getPlanId() { return planId; }
     public void setPlanId(Long planId) { this.planId = planId; }
 

@@ -1,5 +1,6 @@
 package com.yu.aem.domain;
 
+import jakarta.validation.constraints.NotNull;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -57,12 +58,15 @@ public class AemExamInvigilation extends BaseEntity
     public Long getInvigilationId() { return invigilationId; }
     public void setInvigilationId(Long invigilationId) { this.invigilationId = invigilationId; }
 
+    @NotNull(message = "考试ID不能为空")
     public Long getExamId() { return examId; }
     public void setExamId(Long examId) { this.examId = examId; }
 
+    @NotNull(message = "教室ID不能为空")
     public Long getClassroomId() { return classroomId; }
     public void setClassroomId(Long classroomId) { this.classroomId = classroomId; }
 
+    @NotNull(message = "监考教师不能为空")
     public Long getTeacherId() { return teacherId; }
     public void setTeacherId(Long teacherId) { this.teacherId = teacherId; }
 

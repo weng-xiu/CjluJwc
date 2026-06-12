@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -57,7 +59,7 @@ public class BrmClassroomTypeController extends BaseController
     @PreAuthorize("@ss.hasPermi('brm:roomtype:add')")
     @Log(title = "教室类型", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody BrmClassroomType brmClassroomType)
+    public AjaxResult add(@Validated @RequestBody BrmClassroomType brmClassroomType)
     {
         return toAjax(brmClassroomTypeService.insertBrmClassroomType(brmClassroomType));
     }
@@ -65,7 +67,7 @@ public class BrmClassroomTypeController extends BaseController
     @PreAuthorize("@ss.hasPermi('brm:roomtype:edit')")
     @Log(title = "教室类型", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody BrmClassroomType brmClassroomType)
+    public AjaxResult edit(@Validated @RequestBody BrmClassroomType brmClassroomType)
     {
         return toAjax(brmClassroomTypeService.updateBrmClassroomType(brmClassroomType));
     }

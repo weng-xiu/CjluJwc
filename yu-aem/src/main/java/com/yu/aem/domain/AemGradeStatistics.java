@@ -1,5 +1,6 @@
 package com.yu.aem.domain;
 
+import jakarta.validation.constraints.NotNull;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.yu.common.annotation.Excel;
@@ -73,9 +74,11 @@ public class AemGradeStatistics extends BaseEntity
     public Long getStatId() { return statId; }
     public void setStatId(Long statId) { this.statId = statId; }
 
+    @NotNull(message = "课程ID不能为空")
     public Long getCourseId() { return courseId; }
     public void setCourseId(Long courseId) { this.courseId = courseId; }
 
+    @NotNull(message = "学期ID不能为空")
     public Long getSemesterId() { return semesterId; }
     public void setSemesterId(Long semesterId) { this.semesterId = semesterId; }
 

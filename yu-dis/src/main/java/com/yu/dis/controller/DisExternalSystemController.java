@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -57,7 +58,7 @@ public class DisExternalSystemController extends BaseController
     @PreAuthorize("@ss.hasPermi('dis:system:add')")
     @Log(title = "外部系统", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody DisExternalSystem disExternalSystem)
+    public AjaxResult add(@Validated @RequestBody DisExternalSystem disExternalSystem)
     {
         return toAjax(disExternalSystemService.insertDisExternalSystem(disExternalSystem));
     }
@@ -65,7 +66,7 @@ public class DisExternalSystemController extends BaseController
     @PreAuthorize("@ss.hasPermi('dis:system:edit')")
     @Log(title = "外部系统", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody DisExternalSystem disExternalSystem)
+    public AjaxResult edit(@Validated @RequestBody DisExternalSystem disExternalSystem)
     {
         return toAjax(disExternalSystemService.updateDisExternalSystem(disExternalSystem));
     }

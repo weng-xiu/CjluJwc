@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -57,7 +58,7 @@ public class BrmEquipmentMaintenanceController extends BaseController
     @PreAuthorize("@ss.hasPermi('brm:maintenance:add')")
     @Log(title = "设备维护记录", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody BrmEquipmentMaintenance brmEquipmentMaintenance)
+    public AjaxResult add(@Validated @RequestBody BrmEquipmentMaintenance brmEquipmentMaintenance)
     {
         return toAjax(brmEquipmentMaintenanceService.insertBrmEquipmentMaintenance(brmEquipmentMaintenance));
     }
@@ -65,7 +66,7 @@ public class BrmEquipmentMaintenanceController extends BaseController
     @PreAuthorize("@ss.hasPermi('brm:maintenance:edit')")
     @Log(title = "设备维护记录", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody BrmEquipmentMaintenance brmEquipmentMaintenance)
+    public AjaxResult edit(@Validated @RequestBody BrmEquipmentMaintenance brmEquipmentMaintenance)
     {
         return toAjax(brmEquipmentMaintenanceService.updateBrmEquipmentMaintenance(brmEquipmentMaintenance));
     }

@@ -2,6 +2,7 @@ package com.yu.brm.domain;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -56,9 +57,12 @@ public class BrmEquipment extends BaseEntity
     public String getEquipName() { return equipName; }
     public void setEquipName(String equipName) { this.equipName = equipName; }
 
+    @NotNull(message = "所属教室不能为空")
     public Long getClassroomId() { return classroomId; }
     public void setClassroomId(Long classroomId) { this.classroomId = classroomId; }
 
+    @NotBlank(message = "设备类型不能为空")
+    @Size(min = 0, max = 50, message = "设备类型长度不能超过50个字符")
     public String getEquipType() { return equipType; }
     public void setEquipType(String equipType) { this.equipType = equipType; }
 

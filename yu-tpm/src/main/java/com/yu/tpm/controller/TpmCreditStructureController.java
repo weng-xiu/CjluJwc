@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -63,7 +64,7 @@ public class TpmCreditStructureController extends BaseController
     @PreAuthorize("@ss.hasPermi('tpm:credit:add')")
     @Log(title = "学分结构", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody TpmCreditStructure tpmCreditStructure)
+    public AjaxResult add(@Validated @RequestBody TpmCreditStructure tpmCreditStructure)
     {
         return toAjax(tpmCreditStructureService.insertTpmCreditStructure(tpmCreditStructure));
     }
@@ -71,7 +72,7 @@ public class TpmCreditStructureController extends BaseController
     @PreAuthorize("@ss.hasPermi('tpm:credit:edit')")
     @Log(title = "学分结构", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody TpmCreditStructure tpmCreditStructure)
+    public AjaxResult edit(@Validated @RequestBody TpmCreditStructure tpmCreditStructure)
     {
         return toAjax(tpmCreditStructureService.updateTpmCreditStructure(tpmCreditStructure));
     }

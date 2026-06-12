@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -44,12 +45,12 @@ public class SamGraduationProcedureController extends BaseController
     @PreAuthorize("@ss.hasPermi('sam:graduationProcedure:add')")
     @Log(title = "离校手续", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody SamGraduationProcedure samGraduationProcedure) { return toAjax(samGraduationProcedureService.insertSamGraduationProcedure(samGraduationProcedure)); }
+    public AjaxResult add(@Validated @RequestBody SamGraduationProcedure samGraduationProcedure) { return toAjax(samGraduationProcedureService.insertSamGraduationProcedure(samGraduationProcedure)); }
 
     @PreAuthorize("@ss.hasPermi('sam:graduationProcedure:edit')")
     @Log(title = "离校手续", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody SamGraduationProcedure samGraduationProcedure) { return toAjax(samGraduationProcedureService.updateSamGraduationProcedure(samGraduationProcedure)); }
+    public AjaxResult edit(@Validated @RequestBody SamGraduationProcedure samGraduationProcedure) { return toAjax(samGraduationProcedureService.updateSamGraduationProcedure(samGraduationProcedure)); }
 
     @PreAuthorize("@ss.hasPermi('sam:graduationProcedure:remove')")
     @Log(title = "离校手续", businessType = BusinessType.DELETE)

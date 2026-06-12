@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.tpm.mapper.TpmSelectionEnrollmentMapper;
 import com.yu.tpm.domain.TpmSelectionEnrollment;
 import com.yu.tpm.service.ITpmSelectionEnrollmentService;
@@ -32,6 +33,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         return tpmSelectionEnrollmentMapper.selectTpmSelectionEnrollmentList(tpmSelectionEnrollment);
     }
 
+    @Transactional
     @Override
     public int insertTpmSelectionEnrollment(TpmSelectionEnrollment tpmSelectionEnrollment)
     {
@@ -39,6 +41,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         return tpmSelectionEnrollmentMapper.insertTpmSelectionEnrollment(tpmSelectionEnrollment);
     }
 
+    @Transactional
     @Override
     public int updateTpmSelectionEnrollment(TpmSelectionEnrollment tpmSelectionEnrollment)
     {
@@ -46,12 +49,14 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         return tpmSelectionEnrollmentMapper.updateTpmSelectionEnrollment(tpmSelectionEnrollment);
     }
 
+    @Transactional
     @Override
     public int deleteTpmSelectionEnrollmentByEnrollId(Long enrollId)
     {
         return tpmSelectionEnrollmentMapper.deleteTpmSelectionEnrollmentByEnrollId(enrollId);
     }
 
+    @Transactional
     @Override
     public int deleteTpmSelectionEnrollmentByEnrollIds(Long[] enrollIds)
     {

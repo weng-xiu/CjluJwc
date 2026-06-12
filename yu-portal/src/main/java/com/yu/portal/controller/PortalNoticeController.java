@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -63,7 +64,7 @@ public class PortalNoticeController extends BaseController
     @PreAuthorize("@ss.hasPermi('portal:noticeManage:add')")
     @Log(title = "教务通知", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody PortalNotice portalNotice)
+    public AjaxResult add(@Validated @RequestBody PortalNotice portalNotice)
     {
         return toAjax(portalNoticeService.insertPortalNotice(portalNotice));
     }
@@ -71,7 +72,7 @@ public class PortalNoticeController extends BaseController
     @PreAuthorize("@ss.hasPermi('portal:noticeManage:edit')")
     @Log(title = "教务通知", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody PortalNotice portalNotice)
+    public AjaxResult edit(@Validated @RequestBody PortalNotice portalNotice)
     {
         return toAjax(portalNoticeService.updatePortalNotice(portalNotice));
     }

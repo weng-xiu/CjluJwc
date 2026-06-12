@@ -1,5 +1,6 @@
 package com.yu.aem.domain;
 
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -70,12 +71,15 @@ public class AemGradeRecord extends BaseEntity
     public Long getGradeId() { return gradeId; }
     public void setGradeId(Long gradeId) { this.gradeId = gradeId; }
 
+    @NotNull(message = "学生ID不能为空")
     public Long getStudentId() { return studentId; }
     public void setStudentId(Long studentId) { this.studentId = studentId; }
 
+    @NotNull(message = "课程ID不能为空")
     public Long getCourseId() { return courseId; }
     public void setCourseId(Long courseId) { this.courseId = courseId; }
 
+    @NotNull(message = "学期ID不能为空")
     public Long getSemesterId() { return semesterId; }
     public void setSemesterId(Long semesterId) { this.semesterId = semesterId; }
 

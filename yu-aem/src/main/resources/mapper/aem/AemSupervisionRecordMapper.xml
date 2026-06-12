@@ -26,13 +26,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select record_id, course_id, teacher_id, supervisor, visit_date, class_hours, teaching_content, evaluation_score, evaluation_level, suggestion, record_type, status, create_by, create_time, update_by, update_time, remark from aem_supervision_record
     </sql>
     <select id="selectAemSupervisionRecordList" parameterType="AemSupervisionRecord" resultMap="AemSupervisionRecordResult">
-        <include refid="selectAemSupervisionRecordVo"/>
+        select sr.record_id, sr.course_id, sr.teacher_id, sr.supervisor, sr.visit_date, sr.class_hours, sr.teaching_content, sr.evaluation_score, sr.evaluation_level, sr.suggestion, sr.record_type, sr.status, sr.create_by, sr.create_time, sr.update_by, sr.update_time, sr.remark
+        from aem_supervision_record sr
+        left join brm_teacher t on sr.teacher_id = t.teacher_id
+        left join sys_dept d on t.dept_id = d.dept_id
         <where>
-            <if test="courseId != null"> and course_id = #{courseId}</if>
-            <if test="teacherId != null"> and teacher_id = #{teacherId}</if>
-            <if test="supervisor != null and supervisor.trim() != ''"> and supervisor like concat('%', #{supervisor}, '%')</if>
-            <if test="recordType != null and recordType.trim() != ''"> and record_type = #{recordType}</if>
-            <if test="evaluationLevel != null and evaluationLevel.trim() != ''"> and evaluation_level = #{evaluationLevel}</if>
+            <if test="courseId != null"> and sr.course_id = #{courseId}</if>
+            <if test="teacherId != null"> and sr.teacher_id = #{teacherId}</if>
+            <if test="supervisor != null and supervisor.trim() != ''"> and sr.supervisor like concat('%', #{supervisor}, '%')</if>
+            <if test="recordType != null and recordType.trim() != ''"> and sr.record_type = #{recordType}</if>
+            <if test="evaluationLevel != null and evaluationLevel.trim() != ''"> and sr.evaluation_level = #{evaluationLevel}</if>
+            <!-- 数据范围过滤 -->
+            ${params.dataScope}
         </where>
     </select>
     <select id="selectAemSupervisionRecordByRecordId" parameterType="Long" resultMap="AemSupervisionRecordResult">

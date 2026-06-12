@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.dis.mapper.DisInterfaceConfigMapper;
 import com.yu.dis.domain.DisInterfaceConfig;
 import com.yu.dis.service.IDisInterfaceConfigService;
@@ -32,6 +33,7 @@ public class DisInterfaceConfigServiceImpl implements IDisInterfaceConfigService
         return disInterfaceConfigMapper.selectDisInterfaceConfigList(disInterfaceConfig);
     }
 
+    @Transactional
     @Override
     public int insertDisInterfaceConfig(DisInterfaceConfig disInterfaceConfig)
     {
@@ -39,6 +41,7 @@ public class DisInterfaceConfigServiceImpl implements IDisInterfaceConfigService
         return disInterfaceConfigMapper.insertDisInterfaceConfig(disInterfaceConfig);
     }
 
+    @Transactional
     @Override
     public int updateDisInterfaceConfig(DisInterfaceConfig disInterfaceConfig)
     {
@@ -46,12 +49,14 @@ public class DisInterfaceConfigServiceImpl implements IDisInterfaceConfigService
         return disInterfaceConfigMapper.updateDisInterfaceConfig(disInterfaceConfig);
     }
 
+    @Transactional
     @Override
     public int deleteDisInterfaceConfigByInterfaceId(Long interfaceId)
     {
         return disInterfaceConfigMapper.deleteDisInterfaceConfigByInterfaceId(interfaceId);
     }
 
+    @Transactional
     @Override
     public int deleteDisInterfaceConfigByInterfaceIds(Long[] interfaceIds)
     {

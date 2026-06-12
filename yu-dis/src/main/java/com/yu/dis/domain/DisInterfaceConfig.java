@@ -1,6 +1,7 @@
 package com.yu.dis.domain;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -65,6 +66,7 @@ public class DisInterfaceConfig extends BaseEntity
     public Long getInterfaceId() { return interfaceId; }
     public void setInterfaceId(Long interfaceId) { this.interfaceId = interfaceId; }
 
+    @NotNull(message = "所属系统ID不能为空")
     public Long getSystemId() { return systemId; }
     public void setSystemId(Long systemId) { this.systemId = systemId; }
 
@@ -77,6 +79,8 @@ public class DisInterfaceConfig extends BaseEntity
     public String getInterfaceCode() { return interfaceCode; }
     public void setInterfaceCode(String interfaceCode) { this.interfaceCode = interfaceCode; }
 
+    @NotBlank(message = "请求方式不能为空")
+    @Size(min = 0, max = 10, message = "请求方式长度不能超过10个字符")
     public String getRequestMethod() { return requestMethod; }
     public void setRequestMethod(String requestMethod) { this.requestMethod = requestMethod; }
 
@@ -100,6 +104,7 @@ public class DisInterfaceConfig extends BaseEntity
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
+    @Size(min = 0, max = 1, message = "状态长度不能超过1个字符")
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 

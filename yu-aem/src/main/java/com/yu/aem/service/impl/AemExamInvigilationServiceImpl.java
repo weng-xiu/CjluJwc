@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.aem.mapper.AemExamInvigilationMapper;
 import com.yu.aem.domain.AemExamInvigilation;
 import com.yu.aem.service.IAemExamInvigilationService;
@@ -33,6 +34,7 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
     }
 
     @Override
+    @Transactional
     public int insertAemExamInvigilation(AemExamInvigilation aemExamInvigilation)
     {
         aemExamInvigilation.setCreateTime(DateUtils.getNowDate());
@@ -40,6 +42,7 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
     }
 
     @Override
+    @Transactional
     public int updateAemExamInvigilation(AemExamInvigilation aemExamInvigilation)
     {
         aemExamInvigilation.setUpdateTime(DateUtils.getNowDate());
@@ -47,12 +50,14 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
     }
 
     @Override
+    @Transactional
     public int deleteAemExamInvigilationByInvigilationId(Long invigilationId)
     {
         return aemExamInvigilationMapper.deleteAemExamInvigilationByInvigilationId(invigilationId);
     }
 
     @Override
+    @Transactional
     public int deleteAemExamInvigilationByInvigilationIds(Long[] invigilationIds)
     {
         return aemExamInvigilationMapper.deleteAemExamInvigilationByInvigilationIds(invigilationIds);

@@ -3,6 +3,7 @@ package com.yu.dis.service.impl;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.dis.mapper.DisDataExchangeLogMapper;
 import com.yu.dis.domain.DisDataExchangeLog;
 import com.yu.dis.service.IDisDataExchangeLogService;
@@ -31,24 +32,28 @@ public class DisDataExchangeLogServiceImpl implements IDisDataExchangeLogService
         return disDataExchangeLogMapper.selectDisDataExchangeLogList(disDataExchangeLog);
     }
 
+    @Transactional
     @Override
     public int insertDisDataExchangeLog(DisDataExchangeLog disDataExchangeLog)
     {
         return disDataExchangeLogMapper.insertDisDataExchangeLog(disDataExchangeLog);
     }
 
+    @Transactional
     @Override
     public int deleteDisDataExchangeLogByLogId(Long logId)
     {
         return disDataExchangeLogMapper.deleteDisDataExchangeLogByLogId(logId);
     }
 
+    @Transactional
     @Override
     public int deleteDisDataExchangeLogByLogIds(Long[] logIds)
     {
         return disDataExchangeLogMapper.deleteDisDataExchangeLogByLogIds(logIds);
     }
 
+    @Transactional
     @Override
     public int cleanDisDataExchangeLog()
     {

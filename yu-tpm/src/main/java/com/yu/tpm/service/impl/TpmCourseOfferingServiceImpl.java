@@ -1,9 +1,11 @@
 package com.yu.tpm.service.impl;
 
 import java.util.List;
+import com.yu.common.annotation.DataScope;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.tpm.mapper.TpmCourseOfferingMapper;
 import com.yu.tpm.domain.TpmCourseOffering;
 import com.yu.tpm.service.ITpmCourseOfferingService;
@@ -27,11 +29,13 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
     }
 
     @Override
+    @DataScope(deptAlias = "d")
     public List<TpmCourseOffering> selectTpmCourseOfferingList(TpmCourseOffering tpmCourseOffering)
     {
         return tpmCourseOfferingMapper.selectTpmCourseOfferingList(tpmCourseOffering);
     }
 
+    @Transactional
     @Override
     public int insertTpmCourseOffering(TpmCourseOffering tpmCourseOffering)
     {
@@ -39,6 +43,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
         return tpmCourseOfferingMapper.insertTpmCourseOffering(tpmCourseOffering);
     }
 
+    @Transactional
     @Override
     public int updateTpmCourseOffering(TpmCourseOffering tpmCourseOffering)
     {
@@ -46,12 +51,14 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
         return tpmCourseOfferingMapper.updateTpmCourseOffering(tpmCourseOffering);
     }
 
+    @Transactional
     @Override
     public int deleteTpmCourseOfferingByOfferingId(Long offeringId)
     {
         return tpmCourseOfferingMapper.deleteTpmCourseOfferingByOfferingId(offeringId);
     }
 
+    @Transactional
     @Override
     public int deleteTpmCourseOfferingByOfferingIds(Long[] offeringIds)
     {

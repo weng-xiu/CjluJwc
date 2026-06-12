@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -63,7 +64,7 @@ public class TpmScheduleController extends BaseController
     @PreAuthorize("@ss.hasPermi('tpm:schedule:add')")
     @Log(title = "排课管理", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody TpmSchedule tpmSchedule)
+    public AjaxResult add(@Validated @RequestBody TpmSchedule tpmSchedule)
     {
         return toAjax(tpmScheduleService.insertTpmSchedule(tpmSchedule));
     }
@@ -71,7 +72,7 @@ public class TpmScheduleController extends BaseController
     @PreAuthorize("@ss.hasPermi('tpm:schedule:edit')")
     @Log(title = "排课管理", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody TpmSchedule tpmSchedule)
+    public AjaxResult edit(@Validated @RequestBody TpmSchedule tpmSchedule)
     {
         return toAjax(tpmScheduleService.updateTpmSchedule(tpmSchedule));
     }

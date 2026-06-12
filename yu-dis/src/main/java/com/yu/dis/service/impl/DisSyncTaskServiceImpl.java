@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.dis.mapper.DisSyncTaskMapper;
 import com.yu.dis.domain.DisSyncTask;
 import com.yu.dis.service.IDisSyncTaskService;
@@ -32,6 +33,7 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
         return disSyncTaskMapper.selectDisSyncTaskList(disSyncTask);
     }
 
+    @Transactional
     @Override
     public int insertDisSyncTask(DisSyncTask disSyncTask)
     {
@@ -39,6 +41,7 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
         return disSyncTaskMapper.insertDisSyncTask(disSyncTask);
     }
 
+    @Transactional
     @Override
     public int updateDisSyncTask(DisSyncTask disSyncTask)
     {
@@ -46,12 +49,14 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
         return disSyncTaskMapper.updateDisSyncTask(disSyncTask);
     }
 
+    @Transactional
     @Override
     public int deleteDisSyncTaskByTaskId(Long taskId)
     {
         return disSyncTaskMapper.deleteDisSyncTaskByTaskId(taskId);
     }
 
+    @Transactional
     @Override
     public int deleteDisSyncTaskByTaskIds(Long[] taskIds)
     {

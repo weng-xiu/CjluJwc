@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.dis.mapper.DisExternalSystemMapper;
 import com.yu.dis.domain.DisExternalSystem;
 import com.yu.dis.service.IDisExternalSystemService;
@@ -32,6 +33,7 @@ public class DisExternalSystemServiceImpl implements IDisExternalSystemService
         return disExternalSystemMapper.selectDisExternalSystemList(disExternalSystem);
     }
 
+    @Transactional
     @Override
     public int insertDisExternalSystem(DisExternalSystem disExternalSystem)
     {
@@ -39,6 +41,7 @@ public class DisExternalSystemServiceImpl implements IDisExternalSystemService
         return disExternalSystemMapper.insertDisExternalSystem(disExternalSystem);
     }
 
+    @Transactional
     @Override
     public int updateDisExternalSystem(DisExternalSystem disExternalSystem)
     {
@@ -46,12 +49,14 @@ public class DisExternalSystemServiceImpl implements IDisExternalSystemService
         return disExternalSystemMapper.updateDisExternalSystem(disExternalSystem);
     }
 
+    @Transactional
     @Override
     public int deleteDisExternalSystemBySystemId(Long systemId)
     {
         return disExternalSystemMapper.deleteDisExternalSystemBySystemId(systemId);
     }
 
+    @Transactional
     @Override
     public int deleteDisExternalSystemBySystemIds(Long[] systemIds)
     {

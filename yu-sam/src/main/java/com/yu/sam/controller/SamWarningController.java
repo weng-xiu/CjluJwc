@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -44,12 +45,12 @@ public class SamWarningController extends BaseController
     @PreAuthorize("@ss.hasPermi('sam:warning:add')")
     @Log(title = "学籍预警", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody SamWarning samWarning) { return toAjax(samWarningService.insertSamWarning(samWarning)); }
+    public AjaxResult add(@Validated @RequestBody SamWarning samWarning) { return toAjax(samWarningService.insertSamWarning(samWarning)); }
 
     @PreAuthorize("@ss.hasPermi('sam:warning:edit')")
     @Log(title = "学籍预警", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody SamWarning samWarning) { return toAjax(samWarningService.updateSamWarning(samWarning)); }
+    public AjaxResult edit(@Validated @RequestBody SamWarning samWarning) { return toAjax(samWarningService.updateSamWarning(samWarning)); }
 
     @PreAuthorize("@ss.hasPermi('sam:warning:remove')")
     @Log(title = "学籍预警", businessType = BusinessType.DELETE)

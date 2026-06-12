@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -63,7 +64,7 @@ public class AemEvaluationQuestionController extends BaseController
     @PreAuthorize("@ss.hasPermi('aem:question:add')")
     @Log(title = "评教问题", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody AemEvaluationQuestion aemEvaluationQuestion)
+    public AjaxResult add(@Validated @RequestBody AemEvaluationQuestion aemEvaluationQuestion)
     {
         return toAjax(aemEvaluationQuestionService.insertAemEvaluationQuestion(aemEvaluationQuestion));
     }
@@ -71,7 +72,7 @@ public class AemEvaluationQuestionController extends BaseController
     @PreAuthorize("@ss.hasPermi('aem:question:edit')")
     @Log(title = "评教问题", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody AemEvaluationQuestion aemEvaluationQuestion)
+    public AjaxResult edit(@Validated @RequestBody AemEvaluationQuestion aemEvaluationQuestion)
     {
         return toAjax(aemEvaluationQuestionService.updateAemEvaluationQuestion(aemEvaluationQuestion));
     }

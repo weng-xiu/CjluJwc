@@ -1,5 +1,8 @@
 package com.yu.sam.domain;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -66,12 +69,17 @@ public class SamCertificate extends BaseEntity
     public Long getCertId() { return certId; }
     public void setCertId(Long certId) { this.certId = certId; }
 
+    @NotNull(message = "学生ID不能为空")
     public Long getStudentId() { return studentId; }
     public void setStudentId(Long studentId) { this.studentId = studentId; }
 
+    @NotBlank(message = "证书类型不能为空")
+    @Size(min = 0, max = 1, message = "证书类型长度不能超过1个字符")
     public String getCertType() { return certType; }
     public void setCertType(String certType) { this.certType = certType; }
 
+    @NotBlank(message = "证书编号不能为空")
+    @Size(min = 0, max = 50, message = "证书编号长度不能超过50个字符")
     public String getCertNumber() { return certNumber; }
     public void setCertNumber(String certNumber) { this.certNumber = certNumber; }
 

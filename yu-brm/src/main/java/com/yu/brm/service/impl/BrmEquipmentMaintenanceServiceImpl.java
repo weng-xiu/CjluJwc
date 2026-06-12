@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.brm.mapper.BrmEquipmentMaintenanceMapper;
 import com.yu.brm.domain.BrmEquipmentMaintenance;
 import com.yu.brm.service.IBrmEquipmentMaintenanceService;
@@ -33,6 +34,7 @@ public class BrmEquipmentMaintenanceServiceImpl implements IBrmEquipmentMaintena
     }
 
     @Override
+    @Transactional
     public int insertBrmEquipmentMaintenance(BrmEquipmentMaintenance brmEquipmentMaintenance)
     {
         brmEquipmentMaintenance.setCreateTime(DateUtils.getNowDate());
@@ -40,6 +42,7 @@ public class BrmEquipmentMaintenanceServiceImpl implements IBrmEquipmentMaintena
     }
 
     @Override
+    @Transactional
     public int updateBrmEquipmentMaintenance(BrmEquipmentMaintenance brmEquipmentMaintenance)
     {
         brmEquipmentMaintenance.setUpdateTime(DateUtils.getNowDate());
@@ -47,12 +50,14 @@ public class BrmEquipmentMaintenanceServiceImpl implements IBrmEquipmentMaintena
     }
 
     @Override
+    @Transactional
     public int deleteBrmEquipmentMaintenanceByMaintenanceId(Long maintenanceId)
     {
         return brmEquipmentMaintenanceMapper.deleteBrmEquipmentMaintenanceByMaintenanceId(maintenanceId);
     }
 
     @Override
+    @Transactional
     public int deleteBrmEquipmentMaintenanceByMaintenanceIds(Long[] maintenanceIds)
     {
         return brmEquipmentMaintenanceMapper.deleteBrmEquipmentMaintenanceByMaintenanceIds(maintenanceIds);

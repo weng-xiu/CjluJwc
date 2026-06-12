@@ -1,5 +1,8 @@
 package com.yu.aem.domain;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -73,12 +76,15 @@ public class AemGradeReview extends BaseEntity
     public Long getReviewId() { return reviewId; }
     public void setReviewId(Long reviewId) { this.reviewId = reviewId; }
 
+    @NotNull(message = "成绩ID不能为空")
     public Long getGradeId() { return gradeId; }
     public void setGradeId(Long gradeId) { this.gradeId = gradeId; }
 
+    @NotNull(message = "学生ID不能为空")
     public Long getStudentId() { return studentId; }
     public void setStudentId(Long studentId) { this.studentId = studentId; }
 
+    @NotNull(message = "课程ID不能为空")
     public Long getCourseId() { return courseId; }
     public void setCourseId(Long courseId) { this.courseId = courseId; }
 
@@ -88,6 +94,8 @@ public class AemGradeReview extends BaseEntity
     public Double getNewScore() { return newScore; }
     public void setNewScore(Double newScore) { this.newScore = newScore; }
 
+    @NotBlank(message = "复核原因不能为空")
+    @Size(min = 0, max = 500, message = "复核原因长度不能超过500个字符")
     public String getReviewReason() { return reviewReason; }
     public void setReviewReason(String reviewReason) { this.reviewReason = reviewReason; }
 
@@ -103,6 +111,7 @@ public class AemGradeReview extends BaseEntity
     public Date getApproveTime() { return approveTime; }
     public void setApproveTime(Date approveTime) { this.approveTime = approveTime; }
 
+    @Size(min = 0, max = 500, message = "审批意见长度不能超过500个字符")
     public String getApproveOpinion() { return approveOpinion; }
     public void setApproveOpinion(String approveOpinion) { this.approveOpinion = approveOpinion; }
 

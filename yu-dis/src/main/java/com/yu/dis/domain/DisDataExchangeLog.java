@@ -1,6 +1,9 @@
 package com.yu.dis.domain;
 
 import java.util.Date;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -70,15 +73,21 @@ public class DisDataExchangeLog extends BaseEntity
     public Long getLogId() { return logId; }
     public void setLogId(Long logId) { this.logId = logId; }
 
+    @NotNull(message = "外部系统ID不能为空")
     public Long getSystemId() { return systemId; }
     public void setSystemId(Long systemId) { this.systemId = systemId; }
 
+    @NotNull(message = "接口ID不能为空")
     public Long getInterfaceId() { return interfaceId; }
     public void setInterfaceId(Long interfaceId) { this.interfaceId = interfaceId; }
 
+    @NotBlank(message = "请求URL不能为空")
+    @Size(min = 0, max = 500, message = "请求URL长度不能超过500个字符")
     public String getRequestUrl() { return requestUrl; }
     public void setRequestUrl(String requestUrl) { this.requestUrl = requestUrl; }
 
+    @NotBlank(message = "请求方式不能为空")
+    @Size(min = 0, max = 10, message = "请求方式长度不能超过10个字符")
     public String getRequestMethod() { return requestMethod; }
     public void setRequestMethod(String requestMethod) { this.requestMethod = requestMethod; }
 
@@ -91,9 +100,12 @@ public class DisDataExchangeLog extends BaseEntity
     public Integer getResponseCode() { return responseCode; }
     public void setResponseCode(Integer responseCode) { this.responseCode = responseCode; }
 
+    @NotBlank(message = "执行状态不能为空")
+    @Size(min = 0, max = 1, message = "执行状态长度不能超过1个字符")
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
+    @Size(min = 0, max = 500, message = "错误消息长度不能超过500个字符")
     public String getErrorMsg() { return errorMsg; }
     public void setErrorMsg(String errorMsg) { this.errorMsg = errorMsg; }
 
@@ -103,6 +115,7 @@ public class DisDataExchangeLog extends BaseEntity
     public Long getCostTime() { return costTime; }
     public void setCostTime(Long costTime) { this.costTime = costTime; }
 
+    @Size(min = 0, max = 50, message = "操作人员长度不能超过50个字符")
     public String getOperator() { return operator; }
     public void setOperator(String operator) { this.operator = operator; }
 

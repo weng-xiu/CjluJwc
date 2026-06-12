@@ -1,6 +1,9 @@
 package com.yu.brm.domain;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.yu.common.annotation.Excel;
@@ -49,12 +52,16 @@ public class BrmTeacherPosition extends BaseEntity
     public Long getPosId() { return posId; }
     public void setPosId(Long posId) { this.posId = posId; }
 
+    @NotNull(message = "教师ID不能为空")
     public Long getTeacherId() { return teacherId; }
     public void setTeacherId(Long teacherId) { this.teacherId = teacherId; }
 
+    @NotNull(message = "任职院系不能为空")
     public Long getDeptId() { return deptId; }
     public void setDeptId(Long deptId) { this.deptId = deptId; }
 
+    @NotBlank(message = "任职岗位不能为空")
+    @Size(min = 0, max = 100, message = "任职岗位长度不能超过100个字符")
     public String getPositionTitle() { return positionTitle; }
     public void setPositionTitle(String positionTitle) { this.positionTitle = positionTitle; }
 

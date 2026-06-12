@@ -3,6 +3,7 @@ package com.yu.portal.controller;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.core.page.TableDataInfo;
 import com.yu.common.enums.BusinessType;
+import com.yu.common.utils.poi.ExcelUtil;
 import com.yu.aem.domain.AemGradeRecord;
 import com.yu.aem.domain.AemGradeStatistics;
 import com.yu.aem.service.IAemGradeRecordService;
@@ -45,6 +47,17 @@ public class PortalGradeController extends BaseController
         startPage();
         List<AemGradeRecord> list = aemGradeRecordService.selectAemGradeRecordList(aemGradeRecord);
         return getDataTable(list);
+    }
+
+    /** 学生端：成绩导出 */
+    @PreAuthorize("@ss.hasPermi('portal:grade:export')")
+    @Log(title = "个人成绩", businessType = BusinessType.EXPORT)
+    @PostMapping("/export")
+    public void export(HttpServletResponse response, AemGradeRecord aemGradeRecord)
+    {
+        List<AemGradeRecord> list = aemGradeRecordService.selectAemGradeRecordList(aemGradeRecord);
+        ExcelUtil<AemGradeRecord> util = new ExcelUtil<AemGradeRecord>(AemGradeRecord.class);
+        util.exportExcel(response, list, "个人成绩数据");
     }
 
     /** 教师端：成绩录入查询（教学班成绩列表） */

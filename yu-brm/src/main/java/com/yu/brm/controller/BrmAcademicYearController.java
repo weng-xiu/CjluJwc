@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -57,7 +58,7 @@ public class BrmAcademicYearController extends BaseController
     @PreAuthorize("@ss.hasPermi('brm:year:add')")
     @Log(title = "学年", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody BrmAcademicYear brmAcademicYear)
+    public AjaxResult add(@Validated @RequestBody BrmAcademicYear brmAcademicYear)
     {
         return toAjax(brmAcademicYearService.insertBrmAcademicYear(brmAcademicYear));
     }
@@ -65,7 +66,7 @@ public class BrmAcademicYearController extends BaseController
     @PreAuthorize("@ss.hasPermi('brm:year:edit')")
     @Log(title = "学年", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody BrmAcademicYear brmAcademicYear)
+    public AjaxResult edit(@Validated @RequestBody BrmAcademicYear brmAcademicYear)
     {
         return toAjax(brmAcademicYearService.updateBrmAcademicYear(brmAcademicYear));
     }

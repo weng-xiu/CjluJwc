@@ -76,4 +76,12 @@
         delete from brm_semester where semester_id in
         <foreach item="semesterId" collection="array" open="(" separator="," close=")">#{semesterId}</foreach>
     </delete>
+
+    <select id="checkSemesterHasExamPlan" parameterType="Long" resultType="int">
+        select count(1) from aem_exam_plan where semester_id = #{semesterId}
+    </select>
+
+    <select id="checkSemesterHasCourseOffering" parameterType="Long" resultType="int">
+        select count(1) from tpm_course_offering where semester_id = #{semesterId}
+    </select>
 </mapper>

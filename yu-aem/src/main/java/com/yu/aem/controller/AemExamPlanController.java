@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -63,7 +64,7 @@ public class AemExamPlanController extends BaseController
     @PreAuthorize("@ss.hasPermi('aem:examPlan:add')")
     @Log(title = "考试安排", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody AemExamPlan aemExamPlan)
+    public AjaxResult add(@Validated @RequestBody AemExamPlan aemExamPlan)
     {
         return toAjax(aemExamPlanService.insertAemExamPlan(aemExamPlan));
     }
@@ -71,7 +72,7 @@ public class AemExamPlanController extends BaseController
     @PreAuthorize("@ss.hasPermi('aem:examPlan:edit')")
     @Log(title = "考试安排", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody AemExamPlan aemExamPlan)
+    public AjaxResult edit(@Validated @RequestBody AemExamPlan aemExamPlan)
     {
         return toAjax(aemExamPlanService.updateAemExamPlan(aemExamPlan));
     }

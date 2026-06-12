@@ -1,6 +1,7 @@
 package com.yu.tpm.domain;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -51,6 +52,7 @@ public class TpmSelectionRule extends BaseEntity
     public Long getRuleId() { return ruleId; }
     public void setRuleId(Long ruleId) { this.ruleId = ruleId; }
 
+    @NotNull(message = "轮次ID不能为空")
     public Long getRoundId() { return roundId; }
     public void setRoundId(Long roundId) { this.roundId = roundId; }
 

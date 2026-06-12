@@ -1,6 +1,7 @@
 package com.yu.tpm.domain;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -85,6 +86,7 @@ public class TpmScheduleAdjustment extends BaseEntity
     public Long getAdjustId() { return adjustId; }
     public void setAdjustId(Long adjustId) { this.adjustId = adjustId; }
 
+    @NotNull(message = "排课ID不能为空")
     public Long getScheduleId() { return scheduleId; }
     public void setScheduleId(Long scheduleId) { this.scheduleId = scheduleId; }
 
@@ -111,6 +113,8 @@ public class TpmScheduleAdjustment extends BaseEntity
     public Integer getNewEndPeriod() { return newEndPeriod; }
     public void setNewEndPeriod(Integer newEndPeriod) { this.newEndPeriod = newEndPeriod; }
 
+    @NotBlank(message = "申请原因不能为空")
+    @Size(min = 0, max = 500, message = "申请原因长度不能超过500个字符")
     public String getReason() { return reason; }
     public void setReason(String reason) { this.reason = reason; }
 

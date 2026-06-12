@@ -31,7 +31,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="noticeTitle != null and noticeTitle.trim() != ''"> and notice_title like concat('%', #{noticeTitle}, '%')</if>
             <if test="noticeType != null and noticeType.trim() != ''"> and notice_type = #{noticeType}</if>
             <if test="publishStatus != null and publishStatus.trim() != ''"> and publish_status = #{publishStatus}</if>
+            <if test="publishDeptName != null and publishDeptName.trim() != ''"> and publish_dept_name like concat('%', #{publishDeptName}, '%')</if>
             <if test="targetRole != null and targetRole.trim() != ''"> and (target_role = '0' or target_role = #{targetRole})</if>
+            <if test="isTop != null and isTop.trim() != ''"> and is_top = #{isTop}</if>
             <if test="status != null and status.trim() != ''"> and status = #{status}</if>
         </where>
         order by is_top desc, publish_date desc, create_time desc

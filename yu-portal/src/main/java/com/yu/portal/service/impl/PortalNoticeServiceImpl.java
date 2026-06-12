@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.portal.mapper.PortalNoticeMapper;
 import com.yu.portal.domain.PortalNotice;
 import com.yu.portal.service.IPortalNoticeService;
@@ -32,6 +33,7 @@ public class PortalNoticeServiceImpl implements IPortalNoticeService
         return portalNoticeMapper.selectPortalNoticeList(portalNotice);
     }
 
+    @Transactional
     @Override
     public int insertPortalNotice(PortalNotice portalNotice)
     {
@@ -39,6 +41,7 @@ public class PortalNoticeServiceImpl implements IPortalNoticeService
         return portalNoticeMapper.insertPortalNotice(portalNotice);
     }
 
+    @Transactional
     @Override
     public int updatePortalNotice(PortalNotice portalNotice)
     {
@@ -46,12 +49,14 @@ public class PortalNoticeServiceImpl implements IPortalNoticeService
         return portalNoticeMapper.updatePortalNotice(portalNotice);
     }
 
+    @Transactional
     @Override
     public int deletePortalNoticeByNoticeId(Long noticeId)
     {
         return portalNoticeMapper.deletePortalNoticeByNoticeId(noticeId);
     }
 
+    @Transactional
     @Override
     public int deletePortalNoticeByNoticeIds(Long[] noticeIds)
     {

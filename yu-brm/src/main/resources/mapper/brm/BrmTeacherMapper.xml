@@ -48,12 +48,17 @@
     </resultMap>
     <sql id="selectBrmTeacherVo">select teacher_id, teacher_code, teacher_name, dept_id, gender, phone, email, title, education, status, create_by, create_time, update_by, update_time, remark from brm_teacher</sql>
     <select id="selectBrmTeacherList" parameterType="BrmTeacher" resultMap="BrmTeacherResult">
-        <include refid="selectBrmTeacherVo"/><where>
-            <if test="teacherName != null and teacherName.trim() != ''"> and teacher_name like concat('%', #{teacherName}, '%')</if>
-            <if test="teacherCode != null and teacherCode.trim() != ''"> and teacher_code like concat('%', #{teacherCode}, '%')</if>
-            <if test="deptId != null"> and dept_id = #{deptId}</if>
-            <if test="title != null and title.trim() != ''"> and title = #{title}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        select t.teacher_id, t.teacher_code, t.teacher_name, t.dept_id, t.gender, t.phone, t.email, t.title, t.education, t.status, t.create_by, t.create_time, t.update_by, t.update_time, t.remark
+        from brm_teacher t
+        left join sys_dept d on t.dept_id = d.dept_id
+        <where>
+            <if test="teacherName != null and teacherName.trim() != ''"> and t.teacher_name like concat('%', #{teacherName}, '%')</if>
+            <if test="teacherCode != null and teacherCode.trim() != ''"> and t.teacher_code like concat('%', #{teacherCode}, '%')</if>
+            <if test="deptId != null"> and t.dept_id = #{deptId}</if>
+            <if test="title != null and title.trim() != ''"> and t.title = #{title}</if>
+            <if test="status != null and status.trim() != ''"> and t.status = #{status}</if>
+            <!-- 数据范围过滤 -->
+            ${params.dataScope}
         </where>
     </select>
     <select id="selectBrmTeacherByTeacherId" parameterType="Long" resultMap="BrmTeacherResult"><include refid="selectBrmTeacherVo"/> where teacher_id = #{teacherId}</select>

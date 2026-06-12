@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.tpm.mapper.TpmScheduleMapper;
 import com.yu.tpm.domain.TpmSchedule;
 import com.yu.tpm.service.ITpmScheduleService;
@@ -32,6 +33,7 @@ public class TpmScheduleServiceImpl implements ITpmScheduleService
         return tpmScheduleMapper.selectTpmScheduleList(tpmSchedule);
     }
 
+    @Transactional
     @Override
     public int insertTpmSchedule(TpmSchedule tpmSchedule)
     {
@@ -39,6 +41,7 @@ public class TpmScheduleServiceImpl implements ITpmScheduleService
         return tpmScheduleMapper.insertTpmSchedule(tpmSchedule);
     }
 
+    @Transactional
     @Override
     public int updateTpmSchedule(TpmSchedule tpmSchedule)
     {
@@ -46,12 +49,14 @@ public class TpmScheduleServiceImpl implements ITpmScheduleService
         return tpmScheduleMapper.updateTpmSchedule(tpmSchedule);
     }
 
+    @Transactional
     @Override
     public int deleteTpmScheduleByScheduleId(Long scheduleId)
     {
         return tpmScheduleMapper.deleteTpmScheduleByScheduleId(scheduleId);
     }
 
+    @Transactional
     @Override
     public int deleteTpmScheduleByScheduleIds(Long[] scheduleIds)
     {

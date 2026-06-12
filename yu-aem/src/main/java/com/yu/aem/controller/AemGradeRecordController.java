@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -63,7 +64,7 @@ public class AemGradeRecordController extends BaseController
     @PreAuthorize("@ss.hasPermi('aem:gradeRecord:add')")
     @Log(title = "成绩记录", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody AemGradeRecord aemGradeRecord)
+    public AjaxResult add(@Validated @RequestBody AemGradeRecord aemGradeRecord)
     {
         return toAjax(aemGradeRecordService.insertAemGradeRecord(aemGradeRecord));
     }
@@ -71,7 +72,7 @@ public class AemGradeRecordController extends BaseController
     @PreAuthorize("@ss.hasPermi('aem:gradeRecord:edit')")
     @Log(title = "成绩记录", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody AemGradeRecord aemGradeRecord)
+    public AjaxResult edit(@Validated @RequestBody AemGradeRecord aemGradeRecord)
     {
         return toAjax(aemGradeRecordService.updateAemGradeRecord(aemGradeRecord));
     }

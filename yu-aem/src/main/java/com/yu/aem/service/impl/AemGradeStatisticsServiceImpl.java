@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.aem.mapper.AemGradeStatisticsMapper;
 import com.yu.aem.domain.AemGradeStatistics;
 import com.yu.aem.service.IAemGradeStatisticsService;
@@ -33,6 +34,7 @@ public class AemGradeStatisticsServiceImpl implements IAemGradeStatisticsService
     }
 
     @Override
+    @Transactional
     public int insertAemGradeStatistics(AemGradeStatistics aemGradeStatistics)
     {
         aemGradeStatistics.setCreateTime(DateUtils.getNowDate());
@@ -40,12 +42,14 @@ public class AemGradeStatisticsServiceImpl implements IAemGradeStatisticsService
     }
 
     @Override
+    @Transactional
     public int deleteAemGradeStatisticsByStatId(Long statId)
     {
         return aemGradeStatisticsMapper.deleteAemGradeStatisticsByStatId(statId);
     }
 
     @Override
+    @Transactional
     public int deleteAemGradeStatisticsByStatIds(Long[] statIds)
     {
         return aemGradeStatisticsMapper.deleteAemGradeStatisticsByStatIds(statIds);

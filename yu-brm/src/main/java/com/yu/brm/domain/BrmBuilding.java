@@ -1,6 +1,7 @@
 package com.yu.brm.domain;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -48,9 +49,12 @@ public class BrmBuilding extends BaseEntity
     public String getBuildingName() { return buildingName; }
     public void setBuildingName(String buildingName) { this.buildingName = buildingName; }
 
+    @NotBlank(message = "教学楼编码不能为空")
+    @Size(min = 0, max = 50, message = "教学楼编码长度不能超过50个字符")
     public String getBuildingCode() { return buildingCode; }
     public void setBuildingCode(String buildingCode) { this.buildingCode = buildingCode; }
 
+    @NotNull(message = "所属校区不能为空")
     public Long getCampusId() { return campusId; }
     public void setCampusId(Long campusId) { this.campusId = campusId; }
 

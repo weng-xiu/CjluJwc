@@ -1,5 +1,6 @@
 package com.yu.sam.domain;
 
+import jakarta.validation.constraints.NotNull;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -73,6 +74,7 @@ public class SamGraduationReview extends BaseEntity
     public Long getReviewId() { return reviewId; }
     public void setReviewId(Long reviewId) { this.reviewId = reviewId; }
 
+    @NotNull(message = "学生ID不能为空")
     public Long getStudentId() { return studentId; }
     public void setStudentId(Long studentId) { this.studentId = studentId; }
 

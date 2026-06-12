@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.tpm.mapper.TpmScheduleAdjustmentMapper;
 import com.yu.tpm.domain.TpmScheduleAdjustment;
 import com.yu.tpm.service.ITpmScheduleAdjustmentService;
@@ -32,6 +33,7 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
         return tpmScheduleAdjustmentMapper.selectTpmScheduleAdjustmentList(tpmScheduleAdjustment);
     }
 
+    @Transactional
     @Override
     public int insertTpmScheduleAdjustment(TpmScheduleAdjustment tpmScheduleAdjustment)
     {
@@ -39,6 +41,7 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
         return tpmScheduleAdjustmentMapper.insertTpmScheduleAdjustment(tpmScheduleAdjustment);
     }
 
+    @Transactional
     @Override
     public int updateTpmScheduleAdjustment(TpmScheduleAdjustment tpmScheduleAdjustment)
     {
@@ -46,12 +49,14 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
         return tpmScheduleAdjustmentMapper.updateTpmScheduleAdjustment(tpmScheduleAdjustment);
     }
 
+    @Transactional
     @Override
     public int deleteTpmScheduleAdjustmentByAdjustId(Long adjustId)
     {
         return tpmScheduleAdjustmentMapper.deleteTpmScheduleAdjustmentByAdjustId(adjustId);
     }
 
+    @Transactional
     @Override
     public int deleteTpmScheduleAdjustmentByAdjustIds(Long[] adjustIds)
     {

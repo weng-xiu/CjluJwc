@@ -2,6 +2,7 @@ package com.yu.dis.domain;
 
 import java.util.Date;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -76,9 +77,11 @@ public class DisSyncTask extends BaseEntity
     public String getTaskCode() { return taskCode; }
     public void setTaskCode(String taskCode) { this.taskCode = taskCode; }
 
+    @NotNull(message = "外部系统ID不能为空")
     public Long getSystemId() { return systemId; }
     public void setSystemId(Long systemId) { this.systemId = systemId; }
 
+    @NotNull(message = "接口ID不能为空")
     public Long getInterfaceId() { return interfaceId; }
     public void setInterfaceId(Long interfaceId) { this.interfaceId = interfaceId; }
 
@@ -98,6 +101,7 @@ public class DisSyncTask extends BaseEntity
     public Integer getFailCount() { return failCount; }
     public void setFailCount(Integer failCount) { this.failCount = failCount; }
 
+    @Size(min = 0, max = 1, message = "状态长度不能超过1个字符")
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 

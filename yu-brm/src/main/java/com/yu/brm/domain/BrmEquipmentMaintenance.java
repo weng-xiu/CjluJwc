@@ -3,6 +3,7 @@ package com.yu.brm.domain;
 import java.math.BigDecimal;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -55,6 +56,7 @@ public class BrmEquipmentMaintenance extends BaseEntity
     public Long getMaintenanceId() { return maintenanceId; }
     public void setMaintenanceId(Long maintenanceId) { this.maintenanceId = maintenanceId; }
 
+    @NotNull(message = "设备ID不能为空")
     public Long getEquipId() { return equipId; }
     public void setEquipId(Long equipId) { this.equipId = equipId; }
 

@@ -27,13 +27,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select grade_id, student_id, course_id, semester_id, exam_type, regular_score, exam_score, total_score, grade_point, grade_level, is_pass, is_reviewed, status, create_by, create_time, update_by, update_time, remark from aem_grade_record
     </sql>
     <select id="selectAemGradeRecordList" parameterType="AemGradeRecord" resultMap="AemGradeRecordResult">
-        <include refid="selectAemGradeRecordVo"/>
+        select gr.grade_id, gr.student_id, gr.course_id, gr.semester_id, gr.exam_type, gr.regular_score, gr.exam_score, gr.total_score, gr.grade_point, gr.grade_level, gr.is_pass, gr.is_reviewed, gr.status, gr.create_by, gr.create_time, gr.update_by, gr.update_time, gr.remark
+        from aem_grade_record gr
+        left join sam_student ss on gr.student_id = ss.student_id
+        left join sys_dept d on ss.dept_id = d.dept_id
         <where>
-            <if test="studentId != null"> and student_id = #{studentId}</if>
-            <if test="courseId != null"> and course_id = #{courseId}</if>
-            <if test="semesterId != null"> and semester_id = #{semesterId}</if>
-            <if test="examType != null and examType.trim() != ''"> and exam_type = #{examType}</if>
-            <if test="isPass != null and isPass.trim() != ''"> and is_pass = #{isPass}</if>
+            <if test="studentId != null"> and gr.student_id = #{studentId}</if>
+            <if test="courseId != null"> and gr.course_id = #{courseId}</if>
+            <if test="semesterId != null"> and gr.semester_id = #{semesterId}</if>
+            <if test="examType != null and examType.trim() != ''"> and gr.exam_type = #{examType}</if>
+            <if test="gradeLevel != null and gradeLevel.trim() != ''"> and gr.grade_level = #{gradeLevel}</if>
+            <if test="isPass != null and isPass.trim() != ''"> and gr.is_pass = #{isPass}</if>
+            <if test="isReviewed != null and isReviewed.trim() != ''"> and gr.is_reviewed = #{isReviewed}</if>
+            <if test="status != null and status.trim() != ''"> and gr.status = #{status}</if>
+            <!-- 数据范围过滤 -->
+            ${params.dataScope}
         </where>
     </select>
     <select id="selectAemGradeRecordByGradeId" parameterType="Long" resultMap="AemGradeRecordResult">

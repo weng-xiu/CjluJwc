@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -57,7 +58,7 @@ public class DisInterfaceConfigController extends BaseController
     @PreAuthorize("@ss.hasPermi('dis:interface:add')")
     @Log(title = "接口配置", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody DisInterfaceConfig disInterfaceConfig)
+    public AjaxResult add(@Validated @RequestBody DisInterfaceConfig disInterfaceConfig)
     {
         return toAjax(disInterfaceConfigService.insertDisInterfaceConfig(disInterfaceConfig));
     }
@@ -65,7 +66,7 @@ public class DisInterfaceConfigController extends BaseController
     @PreAuthorize("@ss.hasPermi('dis:interface:edit')")
     @Log(title = "接口配置", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody DisInterfaceConfig disInterfaceConfig)
+    public AjaxResult edit(@Validated @RequestBody DisInterfaceConfig disInterfaceConfig)
     {
         return toAjax(disInterfaceConfigService.updateDisInterfaceConfig(disInterfaceConfig));
     }

@@ -26,13 +26,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select exam_id, exam_name, semester_id, exam_type, course_id, exam_date, start_time, end_time, duration, total_students, plan_status, status, create_by, create_time, update_by, update_time, remark from aem_exam_plan
     </sql>
     <select id="selectAemExamPlanList" parameterType="AemExamPlan" resultMap="AemExamPlanResult">
-        <include refid="selectAemExamPlanVo"/>
+        select ep.exam_id, ep.exam_name, ep.semester_id, ep.exam_type, ep.course_id, ep.exam_date, ep.start_time, ep.end_time, ep.duration, ep.total_students, ep.plan_status, ep.status, ep.create_by, ep.create_time, ep.update_by, ep.update_time, ep.remark
+        from aem_exam_plan ep
+        left join tpm_course_library cl on ep.course_id = cl.course_id
+        left join tpm_training_plan tp on cl.plan_id = tp.plan_id
+        left join sys_dept d on tp.dept_id = d.dept_id
         <where>
-            <if test="examName != null and examName.trim() != ''"> and exam_name like concat('%', #{examName}, '%')</if>
-            <if test="semesterId != null"> and semester_id = #{semesterId}</if>
-            <if test="examType != null and examType.trim() != ''"> and exam_type = #{examType}</if>
-            <if test="courseId != null"> and course_id = #{courseId}</if>
-            <if test="planStatus != null and planStatus.trim() != ''"> and plan_status = #{planStatus}</if>
+            <if test="examName != null and examName.trim() != ''"> and ep.exam_name like concat('%', #{examName}, '%')</if>
+            <if test="semesterId != null"> and ep.semester_id = #{semesterId}</if>
+            <if test="examType != null and examType.trim() != ''"> and ep.exam_type = #{examType}</if>
+            <if test="courseId != null"> and ep.course_id = #{courseId}</if>
+            <if test="planStatus != null and planStatus.trim() != ''"> and ep.plan_status = #{planStatus}</if>
+            <!-- 数据范围过滤 -->
+            ${params.dataScope}
         </where>
     </select>
     <select id="selectAemExamPlanByExamId" parameterType="Long" resultMap="AemExamPlanResult">

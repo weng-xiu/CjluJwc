@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.tpm.mapper.TpmCreditStructureMapper;
 import com.yu.tpm.domain.TpmCreditStructure;
 import com.yu.tpm.service.ITpmCreditStructureService;
@@ -32,6 +33,7 @@ public class TpmCreditStructureServiceImpl implements ITpmCreditStructureService
         return tpmCreditStructureMapper.selectTpmCreditStructureList(tpmCreditStructure);
     }
 
+    @Transactional
     @Override
     public int insertTpmCreditStructure(TpmCreditStructure tpmCreditStructure)
     {
@@ -39,6 +41,7 @@ public class TpmCreditStructureServiceImpl implements ITpmCreditStructureService
         return tpmCreditStructureMapper.insertTpmCreditStructure(tpmCreditStructure);
     }
 
+    @Transactional
     @Override
     public int updateTpmCreditStructure(TpmCreditStructure tpmCreditStructure)
     {
@@ -46,12 +49,14 @@ public class TpmCreditStructureServiceImpl implements ITpmCreditStructureService
         return tpmCreditStructureMapper.updateTpmCreditStructure(tpmCreditStructure);
     }
 
+    @Transactional
     @Override
     public int deleteTpmCreditStructureByStructId(Long structId)
     {
         return tpmCreditStructureMapper.deleteTpmCreditStructureByStructId(structId);
     }
 
+    @Transactional
     @Override
     public int deleteTpmCreditStructureByStructIds(Long[] structIds)
     {

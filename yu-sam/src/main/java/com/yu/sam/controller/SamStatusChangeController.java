@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -44,12 +45,12 @@ public class SamStatusChangeController extends BaseController
     @PreAuthorize("@ss.hasPermi('sam:statusChange:add')")
     @Log(title = "学籍异动", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody SamStatusChange samStatusChange) { return toAjax(samStatusChangeService.insertSamStatusChange(samStatusChange)); }
+    public AjaxResult add(@Validated @RequestBody SamStatusChange samStatusChange) { return toAjax(samStatusChangeService.insertSamStatusChange(samStatusChange)); }
 
     @PreAuthorize("@ss.hasPermi('sam:statusChange:edit')")
     @Log(title = "学籍异动", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody SamStatusChange samStatusChange) { return toAjax(samStatusChangeService.updateSamStatusChange(samStatusChange)); }
+    public AjaxResult edit(@Validated @RequestBody SamStatusChange samStatusChange) { return toAjax(samStatusChangeService.updateSamStatusChange(samStatusChange)); }
 
     @PreAuthorize("@ss.hasPermi('sam:statusChange:remove')")
     @Log(title = "学籍异动", businessType = BusinessType.DELETE)

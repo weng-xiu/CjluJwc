@@ -1,6 +1,7 @@
 package com.yu.portal.controller;
 
 import java.util.List;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,6 +16,7 @@ import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.core.page.TableDataInfo;
 import com.yu.common.enums.BusinessType;
+import com.yu.common.utils.poi.ExcelUtil;
 import com.yu.tpm.domain.TpmSelectionEnrollment;
 import com.yu.tpm.domain.TpmSelectionRound;
 import com.yu.tpm.service.ITpmSelectionEnrollmentService;
@@ -63,6 +65,17 @@ public class PortalSelectionController extends BaseController
     public AjaxResult enroll(@RequestBody TpmSelectionEnrollment tpmSelectionEnrollment)
     {
         return toAjax(tpmSelectionEnrollmentService.insertTpmSelectionEnrollment(tpmSelectionEnrollment));
+    }
+
+    /** 选课结果导出 */
+    @PreAuthorize("@ss.hasPermi('portal:selection:export')")
+    @Log(title = "选课记录", businessType = BusinessType.EXPORT)
+    @PostMapping("/export")
+    public void export(HttpServletResponse response, TpmSelectionEnrollment tpmSelectionEnrollment)
+    {
+        List<TpmSelectionEnrollment> list = tpmSelectionEnrollmentService.selectTpmSelectionEnrollmentList(tpmSelectionEnrollment);
+        ExcelUtil<TpmSelectionEnrollment> util = new ExcelUtil<TpmSelectionEnrollment>(TpmSelectionEnrollment.class);
+        util.exportExcel(response, list, "选课记录数据");
     }
 
     /** 学生退课 */

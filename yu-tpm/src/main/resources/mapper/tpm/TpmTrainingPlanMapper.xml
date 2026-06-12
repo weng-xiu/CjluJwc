@@ -25,14 +25,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select plan_id, plan_name, major_id, dept_id, education_level, plan_year, total_credits, publish_status, publish_date, version, status, create_by, create_time, update_by, update_time, remark from tpm_training_plan
     </sql>
     <select id="selectTpmTrainingPlanList" parameterType="TpmTrainingPlan" resultMap="TpmTrainingPlanResult">
-        <include refid="selectTpmTrainingPlanVo"/>
+        select tp.plan_id, tp.plan_name, tp.major_id, tp.dept_id, tp.education_level, tp.plan_year, tp.total_credits, tp.publish_status, tp.publish_date, tp.version, tp.status, tp.create_by, tp.create_time, tp.update_by, tp.update_time, tp.remark
+        from tpm_training_plan tp
+        left join sys_dept d on tp.dept_id = d.dept_id
         <where>
-            <if test="planName != null and planName.trim() != ''"> and plan_name like concat('%', #{planName}, '%')</if>
-            <if test="majorId != null"> and major_id = #{majorId}</if>
-            <if test="deptId != null"> and dept_id = #{deptId}</if>
-            <if test="educationLevel != null and educationLevel.trim() != ''"> and education_level = #{educationLevel}</if>
-            <if test="publishStatus != null and publishStatus.trim() != ''"> and publish_status = #{publishStatus}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            <if test="planName != null and planName.trim() != ''"> and tp.plan_name like concat('%', #{planName}, '%')</if>
+            <if test="majorId != null"> and tp.major_id = #{majorId}</if>
+            <if test="deptId != null"> and tp.dept_id = #{deptId}</if>
+            <if test="educationLevel != null and educationLevel.trim() != ''"> and tp.education_level = #{educationLevel}</if>
+            <if test="publishStatus != null and publishStatus.trim() != ''"> and tp.publish_status = #{publishStatus}</if>
+            <if test="status != null and status.trim() != ''"> and tp.status = #{status}</if>
+            <!-- 数据范围过滤 -->
+            ${params.dataScope}
         </where>
     </select>
     <select id="selectTpmTrainingPlanByPlanId" parameterType="Long" resultMap="TpmTrainingPlanResult">

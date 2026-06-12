@@ -17,4 +17,9 @@ public interface SamStudentMapper
     public int updateSamStudent(SamStudent samStudent);
     public int deleteSamStudentByStudentId(Long studentId);
     public int deleteSamStudentByStudentIds(Long[] studentIds);
+
+    /**
+     * 检查学生是否存在成绩记录
+     */
+    public int checkStudentHasGradeRecord(Long studentId);
 }

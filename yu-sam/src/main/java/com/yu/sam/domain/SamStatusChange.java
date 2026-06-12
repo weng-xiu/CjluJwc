@@ -1,5 +1,8 @@
 package com.yu.sam.domain;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -74,9 +77,12 @@ public class SamStatusChange extends BaseEntity
     public Long getChangeId() { return changeId; }
     public void setChangeId(Long changeId) { this.changeId = changeId; }
 
+    @NotNull(message = "学生ID不能为空")
     public Long getStudentId() { return studentId; }
     public void setStudentId(Long studentId) { this.studentId = studentId; }
 
+    @NotBlank(message = "异动类型不能为空")
+    @Size(min = 0, max = 1, message = "异动类型长度不能超过1个字符")
     public String getChangeType() { return changeType; }
     public void setChangeType(String changeType) { this.changeType = changeType; }
 
@@ -89,6 +95,7 @@ public class SamStatusChange extends BaseEntity
     public String getNewStatus() { return newStatus; }
     public void setNewStatus(String newStatus) { this.newStatus = newStatus; }
 
+    @Size(min = 0, max = 500, message = "申请原因长度不能超过500个字符")
     public String getReason() { return reason; }
     public void setReason(String reason) { this.reason = reason; }
 

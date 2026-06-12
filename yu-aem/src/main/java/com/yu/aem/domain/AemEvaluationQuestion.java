@@ -1,6 +1,7 @@
 package com.yu.aem.domain;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -51,9 +52,12 @@ public class AemEvaluationQuestion extends BaseEntity
     public Long getQuestionId() { return questionId; }
     public void setQuestionId(Long questionId) { this.questionId = questionId; }
 
+    @NotNull(message = "问卷ID不能为空")
     public Long getQuestionnaireId() { return questionnaireId; }
     public void setQuestionnaireId(Long questionnaireId) { this.questionnaireId = questionnaireId; }
 
+    @NotBlank(message = "问题类型不能为空")
+    @Size(min = 0, max = 1, message = "问题类型长度不能超过1个字符")
     public String getQuestionType() { return questionType; }
     public void setQuestionType(String questionType) { this.questionType = questionType; }
 

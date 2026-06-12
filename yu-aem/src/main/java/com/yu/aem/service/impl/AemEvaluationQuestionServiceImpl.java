@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.yu.aem.mapper.AemEvaluationQuestionMapper;
 import com.yu.aem.domain.AemEvaluationQuestion;
 import com.yu.aem.service.IAemEvaluationQuestionService;
@@ -33,6 +34,7 @@ public class AemEvaluationQuestionServiceImpl implements IAemEvaluationQuestionS
     }
 
     @Override
+    @Transactional
     public int insertAemEvaluationQuestion(AemEvaluationQuestion aemEvaluationQuestion)
     {
         aemEvaluationQuestion.setCreateTime(DateUtils.getNowDate());
@@ -40,6 +42,7 @@ public class AemEvaluationQuestionServiceImpl implements IAemEvaluationQuestionS
     }
 
     @Override
+    @Transactional
     public int updateAemEvaluationQuestion(AemEvaluationQuestion aemEvaluationQuestion)
     {
         aemEvaluationQuestion.setUpdateTime(DateUtils.getNowDate());
@@ -47,12 +50,14 @@ public class AemEvaluationQuestionServiceImpl implements IAemEvaluationQuestionS
     }
 
     @Override
+    @Transactional
     public int deleteAemEvaluationQuestionByQuestionId(Long questionId)
     {
         return aemEvaluationQuestionMapper.deleteAemEvaluationQuestionByQuestionId(questionId);
     }
 
     @Override
+    @Transactional
     public int deleteAemEvaluationQuestionByQuestionIds(Long[] questionIds)
     {
         return aemEvaluationQuestionMapper.deleteAemEvaluationQuestionByQuestionIds(questionIds);

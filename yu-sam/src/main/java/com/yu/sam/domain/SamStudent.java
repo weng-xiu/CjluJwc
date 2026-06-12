@@ -1,6 +1,7 @@
 package com.yu.sam.domain;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -94,12 +95,15 @@ public class SamStudent extends BaseEntity
     public String getIdCard() { return idCard; }
     public void setIdCard(String idCard) { this.idCard = idCard; }
 
+    @NotNull(message = "专业ID不能为空")
     public Long getMajorId() { return majorId; }
     public void setMajorId(Long majorId) { this.majorId = majorId; }
 
+    @NotNull(message = "院系ID不能为空")
     public Long getDeptId() { return deptId; }
     public void setDeptId(Long deptId) { this.deptId = deptId; }
 
+    @NotNull(message = "班级ID不能为空")
     public Long getClassId() { return classId; }
     public void setClassId(Long classId) { this.classId = classId; }
 
