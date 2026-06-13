@@ -178,3 +178,9 @@ insert into sys_role_menu values('3', '2557');
 insert into sys_role_menu values('3', '2560');
 insert into sys_role_menu values('3', '2561');
 insert into sys_role_menu values('3', '2562');
+
+
+-- ----------------------------
+-- 8. 教师用户整合约束（确保一个用户只能对应一个教师记录）
+-- ----------------------------
+ALTER TABLE brm_teacher ADD UNIQUE KEY uk_user_id (user_id);

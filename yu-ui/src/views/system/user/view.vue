@@ -69,6 +69,38 @@
           </div>
         </el-col>
       </el-row>
+      <!-- 教师信息 -->
+      <div v-if="info.userCategory === 'teacher'">
+        <h4 class="section-header">教师信息</h4>
+        <el-row :gutter="20" class="mb8">
+          <el-col :span="12">
+            <div class="info-item">
+              <label class="info-label">教师工号：</label>
+              <span class="info-value plaintext">{{ info.teacherCode || '-' }}</span>
+            </div>
+          </el-col>
+          <el-col :span="12">
+            <div class="info-item">
+              <label class="info-label">职称：</label>
+              <span class="info-value plaintext">{{ info.title || '-' }}</span>
+            </div>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20" class="mb8">
+          <el-col :span="12">
+            <div class="info-item">
+              <label class="info-label">学历：</label>
+              <span class="info-value plaintext">{{ educationLabel }}</span>
+            </div>
+          </el-col>
+          <el-col :span="12">
+            <div class="info-item">
+              <label class="info-label">账号状态：</label>
+              <span class="info-value plaintext">{{ info.accountStatus || '-' }}</span>
+            </div>
+          </el-col>
+        </el-row>
+      </div>
       <!-- 其他信息 -->
       <h4 class="section-header">其他信息</h4>
       <el-row :gutter="20" class="mb8">
@@ -143,6 +175,10 @@ export default {
   computed: {
     sexLabel() {
       return this.selectDictLabel(this.dict.type.sys_user_sex, this.info.sex) || '-'
+    },
+    educationLabel() {
+      const map = { bachelor: '本科', master: '硕士', doctor: '博士', postdoctor: '博士后', other: '其他' }
+      return map[this.info.education] || this.info.education || '-'
     },
     postNames() {
       if (!this.postOptions.length) return ''

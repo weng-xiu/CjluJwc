@@ -6,11 +6,8 @@
         <h1 class="logo" @click="$router.push('/home')">师生互动服务门户</h1>
       </div>
       <div class="header-nav">
-        <div class="role-switch">
-          <el-radio-group v-model="activeRole" size="small" @change="onRoleChange">
-            <el-radio-button label="student">学生端</el-radio-button>
-            <el-radio-button label="teacher">教师端</el-radio-button>
-          </el-radio-group>
+        <div class="role-tag">
+          <el-tag size="small" type="info">{{ activeRole === 'student' ? '学生端' : '教师端' }}</el-tag>
         </div>
         <el-dropdown trigger="click" class="user-dropdown">
           <span class="user-info">
@@ -68,15 +65,15 @@
 export default {
   name: 'PortalLayout',
   data() {
-    return { activeRole: 'student' }
+    return {}
   },
   computed: {
     userName() { return this.$store.state.user.nickName || this.$store.state.user.name || '用户' },
     activeMenu() { return this.$route.path },
-    pageTitle() { return this.$route.meta?.title || '' }
+    pageTitle() { return this.$route.meta?.title || '' },
+    activeRole() { return this.$store.state.user.userCategory || 'student' }
   },
   methods: {
-    onRoleChange(role) { this.$router.push('/home') },
     handleMenuSelect() {},
     async handleLogout() {
       await this.$store.dispatch('LogOut')

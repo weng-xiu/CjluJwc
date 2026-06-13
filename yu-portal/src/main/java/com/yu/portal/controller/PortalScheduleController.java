@@ -36,7 +36,7 @@ public class PortalScheduleController extends BaseController
     }
 
     /** 教师端：查询个人课表 */
-    @PreAuthorize("@ss.hasPermi('portal:teacherSchedule:list')")
+    @PreAuthorize("@ss.hasPermi('portal:teacherSchedule:list') and @ss.hasAnyRoles('admin,teacher')")
     @GetMapping("/teacherList")
     public TableDataInfo teacherList(TpmSchedule tpmSchedule)
     {

@@ -39,7 +39,7 @@ public class PortalSelectionController extends BaseController
     private ITpmSelectionEnrollmentService tpmSelectionEnrollmentService;
 
     /** 选课轮次列表 */
-    @PreAuthorize("@ss.hasPermi('portal:selection:list')")
+    @PreAuthorize("@ss.hasPermi('portal:selection:list') and @ss.hasAnyRoles('admin,student')")
     @GetMapping("/roundList")
     public TableDataInfo roundList(TpmSelectionRound tpmSelectionRound)
     {
@@ -49,7 +49,7 @@ public class PortalSelectionController extends BaseController
     }
 
     /** 可选课程列表（选课名单） */
-    @PreAuthorize("@ss.hasPermi('portal:selection:query')")
+    @PreAuthorize("@ss.hasPermi('portal:selection:query') and @ss.hasAnyRoles('admin,student')")
     @GetMapping("/courseList")
     public TableDataInfo courseList(TpmSelectionEnrollment tpmSelectionEnrollment)
     {
@@ -59,7 +59,7 @@ public class PortalSelectionController extends BaseController
     }
 
     /** 学生选课 */
-    @PreAuthorize("@ss.hasPermi('portal:selection:enroll')")
+    @PreAuthorize("@ss.hasPermi('portal:selection:enroll') and @ss.hasAnyRoles('admin,student')")
     @Log(title = "选课操作", businessType = BusinessType.INSERT)
     @PostMapping("/enroll")
     public AjaxResult enroll(@RequestBody TpmSelectionEnrollment tpmSelectionEnrollment)
@@ -68,7 +68,7 @@ public class PortalSelectionController extends BaseController
     }
 
     /** 选课结果导出 */
-    @PreAuthorize("@ss.hasPermi('portal:selection:export')")
+    @PreAuthorize("@ss.hasPermi('portal:selection:export') and @ss.hasAnyRoles('admin,student')")
     @Log(title = "选课记录", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, TpmSelectionEnrollment tpmSelectionEnrollment)
@@ -79,7 +79,7 @@ public class PortalSelectionController extends BaseController
     }
 
     /** 学生退课 */
-    @PreAuthorize("@ss.hasPermi('portal:selection:drop')")
+    @PreAuthorize("@ss.hasPermi('portal:selection:drop') and @ss.hasAnyRoles('admin,student')")
     @Log(title = "退课操作", businessType = BusinessType.DELETE)
     @DeleteMapping("/drop/{enrollmentId}")
     public AjaxResult drop(@PathVariable Long enrollmentId)
@@ -88,7 +88,7 @@ public class PortalSelectionController extends BaseController
     }
 
     /** 选课结果查询 */
-    @PreAuthorize("@ss.hasPermi('portal:selection:result')")
+    @PreAuthorize("@ss.hasPermi('portal:selection:result') and @ss.hasAnyRoles('admin,student')")
     @GetMapping("/result")
     public TableDataInfo result()
     {

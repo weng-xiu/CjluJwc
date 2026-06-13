@@ -35,7 +35,7 @@ public class PortalStudentStatusController extends BaseController
     private ISamStatusChangeService samStatusChangeService;
 
     /** 学生端：学籍信息查询 */
-    @PreAuthorize("@ss.hasPermi('portal:status:list')")
+    @PreAuthorize("@ss.hasPermi('portal:status:list') and @ss.hasAnyRoles('admin,student')")
     @GetMapping("/list")
     public TableDataInfo list(SamStudent samStudent)
     {
@@ -45,7 +45,7 @@ public class PortalStudentStatusController extends BaseController
     }
 
     /** 学生端：学籍信息查询（前端别名） */
-    @PreAuthorize("@ss.hasPermi('portal:status:list')")
+    @PreAuthorize("@ss.hasPermi('portal:status:list') and @ss.hasAnyRoles('admin,student')")
     @GetMapping("/info")
     public AjaxResult info()
     {
@@ -58,7 +58,7 @@ public class PortalStudentStatusController extends BaseController
     }
 
     /** 学生端：学籍异动申请 */
-    @PreAuthorize("@ss.hasPermi('portal:status:change')")
+    @PreAuthorize("@ss.hasPermi('portal:status:change') and @ss.hasAnyRoles('admin,student')")
     @Log(title = "学籍异动申请", businessType = BusinessType.INSERT)
     @PostMapping("/change")
     public AjaxResult change(@RequestBody SamStatusChange samStatusChange)
@@ -67,7 +67,7 @@ public class PortalStudentStatusController extends BaseController
     }
 
     /** 学生端：学籍异动申请（前端别名） */
-    @PreAuthorize("@ss.hasPermi('portal:status:change')")
+    @PreAuthorize("@ss.hasPermi('portal:status:change') and @ss.hasAnyRoles('admin,student')")
     @Log(title = "学籍异动申请", businessType = BusinessType.INSERT)
     @PostMapping("/apply")
     public AjaxResult apply(@RequestBody SamStatusChange samStatusChange)
@@ -76,7 +76,7 @@ public class PortalStudentStatusController extends BaseController
     }
 
     /** 学生端：学籍异动记录查询 */
-    @PreAuthorize("@ss.hasPermi('portal:status:list')")
+    @PreAuthorize("@ss.hasPermi('portal:status:list') and @ss.hasAnyRoles('admin,student')")
     @GetMapping("/changeList")
     public TableDataInfo changeList(SamStatusChange samStatusChange)
     {

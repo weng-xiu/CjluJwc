@@ -14,8 +14,14 @@
     </el-row>
     <el-row :gutter="20">
       <el-col :span="12">
-        <el-form-item label="所属院系" prop="deptId">
-          <treeselect v-model="form.deptId" :options="deptOptions" :normalizer="normalizer" placeholder="请选择院系" />
+        <el-form-item label="学历" prop="education">
+          <el-select v-model="form.education" placeholder="请选择学历" clearable>
+            <el-option label="本科" value="bachelor" />
+            <el-option label="硕士" value="master" />
+            <el-option label="博士" value="doctor" />
+            <el-option label="博士后" value="postdoctor" />
+            <el-option label="其他" value="other" />
+          </el-select>
         </el-form-item>
       </el-col>
       <el-col :span="12">

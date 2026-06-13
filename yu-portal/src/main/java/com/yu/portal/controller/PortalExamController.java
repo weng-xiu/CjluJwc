@@ -40,7 +40,7 @@ public class PortalExamController extends BaseController
     }
 
     /** 教师端：监考安排查询 */
-    @PreAuthorize("@ss.hasPermi('portal:invigilation:list')")
+    @PreAuthorize("@ss.hasPermi('portal:invigilation:list') and @ss.hasAnyRoles('admin,teacher')")
     @GetMapping("/invigilationList")
     public TableDataInfo invigilationList(AemExamInvigilation aemExamInvigilation)
     {

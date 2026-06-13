@@ -25,7 +25,7 @@ public class PortalTeachingTaskController extends BaseController
     private ITpmCourseOfferingService tpmCourseOfferingService;
 
     /** 教师端：教学任务查询 */
-    @PreAuthorize("@ss.hasPermi('portal:teachingTask:list')")
+    @PreAuthorize("@ss.hasPermi('portal:teachingTask:list') and @ss.hasAnyRoles('admin,teacher')")
     @GetMapping("/list")
     public TableDataInfo list(TpmCourseOffering tpmCourseOffering)
     {

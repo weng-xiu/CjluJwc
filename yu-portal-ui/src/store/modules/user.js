@@ -9,7 +9,8 @@ const user = {
     avatar: '',
     roles: [],
     permissions: [],
-    userId: ''
+    userId: '',
+    userCategory: ''
   },
   mutations: {
     SET_TOKEN: (state, token) => { state.token = token },
@@ -18,16 +19,18 @@ const user = {
     SET_AVATAR: (state, avatar) => { state.avatar = avatar },
     SET_ROLES: (state, roles) => { state.roles = roles },
     SET_PERMISSIONS: (state, permissions) => { state.permissions = permissions },
-    SET_USER_ID: (state, userId) => { state.userId = userId }
+    SET_USER_ID: (state, userId) => { state.userId = userId },
+    SET_USER_CATEGORY: (state, userCategory) => { state.userCategory = userCategory }
   },
   actions: {
-    Login({ commit }, userInfo) {
+    Login({ commit, dispatch }, userInfo) {
       const { username, password, code, uuid } = userInfo
       return new Promise((resolve, reject) => {
         login(username.trim(), password, code, uuid).then(res => {
           setToken(res.token)
           commit('SET_TOKEN', res.token)
-          resolve()
+          // 登录成功后立即获取用户信息（含角色/类别）
+          dispatch('GetInfo').then(() => resolve()).catch(error => reject(error))
         }).catch(error => reject(error))
       })
     },
@@ -39,6 +42,7 @@ const user = {
           commit('SET_NICK_NAME', user.nickName)
           commit('SET_AVATAR', user.avatar || '')
           commit('SET_USER_ID', user.userId)
+          commit('SET_USER_CATEGORY', user.userCategory || '')
           if (res.roles && res.roles.length > 0) {
             commit('SET_ROLES', res.roles)
             commit('SET_PERMISSIONS', res.permissions)

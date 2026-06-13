@@ -46,7 +46,6 @@ export default {
   data() {
     return {
       noticeList: [], noticeLoading: false,
-      activeRole: 'student',
       studentMenus: [
         { name: '课表查询', path: '/schedule', icon: 'el-icon-date' },
         { name: '成绩查询', path: '/grade', icon: 'el-icon-document' },
@@ -63,6 +62,7 @@ export default {
   },
   computed: {
     userName() { return this.$store.state.user.nickName || this.$store.state.user.name || '用户' },
+    activeRole() { return this.$store.state.user.userCategory || 'student' },
     greeting() {
       const h = new Date().getHours()
       return h < 6 ? '夜深了' : h < 12 ? '上午好' : h < 14 ? '中午好' : h < 18 ? '下午好' : '晚上好'
@@ -72,7 +72,6 @@ export default {
     }
   },
   created() {
-    this.activeRole = this.$parent?.activeRole || 'student'
     this.fetchNotices()
   },
   methods: {

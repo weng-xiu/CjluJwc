@@ -1,7 +1,11 @@
 <template>
   <div class="register">
     <el-form ref="registerForm" :model="registerForm" :rules="registerRules" class="register-form">
-      <h3 class="title">{{title}}</h3>
+      <div class="register-header">
+        <div class="register-logo">长大</div>
+        <h3 class="title">长江大学教务处</h3>
+        <p class="subtitle">Academic Affairs Management System</p>
+      </div>
       <el-form-item prop="username">
         <el-input v-model="registerForm.username" type="text" auto-complete="off" placeholder="账号">
           <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
@@ -10,23 +14,25 @@
       <el-form-item prop="password" :rules="registerPwdValidator">
         <el-input
           v-model="registerForm.password"
-          type="password"
+          :type="passwordType"
           auto-complete="off"
           placeholder="密码"
           @keyup.enter.native="handleRegister"
         >
           <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon" />
+          <i slot="suffix" :class="passwordType === 'password' ? 'el-icon-view' : 'el-icon-hide'" class="el-input__icon input-icon" style="cursor: pointer;" @click="togglePasswordType"></i>
         </el-input>
       </el-form-item>
       <el-form-item prop="confirmPassword">
         <el-input
           v-model="registerForm.confirmPassword"
-          type="password"
+          :type="confirmPasswordType"
           auto-complete="off"
           placeholder="确认密码"
           @keyup.enter.native="handleRegister"
         >
           <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon" />
+          <i slot="suffix" :class="confirmPasswordType === 'password' ? 'el-icon-view' : 'el-icon-hide'" class="el-input__icon input-icon" style="cursor: pointer;" @click="toggleConfirmPasswordType"></i>
         </el-input>
       </el-form-item>
       <el-form-item prop="code" v-if="captchaEnabled">
@@ -54,7 +60,7 @@
           <span v-if="!loading">注 册</span>
           <span v-else>注 册 中...</span>
         </el-button>
-        <div style="float: right;">
+        <div class="register-link">
           <router-link class="link-type" :to="'/login'">使用已有账户登录</router-link>
         </div>
       </el-form-item>
@@ -86,7 +92,9 @@ export default {
         uuid: ""
       },
       loading: false,
-      captchaEnabled: true
+      captchaEnabled: true,
+      passwordType: 'password',
+      confirmPasswordType: 'password'
     }
   },
   computed: {
@@ -125,6 +133,12 @@ export default {
         }
       })
     },
+    togglePasswordType() {
+      this.passwordType = this.passwordType === 'password' ? 'text' : 'password'
+    },
+    toggleConfirmPasswordType() {
+      this.confirmPasswordType = this.confirmPasswordType === 'password' ? 'text' : 'password'
+    },
     handleRegister() {
       this.$refs.registerForm.validate(valid => {
         if (valid) {
@@ -151,6 +165,17 @@ export default {
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .register {
   display: flex;
   justify-content: center;
@@ -158,44 +183,127 @@ export default {
   height: 100%;
   background-image: url("../assets/images/login-background.jpg");
   background-size: cover;
-}
-.title {
-  margin: 0px auto 30px auto;
-  text-align: center;
-  color: #707070;
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(0, 32, 64, 0.4) 0%, rgba(0, 80, 160, 0.2) 100%);
+    z-index: 0;
+  }
 }
 
 .register-form {
-  border-radius: 6px;
-  background: #ffffff;
-  width: 400px;
-  padding: 25px 25px 5px 25px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  width: 420px;
+  padding: 45px 40px 25px 40px;
+  z-index: 1;
+  position: relative;
+  animation: fadeInUp 0.6s ease-out;
+
   .el-input {
-    height: 38px;
+    height: 48px;
     input {
-      height: 38px;
+      height: 48px;
+      border-radius: 10px;
+      border: 1.5px solid #e4e7ed;
+      padding-left: 40px;
+      transition: all 0.3s ease;
+      &:focus {
+        border-color: #409EFF;
+        box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
+      }
     }
   }
   .input-icon {
-    height: 39px;
-    width: 14px;
-    margin-left: 2px;
+    height: 48px;
+    width: 16px;
+    margin-left: 4px;
+    color: #909399;
   }
 }
+
+.register-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.register-logo {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #409EFF, #1890ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.4);
+}
+
+.title {
+  margin: 0px auto 6px auto;
+  text-align: center;
+  color: #303133;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+
+.subtitle {
+  margin: 0px auto 0px auto;
+  text-align: center;
+  color: #909399;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 12px;
+}
+
+.link-type {
+  color: #409EFF;
+  font-size: 13px;
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 .register-tip {
   font-size: 13px;
   text-align: center;
   color: #bfbfbf;
 }
+
 .register-code {
   width: 33%;
-  height: 38px;
+  height: 48px;
   float: right;
   img {
     cursor: pointer;
     vertical-align: middle;
+    border-radius: 8px;
+    border: 1px solid #e4e7ed;
   }
 }
+
+.register-code-img {
+  height: 48px;
+}
+
 .el-register-footer {
   height: 40px;
   line-height: 40px;
@@ -203,12 +311,32 @@ export default {
   bottom: 0;
   width: 100%;
   text-align: center;
-  color: #fff;
-  font-family: Arial;
+  color: rgba(255, 255, 255, 0.8);
   font-size: 12px;
   letter-spacing: 1px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  z-index: 1;
 }
-.register-code-img {
-  height: 38px;
+
+::v-deep .el-button--primary {
+  width: 100%;
+  height: 48px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  background: linear-gradient(135deg, #409EFF 0%, #1677ff 100%);
+  border: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.3);
+}
+::v-deep .el-button--primary:hover {
+  background: linear-gradient(135deg, #66b1ff 0%, #409EFF 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(64, 158, 255, 0.45);
+}
+::v-deep .el-button--primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
 }
 </style>

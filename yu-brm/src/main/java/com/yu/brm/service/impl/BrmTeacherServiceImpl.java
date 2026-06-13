@@ -33,6 +33,12 @@ public class BrmTeacherServiceImpl implements IBrmTeacherService
     }
 
     @Override
+    public BrmTeacher selectBrmTeacherByUserId(Long userId)
+    {
+        return brmTeacherMapper.selectBrmTeacherByUserId(userId);
+    }
+
+    @Override
     @DataScope(deptAlias = "d", userAlias = "t")
     public List<BrmTeacher> selectBrmTeacherList(BrmTeacher brmTeacher)
     {
@@ -64,6 +70,14 @@ public class BrmTeacherServiceImpl implements IBrmTeacherService
 
     @Override
     @Transactional
+    public int updateBrmTeacherByUserId(BrmTeacher brmTeacher)
+    {
+        brmTeacher.setUpdateTime(DateUtils.getNowDate());
+        return brmTeacherMapper.updateBrmTeacherByUserId(brmTeacher);
+    }
+
+    @Override
+    @Transactional
     public int deleteBrmTeacherByTeacherId(Long teacherId)
     {
         brmTeacherMapper.deleteBrmTeacherPositionByTeacherId(teacherId);
@@ -78,6 +92,21 @@ public class BrmTeacherServiceImpl implements IBrmTeacherService
         brmTeacherMapper.deleteBrmTeacherPositionByTeacherIds(teacherIds);
         brmTeacherMapper.deleteBrmTeacherQualificationByTeacherIds(teacherIds);
         return brmTeacherMapper.deleteBrmTeacherByTeacherIds(teacherIds);
+    }
+
+    @Override
+    @Transactional
+    public int deleteBrmTeacherByUserId(Long userId)
+    {
+        BrmTeacher teacher = brmTeacherMapper.selectBrmTeacherByUserId(userId);
+        if (teacher != null)
+        {
+            Long teacherId = teacher.getTeacherId();
+            brmTeacherMapper.deleteBrmTeacherPositionByTeacherId(teacherId);
+            brmTeacherMapper.deleteBrmTeacherQualificationByTeacherId(teacherId);
+            return brmTeacherMapper.deleteBrmTeacherByUserId(userId);
+        }
+        return 0;
     }
 
     public void insertBrmTeacherPosition(BrmTeacher brmTeacher)

@@ -75,6 +75,8 @@
               <span>{{ scope.row.accountStatus }}</span>
             </template>
           </el-table-column>
+          <el-table-column label="教师工号" align="center" key="teacherCode" prop="teacherCode" v-if="columns.teacherCode.visible" width="120" />
+          <el-table-column label="职称" align="center" key="title" prop="title" v-if="columns.title.visible" width="100" />
           <el-table-column label="创建时间" align="center" prop="createTime" v-if="columns.createTime.visible" width="160">
             <template slot-scope="scope">
               <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -166,7 +168,9 @@ export default {
         deptName: { label: '部门', visible: true },
         phonenumber: { label: '手机号码', visible: true },
         status: { label: '状态', visible: true },
-        createTime: { label: '创建时间', visible: true }
+        createTime: { label: '创建时间', visible: true },
+        teacherCode: { label: '教师工号', visible: false },
+        title: { label: '职称', visible: false }
       }
     }
   },
@@ -251,6 +255,9 @@ export default {
       } else {
         this.queryParams.userCategory = tab.name;
       }
+      // 教师Tab下展示教师工号和职称列
+      this.columns.teacherCode.visible = tab.name === 'teacher';
+      this.columns.title.visible = tab.name === 'teacher';
       this.handleQuery();
     },
     // 状态变更操作

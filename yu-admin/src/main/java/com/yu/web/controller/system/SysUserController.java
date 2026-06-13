@@ -27,6 +27,8 @@ import com.yu.common.enums.BusinessType;
 import com.yu.common.utils.SecurityUtils;
 import com.yu.common.utils.StringUtils;
 import com.yu.common.utils.poi.ExcelUtil;
+import com.yu.brm.domain.BrmTeacher;
+import com.yu.brm.service.IBrmTeacherService;
 import com.yu.system.service.ISysDeptService;
 import com.yu.system.service.ISysPostService;
 import com.yu.system.service.ISysRoleService;
@@ -52,6 +54,9 @@ public class SysUserController extends BaseController
 
     @Autowired
     private ISysPostService postService;
+
+    @Autowired
+    private IBrmTeacherService brmTeacherService;
 
     /**
      * 获取用户列表
@@ -109,6 +114,12 @@ public class SysUserController extends BaseController
             ajax.put(AjaxResult.DATA_TAG, sysUser);
             ajax.put("postIds", postService.selectPostListByUserId(userId));
             ajax.put("roleIds", sysUser.getRoles().stream().map(SysRole::getRoleId).collect(Collectors.toList()));
+            // 教师用户补充教师详情
+            if ("teacher".equals(sysUser.getUserCategory()))
+            {
+                BrmTeacher teacher = brmTeacherService.selectBrmTeacherByUserId(userId);
+                ajax.put("teacherInfo", teacher);
+            }
         }
         List<SysRole> roles = roleService.selectRoleAll();
         ajax.put("roles", SecurityUtils.isAdmin(userId) ? roles : roles.stream().filter(r -> !r.isAdmin()).collect(Collectors.toList()));
@@ -126,6 +137,10 @@ public class SysUserController extends BaseController
     {
         deptService.checkDeptDataScope(user.getDeptId());
         roleService.checkRoleDataScope(user.getRoleIds());
+        if ("teacher".equals(user.getUserCategory()) && StringUtils.isEmpty(user.getTeacherCode()))
+        {
+            return error("新增教师用户'" + user.getUserName() + "'失败，教师工号不能为空");
+        }
         if (!userService.checkUserNameUnique(user))
         {
             return error("新增用户'" + user.getUserName() + "'失败，登录账号已存在");
@@ -155,6 +170,10 @@ public class SysUserController extends BaseController
         userService.checkUserDataScope(user.getUserId());
         deptService.checkDeptDataScope(user.getDeptId());
         roleService.checkRoleDataScope(user.getRoleIds());
+        if ("teacher".equals(user.getUserCategory()) && StringUtils.isEmpty(user.getTeacherCode()))
+        {
+            return error("修改教师用户'" + user.getUserName() + "'失败，教师工号不能为空");
+        }
         if (!userService.checkUserNameUnique(user))
         {
             return error("修改用户'" + user.getUserName() + "'失败，登录账号已存在");

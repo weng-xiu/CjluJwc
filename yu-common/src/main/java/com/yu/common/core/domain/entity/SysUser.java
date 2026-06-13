@@ -117,6 +117,18 @@ public class SysUser extends BaseEntity
     @Excel(name = "毕业/离职日期", width = 30, dateFormat = "yyyy-MM-dd")
     private Date graduationDate;
 
+    /** 教师工号（关联brm_teacher） */
+    @Excel(name = "教师工号")
+    private String teacherCode;
+
+    /** 职称（关联brm_teacher） */
+    @Excel(name = "职称")
+    private String title;
+
+    /** 学历（关联brm_teacher） */
+    @Excel(name = "学历")
+    private String education;
+
     public SysUser()
     {
 
@@ -381,6 +393,36 @@ public class SysUser extends BaseEntity
         this.graduationDate = graduationDate;
     }
 
+    public String getTeacherCode()
+    {
+        return teacherCode;
+    }
+
+    public void setTeacherCode(String teacherCode)
+    {
+        this.teacherCode = teacherCode;
+    }
+
+    public String getTitle()
+    {
+        return title;
+    }
+
+    public void setTitle(String title)
+    {
+        this.title = title;
+    }
+
+    public String getEducation()
+    {
+        return education;
+    }
+
+    public void setEducation(String education)
+    {
+        this.education = education;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -403,6 +445,14 @@ public class SysUser extends BaseEntity
             .append("updateBy", getUpdateBy())
             .append("updateTime", getUpdateTime())
             .append("remark", getRemark())
+            .append("userCategory", getUserCategory())
+            .append("identityId", getIdentityId())
+            .append("accountStatus", getAccountStatus())
+            .append("enrollmentDate", getEnrollmentDate())
+            .append("graduationDate", getGraduationDate())
+            .append("teacherCode", getTeacherCode())
+            .append("title", getTitle())
+            .append("education", getEducation())
             .append("dept", getDept())
             .toString();
     }

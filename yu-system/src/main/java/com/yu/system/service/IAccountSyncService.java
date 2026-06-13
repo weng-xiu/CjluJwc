@@ -3,7 +3,7 @@ package com.yu.system.service;
 import java.util.Map;
 
 /**
- * 账号同步 业务层
+ * 账号同步 服务层
  *
  * @author yu
  */
@@ -18,7 +18,7 @@ public interface IAccountSyncService
     public Map<String, Integer> syncTeacherAccounts(Long deptId);
 
     /**
-     * 从BRM同步学生账号（基于班级）
+     * 从BRM同步学生账号
      *
      * @param classId 班级ID，null则同步全部
      * @return 结果统计

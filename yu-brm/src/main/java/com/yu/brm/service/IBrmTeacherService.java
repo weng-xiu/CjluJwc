@@ -11,12 +11,15 @@ import com.yu.brm.domain.BrmTeacherQualification;
  * @author ruoyi
  * @date 2026-05-08
  */
-public interface IBrmTeacherService 
+public interface IBrmTeacherService
 {
     public BrmTeacher selectBrmTeacherByTeacherId(Long teacherId);
+    public BrmTeacher selectBrmTeacherByUserId(Long userId);
     public List<BrmTeacher> selectBrmTeacherList(BrmTeacher brmTeacher);
     public int insertBrmTeacher(BrmTeacher brmTeacher);
     public int updateBrmTeacher(BrmTeacher brmTeacher);
+    public int updateBrmTeacherByUserId(BrmTeacher brmTeacher);
     public int deleteBrmTeacherByTeacherId(Long teacherId);
     public int deleteBrmTeacherByTeacherIds(Long[] teacherIds);
+    public int deleteBrmTeacherByUserId(Long userId);
 }

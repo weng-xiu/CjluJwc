@@ -31,7 +31,7 @@ public class PortalAdjustmentController extends BaseController
     private ITpmScheduleAdjustmentService tpmScheduleAdjustmentService;
 
     /** 教师端：调停课申请列表查询 */
-    @PreAuthorize("@ss.hasPermi('portal:adjustment:list')")
+    @PreAuthorize("@ss.hasPermi('portal:adjustment:list') and @ss.hasAnyRoles('admin,teacher')")
     @GetMapping("/list")
     public TableDataInfo list(TpmScheduleAdjustment tpmScheduleAdjustment)
     {
@@ -41,7 +41,7 @@ public class PortalAdjustmentController extends BaseController
     }
 
     /** 教师端：提交调停课申请 */
-    @PreAuthorize("@ss.hasPermi('portal:adjustment:add')")
+    @PreAuthorize("@ss.hasPermi('portal:adjustment:add') and @ss.hasAnyRoles('admin,teacher')")
     @Log(title = "调停课申请", businessType = BusinessType.INSERT)
     @PostMapping("/apply")
     public AjaxResult add(@Validated @RequestBody TpmScheduleAdjustment tpmScheduleAdjustment)

@@ -14,15 +14,36 @@ router.beforeEach((to, from, next) => {
     if (to.path === '/login') {
       next({ path: '/' })
     } else {
+      const checkAuth = () => {
+        const userCategory = store.state.user.userCategory
+        const roles = store.state.user.roles
+        // 管理员跳转至管理后台
+        if (userCategory === 'admin' || roles.includes('admin')) {
+          store.dispatch('FedLogOut')
+          window.location.href = 'http://localhost:80/login'
+          return
+        }
+        // 非法角色兜底
+        if (userCategory !== 'student' && userCategory !== 'teacher') {
+          next({ path: '/home' })
+          return
+        }
+        // 路由角色权限校验
+        if (to.meta.roles && !to.meta.roles.includes(userCategory)) {
+          next({ path: '/home' })
+        } else {
+          next()
+        }
+      }
       if (store.state.user.roles.length === 0) {
         store.dispatch('GetInfo').then(() => {
-          next({ ...to, replace: true })
+          checkAuth()
         }).catch(() => {
           store.dispatch('FedLogOut')
           next({ path: '/login', query: { redirect: to.fullPath } })
         })
       } else {
-        next()
+        checkAuth()
       }
     }
   } else {

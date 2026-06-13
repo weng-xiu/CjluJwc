@@ -104,7 +104,7 @@ public class PortalEvaluationController extends BaseController
     }
 
     /** 教师端：评教结果查询 */
-    @PreAuthorize("@ss.hasPermi('portal:evalResult:list')")
+    @PreAuthorize("@ss.hasPermi('portal:evalResult:list') and @ss.hasAnyRoles('admin,teacher')")
     @GetMapping("/resultList")
     public TableDataInfo resultList(AemEvaluationResult aemEvaluationResult)
     {
@@ -114,7 +114,7 @@ public class PortalEvaluationController extends BaseController
     }
 
     /** 教师端：评教结果汇总（前端调用） */
-    @PreAuthorize("@ss.hasPermi('portal:evalResult:list')")
+    @PreAuthorize("@ss.hasPermi('portal:evalResult:list') and @ss.hasAnyRoles('admin,teacher')")
     @GetMapping("/teacherResults")
     public TableDataInfo teacherResults()
     {

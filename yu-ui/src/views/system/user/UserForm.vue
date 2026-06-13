@@ -3,6 +3,15 @@
     <el-form ref="form" :model="form" :rules="rules" label-width="80px">
       <el-row>
         <el-col :span="12">
+          <el-form-item label="用户类别" prop="userCategory">
+            <el-select v-model="form.userCategory" placeholder="请选择用户类别">
+              <el-option v-for="dict in dict.type.sys_user_category" :key="dict.value" :label="dict.label" :value="dict.value"></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row>
+        <el-col :span="12">
           <el-form-item label="用户昵称" prop="nickName">
             <el-input v-model="form.nickName" placeholder="请输入用户昵称" maxlength="30" />
           </el-form-item>
@@ -76,6 +85,8 @@
           </el-form-item>
         </el-col>
       </el-row>
+      <!-- 教师扩展信息 -->
+      <teacher-form v-if="form.userCategory === 'teacher'" :form="form" :is-add="!form.userId" :dept-options="enabledDeptOptions" />
     </el-form>
     <div slot="footer" class="dialog-footer">
       <el-button type="primary" @click="submitForm">确 定</el-button>
@@ -89,12 +100,13 @@ import { getUser, addUser, updateUser, deptTreeSelect } from "@/api/system/user"
 import Treeselect from "@riophae/vue-treeselect"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css"
 import passwordRule from "@/utils/passwordRule"
+import TeacherForm from "./TeacherForm"
 
 export default {
   name: "UserForm",
   mixins: [passwordRule],
-  dicts: ['sys_normal_disable', 'sys_user_sex'],
-  components: { Treeselect },
+  dicts: ['sys_normal_disable', 'sys_user_sex', 'sys_user_category'],
+  components: { Treeselect, TeacherForm },
   data() {
     return {
       // 弹出层标题
@@ -210,7 +222,8 @@ export default {
         status: "0",
         remark: undefined,
         postIds: [],
-        roleIds: []
+        roleIds: [],
+        userCategory: 'admin'
       }
       this.resetForm("form")
     },

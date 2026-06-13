@@ -61,7 +61,7 @@ public class PortalGradeController extends BaseController
     }
 
     /** 教师端：成绩录入查询（教学班成绩列表） */
-    @PreAuthorize("@ss.hasPermi('portal:gradeEntry:list')")
+    @PreAuthorize("@ss.hasPermi('portal:gradeEntry:list') and @ss.hasAnyRoles('admin,teacher')")
     @GetMapping("/entryList")
     public TableDataInfo entryList(AemGradeRecord aemGradeRecord)
     {
@@ -71,7 +71,7 @@ public class PortalGradeController extends BaseController
     }
 
     /** 教师端：录入成绩 */
-    @PreAuthorize("@ss.hasPermi('portal:gradeEntry:add')")
+    @PreAuthorize("@ss.hasPermi('portal:gradeEntry:add') and @ss.hasAnyRoles('admin,teacher')")
     @Log(title = "成绩录入", businessType = BusinessType.INSERT)
     @PostMapping("/entry")
     public AjaxResult entry(@RequestBody AemGradeRecord aemGradeRecord)
@@ -80,7 +80,7 @@ public class PortalGradeController extends BaseController
     }
 
     /** 教师端：修改成绩 */
-    @PreAuthorize("@ss.hasPermi('portal:gradeEntry:edit')")
+    @PreAuthorize("@ss.hasPermi('portal:gradeEntry:edit') and @ss.hasAnyRoles('admin,teacher')")
     @Log(title = "成绩修改", businessType = BusinessType.UPDATE)
     @PutMapping("/entry")
     public AjaxResult editEntry(@RequestBody AemGradeRecord aemGradeRecord)
@@ -89,7 +89,7 @@ public class PortalGradeController extends BaseController
     }
 
     /** 教师端：暂存/提交成绩（含平时成绩和期末成绩） */
-    @PreAuthorize("@ss.hasPermi('portal:gradeEntry:add')")
+    @PreAuthorize("@ss.hasPermi('portal:gradeEntry:add') and @ss.hasAnyRoles('admin,teacher')")
     @Log(title = "成绩提交", businessType = BusinessType.INSERT)
     @PostMapping("/submit")
     public AjaxResult submit(@RequestBody Map<String, Object> params)

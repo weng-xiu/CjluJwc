@@ -24,6 +24,8 @@ import com.yu.common.utils.SecurityUtils;
 import com.yu.common.utils.StringUtils;
 import com.yu.common.utils.bean.BeanValidators;
 import com.yu.common.utils.spring.SpringUtils;
+import com.yu.brm.domain.BrmTeacher;
+import com.yu.brm.service.IBrmTeacherService;
 import com.yu.system.domain.SysPost;
 import com.yu.system.domain.SysUserPost;
 import com.yu.system.domain.SysUserRole;
@@ -72,6 +74,9 @@ public class SysUserServiceImpl implements ISysUserService
 
     @Autowired
     private RedisCache redisCache;
+
+    @Autowired
+    private IBrmTeacherService brmTeacherService;
 
     /**
      * 根据条件分页查询用户列表
@@ -297,8 +302,40 @@ public class SysUserServiceImpl implements ISysUserService
         insertUserPost(user);
         // 新增用户与角色管理
         insertUserRole(user);
+        // 同步教师信息
+        if ("teacher".equals(user.getUserCategory()) && StringUtils.isNotEmpty(user.getTeacherCode()))
+        {
+            BrmTeacher teacher = buildBrmTeacherFromSysUser(user);
+            brmTeacherService.insertBrmTeacher(teacher);
+            // 回写 identity_id
+            SysUser identityUpdate = new SysUser();
+            identityUpdate.setUserId(user.getUserId());
+            identityUpdate.setIdentityId(teacher.getTeacherId());
+            userMapper.updateUser(identityUpdate);
+        }
         log.info("[用户管理] 新增用户 - userId={}, userName={}", user.getUserId(), user.getUserName());
         return rows;
+    }
+
+    /**
+     * 从SysUser构建BrmTeacher对象
+     */
+    private BrmTeacher buildBrmTeacherFromSysUser(SysUser user)
+    {
+        BrmTeacher teacher = new BrmTeacher();
+        teacher.setUserId(user.getUserId());
+        teacher.setTeacherCode(user.getTeacherCode());
+        teacher.setTeacherName(user.getNickName());
+        teacher.setDeptId(user.getDeptId());
+        teacher.setGender(user.getSex());
+        teacher.setPhone(user.getPhonenumber());
+        teacher.setEmail(user.getEmail());
+        teacher.setTitle(user.getTitle());
+        teacher.setEducation(user.getEducation());
+        teacher.setStatus(user.getStatus());
+        teacher.setCreateBy(user.getCreateBy());
+        teacher.setRemark(user.getRemark());
+        return teacher;
     }
 
     /**
@@ -332,6 +369,27 @@ public class SysUserServiceImpl implements ISysUserService
         userPostMapper.deleteUserPostByUserId(userId);
         // 新增用户与岗位管理
         insertUserPost(user);
+        // 同步教师信息
+        SysUser oldUser = userMapper.selectUserById(userId);
+        if ("teacher".equals(user.getUserCategory()))
+        {
+            BrmTeacher teacher = buildBrmTeacherFromSysUser(user);
+            if (oldUser != null && oldUser.getIdentityId() != null)
+            {
+                teacher.setTeacherId(oldUser.getIdentityId());
+                brmTeacherService.updateBrmTeacher(teacher);
+            }
+            else
+            {
+                brmTeacherService.insertBrmTeacher(teacher);
+                user.setIdentityId(teacher.getTeacherId());
+            }
+        }
+        else if (oldUser != null && oldUser.getIdentityId() != null)
+        {
+            brmTeacherService.deleteBrmTeacherByTeacherId(oldUser.getIdentityId());
+            user.setIdentityId(null);
+        }
         int rows = userMapper.updateUser(user);
         if (rows > 0)
         {
@@ -506,6 +564,11 @@ public class SysUserServiceImpl implements ISysUserService
     @Transactional
     public int deleteUserById(Long userId)
     {
+        SysUser user = userMapper.selectUserById(userId);
+        if (user != null && "teacher".equals(user.getUserCategory()) && user.getIdentityId() != null)
+        {
+            brmTeacherService.deleteBrmTeacherByTeacherId(user.getIdentityId());
+        }
         // 删除用户与角色关联
         userRoleMapper.deleteUserRoleByUserId(userId);
         // 删除用户与岗位表
@@ -515,7 +578,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 批量删除用户信息
-     * 
+     *
      * @param userIds 需要删除的用户ID
      * @return 结果
      */
@@ -527,6 +590,11 @@ public class SysUserServiceImpl implements ISysUserService
         {
             checkUserAllowed(new SysUser(userId));
             checkUserDataScope(userId);
+            SysUser user = userMapper.selectUserById(userId);
+            if (user != null && "teacher".equals(user.getUserCategory()) && user.getIdentityId() != null)
+            {
+                brmTeacherService.deleteBrmTeacherByTeacherId(user.getIdentityId());
+            }
         }
         // 删除用户与角色关联
         userRoleMapper.deleteUserRole(userIds);
