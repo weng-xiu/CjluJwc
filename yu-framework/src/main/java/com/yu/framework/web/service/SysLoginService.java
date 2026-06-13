@@ -51,6 +51,9 @@ public class SysLoginService
     @Autowired
     private ISysConfigService configService;
 
+    @Autowired
+    private CaptchaValidator captchaValidator;
+
     /**
      * 登录验证
      * 
@@ -105,25 +108,25 @@ public class SysLoginService
      * @param username 用户名
      * @param code 验证码
      * @param uuid 唯一标识
-     * @return 结果
      */
     public void validateCaptcha(String username, String code, String uuid)
     {
         boolean captchaEnabled = configService.selectCaptchaEnabled();
         if (captchaEnabled)
         {
-            String verifyKey = CacheConstants.CAPTCHA_CODE_KEY + StringUtils.nvl(uuid, "");
-            String captcha = redisCache.getCacheObject(verifyKey);
-            if (captcha == null)
+            try
+            {
+                captchaValidator.validate(username, code, uuid);
+            }
+            catch (CaptchaExpireException e)
             {
                 AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.jcaptcha.expire")));
-                throw new CaptchaExpireException();
+                throw e;
             }
-            redisCache.deleteObject(verifyKey);
-            if (!code.equalsIgnoreCase(captcha))
+            catch (CaptchaException e)
             {
                 AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.jcaptcha.error")));
-                throw new CaptchaException();
+                throw e;
             }
         }
     }

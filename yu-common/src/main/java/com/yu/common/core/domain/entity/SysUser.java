@@ -96,6 +96,27 @@ public class SysUser extends BaseEntity
     /** 角色ID */
     private Long roleId;
 
+    /** 用户类别(student/teacher/admin/secretary) */
+    @Excel(name = "用户类别")
+    private String userCategory;
+
+    /** 关联业务身份ID */
+    private Long identityId;
+
+    /** 生命周期状态 */
+    @Excel(name = "账号状态")
+    private String accountStatus;
+
+    /** 入学/入职日期 */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @Excel(name = "入学/入职日期", width = 30, dateFormat = "yyyy-MM-dd")
+    private Date enrollmentDate;
+
+    /** 毕业/离职日期 */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @Excel(name = "毕业/离职日期", width = 30, dateFormat = "yyyy-MM-dd")
+    private Date graduationDate;
+
     public SysUser()
     {
 
@@ -308,6 +329,56 @@ public class SysUser extends BaseEntity
     public void setRoleId(Long roleId)
     {
         this.roleId = roleId;
+    }
+
+    public String getUserCategory()
+    {
+        return userCategory;
+    }
+
+    public void setUserCategory(String userCategory)
+    {
+        this.userCategory = userCategory;
+    }
+
+    public Long getIdentityId()
+    {
+        return identityId;
+    }
+
+    public void setIdentityId(Long identityId)
+    {
+        this.identityId = identityId;
+    }
+
+    public String getAccountStatus()
+    {
+        return accountStatus;
+    }
+
+    public void setAccountStatus(String accountStatus)
+    {
+        this.accountStatus = accountStatus;
+    }
+
+    public Date getEnrollmentDate()
+    {
+        return enrollmentDate;
+    }
+
+    public void setEnrollmentDate(Date enrollmentDate)
+    {
+        this.enrollmentDate = enrollmentDate;
+    }
+
+    public Date getGraduationDate()
+    {
+        return graduationDate;
+    }
+
+    public void setGraduationDate(Date graduationDate)
+    {
+        this.graduationDate = graduationDate;
     }
 
     @Override

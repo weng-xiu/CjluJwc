@@ -29,7 +29,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
     }
 
     @Override
-    @DataScope(deptAlias = "d")
+    @DataScope(deptAlias = "d", userAlias = "t")
     public List<TpmCourseOffering> selectTpmCourseOfferingList(TpmCourseOffering tpmCourseOffering)
     {
         return tpmCourseOfferingMapper.selectTpmCourseOfferingList(tpmCourseOffering);

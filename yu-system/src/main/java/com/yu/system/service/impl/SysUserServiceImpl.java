@@ -1,8 +1,10 @@
 package com.yu.system.service.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import jakarta.validation.Validator;
 import org.slf4j.Logger;
@@ -12,9 +14,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import com.yu.common.annotation.DataScope;
+import com.yu.common.constant.CacheConstants;
 import com.yu.common.constant.UserConstants;
 import com.yu.common.core.domain.entity.SysRole;
 import com.yu.common.core.domain.entity.SysUser;
+import com.yu.common.core.redis.RedisCache;
 import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.SecurityUtils;
 import com.yu.common.utils.StringUtils;
@@ -66,6 +70,9 @@ public class SysUserServiceImpl implements ISysUserService
     @Autowired
     protected Validator validator;
 
+    @Autowired
+    private RedisCache redisCache;
+
     /**
      * 根据条件分页查询用户列表
      * 
@@ -114,7 +121,18 @@ public class SysUserServiceImpl implements ISysUserService
     @Override
     public SysUser selectUserByUserName(String userName)
     {
-        return userMapper.selectUserByUserName(userName);
+        String cacheKey = CacheConstants.SYS_USER_NAME_KEY + userName;
+        SysUser user = redisCache.getCacheObject(cacheKey);
+        if (user != null)
+        {
+            return user;
+        }
+        user = userMapper.selectUserByUserName(userName);
+        if (user != null)
+        {
+            redisCache.setCacheObject(cacheKey, user, CacheConstants.SYS_USER_CACHE_EXPIRATION, TimeUnit.MINUTES);
+        }
+        return user;
     }
 
     /**
@@ -126,7 +144,18 @@ public class SysUserServiceImpl implements ISysUserService
     @Override
     public SysUser selectUserById(Long userId)
     {
-        return userMapper.selectUserById(userId);
+        String cacheKey = CacheConstants.SYS_USER_ID_KEY + userId;
+        SysUser user = redisCache.getCacheObject(cacheKey);
+        if (user != null)
+        {
+            return user;
+        }
+        user = userMapper.selectUserById(userId);
+        if (user != null)
+        {
+            redisCache.setCacheObject(cacheKey, user, CacheConstants.SYS_USER_CACHE_EXPIRATION, TimeUnit.MINUTES);
+        }
+        return user;
     }
 
     /**
@@ -174,11 +203,7 @@ public class SysUserServiceImpl implements ISysUserService
     {
         Long userId = StringUtils.isNull(user.getUserId()) ? -1L : user.getUserId();
         SysUser info = userMapper.checkUserNameUnique(user.getUserName());
-        if (StringUtils.isNotNull(info) && info.getUserId().longValue() != userId.longValue())
-        {
-            return UserConstants.NOT_UNIQUE;
-        }
-        return UserConstants.UNIQUE;
+        return isUnique(info, userId) ? UserConstants.UNIQUE : UserConstants.NOT_UNIQUE;
     }
 
     /**
@@ -192,11 +217,7 @@ public class SysUserServiceImpl implements ISysUserService
     {
         Long userId = StringUtils.isNull(user.getUserId()) ? -1L : user.getUserId();
         SysUser info = userMapper.checkPhoneUnique(user.getPhonenumber());
-        if (StringUtils.isNotNull(info) && info.getUserId().longValue() != userId.longValue())
-        {
-            return UserConstants.NOT_UNIQUE;
-        }
-        return UserConstants.UNIQUE;
+        return isUnique(info, userId) ? UserConstants.UNIQUE : UserConstants.NOT_UNIQUE;
     }
 
     /**
@@ -210,11 +231,20 @@ public class SysUserServiceImpl implements ISysUserService
     {
         Long userId = StringUtils.isNull(user.getUserId()) ? -1L : user.getUserId();
         SysUser info = userMapper.checkEmailUnique(user.getEmail());
-        if (StringUtils.isNotNull(info) && info.getUserId().longValue() != userId.longValue())
-        {
-            return UserConstants.NOT_UNIQUE;
-        }
-        return UserConstants.UNIQUE;
+        return isUnique(info, userId) ? UserConstants.UNIQUE : UserConstants.NOT_UNIQUE;
+    }
+
+    /**
+     * 通用唯一性校验
+     *
+     * @param existUser 数据库中已存在的用户
+     * @param currentUserId 当前待校验的用户ID
+     * @return true=唯一 false=不唯一
+     */
+    private boolean isUnique(SysUser existUser, Long currentUserId)
+    {
+        Long existUserId = StringUtils.isNull(existUser) ? -1L : existUser.getUserId();
+        return StringUtils.isNull(existUser) || existUserId.equals(currentUserId);
     }
 
     /**
@@ -267,6 +297,7 @@ public class SysUserServiceImpl implements ISysUserService
         insertUserPost(user);
         // 新增用户与角色管理
         insertUserRole(user);
+        log.info("[用户管理] 新增用户 - userId={}, userName={}", user.getUserId(), user.getUserName());
         return rows;
     }
 
@@ -301,7 +332,13 @@ public class SysUserServiceImpl implements ISysUserService
         userPostMapper.deleteUserPostByUserId(userId);
         // 新增用户与岗位管理
         insertUserPost(user);
-        return userMapper.updateUser(user);
+        int rows = userMapper.updateUser(user);
+        if (rows > 0)
+        {
+            clearUserCache(userId, user.getUserName());
+            log.info("[用户管理] 修改用户 - userId={}, userName={}", user.getUserId(), user.getUserName());
+        }
+        return rows;
     }
 
     /**
@@ -327,7 +364,12 @@ public class SysUserServiceImpl implements ISysUserService
     @Override
     public int updateUserStatus(SysUser user)
     {
-        return userMapper.updateUserStatus(user.getUserId(), user.getStatus());
+        int rows = userMapper.updateUserStatus(user.getUserId(), user.getStatus());
+        if (rows > 0)
+        {
+            clearUserCache(user.getUserId(), null);
+        }
+        return rows;
     }
 
     /**
@@ -377,7 +419,12 @@ public class SysUserServiceImpl implements ISysUserService
     @Override
     public int resetPwd(SysUser user)
     {
-        return userMapper.resetUserPwd(user.getUserId(), user.getPassword());
+        int rows = userMapper.resetUserPwd(user.getUserId(), user.getPassword());
+        if (rows > 0)
+        {
+            clearUserCache(user.getUserId(), null);
+        }
+        return rows;
     }
 
     /**
@@ -485,7 +532,16 @@ public class SysUserServiceImpl implements ISysUserService
         userRoleMapper.deleteUserRole(userIds);
         // 删除用户与岗位关联
         userPostMapper.deleteUserPost(userIds);
-        return userMapper.deleteUserByIds(userIds);
+        int rows = userMapper.deleteUserByIds(userIds);
+        if (rows > 0)
+        {
+            for (Long userId : userIds)
+            {
+                clearUserCache(userId, null);
+            }
+            log.info("[用户管理] 删除用户 - userIds={}", Arrays.toString(userIds));
+        }
+        return rows;
     }
 
     /**
@@ -511,46 +567,98 @@ public class SysUserServiceImpl implements ISysUserService
         {
             try
             {
-                // 验证是否存在这个用户
-                SysUser u = userMapper.selectUserByUserName(user.getUserName());
-                if (StringUtils.isNull(u))
+                boolean isExist = checkImportUserExists(user);
+                if (!isExist)
                 {
-                    BeanValidators.validateWithException(validator, user);
-                    deptService.checkDeptDataScope(user.getDeptId());
-                    String password = configService.selectConfigByKey("sys.user.initPassword");
-                    user.setPassword(SecurityUtils.encryptPassword(password));
-                    user.setCreateBy(operName);
-                    userMapper.insertUser(user);
-                    successNum++;
-                    successMsg.append("<br/>" + successNum + "、账号 " + user.getUserName() + " 导入成功");
+                    successNum += importNewUser(user, operName, successMsg);
                 }
                 else if (isUpdateSupport)
                 {
-                    BeanValidators.validateWithException(validator, user);
-                    checkUserAllowed(u);
-                    checkUserDataScope(u.getUserId());
-                    deptService.checkDeptDataScope(user.getDeptId());
-                    user.setUserId(u.getUserId());
-                    user.setDeptId(u.getDeptId());
-                    user.setUpdateBy(operName);
-                    userMapper.updateUser(user);
-                    successNum++;
-                    successMsg.append("<br/>" + successNum + "、账号 " + user.getUserName() + " 更新成功");
+                    successNum += importUpdateUser(user, operName, successMsg);
                 }
                 else
                 {
                     failureNum++;
-                    failureMsg.append("<br/>" + failureNum + "、账号 " + user.getUserName() + " 已存在");
+                    failureMsg.append("<br/>").append(failureNum).append("、账号 ").append(user.getUserName()).append(" 已存在");
                 }
             }
             catch (Exception e)
             {
                 failureNum++;
                 String msg = "<br/>" + failureNum + "、账号 " + user.getUserName() + " 导入失败：";
-                failureMsg.append(msg + e.getMessage());
+                failureMsg.append(msg).append(e.getMessage());
                 log.error(msg, e);
             }
         }
+        return buildImportResult(successNum, failureNum, successMsg, failureMsg);
+    }
+
+    /**
+     * 校验导入用户是否已存在
+     *
+     * @param user 用户信息
+     * @return true=已存在 false=不存在
+     */
+    private boolean checkImportUserExists(SysUser user)
+    {
+        return StringUtils.isNotNull(userMapper.selectUserByUserName(user.getUserName()));
+    }
+
+    /**
+     * 导入新增用户
+     *
+     * @param user 用户信息
+     * @param operName 操作人
+     * @param successMsg 成功消息
+     * @return 成功条数
+     */
+    private int importNewUser(SysUser user, String operName, StringBuilder successMsg)
+    {
+        BeanValidators.validateWithException(validator, user);
+        deptService.checkDeptDataScope(user.getDeptId());
+        String password = configService.selectConfigByKey("sys.user.initPassword");
+        user.setPassword(SecurityUtils.encryptPassword(password));
+        user.setCreateBy(operName);
+        userMapper.insertUser(user);
+        successMsg.append("<br/>").append("账号 ").append(user.getUserName()).append(" 导入成功");
+        return 1;
+    }
+
+    /**
+     * 导入更新用户
+     *
+     * @param user 用户信息
+     * @param operName 操作人
+     * @param successMsg 成功消息
+     * @return 成功条数
+     */
+    private int importUpdateUser(SysUser user, String operName, StringBuilder successMsg)
+    {
+        SysUser u = userMapper.selectUserByUserName(user.getUserName());
+        BeanValidators.validateWithException(validator, user);
+        checkUserAllowed(u);
+        checkUserDataScope(u.getUserId());
+        deptService.checkDeptDataScope(user.getDeptId());
+        user.setUserId(u.getUserId());
+        user.setDeptId(u.getDeptId());
+        user.setUpdateBy(operName);
+        userMapper.updateUser(user);
+        clearUserCache(user.getUserId(), user.getUserName());
+        successMsg.append("<br/>").append("账号 ").append(user.getUserName()).append(" 更新成功");
+        return 1;
+    }
+
+    /**
+     * 构建导入结果消息
+     *
+     * @param successNum 成功数
+     * @param failureNum 失败数
+     * @param successMsg 成功消息
+     * @param failureMsg 失败消息
+     * @return 结果消息
+     */
+    private String buildImportResult(int successNum, int failureNum, StringBuilder successMsg, StringBuilder failureMsg)
+    {
         if (failureNum > 0)
         {
             failureMsg.insert(0, "很抱歉，导入失败！共 " + failureNum + " 条数据格式不正确，错误如下：");
@@ -561,5 +669,39 @@ public class SysUserServiceImpl implements ISysUserService
             successMsg.insert(0, "恭喜您，数据已全部导入成功！共 " + successNum + " 条，数据如下：");
         }
         return successMsg.toString();
+    }
+
+    /**
+     * 清除用户缓存
+     */
+    private void clearUserCache(Long userId, String userName)
+    {
+        if (userId != null)
+        {
+            redisCache.deleteObject(CacheConstants.SYS_USER_ID_KEY + userId);
+        }
+        if (StringUtils.isNotEmpty(userName))
+        {
+            redisCache.deleteObject(CacheConstants.SYS_USER_NAME_KEY + userName);
+        }
+    }
+
+    /**
+     * 变更用户生命周期状态
+     *
+     * @param userId 用户ID
+     * @param newStatus 新状态
+     * @return 结果
+     */
+    @Override
+    public int changeLifecycleStatus(Long userId, String newStatus)
+    {
+        SysUser user = new SysUser();
+        user.setUserId(userId);
+        user.setAccountStatus(newStatus);
+        // 清除缓存
+        clearUserCache(userId, selectUserById(userId).getUserName());
+        log.info("[用户管理] 变更生命周期状态 - userId={}, newStatus={}", userId, newStatus);
+        return userMapper.updateUser(user);
     }
 }

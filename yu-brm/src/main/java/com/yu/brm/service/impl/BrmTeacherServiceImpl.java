@@ -33,7 +33,7 @@ public class BrmTeacherServiceImpl implements IBrmTeacherService
     }
 
     @Override
-    @DataScope(deptAlias = "d")
+    @DataScope(deptAlias = "d", userAlias = "t")
     public List<BrmTeacher> selectBrmTeacherList(BrmTeacher brmTeacher)
     {
         return brmTeacherMapper.selectBrmTeacherList(brmTeacher);

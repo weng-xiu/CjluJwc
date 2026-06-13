@@ -169,6 +169,7 @@ CREATE TABLE `brm_teacher` (
   `teacher_id` bigint NOT NULL AUTO_INCREMENT COMMENT '教师ID',
   `teacher_code` varchar(50) NOT NULL COMMENT '教师工号',
   `teacher_name` varchar(50) NOT NULL COMMENT '教师姓名',
+  `user_id` bigint DEFAULT NULL COMMENT '关联系统用户ID（关联sys_user）',
   `dept_id` bigint DEFAULT NULL COMMENT '所属院系ID',
   `gender` char(1) DEFAULT '0' COMMENT '性别（0男 1女 2未知）',
   `phone` varchar(20) DEFAULT NULL COMMENT '联系电话',

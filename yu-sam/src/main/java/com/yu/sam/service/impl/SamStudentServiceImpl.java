@@ -40,7 +40,7 @@ public class SamStudentServiceImpl implements ISamStudentService
     }
 
     @Override
-    @DataScope(deptAlias = "d")
+    @DataScope(deptAlias = "d", userAlias = "s")
     public List<SamStudent> selectSamStudentList(SamStudent samStudent)
     {
         return samStudentMapper.selectSamStudentList(samStudent);

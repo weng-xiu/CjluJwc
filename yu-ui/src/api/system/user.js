@@ -134,3 +134,12 @@ export function deptTreeSelect() {
     method: 'get'
   })
 }
+
+// 变更用户生命周期状态
+export function changeLifecycle(data) {
+  return request({
+    url: '/system/user/lifecycle',
+    method: 'put',
+    data: data
+  })
+}

@@ -30,7 +30,7 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     }
 
     @Override
-    @DataScope(deptAlias = "d")
+    @DataScope(deptAlias = "d", userAlias = "ss")
     public List<AemGradeRecord> selectAemGradeRecordList(AemGradeRecord aemGradeRecord)
     {
         return aemGradeRecordMapper.selectAemGradeRecordList(aemGradeRecord);

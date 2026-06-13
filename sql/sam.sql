@@ -15,6 +15,7 @@ CREATE TABLE `sam_student` (
   `birth_date` date DEFAULT NULL COMMENT '出生日期',
   `id_card` varchar(18) DEFAULT NULL COMMENT '身份证号',
   `major_id` bigint DEFAULT NULL COMMENT '专业ID（关联brm_major）',
+  `user_id` bigint DEFAULT NULL COMMENT '关联系统用户ID（关联sys_user）',
   `dept_id` bigint DEFAULT NULL COMMENT '院系ID（关联brm_department）',
   `class_id` bigint DEFAULT NULL COMMENT '班级ID（关联brm_class）',
   `enrollment_year` varchar(10) DEFAULT NULL COMMENT '入学年份（如2024级）',

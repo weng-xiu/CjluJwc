@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.system.mapper.SysStudentMapper">
+
+    <resultMap type="SysStudent" id="SysStudentResult">
+        <id     property="studentId"      column="student_id"       />
+        <result property="userId"         column="user_id"          />
+        <result property="studentCode"    column="student_code"     />
+        <result property="classId"        column="class_id"         />
+        <result property="majorId"        column="major_id"         />
+        <result property="deptId"         column="dept_id"          />
+        <result property="grade"          column="grade"            />
+        <result property="enrollmentYear" column="enrollment_year"  />
+        <result property="educationLevel" column="education_level"  />
+        <result property="studentStatus"  column="student_status"   />
+        <result property="createTime"     column="create_time"      />
+        <result property="remark"         column="remark"           />
+        <result property="userName"       column="user_name"        />
+        <result property="nickName"       column="nick_name"        />
+        <result property="className"      column="class_name"       />
+        <result property="majorName"      column="major_name"       />
+        <result property="deptName"       column="dept_name"        />
+    </resultMap>
+
+    <sql id="selectStudentVo">
+        select s.student_id, s.user_id, s.student_code, s.class_id, s.major_id, s.dept_id, s.grade, s.enrollment_year, s.education_level, s.student_status, s.create_time, s.remark,
+        u.user_name, u.nick_name, c.class_name, m.major_name, d.dept_name
+        from sys_student s
+		    left join sys_user u on s.user_id = u.user_id
+		    left join brm_class c on s.class_id = c.class_id
+		    left join brm_major m on s.major_id = m.major_id
+		    left join brm_department d on s.dept_id = d.dept_id
+    </sql>
+
+    <select id="selectStudentList" parameterType="SysStudent" resultMap="SysStudentResult">
+        <include refid="selectStudentVo"/>
+        where s.student_id is not null
+        <if test="studentCode != null and studentCode != ''">
+            AND s.student_code like concat('%', #{studentCode}, '%')
+        </if>
+        <if test="grade != null and grade != ''">
+            AND s.grade = #{grade}
+        </if>
+        <if test="deptId != null and deptId != 0">
+            AND s.dept_id = #{deptId}
+        </if>
+        <if test="majorId != null and majorId != 0">
+            AND s.major_id = #{majorId}
+        </if>
+        <if test="classId != null and classId != 0">
+            AND s.class_id = #{classId}
+        </if>
+        <if test="studentStatus != null and studentStatus != ''">
+            AND s.student_status = #{studentStatus}
+        </if>
+        <if test="educationLevel != null and educationLevel != ''">
+            AND s.education_level = #{educationLevel}
+        </if>
+        <if test="userName != null and userName != ''">
+            AND u.user_name like concat('%', #{userName}, '%')
+        </if>
+        <!-- 数据范围过滤 -->
+        ${params.dataScope}
+    </select>
+
+    <select id="selectStudentById" parameterType="Long" resultMap="SysStudentResult">
+        <include refid="selectStudentVo"/>
+        where s.student_id = #{studentId}
+    </select>
+
+    <select id="selectStudentByUserId" parameterType="Long" resultMap="SysStudentResult">
+        <include refid="selectStudentVo"/>
+        where s.user_id = #{userId}
+    </select>
+
+    <select id="selectStudentByCode" parameterType="String" resultMap="SysStudentResult">
+        <include refid="selectStudentVo"/>
+        where s.student_code = #{studentCode}
+    </select>
+
+    <insert id="insertStudent" parameterType="SysStudent" useGeneratedKeys="true" keyProperty="studentId">
+        insert into sys_student(
+            <if test="userId != null">user_id,</if>
+            <if test="studentCode != null and studentCode != ''">student_code,</if>
+            <if test="classId != null">class_id,</if>
+            <if test="majorId != null">major_id,</if>
+            <if test="deptId != null">dept_id,</if>
+            <if test="grade != null and grade != ''">grade,</if>
+            <if test="enrollmentYear != null and enrollmentYear != ''">enrollment_year,</if>
+            <if test="educationLevel != null and educationLevel != ''">education_level,</if>
+            <if test="studentStatus != null and studentStatus != ''">student_status,</if>
+            <if test="remark != null and remark != ''">remark,</if>
+            create_time
+        )values(
+            <if test="userId != null">#{userId},</if>
+            <if test="studentCode != null and studentCode != ''">#{studentCode},</if>
+            <if test="classId != null">#{classId},</if>
+            <if test="majorId != null">#{majorId},</if>
+            <if test="deptId != null">#{deptId},</if>
+            <if test="grade != null and grade != ''">#{grade},</if>
+            <if test="enrollmentYear != null and enrollmentYear != ''">#{enrollmentYear},</if>
+            <if test="educationLevel != null and educationLevel != ''">#{educationLevel},</if>
+            <if test="studentStatus != null and studentStatus != ''">#{studentStatus},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateStudent" parameterType="SysStudent">
+        update sys_student
+        <set>
+            <if test="studentCode != null and studentCode != ''">student_code = #{studentCode},</if>
+            <if test="classId != null">class_id = #{classId},</if>
+            <if test="majorId != null">major_id = #{majorId},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="grade != null and grade != ''">grade = #{grade},</if>
+            <if test="enrollmentYear != null and enrollmentYear != ''">enrollment_year = #{enrollmentYear},</if>
+            <if test="educationLevel != null and educationLevel != ''">education_level = #{educationLevel},</if>
+            <if test="studentStatus != null and studentStatus != ''">student_status = #{studentStatus},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = sysdate()
+        </set>
+        where student_id = #{studentId}
+    </update>
+
+    <delete id="deleteStudentById" parameterType="Long">
+        delete from sys_student where student_id = #{studentId}
+    </delete>
+
+    <delete id="deleteStudentByIds" parameterType="Long">
+        delete from sys_student where student_id in
+        <foreach collection="array" item="studentId" open="(" separator="," close=")">
+            #{studentId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteStudentByUserId" parameterType="Long">
+        delete from sys_student where user_id = #{userId}
+    </delete>
+
+    <insert id="batchInsertStudent" parameterType="java.util.List">
+        insert into sys_student(user_id, student_code, class_id, major_id, dept_id, grade, enrollment_year, education_level, student_status, remark, create_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.userId}, #{item.studentCode}, #{item.classId}, #{item.majorId}, #{item.deptId}, #{item.grade}, #{item.enrollmentYear}, #{item.educationLevel}, #{item.studentStatus}, #{item.remark}, sysdate())
+        </foreach>
+    </insert>
+
+    <select id="checkStudentCodeUnique" parameterType="String" resultMap="SysStudentResult">
+        select s.student_id, s.student_code from sys_student s where s.student_code = #{studentCode} limit 1
+    </select>
+
+</mapper>

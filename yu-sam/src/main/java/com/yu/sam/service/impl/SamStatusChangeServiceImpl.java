@@ -20,7 +20,7 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
     @Override
     public SamStatusChange selectSamStatusChangeByChangeId(Long changeId) { return samStatusChangeMapper.selectSamStatusChangeByChangeId(changeId); }
     @Override
-    @DataScope(deptAlias = "d")
+    @DataScope(deptAlias = "d", userAlias = "s")
     public List<SamStatusChange> selectSamStatusChangeList(SamStatusChange samStatusChange) { return samStatusChangeMapper.selectSamStatusChangeList(samStatusChange); }
     @Override
     @Transactional

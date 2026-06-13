@@ -29,7 +29,7 @@ public class AemSupervisionRecordServiceImpl implements IAemSupervisionRecordSer
     }
 
     @Override
-    @DataScope(deptAlias = "d")
+    @DataScope(deptAlias = "d", userAlias = "t")
     public List<AemSupervisionRecord> selectAemSupervisionRecordList(AemSupervisionRecord aemSupervisionRecord)
     {
         return aemSupervisionRecordMapper.selectAemSupervisionRecordList(aemSupervisionRecord);

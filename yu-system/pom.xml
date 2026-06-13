@@ -23,6 +23,12 @@
             <artifactId>yu-common</artifactId>
         </dependency>
 
+        <!-- 基础资源管理模块（用于账号同步） -->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-brm</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

@@ -49,6 +49,10 @@ public class SamStudent extends BaseEntity
     @Excel(name = "专业ID")
     private Long majorId;
 
+    /** 关联系统用户ID（关联sys_user） */
+    @Excel(name = "用户ID")
+    private Long userId;
+
     /** 院系ID（关联brm_department） */
     @Excel(name = "院系ID")
     private Long deptId;
@@ -99,6 +103,9 @@ public class SamStudent extends BaseEntity
     public Long getMajorId() { return majorId; }
     public void setMajorId(Long majorId) { this.majorId = majorId; }
 
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+
     @NotNull(message = "院系ID不能为空")
     public Long getDeptId() { return deptId; }
     public void setDeptId(Long deptId) { this.deptId = deptId; }
@@ -129,6 +136,7 @@ public class SamStudent extends BaseEntity
             .append("birthDate", getBirthDate())
             .append("idCard", getIdCard())
             .append("majorId", getMajorId())
+            .append("userId", getUserId())
             .append("deptId", getDeptId())
             .append("classId", getClassId())
             .append("enrollmentYear", getEnrollmentYear())

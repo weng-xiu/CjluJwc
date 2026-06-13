@@ -5,6 +5,7 @@
         <result property="teacherId"     column="teacher_id"     />
         <result property="teacherCode"   column="teacher_code"   />
         <result property="teacherName"   column="teacher_name"   />
+        <result property="userId"       column="user_id"       />
         <result property="deptId"        column="dept_id"        />
         <result property="gender"        column="gender"         />
         <result property="phone"         column="phone"          />
@@ -48,7 +49,7 @@
     </resultMap>
     <sql id="selectBrmTeacherVo">select teacher_id, teacher_code, teacher_name, dept_id, gender, phone, email, title, education, status, create_by, create_time, update_by, update_time, remark from brm_teacher</sql>
     <select id="selectBrmTeacherList" parameterType="BrmTeacher" resultMap="BrmTeacherResult">
-        select t.teacher_id, t.teacher_code, t.teacher_name, t.dept_id, t.gender, t.phone, t.email, t.title, t.education, t.status, t.create_by, t.create_time, t.update_by, t.update_time, t.remark
+        select t.teacher_id, t.teacher_code, t.teacher_name, t.user_id, t.dept_id, t.gender, t.phone, t.email, t.title, t.education, t.status, t.create_by, t.create_time, t.update_by, t.update_time, t.remark
         from brm_teacher t
         left join sys_dept d on t.dept_id = d.dept_id
         <where>
@@ -65,7 +66,7 @@
     <insert id="insertBrmTeacher" parameterType="BrmTeacher" useGeneratedKeys="true" keyProperty="teacherId">insert into brm_teacher
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="teacherCode != null and teacherCode != ''">teacher_code,</if><if test="teacherName != null and teacherName != ''">teacher_name,</if>
-            <if test="deptId != null">dept_id,</if><if test="gender != null">gender,</if>
+            <if test="userId != null">user_id,</if><if test="deptId != null">dept_id,</if><if test="gender != null">gender,</if>
             <if test="phone != null">phone,</if><if test="email != null">email,</if>
             <if test="title != null">title,</if><if test="education != null">education,</if>
             <if test="status != null">status,</if><if test="createBy != null">create_by,</if>
@@ -73,7 +74,7 @@
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="teacherCode != null and teacherCode != ''">#{teacherCode},</if><if test="teacherName != null and teacherName != ''">#{teacherName},</if>
-            <if test="deptId != null">#{deptId},</if><if test="gender != null">#{gender},</if>
+            <if test="userId != null">#{userId},</if><if test="deptId != null">#{deptId},</if><if test="gender != null">#{gender},</if>
             <if test="phone != null">#{phone},</if><if test="email != null">#{email},</if>
             <if test="title != null">#{title},</if><if test="education != null">#{education},</if>
             <if test="status != null">#{status},</if><if test="createBy != null">#{createBy},</if>
@@ -83,7 +84,7 @@
     <update id="updateBrmTeacher" parameterType="BrmTeacher">update brm_teacher
         <trim prefix="SET" suffixOverrides=",">
             <if test="teacherCode != null and teacherCode != ''">teacher_code = #{teacherCode},</if><if test="teacherName != null and teacherName != ''">teacher_name = #{teacherName},</if>
-            <if test="deptId != null">dept_id = #{deptId},</if><if test="gender != null">gender = #{gender},</if>
+            <if test="userId != null">user_id = #{userId},</if><if test="deptId != null">dept_id = #{deptId},</if><if test="gender != null">gender = #{gender},</if>
             <if test="phone != null">phone = #{phone},</if><if test="email != null">email = #{email},</if>
             <if test="title != null">title = #{title},</if><if test="education != null">education = #{education},</if>
             <if test="status != null">status = #{status},</if><if test="updateBy != null">update_by = #{updateBy},</if>

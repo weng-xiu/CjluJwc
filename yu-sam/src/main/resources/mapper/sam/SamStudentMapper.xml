@@ -11,6 +11,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="birthDate"         column="birth_date"         />
         <result property="idCard"            column="id_card"            />
         <result property="majorId"           column="major_id"           />
+        <result property="userId"            column="user_id"            />
         <result property="deptId"            column="dept_id"            />
         <result property="classId"           column="class_id"           />
         <result property="enrollmentYear"    column="enrollment_year"    />
@@ -27,7 +28,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select student_id, student_no, student_name, gender, birth_date, id_card, major_id, dept_id, class_id, enrollment_year, education_level, student_status, status, create_by, create_time, update_by, update_time, remark from sam_student
     </sql>
     <select id="selectSamStudentList" parameterType="SamStudent" resultMap="SamStudentResult">
-        select s.student_id, s.student_no, s.student_name, s.gender, s.birth_date, s.id_card, s.major_id, s.dept_id, s.class_id, s.enrollment_year, s.education_level, s.student_status, s.status, s.create_by, s.create_time, s.update_by, s.update_time, s.remark
+        select s.student_id, s.student_no, s.student_name, s.gender, s.birth_date, s.id_card, s.major_id, s.user_id, s.dept_id, s.class_id, s.enrollment_year, s.education_level, s.student_status, s.status, s.create_by, s.create_time, s.update_by, s.update_time, s.remark
         from sam_student s
         left join sys_dept d on s.dept_id = d.dept_id
         <where>
@@ -55,6 +56,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="birthDate != null">birth_date,</if>
             <if test="idCard != null">id_card,</if>
             <if test="majorId != null">major_id,</if>
+            <if test="userId != null">user_id,</if>
             <if test="deptId != null">dept_id,</if>
             <if test="classId != null">class_id,</if>
             <if test="enrollmentYear != null">enrollment_year,</if>
@@ -72,6 +74,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="birthDate != null">#{birthDate},</if>
             <if test="idCard != null">#{idCard},</if>
             <if test="majorId != null">#{majorId},</if>
+            <if test="userId != null">#{userId},</if>
             <if test="deptId != null">#{deptId},</if>
             <if test="classId != null">#{classId},</if>
             <if test="enrollmentYear != null">#{enrollmentYear},</if>
@@ -92,6 +95,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="birthDate != null">birth_date = #{birthDate},</if>
             <if test="idCard != null">id_card = #{idCard},</if>
             <if test="majorId != null">major_id = #{majorId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
             <if test="deptId != null">dept_id = #{deptId},</if>
             <if test="classId != null">class_id = #{classId},</if>
             <if test="enrollmentYear != null">enrollment_year = #{enrollmentYear},</if>

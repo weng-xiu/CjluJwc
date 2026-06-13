@@ -2,6 +2,7 @@ package com.yu.system.service.impl;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -71,7 +72,7 @@ public class SysConfigServiceImpl implements ISysConfigService
         SysConfig retConfig = configMapper.selectConfig(config);
         if (StringUtils.isNotNull(retConfig))
         {
-            redisCache.setCacheObject(getCacheKey(configKey), retConfig.getConfigValue());
+            redisCache.setCacheObject(getCacheKey(configKey), retConfig.getConfigValue(), CacheConstants.SYS_CONFIG_CACHE_EXPIRATION, TimeUnit.MINUTES);
             return retConfig.getConfigValue();
         }
         return StringUtils.EMPTY;
@@ -117,7 +118,7 @@ public class SysConfigServiceImpl implements ISysConfigService
         int row = configMapper.insertConfig(config);
         if (row > 0)
         {
-            redisCache.setCacheObject(getCacheKey(config.getConfigKey()), config.getConfigValue());
+            redisCache.setCacheObject(getCacheKey(config.getConfigKey()), config.getConfigValue(), CacheConstants.SYS_CONFIG_CACHE_EXPIRATION, TimeUnit.MINUTES);
         }
         return row;
     }
@@ -140,7 +141,7 @@ public class SysConfigServiceImpl implements ISysConfigService
         int row = configMapper.updateConfig(config);
         if (row > 0)
         {
-            redisCache.setCacheObject(getCacheKey(config.getConfigKey()), config.getConfigValue());
+            redisCache.setCacheObject(getCacheKey(config.getConfigKey()), config.getConfigValue(), CacheConstants.SYS_CONFIG_CACHE_EXPIRATION, TimeUnit.MINUTES);
         }
         return row;
     }
@@ -174,7 +175,7 @@ public class SysConfigServiceImpl implements ISysConfigService
         List<SysConfig> configsList = configMapper.selectConfigList(new SysConfig());
         for (SysConfig config : configsList)
         {
-            redisCache.setCacheObject(getCacheKey(config.getConfigKey()), config.getConfigValue());
+            redisCache.setCacheObject(getCacheKey(config.getConfigKey()), config.getConfigValue(), CacheConstants.SYS_CONFIG_CACHE_EXPIRATION, TimeUnit.MINUTES);
         }
     }
 

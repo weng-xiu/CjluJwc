@@ -24,6 +24,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateBy"      column="update_by"       />
         <result property="updateTime"    column="update_time"     />
         <result property="remark"        column="remark"          />
+        <result property="userCategory"   column="user_category"    />
+        <result property="identityId"     column="identity_id"     />
+        <result property="accountStatus"  column="account_status"  />
+        <result property="enrollmentDate" column="enrollment_date" />
+        <result property="graduationDate" column="graduation_date" />
         <association property="dept"     javaType="SysDept"         resultMap="deptResult" />
         <collection  property="roles"    javaType="java.util.List"  resultMap="RoleResult" />
     </resultMap>
@@ -48,7 +53,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 	
 	<sql id="selectUserVo">
-        select u.user_id, u.dept_id, u.user_name, u.nick_name, u.email, u.avatar, u.phonenumber, u.password, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.pwd_update_date, u.create_by, u.create_time, u.update_by, u.update_time, u.remark, 
+        select u.user_id, u.dept_id, u.user_name, u.nick_name, u.email, u.avatar, u.phonenumber, u.password, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.pwd_update_date, u.create_by, u.create_time, u.update_by, u.update_time, u.remark, u.user_category, u.identity_id, u.account_status, u.enrollment_date, u.graduation_date, 
         d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader, d.status as dept_status,
         r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.status as role_status
         from sys_user u
@@ -81,6 +86,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		</if>
 		<if test="deptId != null and deptId != 0">
 			AND (u.dept_id = #{deptId} OR u.dept_id IN ( SELECT t.dept_id FROM sys_dept t WHERE find_in_set(#{deptId}, ancestors) ))
+		</if>
+		<if test="userCategory != null and userCategory != ''">
+			AND u.user_category = #{userCategory}
+		</if>
+		<if test="accountStatus != null and accountStatus != ''">
+			AND u.account_status = #{accountStatus}
 		</if>
 		<!-- 数据范围过滤 -->
 		${params.dataScope}
@@ -158,6 +169,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
  			<if test="pwdUpdateDate != null">pwd_update_date,</if>
  			<if test="createBy != null and createBy != ''">create_by,</if>
  			<if test="remark != null and remark != ''">remark,</if>
+ 			<if test="userCategory != null and userCategory != ''">user_category,</if>
+ 			<if test="identityId != null">identity_id,</if>
+ 			<if test="accountStatus != null and accountStatus != ''">account_status,</if>
+ 			<if test="enrollmentDate != null">enrollment_date,</if>
+ 			<if test="graduationDate != null">graduation_date,</if>
  			create_time
  		)values(
  			<if test="userId != null and userId != ''">#{userId},</if>
@@ -173,6 +189,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
  			<if test="pwdUpdateDate != null">#{pwdUpdateDate},</if>
  			<if test="createBy != null and createBy != ''">#{createBy},</if>
  			<if test="remark != null and remark != ''">#{remark},</if>
+ 			<if test="userCategory != null and userCategory != ''">#{userCategory},</if>
+ 			<if test="identityId != null">#{identityId},</if>
+ 			<if test="accountStatus != null and accountStatus != ''">#{accountStatus},</if>
+ 			<if test="enrollmentDate != null">#{enrollmentDate},</if>
+ 			<if test="graduationDate != null">#{graduationDate},</if>
  			sysdate()
  		)
 	</insert>
@@ -192,6 +213,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
  			<if test="loginDate != null">login_date = #{loginDate},</if>
  			<if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
  			<if test="remark != null">remark = #{remark},</if>
+ 			<if test="userCategory != null and userCategory != ''">user_category = #{userCategory},</if>
+ 			<if test="identityId != null">identity_id = #{identityId},</if>
+ 			<if test="accountStatus != null and accountStatus != ''">account_status = #{accountStatus},</if>
+ 			<if test="enrollmentDate != null">enrollment_date = #{enrollmentDate},</if>
+ 			<if test="graduationDate != null">graduation_date = #{graduationDate},</if>
  			update_time = sysdate()
  		</set>
  		where user_id = #{userId}

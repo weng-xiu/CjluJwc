@@ -216,6 +216,19 @@ public class SysUserController extends BaseController
     }
 
     /**
+     * 变更用户生命周期状态
+     */
+    @PreAuthorize("@ss.hasPermi('system:user:edit')")
+    @Log(title = "用户管理", businessType = BusinessType.UPDATE)
+    @PutMapping("/lifecycle")
+    public AjaxResult changeLifecycle(@RequestBody SysUser user)
+    {
+        userService.checkUserAllowed(user);
+        userService.checkUserDataScope(user.getUserId());
+        return toAjax(userService.changeLifecycleStatus(user.getUserId(), user.getAccountStatus()));
+    }
+
+    /**
      * 根据用户编号获取授权角色
      */
     @PreAuthorize("@ss.hasPermi('system:user:query')")

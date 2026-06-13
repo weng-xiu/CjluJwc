@@ -214,4 +214,13 @@ public interface ISysUserService
      * @return 结果
      */
     public String importUser(List<SysUser> userList, Boolean isUpdateSupport, String operName);
+
+    /**
+     * 变更用户生命周期状态
+     *
+     * @param userId 用户ID
+     * @param newStatus 新状态
+     * @return 结果
+     */
+    public int changeLifecycleStatus(Long userId, String newStatus);
 }

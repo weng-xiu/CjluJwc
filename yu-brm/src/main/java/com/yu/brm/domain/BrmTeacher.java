@@ -30,6 +30,10 @@ public class BrmTeacher extends BaseEntity
     @Excel(name = "教师姓名")
     private String teacherName;
 
+    /** 关联系统用户ID（关联sys_user） */
+    @Excel(name = "用户ID")
+    private Long userId;
+
     /** 所属院系ID */
     @Excel(name = "所属院系ID")
     private Long deptId;
@@ -77,6 +81,9 @@ public class BrmTeacher extends BaseEntity
     public String getTeacherName() { return teacherName; }
     public void setTeacherName(String teacherName) { this.teacherName = teacherName; }
 
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+
     @NotNull(message = "所属院系不能为空")
     public Long getDeptId() { return deptId; }
     public void setDeptId(Long deptId) { this.deptId = deptId; }
@@ -113,6 +120,7 @@ public class BrmTeacher extends BaseEntity
             .append("teacherId", getTeacherId())
             .append("teacherCode", getTeacherCode())
             .append("teacherName", getTeacherName())
+            .append("userId", getUserId())
             .append("deptId", getDeptId())
             .append("gender", getGender())
             .append("phone", getPhone())

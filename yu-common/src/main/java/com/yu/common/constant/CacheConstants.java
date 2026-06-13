@@ -41,4 +41,24 @@ public class CacheConstants
      * 登录账户密码错误次数 redis key
      */
     public static final String PWD_ERR_CNT_KEY = "pwd_err_cnt:";
+
+    /**
+     * 用户信息缓存（按ID）
+     */
+    public static final String SYS_USER_ID_KEY = "sys_user:id:";
+
+    /**
+     * 用户信息缓存（按用户名）
+     */
+    public static final String SYS_USER_NAME_KEY = "sys_user:name:";
+
+    /**
+     * 用户缓存过期时间（分钟）
+     */
+    public static final int SYS_USER_CACHE_EXPIRATION = 30;
+
+    /**
+     * 系统配置缓存过期时间（分钟）
+     */
+    public static final int SYS_CONFIG_CACHE_EXPIRATION = 120;
 }
