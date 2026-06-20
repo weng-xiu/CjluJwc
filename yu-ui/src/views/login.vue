@@ -303,7 +303,7 @@ export default {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(0, 32, 64, 0.3) 0%, rgba(0, 80, 160, 0.15) 100%);
+    background: linear-gradient(135deg, rgba(0, 50, 100, 0.4) 0%, rgba(0, 122, 184, 0.2) 100%);
     z-index: 0;
   }
 }
@@ -327,7 +327,7 @@ export default {
     cursor: pointer;
     transition: all 0.3s;
     &.active {
-      background: #8B0000;
+      background: #007ab8;
       color: #fff;
     }
     &:hover:not(.active) {
@@ -342,10 +342,10 @@ export default {
   width: 880px;
   min-height: 480px;
   border-radius: 16px;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 40, 80, 0.75);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  box-shadow: 0 20px 60px rgba(0, 40, 80, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
   z-index: 1;
   position: relative;
   animation: fadeInUp 0.6s ease-out;
@@ -380,11 +380,11 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #8B0000;
+    color: #007ab8;
     font-size: 14px;
     font-weight: bold;
     letter-spacing: 1px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 122, 184, 0.3);
   }
 }
 
@@ -494,11 +494,11 @@ export default {
   color: rgba(255, 255, 255, 0.9);
 }
 ::v-deep .el-checkbox__input.is-checked .el-checkbox__inner {
-  background-color: #8B0000;
-  border-color: #8B0000;
+  background-color: #007ab8;
+  border-color: #007ab8;
 }
 ::v-deep .el-checkbox__inner:hover {
-  border-color: #8B0000;
+  border-color: #007ab8;
 }
 
 .remember-text {
@@ -591,7 +591,7 @@ export default {
   z-index: 1;
 }
 
-/* 登录按钮 - 深红色 */
+/* 登录按钮 - 长江大学蓝 */
 ::v-deep .el-button--primary {
   width: 100%;
   height: 48px;
@@ -599,19 +599,19 @@ export default {
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 4px;
-  background: #8B0000;
+  background: #007ab8;
   border: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 16px rgba(139, 0, 0, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 122, 184, 0.35);
 }
 ::v-deep .el-button--primary:hover {
-  background: #a50000;
+  background: #008ed6;
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(139, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgba(0, 122, 184, 0.5);
 }
 ::v-deep .el-button--primary:active {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(139, 0, 0, 0.35);
+  box-shadow: 0 2px 8px rgba(0, 122, 184, 0.35);
 }
 
 /* 短信登录占位 */

@@ -137,7 +137,7 @@ export default {
 }
 .notice-popover .notice-mark-all {
   font-size: 12px;
-  color: #409EFF;
+  color: #007ab8;
   font-weight: normal;
   cursor: pointer;
 }

@@ -11,7 +11,9 @@ import com.yu.common.core.redis.RedisCache;
 import com.yu.common.exception.user.UserPasswordNotMatchException;
 import com.yu.common.exception.user.UserPasswordRetryLimitExceedException;
 import com.yu.common.utils.SecurityUtils;
+import com.yu.common.utils.StringUtils;
 import com.yu.framework.security.context.AuthenticationContextHolder;
+import com.yu.system.service.ISysUserService;
 
 /**
  * 登录密码方法
@@ -23,6 +25,9 @@ public class SysPasswordService
 {
     @Autowired
     private RedisCache redisCache;
+
+    @Autowired
+    private ISysUserService userService;
 
     @Value(value = "${user.password.maxRetryCount}")
     private int maxRetryCount;
@@ -73,7 +78,17 @@ public class SysPasswordService
 
     public boolean matches(SysUser user, String rawPassword)
     {
-        return SecurityUtils.matchesPassword(rawPassword, user.getPassword());
+        String encodedPassword = user.getPassword();
+        if (StringUtils.isEmpty(encodedPassword))
+        {
+            // 缓存对象可能缺失密码，从数据库重新加载
+            SysUser freshUser = userService.selectUserByUserName(user.getUserName());
+            if (freshUser != null)
+            {
+                encodedPassword = freshUser.getPassword();
+            }
+        }
+        return SecurityUtils.matchesPassword(rawPassword, encodedPassword);
     }
 
     public void clearLoginRecordCache(String loginName)

@@ -482,7 +482,7 @@ export default {
     margin-left: 6px;
   }
   .el-icon-plus{
-    color: #409EFF;
+    color: #007ab8;
   }
   .el-icon-delete{
     color: #157a0c;
@@ -502,7 +502,7 @@ export default {
 }
 
 $selectedColor: #f6f7ff;
-$lighterBlue: #409EFF;
+$lighterBlue: #007ab8;
 
 .container {
   position: relative;

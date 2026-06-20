@@ -105,7 +105,7 @@ export default {
     },
     chromeVars() {
       if (this.tagsViewStyle !== 'chrome') return {}
-      const primary = this.theme || '#409EFF'
+      const primary = this.theme || '#007ab8'
       return {
         '--chrome-tab-active-bg': this.mixHexWithWhite(primary, 0.15),
         '--chrome-tab-text-active': primary,

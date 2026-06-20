@@ -191,7 +191,7 @@ export default {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, rgba(0, 32, 64, 0.4) 0%, rgba(0, 80, 160, 0.2) 100%);
+    background: linear-gradient(135deg, rgba(0, 50, 100, 0.4) 0%, rgba(0, 122, 184, 0.2) 100%);
     z-index: 0;
   }
 }
@@ -217,8 +217,8 @@ export default {
       padding-left: 40px;
       transition: all 0.3s ease;
       &:focus {
-        border-color: #409EFF;
-        box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
+        border-color: #007ab8;
+        box-shadow: 0 0 0 3px rgba(0, 122, 184, 0.1);
       }
     }
   }
@@ -240,7 +240,7 @@ export default {
   height: 64px;
   margin: 0 auto 16px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #409EFF, #1890ff);
+  background: #007ab8;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -248,7 +248,7 @@ export default {
   font-size: 22px;
   font-weight: bold;
   letter-spacing: 2px;
-  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 122, 184, 0.4);
 }
 
 .title {
@@ -274,11 +274,12 @@ export default {
 }
 
 .link-type {
-  color: #409EFF;
+  color: #007ab8;
   font-size: 13px;
   text-decoration: none;
   &:hover {
     text-decoration: underline;
+    color: #008ed6;
   }
 }
 
@@ -325,18 +326,18 @@ export default {
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 4px;
-  background: linear-gradient(135deg, #409EFF 0%, #1677ff 100%);
+  background: linear-gradient(135deg, #007ab8 0%, #008ed6 100%);
   border: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 122, 184, 0.3);
 }
 ::v-deep .el-button--primary:hover {
-  background: linear-gradient(135deg, #66b1ff 0%, #409EFF 100%);
+  background: linear-gradient(135deg, #008ed6 0%, #007ab8 100%);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(64, 158, 255, 0.45);
+  box-shadow: 0 8px 24px rgba(0, 122, 184, 0.45);
 }
 ::v-deep .el-button--primary:active {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 122, 184, 0.3);
 }
 </style>

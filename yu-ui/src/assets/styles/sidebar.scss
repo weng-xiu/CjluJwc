@@ -120,15 +120,15 @@
           content: '';
           position: absolute;
           inset: 0;
-          background-color: var(--current-color-dark-bg, rgba(64, 158, 255, 0.2));
-          border-right: 3px solid var(--current-color, #409eff);
+          background-color: var(--current-color-dark-bg, rgba(0, 122, 184, 0.2));
+          border-right: 3px solid var(--current-color, #007ab8);
           pointer-events: none;
           z-index: 1;
         }
       }
 
       .el-submenu.is-active > .el-submenu__title {
-        color: var(--current-color, #409eff) !important;
+        color: var(--current-color, #007ab8) !important;
       }
 
       .el-menu-item:not(.is-active),
@@ -147,7 +147,7 @@
         }
 
         &:hover::before {
-          background-color: var(--current-color-dark-bg, rgba(64, 158, 255, 0.2));
+          background-color: var(--current-color-dark-bg, rgba(0, 122, 184, 0.2));
         }
       }
     }
@@ -163,22 +163,22 @@
       }
 
       .el-menu-item.is-active {
-        color: var(--current-color, #409eff) !important;
+        color: var(--current-color, #007ab8) !important;
         position: relative;
 
         &::before {
           content: '';
           position: absolute;
           inset: 0;
-          background-color: var(--current-color-light, #ecf5ff);
-          border-right: 3px solid var(--current-color, #409eff);
+          background-color: var(--current-color-light, #edf3f9);
+          border-right: 3px solid var(--current-color, #007ab8);
           pointer-events: none;
           z-index: 1;
         }
       }
 
       .el-submenu.is-active > .el-submenu__title {
-        color: var(--current-color, #409eff) !important;
+        color: var(--current-color, #007ab8) !important;
       }
 
       .el-menu-item:not(.is-active):hover,
@@ -193,7 +193,7 @@
         background-color: #fafafa !important;
 
         &:hover {
-          background-color: #f0f5ff !important;
+          background-color: #edf3f9 !important;
         }
       }
     }
