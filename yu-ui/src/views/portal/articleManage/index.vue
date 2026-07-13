@@ -38,15 +38,15 @@
           <dict-tag :options="dict.type.sys_yes_no" :value="scope.row.isTop"/>
         </template>
       </el-table-column>
-      <el-table-column label="是否推荐" align="center" prop="isRecommend" width="80">
+      <el-table-column label="是否推荐" align="center" prop="isFeatured" width="80">
         <template slot-scope="scope">
-          <dict-tag :options="dict.type.sys_yes_no" :value="scope.row.isRecommend"/>
+          <dict-tag :options="dict.type.sys_yes_no" :value="scope.row.isFeatured"/>
         </template>
       </el-table-column>
       <el-table-column label="浏览次数" align="center" prop="viewCount" width="80" />
-      <el-table-column label="发布时间" align="center" prop="publishTime" width="160">
+      <el-table-column label="发布时间" align="center" prop="publishDate" width="160">
         <template slot-scope="scope">
-          <span>{{ parseTime(scope.row.publishTime) }}</span>
+          <span>{{ parseTime(scope.row.publishDate) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="280">
@@ -93,8 +93,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="是否推荐" prop="isRecommend">
-              <el-switch v-model="form.isRecommend" active-value="1" inactive-value="0" active-text="是" inactive-text="否"></el-switch>
+            <el-form-item label="是否推荐" prop="isFeatured">
+              <el-switch v-model="form.isFeatured" active-value="1" inactive-value="0" active-text="是" inactive-text="否"></el-switch>
             </el-form-item>
           </el-col>
           <el-col :span="24">
@@ -225,7 +225,7 @@ export default {
         source: null,
         author: null,
         isTop: "0",
-        isRecommend: "0",
+        isFeatured: "0",
         status: "0",
         remark: null
       }

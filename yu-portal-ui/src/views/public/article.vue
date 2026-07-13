@@ -160,7 +160,7 @@ export default {
 /* ========== 摘要 ========== */
 .article-summary {
   background: #f9f9f9;
-  border-left: 3px solid #0066CC;
+  border-left: 3px solid #007ab8;
   padding: 12px 16px;
   margin-bottom: 24px;
 }
@@ -214,7 +214,7 @@ export default {
 }
 
 .article-content >>> a {
-  color: #0066CC;
+  color: #007ab8;
   text-decoration: none;
 }
 
@@ -242,7 +242,7 @@ export default {
 }
 
 .article-content >>> blockquote {
-  border-left: 4px solid #0066CC;
+  border-left: 4px solid #007ab8;
   padding: 8px 16px;
   margin: 16px 0;
   background: #f9f9f9;
@@ -310,7 +310,7 @@ export default {
 .nav-label {
   display: block;
   font-size: 12px;
-  color: #0066CC;
+  color: #007ab8;
   margin-bottom: 4px;
 }
 

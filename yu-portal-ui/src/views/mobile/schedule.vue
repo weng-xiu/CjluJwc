@@ -282,7 +282,7 @@ export default {
 }
 .day-name { font-size: 12px; color: #606266; }
 .day-date { font-size: 10px; color: #909399; }
-.day-col.today .day-name { color: #2e86c1; font-weight: 600; }
+.day-col.today .day-name { color: #007ab8; font-weight: 600; }
 .day-col.today { background: #ecf5ff; }
 
 .schedule-grid { background: #fff; }
@@ -366,7 +366,7 @@ export default {
   border-bottom: 1px solid #f0f2f5;
 }
 .detail-row:last-child { border-bottom: none; }
-.detail-row i { color: #2e86c1; margin-right: 6px; }
+.detail-row i { color: #007ab8; margin-right: 6px; }
 
 ::v-deep .mobile-dialog {
   border-radius: 12px;

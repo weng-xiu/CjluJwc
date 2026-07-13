@@ -87,7 +87,7 @@ export default {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a5276 0%, #2e86c1 40%, #85c1e9 100%);
+  background: linear-gradient(135deg, #003366 0%, #007ab8 50%, #008ed6 100%);
   position: relative;
   overflow: hidden;
 }
@@ -115,7 +115,7 @@ export default {
 }
 .login-header h2 {
   font-size: 24px;
-  color: #1a5276;
+  color: #007ab8;
   margin: 0 0 8px 0;
   font-weight: 600;
 }

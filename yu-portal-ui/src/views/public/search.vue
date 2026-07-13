@@ -184,7 +184,7 @@ export default {
 }
 
 .result-count strong {
-  color: #0066CC;
+  color: #007ab8;
   font-size: 18px;
 }
 
@@ -218,7 +218,7 @@ export default {
 }
 
 .article-item:hover .item-title {
-  color: #0066CC;
+  color: #007ab8;
 }
 
 .article-item .item-summary {

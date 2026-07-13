@@ -263,7 +263,7 @@ export default {
 .card-course-name { font-size: 15px; font-weight: 600; color: #303133; flex: 1; }
 .card-credit {
   font-size: 11px;
-  color: #2e86c1;
+  color: #007ab8;
   background: #ecf5ff;
   padding: 2px 8px;
   border-radius: 10px;
@@ -303,7 +303,7 @@ export default {
 .load-more {
   text-align: center;
   padding: 16px;
-  color: #2e86c1;
+  color: #007ab8;
   font-size: 13px;
   cursor: pointer;
 }

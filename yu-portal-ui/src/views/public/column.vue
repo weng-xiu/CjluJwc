@@ -145,7 +145,7 @@ export default {
 }
 
 .page-header {
-  border-bottom: 2px solid #0066CC;
+  border-bottom: 2px solid #007ab8;
   margin-bottom: 24px;
   padding-bottom: 12px;
 }
@@ -214,7 +214,7 @@ export default {
 }
 
 .article-item:hover .item-title {
-  color: #0066CC;
+  color: #007ab8;
 }
 
 .item-summary {

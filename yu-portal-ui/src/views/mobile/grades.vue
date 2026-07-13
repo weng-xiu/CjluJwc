@@ -192,7 +192,7 @@ export default {
 
 /* GPA横幅 */
 .gpa-banner {
-  background: linear-gradient(135deg, #1a5276, #2e86c1);
+  background: linear-gradient(135deg, #003366, #007ab8);
   color: #fff;
   padding: 20px 16px;
   text-align: center;
@@ -229,8 +229,8 @@ export default {
   flex-shrink: 0;
 }
 .sem-tab.active {
-  color: #2e86c1;
-  border-bottom-color: #2e86c1;
+  color: #007ab8;
+  border-bottom-color: #007ab8;
   font-weight: 600;
 }
 
@@ -293,7 +293,7 @@ export default {
 .load-more {
   text-align: center;
   padding: 16px;
-  color: #2e86c1;
+  color: #007ab8;
   font-size: 13px;
   cursor: pointer;
 }

@@ -229,7 +229,7 @@ export default {
 .load-more {
   text-align: center;
   padding: 16px;
-  color: #2e86c1;
+  color: #007ab8;
   font-size: 13px;
   cursor: pointer;
 }

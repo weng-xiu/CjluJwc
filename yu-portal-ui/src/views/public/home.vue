@@ -371,7 +371,7 @@ export default {
 .banner-placeholder {
   width: 100%;
   height: 400px;
-  background: linear-gradient(135deg, #003366 0%, #0066CC 100%);
+  background: linear-gradient(135deg, #003366 0%, #007ab8 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -420,13 +420,13 @@ export default {
 
 .section-subtitle {
   font-size: 13px;
-  color: #0066CC;
+  color: #007ab8;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .more-link {
-  color: #0066CC;
+  color: #007ab8;
   font-size: 14px;
   text-decoration: none;
   transition: opacity 0.3s;
@@ -502,7 +502,7 @@ export default {
 }
 
 .news-card:hover .card-title {
-  color: #0066CC;
+  color: #007ab8;
 }
 
 /* ========== 双栏布局 ========== */
@@ -538,7 +538,7 @@ export default {
 }
 
 .article-list li:hover .item-title {
-  color: #0066CC;
+  color: #007ab8;
 }
 
 .article-list.with-date li {
@@ -550,7 +550,7 @@ export default {
   width: 44px;
   text-align: center;
   background: #f0f7ff;
-  color: #0066CC;
+  color: #007ab8;
   font-size: 14px;
   font-weight: 600;
   padding: 4px 0;
@@ -734,7 +734,7 @@ export default {
 }
 
 .people-readmore {
-  color: #0066CC;
+  color: #007ab8;
   font-size: 14px;
 }
 
@@ -822,7 +822,7 @@ export default {
 
 .link-item i {
   font-size: 28px;
-  color: #0066CC;
+  color: #007ab8;
   margin-bottom: 8px;
   transition: transform 0.3s;
 }
@@ -938,15 +938,3 @@ export default {
   }
 }
 </style>
-<template>
-  <div class="public-home">
-    <h1>门户首页</h1>
-    <p>加载中...</p>
-  </div>
-</template>
-
-<script>
-export default {
-  name: 'PublicHome'
-}
-</script>

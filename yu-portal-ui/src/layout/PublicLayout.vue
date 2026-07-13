@@ -202,7 +202,7 @@ export default {
 /* ========== 主导航栏 ========== */
 .main-nav {
   background: #fff;
-  border-bottom: 3px solid #0066CC;
+  border-bottom: 3px solid #007ab8;
   position: relative;
   z-index: 100;
   flex-shrink: 0;
@@ -253,11 +253,11 @@ export default {
 }
 
 .nav-list li a:hover {
-  color: #0066CC;
+  color: #007ab8;
 }
 
 .nav-list li.active a {
-  color: #0066CC;
+  color: #007ab8;
 }
 
 .nav-list li.active::after {
@@ -267,7 +267,7 @@ export default {
   left: 20px;
   right: 20px;
   height: 3px;
-  background: #0066CC;
+  background: #007ab8;
 }
 
 /* ========== 移动端菜单按钮 ========== */
@@ -316,9 +316,9 @@ export default {
 
 .mobile-nav-item:hover,
 .mobile-nav-item.active {
-  color: #0066CC;
-  background: #f0f7ff;
-  border-left-color: #0066CC;
+  color: #007ab8;
+  background: #edf3f9;
+  border-left-color: #007ab8;
 }
 
 /* ========== 内容区 ========== */
