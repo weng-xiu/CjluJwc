@@ -29,6 +29,12 @@
             <artifactId>yu-brm</artifactId>
         </dependency>
 
+        <!-- 框架核心（Redis缓存等）-->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-framework</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

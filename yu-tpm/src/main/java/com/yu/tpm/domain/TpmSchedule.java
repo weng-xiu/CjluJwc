@@ -55,6 +55,23 @@ public class TpmSchedule extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    // ========== 以下为关联查询的冗余字段，不映射到数据库 ==========
+
+    /** 课程名称（关联查询） */
+    private String courseName;
+
+    /** 教师姓名（关联查询） */
+    private String teacherName;
+
+    /** 教室名称（关联查询） */
+    private String classroomName;
+
+    /** 教学楼名称（关联查询） */
+    private String buildingName;
+
+    /** 开课容量上限（关联查询） */
+    private Integer maxStudents;
+
     public Long getScheduleId() { return scheduleId; }
     public void setScheduleId(Long scheduleId) { this.scheduleId = scheduleId; }
 
@@ -85,6 +102,21 @@ public class TpmSchedule extends BaseEntity
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getCourseName() { return courseName; }
+    public void setCourseName(String courseName) { this.courseName = courseName; }
+
+    public String getTeacherName() { return teacherName; }
+    public void setTeacherName(String teacherName) { this.teacherName = teacherName; }
+
+    public String getClassroomName() { return classroomName; }
+    public void setClassroomName(String classroomName) { this.classroomName = classroomName; }
+
+    public String getBuildingName() { return buildingName; }
+    public void setBuildingName(String buildingName) { this.buildingName = buildingName; }
+
+    public Integer getMaxStudents() { return maxStudents; }
+    public void setMaxStudents(Integer maxStudents) { this.maxStudents = maxStudents; }
 
     @Override
     public String toString() {

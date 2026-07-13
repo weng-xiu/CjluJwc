@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamWarningDataMapper">
+
+    <!-- 计算学生某学期GPA（加权平均绩点） -->
+    <select id="selectStudentGpa" resultType="java.lang.Double">
+        select
+            case when sum(cl.credit) = 0 then null
+                 else round(sum(gr.grade_point * cl.credit) / sum(cl.credit), 2)
+            end as gpa
+        from aem_grade_record gr
+        left join tpm_course_library cl on gr.course_id = cl.course_id
+        where gr.student_id = #{studentId}
+          and gr.semester_id = #{semesterId}
+          and gr.status = '0'
+    </select>
+
+    <!-- 统计学生已获得学分（已通过课程） -->
+    <select id="selectStudentEarnedCredits" resultType="java.lang.Double">
+        select coalesce(sum(cl.credit), 0)
+        from aem_grade_record gr
+        left join tpm_course_library cl on gr.course_id = cl.course_id
+        where gr.student_id = #{studentId}
+          and gr.semester_id = #{semesterId}
+          and gr.is_pass = '1'
+          and gr.status = '0'
+    </select>
+
+    <!-- 查询学生应修总学分（该学期所有已修课程） -->
+    <select id="selectStudentRequiredCredits" resultType="java.lang.Double">
+        select coalesce(sum(cl.credit), 0)
+        from aem_grade_record gr
+        left join tpm_course_library cl on gr.course_id = cl.course_id
+        where gr.student_id = #{studentId}
+          and gr.semester_id = #{semesterId}
+          and gr.status = '0'
+    </select>
+
+    <!-- 分页查询所有学生ID -->
+    <select id="selectAllStudentIds" resultType="java.lang.Long">
+        select student_id from sam_student where status = '0' order by student_id limit #{offset}, #{limit}
+    </select>
+
+    <!-- 查询学生总数 -->
+    <select id="selectStudentCount" resultType="int">
+        select count(1) from sam_student where status = '0'
+    </select>
+
+</mapper>

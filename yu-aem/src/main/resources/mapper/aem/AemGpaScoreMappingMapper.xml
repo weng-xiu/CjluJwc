@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.aem.mapper.AemGpaScoreMappingMapper">
+    <resultMap type="AemGpaScoreMapping" id="AemGpaScoreMappingResult">
+        <result property="mappingId"   column="mapping_id"   />
+        <result property="configId"    column="config_id"    />
+        <result property="minScore"    column="min_score"    />
+        <result property="maxScore"    column="max_score"    />
+        <result property="gradePoint"  column="grade_point"  />
+        <result property="gradeLevel"  column="grade_level"  />
+        <result property="sortOrder"   column="sort_order"   />
+    </resultMap>
+    <sql id="selectAemGpaScoreMappingVo">
+        select mapping_id, config_id, min_score, max_score, grade_point, grade_level, sort_order from aem_gpa_score_mapping
+    </sql>
+    <select id="selectByConfigId" parameterType="Long" resultMap="AemGpaScoreMappingResult">
+        <include refid="selectAemGpaScoreMappingVo"/> where config_id = #{configId} order by sort_order
+    </select>
+    <insert id="insertBatch">
+        insert into aem_gpa_score_mapping (config_id, min_score, max_score, grade_point, grade_level, sort_order) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.configId}, #{item.minScore}, #{item.maxScore}, #{item.gradePoint}, #{item.gradeLevel}, #{item.sortOrder})
+        </foreach>
+    </insert>
+    <delete id="deleteByConfigId" parameterType="Long">
+        delete from aem_gpa_score_mapping where config_id = #{configId}
+    </delete>
+</mapper>

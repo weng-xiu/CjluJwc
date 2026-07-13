@@ -11,7 +11,7 @@
           <el-input v-model="loginForm.username" placeholder="请输入账号" prefix-icon="el-icon-user" size="medium" />
         </el-form-item>
         <el-form-item prop="password">
-          <el-input v-model="loginForm.password" type="password" placeholder="请输入密码" prefix-icon="el-icon-lock" size="medium" @keyup.enter.native="handleLogin" />
+          <el-input v-model="loginForm.password" type="password" show-password placeholder="请输入密码" prefix-icon="el-icon-lock" size="medium" @keyup.enter.native="handleLogin" />
         </el-form-item>
         <el-form-item prop="code" v-if="captchaEnabled">
           <el-input v-model="loginForm.code" placeholder="验证码" prefix-icon="el-icon-picture" size="medium" style="width:60%" @keyup.enter.native="handleLogin" />
@@ -35,7 +35,7 @@ export default {
   name: 'Login',
   data() {
     return {
-      loginForm: { username: '', password: '', code: '', uuid: '' },
+      loginForm: { username: 'admin', password: 'admin123', rememberMe: true, code: '', uuid: '' },
       loginRules: {
         username: [{ required: true, trigger: 'blur', message: '请输入账号' }],
         password: [{ required: true, trigger: 'blur', message: '请输入密码' }],

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamWarningRuleConfigMapper">
+    <resultMap type="com.yu.sam.domain.SamWarningRuleConfig" id="SamWarningRuleConfigResult">
+        <result property="ruleId"          column="rule_id"           />
+        <result property="ruleCode"        column="rule_code"         />
+        <result property="ruleName"        column="rule_name"         />
+        <result property="warningType"     column="warning_type"      />
+        <result property="thresholdValue"  column="threshold_value"   />
+        <result property="warningLevel"    column="warning_level"     />
+        <result property="messageTemplate" column="message_template"  />
+        <result property="isEnabled"       column="is_enabled"        />
+        <result property="semesterId"      column="semester_id"       />
+        <result property="status"          column="status"            />
+        <result property="createBy"        column="create_by"         />
+        <result property="createTime"      column="create_time"       />
+        <result property="updateBy"        column="update_by"         />
+        <result property="updateTime"      column="update_time"       />
+        <result property="remark"          column="remark"            />
+    </resultMap>
+    <sql id="selectSamWarningRuleConfigVo">
+        select rule_id, rule_code, rule_name, warning_type, threshold_value, warning_level, message_template, is_enabled, semester_id, status, create_by, create_time, update_by, update_time, remark from sam_warning_rule_config
+    </sql>
+    <select id="selectSamWarningRuleConfigList" parameterType="com.yu.sam.domain.SamWarningRuleConfig" resultMap="SamWarningRuleConfigResult">
+        <include refid="selectSamWarningRuleConfigVo"/>
+        <where>
+            <if test="ruleCode != null and ruleCode.trim() != ''"> and rule_code = #{ruleCode}</if>
+            <if test="ruleName != null and ruleName.trim() != ''"> and rule_name like concat('%', #{ruleName}, '%')</if>
+            <if test="warningType != null and warningType.trim() != ''"> and warning_type = #{warningType}</if>
+            <if test="warningLevel != null and warningLevel.trim() != ''"> and warning_level = #{warningLevel}</if>
+            <if test="isEnabled != null and isEnabled.trim() != ''"> and is_enabled = #{isEnabled}</if>
+            <if test="semesterId != null"> and semester_id = #{semesterId}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+        order by rule_id
+    </select>
+    <select id="selectSamWarningRuleConfigById" parameterType="Long" resultMap="SamWarningRuleConfigResult">
+        <include refid="selectSamWarningRuleConfigVo"/> where rule_id = #{ruleId}
+    </select>
+    <select id="selectEnabledRules" resultMap="SamWarningRuleConfigResult">
+        <include refid="selectSamWarningRuleConfigVo"/> where is_enabled = '1' and status = '0' order by rule_id
+    </select>
+    <select id="selectByRuleCode" parameterType="String" resultMap="SamWarningRuleConfigResult">
+        <include refid="selectSamWarningRuleConfigVo"/> where rule_code = #{ruleCode} limit 1
+    </select>
+    <insert id="insertSamWarningRuleConfig" parameterType="com.yu.sam.domain.SamWarningRuleConfig" useGeneratedKeys="true" keyProperty="ruleId">
+        insert into sam_warning_rule_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="ruleCode != null">rule_code,</if>
+            <if test="ruleName != null">rule_name,</if>
+            <if test="warningType != null">warning_type,</if>
+            <if test="thresholdValue != null">threshold_value,</if>
+            <if test="warningLevel != null">warning_level,</if>
+            <if test="messageTemplate != null">message_template,</if>
+            <if test="isEnabled != null">is_enabled,</if>
+            <if test="semesterId != null">semester_id,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="ruleCode != null">#{ruleCode},</if>
+            <if test="ruleName != null">#{ruleName},</if>
+            <if test="warningType != null">#{warningType},</if>
+            <if test="thresholdValue != null">#{thresholdValue},</if>
+            <if test="warningLevel != null">#{warningLevel},</if>
+            <if test="messageTemplate != null">#{messageTemplate},</if>
+            <if test="isEnabled != null">#{isEnabled},</if>
+            <if test="semesterId != null">#{semesterId},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateSamWarningRuleConfig" parameterType="com.yu.sam.domain.SamWarningRuleConfig">
+        update sam_warning_rule_config
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="ruleCode != null">rule_code = #{ruleCode},</if>
+            <if test="ruleName != null">rule_name = #{ruleName},</if>
+            <if test="warningType != null">warning_type = #{warningType},</if>
+            <if test="thresholdValue != null">threshold_value = #{thresholdValue},</if>
+            <if test="warningLevel != null">warning_level = #{warningLevel},</if>
+            <if test="messageTemplate != null">message_template = #{messageTemplate},</if>
+            <if test="isEnabled != null">is_enabled = #{isEnabled},</if>
+            <if test="semesterId != null">semester_id = #{semesterId},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where rule_id = #{ruleId}
+    </update>
+    <delete id="deleteSamWarningRuleConfigById" parameterType="Long">
+        delete from sam_warning_rule_config where rule_id = #{ruleId}
+    </delete>
+    <delete id="deleteSamWarningRuleConfigByIds" parameterType="String">
+        delete from sam_warning_rule_config where rule_id in
+        <foreach item="ruleId" collection="array" open="(" separator="," close=")">#{ruleId}</foreach>
+    </delete>
+</mapper>

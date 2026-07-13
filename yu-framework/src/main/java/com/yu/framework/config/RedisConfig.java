@@ -1,6 +1,5 @@
 package com.yu.framework.config;
 
-import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,10 +13,9 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  * 
  * @author ruoyi
  */
-@SuppressWarnings("deprecation")
 @Configuration
 @EnableCaching
-public class RedisConfig extends CachingConfigurerSupport
+public class RedisConfig
 {
     @Bean
     @SuppressWarnings(value = { "unchecked", "rawtypes" })

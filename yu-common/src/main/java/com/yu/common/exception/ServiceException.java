@@ -5,7 +5,7 @@ package com.yu.common.exception;
  * 
  * @author ruoyi
  */
-public final class ServiceException extends RuntimeException
+public class ServiceException extends RuntimeException
 {
     private static final long serialVersionUID = 1L;
 

@@ -89,4 +89,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from tpm_selection_enrollment where enroll_id in
         <foreach item="enrollId" collection="array" open="(" separator="," close=")">#{enrollId}</foreach>
     </delete>
+    <select id="selectCountByOffering" parameterType="Long" resultType="int">
+        select count(1) from tpm_selection_enrollment
+        where course_offering_id = #{courseOfferingId}
+        and result_status != '3'
+    </select>
+    <select id="selectByStudentAndRound" resultMap="TpmSelectionEnrollmentResult">
+        <include refid="selectTpmSelectionEnrollmentVo"/>
+        where student_id = #{studentId}
+        and round_id = #{roundId}
+        and result_status != '3'
+    </select>
 </mapper>

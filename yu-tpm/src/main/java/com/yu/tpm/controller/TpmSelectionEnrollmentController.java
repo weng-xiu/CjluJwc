@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +19,8 @@ import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.enums.BusinessType;
 import com.yu.tpm.domain.TpmSelectionEnrollment;
+import com.yu.tpm.domain.dto.ConflictWarning;
+import com.yu.tpm.domain.dto.CourseSuggestion;
 import com.yu.tpm.service.ITpmSelectionEnrollmentService;
 import com.yu.common.utils.poi.ExcelUtil;
 import com.yu.common.core.page.TableDataInfo;
@@ -83,5 +86,42 @@ public class TpmSelectionEnrollmentController extends BaseController
     public AjaxResult remove(@PathVariable Long[] enrollIds)
     {
         return toAjax(tpmSelectionEnrollmentService.deleteTpmSelectionEnrollmentByEnrollIds(enrollIds));
+    }
+
+    /**
+     * 选课冲突检测
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:selection:validate')")
+    @PostMapping("/validate")
+    @Log(title = "选课冲突检测", businessType = BusinessType.OTHER)
+    public AjaxResult validateSelection(@RequestBody TpmSelectionEnrollment enrollment)
+    {
+        List<ConflictWarning> warnings = tpmSelectionEnrollmentService
+                .checkSelectionConflicts(enrollment.getStudentId(), enrollment.getCourseOfferingId(), enrollment.getRoundId());
+        return success(warnings);
+    }
+
+    /**
+     * 获取替代课程建议
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:selection:suggest')")
+    @GetMapping("/suggestions/{courseOfferingId}")
+    public AjaxResult getAlternatives(@PathVariable Long courseOfferingId, @RequestParam Long studentId, @RequestParam Long roundId)
+    {
+        List<CourseSuggestion> suggestions = tpmSelectionEnrollmentService
+                .getAlternativeCourses(studentId, courseOfferingId, roundId);
+        return success(suggestions);
+    }
+
+    /**
+     * 带验证的选课（含冲突检测+Redis并发控制）
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:selection:enroll')")
+    @PostMapping("/enrollWithValidation")
+    @Log(title = "带验证选课", businessType = BusinessType.INSERT)
+    public AjaxResult enrollWithValidation(@RequestBody TpmSelectionEnrollment enrollment)
+    {
+        return tpmSelectionEnrollmentService
+                .enrollWithValidation(enrollment.getStudentId(), enrollment.getCourseOfferingId(), enrollment.getRoundId());
     }
 }

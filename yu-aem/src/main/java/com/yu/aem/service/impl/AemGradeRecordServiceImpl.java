@@ -1,5 +1,7 @@
 package com.yu.aem.service.impl;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import com.yu.common.annotation.DataScope;
 import com.yu.common.exception.ServiceException;
@@ -8,8 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.aem.mapper.AemGradeRecordMapper;
+import com.yu.aem.mapper.AemGpaAlgorithmConfigMapper;
 import com.yu.aem.domain.AemGradeRecord;
+import com.yu.aem.domain.AemGpaAlgorithmConfig;
 import com.yu.aem.service.IAemGradeRecordService;
+import com.yu.aem.strategy.GpaStrategyFactory;
+import com.yu.aem.strategy.IGpaCalculationStrategy;
 
 /**
  * 成绩记录Service业务层处理
@@ -22,6 +28,12 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
 {
     @Autowired
     private AemGradeRecordMapper aemGradeRecordMapper;
+
+    @Autowired
+    private AemGpaAlgorithmConfigMapper aemGpaAlgorithmConfigMapper;
+
+    @Autowired
+    private GpaStrategyFactory gpaStrategyFactory;
 
     @Override
     public AemGradeRecord selectAemGradeRecordByGradeId(Long gradeId)
@@ -96,5 +108,99 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     public int deleteAemGradeRecordByGradeIds(Long[] gradeIds)
     {
         return aemGradeRecordMapper.deleteAemGradeRecordByGradeIds(gradeIds);
+    }
+
+    @Override
+    public Double calculateStudentGpa(Long studentId, Long semesterId, String algorithmCode)
+    {
+        IGpaCalculationStrategy strategy = getStrategy(algorithmCode);
+        List<AemGradeRecord> records = aemGradeRecordMapper.selectByStudentAndSemester(studentId, semesterId);
+        BigDecimal totalWeightedGpa = BigDecimal.ZERO;
+        BigDecimal totalCredits = BigDecimal.ZERO;
+        for (AemGradeRecord record : records)
+        {
+            if (record.getTotalScore() == null)
+            {
+                continue;
+            }
+            Double credit = getCourseCredit(record.getCourseId());
+            if (credit == null || credit <= 0)
+            {
+                continue;
+            }
+            double gpa = strategy.calculate(record.getTotalScore());
+            BigDecimal gpaDecimal = new BigDecimal(Double.toString(gpa));
+            BigDecimal creditDecimal = new BigDecimal(Double.toString(credit));
+            totalWeightedGpa = totalWeightedGpa.add(gpaDecimal.multiply(creditDecimal));
+            totalCredits = totalCredits.add(creditDecimal);
+        }
+        if (totalCredits.compareTo(BigDecimal.ZERO) == 0)
+        {
+            return 0.00;
+        }
+        return totalWeightedGpa.divide(totalCredits, 2, RoundingMode.HALF_UP).doubleValue();
+    }
+
+    @Override
+    @Transactional
+    public void batchRecalculateGpa(Long semesterId, String algorithmCode)
+    {
+        IGpaCalculationStrategy strategy = getStrategy(algorithmCode);
+        List<AemGradeRecord> records = aemGradeRecordMapper.selectBySemester(semesterId);
+        if (records == null || records.isEmpty())
+        {
+            return;
+        }
+        for (AemGradeRecord record : records)
+        {
+            if (record.getTotalScore() != null)
+            {
+                record.setGradePoint(strategy.calculate(record.getTotalScore()));
+                record.setGradeLevel(strategy.getGradeLevel(record.getTotalScore()));
+            }
+        }
+        aemGradeRecordMapper.updateGradePointBatch(records);
+    }
+
+    /**
+     * 获取算法策略，空值时使用默认算法
+     */
+    private IGpaCalculationStrategy getStrategy(String algorithmCode)
+    {
+        if (algorithmCode == null || algorithmCode.isEmpty())
+        {
+            algorithmCode = getDefaultAlgorithmCode();
+        }
+        IGpaCalculationStrategy strategy = gpaStrategyFactory.getStrategy(algorithmCode);
+        if (strategy == null)
+        {
+            throw new ServiceException("GPA算法不存在：" + algorithmCode);
+        }
+        return strategy;
+    }
+
+    /**
+     * 获取默认算法代码
+     */
+    private String getDefaultAlgorithmCode()
+    {
+        AemGpaAlgorithmConfig config = aemGpaAlgorithmConfigMapper.selectDefaultAlgorithm();
+        if (config != null && config.getAlgorithmCode() != null && !config.getAlgorithmCode().isEmpty())
+        {
+            return config.getAlgorithmCode();
+        }
+        return "CN_STANDARD";
+    }
+
+    /**
+     * 获取课程学分
+     */
+    private Double getCourseCredit(Long courseId)
+    {
+        if (courseId == null)
+        {
+            return null;
+        }
+        return aemGradeRecordMapper.selectCourseCreditByCourseId(courseId);
     }
 }

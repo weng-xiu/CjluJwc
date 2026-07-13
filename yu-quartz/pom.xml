@@ -29,6 +29,12 @@
             <artifactId>yu-common</artifactId>
         </dependency>
 
+        <!-- 学籍与学位管理模块（学业预警引擎）-->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-sam</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

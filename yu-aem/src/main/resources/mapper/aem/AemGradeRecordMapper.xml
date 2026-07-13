@@ -112,4 +112,30 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from aem_grade_record where grade_id in
         <foreach item="gradeId" collection="array" open="(" separator="," close=")">#{gradeId}</foreach>
     </delete>
+    <select id="selectByStudentAndSemester" resultMap="AemGradeRecordResult">
+        <include refid="selectAemGradeRecordVo"/>
+        where student_id = #{studentId}
+        <if test="semesterId != null"> and semester_id = #{semesterId}</if>
+    </select>
+    <select id="selectBySemester" parameterType="Long" resultMap="AemGradeRecordResult">
+        <include refid="selectAemGradeRecordVo"/> where semester_id = #{semesterId}
+    </select>
+    <update id="updateGradePointBatch">
+        update aem_grade_record
+        set grade_point = case grade_id
+        <foreach collection="list" item="item">
+            when #{item.gradeId} then #{item.gradePoint}
+        </foreach>
+        end,
+        grade_level = case grade_id
+        <foreach collection="list" item="item">
+            when #{item.gradeId} then #{item.gradeLevel}
+        </foreach>
+        end
+        where grade_id in
+        <foreach collection="list" item="item" open="(" separator="," close=")">#{item.gradeId}</foreach>
+    </update>
+    <select id="selectCourseCreditByCourseId" parameterType="Long" resultType="java.lang.Double">
+        select credit from tpm_course_library where course_id = #{courseId}
+    </select>
 </mapper>

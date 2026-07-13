@@ -17,4 +17,10 @@ public interface IAemGradeRecordService
     public int updateAemGradeRecord(AemGradeRecord aemGradeRecord);
     public int deleteAemGradeRecordByGradeIds(Long[] gradeIds);
     public int deleteAemGradeRecordByGradeId(Long gradeId);
+
+    /** 计算学生某学期GPA */
+    public Double calculateStudentGpa(Long studentId, Long semesterId, String algorithmCode);
+
+    /** 批量重算某学期所有学生GPA */
+    public void batchRecalculateGpa(Long semesterId, String algorithmCode);
 }

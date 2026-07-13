@@ -20,6 +20,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateTime"   column="update_time"    />
         <result property="remark"       column="remark"         />
     </resultMap>
+    <!-- 含关联信息的扩展结果映射 -->
+    <resultMap type="TpmSchedule" id="TpmScheduleWithInfoResult" extends="TpmScheduleResult">
+        <result property="courseName"    column="course_name"    />
+        <result property="teacherName"   column="teacher_name"   />
+        <result property="classroomName" column="classroom_name" />
+        <result property="buildingName"  column="building_name"  />
+        <result property="maxStudents"   column="max_students"   />
+    </resultMap>
     <sql id="selectTpmScheduleVo">
         select schedule_id, offering_id, classroom_id, week_day, start_period, end_period, start_week, end_week, schedule_type, status, create_by, create_time, update_by, update_time, remark from tpm_schedule
     </sql>
@@ -92,4 +100,61 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from tpm_schedule where schedule_id in
         <foreach item="scheduleId" collection="array" open="(" separator="," close=")">#{scheduleId}</foreach>
     </delete>
+
+    <!-- 按学期查询所有排课（含课程名、教师名、教室名等关联信息） -->
+    <select id="selectSchedulesBySemester" resultMap="TpmScheduleWithInfoResult">
+        select s.schedule_id, s.offering_id, s.classroom_id, s.week_day, s.start_period, s.end_period,
+               s.start_week, s.end_week, s.schedule_type, s.status,
+               cl.course_name as course_name,
+               t.teacher_name as teacher_name,
+               cr.classroom_name as classroom_name,
+               b.building_name as building_name,
+               o.max_students as max_students
+        from tpm_schedule s
+        inner join tpm_course_offering o on s.offering_id = o.offering_id
+        left join tpm_course_library cl on o.course_id = cl.course_id
+        left join brm_teacher t on o.teacher_id = t.teacher_id
+        left join brm_classroom cr on s.classroom_id = cr.classroom_id
+        left join brm_building b on cr.building_id = b.building_id
+        where o.semester_id = #{semesterId}
+        order by s.week_day, s.start_period
+    </select>
+
+    <!-- 查询某教室指定时间段的排课（用于冲突检测） -->
+    <select id="selectByClassroomAndTime" resultMap="TpmScheduleResult">
+        <include refid="selectTpmScheduleVo"/>
+        where classroom_id = #{classroomId}
+          and week_day = #{weekDay}
+          and not (end_period &lt; #{startPeriod} or start_period &gt; #{endPeriod})
+    </select>
+
+    <!-- 查询未分配教室的排课（含开课容量信息） -->
+    <select id="selectUnassignedSchedules" resultMap="TpmScheduleWithInfoResult">
+        select s.schedule_id, s.offering_id, s.classroom_id, s.week_day, s.start_period, s.end_period,
+               s.start_week, s.end_week, s.schedule_type, s.status,
+               cl.course_name as course_name,
+               o.max_students as max_students
+        from tpm_schedule s
+        inner join tpm_course_offering o on s.offering_id = o.offering_id
+        left join tpm_course_library cl on o.course_id = cl.course_id
+        where o.semester_id = #{semesterId}
+          and (s.classroom_id is null)
+        order by o.max_students desc
+    </select>
+
+    <!-- 根据多个开课ID批量查询排课信息 -->
+    <select id="selectByOfferingIds" resultMap="TpmScheduleResult">
+        <include refid="selectTpmScheduleVo"/>
+        where offering_id in
+        <foreach item="offeringId" collection="offeringIds" open="(" separator="," close=")">#{offeringId}</foreach>
+    </select>
+
+    <!-- 根据教室和时间范围查询排课（用于教室占用检测） -->
+    <select id="selectByClassroomAndTimeRange" resultMap="TpmScheduleResult">
+        <include refid="selectTpmScheduleVo"/>
+        where classroom_id = #{classroomId}
+        and week_day = #{weekDay}
+        and start_period &lt;= #{endPeriod}
+        and end_period &gt;= #{startPeriod}
+    </select>
 </mapper>

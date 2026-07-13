@@ -61,19 +61,13 @@
           <el-form-item prop="password">
             <el-input
               v-model="loginForm.password"
-              :type="passwordType"
+              type="password"
+              show-password
               auto-complete="off"
               placeholder="请输入密码"
               @keyup.enter.native="handleLogin"
             >
               <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon" />
-              <i
-                slot="suffix"
-                :class="passwordType === 'password' ? 'el-icon-view' : 'el-icon-hide'"
-                class="el-input__icon input-icon"
-                style="cursor: pointer;"
-                @click="togglePassword"
-              />
             </el-input>
           </el-form-item>
           <el-form-item v-if="captchaEnabled" prop="code">
@@ -190,7 +184,7 @@ export default {
       loginForm: {
         username: "admin",
         password: "admin123",
-        rememberMe: false,
+        rememberMe: true,
         code: "",
         uuid: ""
       },
@@ -208,8 +202,7 @@ export default {
       captchaEnabled: true,
       // 注册开关
       register: false,
-      redirect: undefined,
-      passwordType: 'password'
+      redirect: undefined
     }
   },
   watch: {
@@ -243,9 +236,6 @@ export default {
         password: password === undefined ? this.loginForm.password : decrypt(password),
         rememberMe: rememberMe === undefined ? false : Boolean(rememberMe)
       }
-    },
-    togglePassword() {
-      this.passwordType = this.passwordType === 'password' ? 'text' : 'password'
     },
     handleLogin() {
       this.$refs.loginForm.validate(valid => {
@@ -473,6 +463,15 @@ export default {
     width: 16px;
     margin-left: 4px;
     color: rgba(255, 255, 255, 0.5);
+  }
+  ::v-deep .el-input__suffix {
+    .el-input__icon {
+      color: rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      &:hover {
+        color: rgba(255, 255, 255, 0.85);
+      }
+    }
   }
 }
 

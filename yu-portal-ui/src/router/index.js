@@ -3,6 +3,13 @@ import Router from 'vue-router'
 
 Vue.use(Router)
 
+/** 判断是否为移动设备 */
+function isMobile() {
+  const ua = navigator.userAgent || navigator.vendor || window.opera
+  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua) ||
+    window.innerWidth <= 768
+}
+
 export const constantRoutes = [
   {
     path: '/login',
@@ -48,6 +55,20 @@ export const constantRoutes = [
       { path: 'evalResult', component: () => import('@/views/evalResult/index'), name: 'EvalResult', meta: { title: '评教结果查询', roles: ['teacher'] } },
       { path: 'adjustment', component: () => import('@/views/adjustment/index'), name: 'Adjustment', meta: { title: '调停课申请', roles: ['teacher'] } }
     ]
+  },
+  // 移动端路由
+  {
+    path: '/mobile',
+    component: () => import('@/layout/MobileLayout'),
+    redirect: '/mobile',
+    meta: { isMobile: true },
+    children: [
+      { path: '', component: () => import('@/views/mobile/index.vue'), name: 'MobileHome', meta: { title: '首页', isMobile: true } },
+      { path: 'schedule', component: () => import('@/views/mobile/schedule.vue'), name: 'MobileSchedule', meta: { title: '课表', isMobile: true } },
+      { path: 'grades', component: () => import('@/views/mobile/grades.vue'), name: 'MobileGrades', meta: { title: '成绩', isMobile: true } },
+      { path: 'selection', component: () => import('@/views/mobile/selection.vue'), name: 'MobileSelection', meta: { title: '选课', isMobile: true } },
+      { path: 'warning', component: () => import('@/views/mobile/warning.vue'), name: 'MobileWarning', meta: { title: '预警', isMobile: true } }
+    ]
   }
 ]
 
@@ -56,8 +77,43 @@ Router.prototype.push = function push(location) {
   return routerPush.call(this, location).catch(err => err)
 }
 
-export default new Router({
+const router = new Router({
   mode: 'history',
   scrollBehavior: () => ({ y: 0 }),
   routes: constantRoutes
 })
+
+/**
+ * 移动端设备检测路由守卫
+ * - 移动设备访问PC页面时，提示可跳转移动版（不强制）
+ * - 用户选择后可通过 sessionStorage 标记偏好
+ */
+router.beforeEach((to, from, next) => {
+  // 已选择留在PC版的不做处理
+  if (sessionStorage.getItem('preferPC') === 'true') {
+    next()
+    return
+  }
+
+  // 移动端访问PC首页时，提示跳转
+  if (isMobile() && !to.meta.isMobile && to.path !== '/login' && to.path !== '/mobile') {
+    // 使用 Element UI 的 MessageBox 提示（仅在首次访问时）
+    if (!sessionStorage.getItem('mobileTipShown')) {
+      sessionStorage.setItem('mobileTipShown', 'true')
+      // 延迟到 next tick，确保页面已渲染
+      setTimeout(() => {
+        if (typeof window !== 'undefined' && window.confirm) {
+          const jump = window.confirm('检测到您正在使用移动设备，是否切换到移动版？')
+          if (jump) {
+            sessionStorage.removeItem('preferPC')
+            router.push('/mobile')
+          }
+        }
+      }, 500)
+    }
+  }
+
+  next()
+})
+
+export default router
