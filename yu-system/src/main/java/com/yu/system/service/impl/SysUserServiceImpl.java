@@ -141,6 +141,18 @@ public class SysUserServiceImpl implements ISysUserService
     }
 
     /**
+     * 通过用户名查询用户（不走缓存，用于认证等需要敏感字段的场景）
+     *
+     * @param userName 用户名
+     * @return 用户对象信息
+     */
+    @Override
+    public SysUser selectUserByUserNameWithoutCache(String userName)
+    {
+        return userMapper.selectUserByUserName(userName);
+    }
+
+    /**
      * 通过用户ID查询用户
      * 
      * @param userId 用户ID

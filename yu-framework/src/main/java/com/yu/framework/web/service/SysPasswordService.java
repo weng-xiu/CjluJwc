@@ -81,8 +81,8 @@ public class SysPasswordService
         String encodedPassword = user.getPassword();
         if (StringUtils.isEmpty(encodedPassword))
         {
-            // 缓存对象可能缺失密码，从数据库重新加载
-            SysUser freshUser = userService.selectUserByUserName(user.getUserName());
+            // 缓存对象可能缺失密码，从数据库重新加载（绕过缓存，避免再次取到password为null的对象）
+            SysUser freshUser = userService.selectUserByUserNameWithoutCache(user.getUserName());
             if (freshUser != null)
             {
                 encodedPassword = freshUser.getPassword();

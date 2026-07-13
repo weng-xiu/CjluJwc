@@ -183,6 +183,10 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="菜单权限">
+          <el-radio-group v-model="menuPlatform" size="small" @change="handlePlatformChange" style="margin-bottom: 12px; display: block;">
+            <el-radio-button label="admin">管理端菜单</el-radio-button>
+            <el-radio-button label="portal">门户端菜单</el-radio-button>
+          </el-radio-group>
           <el-checkbox v-model="menuExpand" @change="handleCheckedTreeExpand($event, 'menu')">展开/折叠</el-checkbox>
           <el-checkbox v-model="menuNodeAll" @change="handleCheckedTreeNodeAll($event, 'menu')">全选/全不选</el-checkbox>
           <el-checkbox v-model="form.menuCheckStrictly" @change="handleCheckedTreeConnect($event, 'menu')">父子联动</el-checkbox>
@@ -311,6 +315,16 @@ export default {
       ],
       // 菜单列表
       menuOptions: [],
+      // 当前选中的菜单平台
+      menuPlatform: 'admin',
+      // 门户端菜单选项（独立存储）
+      portalMenuOptions: [],
+      // 门户端已选菜单keys
+      portalCheckedKeys: [],
+      // 管理端菜单选项
+      adminMenuOptions: [],
+      // 管理端已选菜单keys
+      adminCheckedKeys: [],
       // 部门列表
       deptOptions: [],
       // 查询参数
@@ -357,7 +371,7 @@ export default {
     },
     /** 查询菜单树结构 */
     getMenuTreeselect() {
-      menuTreeselect().then(response => {
+      menuTreeselect(this.menuPlatform).then(response => {
         this.menuOptions = response.data
       })
     },
@@ -381,10 +395,60 @@ export default {
     },
     /** 根据角色ID查询菜单树结构 */
     getRoleMenuTreeselect(roleId) {
-      return roleMenuTreeselect(roleId).then(response => {
+      return roleMenuTreeselect(roleId, this.menuPlatform).then(response => {
         this.menuOptions = response.menus
         return response
       })
+    },
+    /** 切换菜单平台 */
+    handlePlatformChange() {
+      const platform = this.menuPlatform
+      // 保存当前平台的勾选状态
+      if (this.$refs.menu) {
+        if (platform === 'portal') {
+          this.adminCheckedKeys = this.getMenuAllCheckedKeys()
+          this.adminMenuOptions = JSON.parse(JSON.stringify(this.menuOptions))
+        } else {
+          this.portalCheckedKeys = this.getMenuAllCheckedKeys()
+          this.portalMenuOptions = JSON.parse(JSON.stringify(this.menuOptions))
+        }
+      }
+      // 清空当前菜单树，显示加载状态
+      this.menuOptions = []
+      // 加载目标平台菜单树
+      const roleId = this.form.roleId
+      if (roleId) {
+        roleMenuTreeselect(roleId, platform).then(response => {
+          this.menuOptions = response.menus
+          this.$nextTick(() => {
+            let checkedKeys
+            if (platform === 'portal' && this.portalCheckedKeys.length > 0) {
+              checkedKeys = this.portalCheckedKeys
+            } else if (platform === 'admin' && this.adminCheckedKeys.length > 0) {
+              checkedKeys = this.adminCheckedKeys
+            } else {
+              checkedKeys = response.checkedKeys
+            }
+            if (this.$refs.menu) {
+              this.$refs.menu.setCheckedKeys(checkedKeys)
+            }
+          })
+        }).catch(() => {
+          this.$modal.msgError("加载" + (platform === 'portal' ? '门户端' : '管理端') + "菜单失败")
+        })
+      } else {
+        menuTreeselect(platform).then(response => {
+          this.menuOptions = response.data
+          this.$nextTick(() => {
+            let checkedKeys = platform === 'portal' ? this.portalCheckedKeys : this.adminCheckedKeys
+            if (this.$refs.menu) {
+              this.$refs.menu.setCheckedKeys(checkedKeys)
+            }
+          })
+        }).catch(() => {
+          this.$modal.msgError("加载菜单树失败")
+        })
+      }
     },
     /** 根据角色ID查询部门树结构 */
     getDeptTree(roleId) {
@@ -419,6 +483,11 @@ export default {
       if (this.$refs.menu != undefined) {
         this.$refs.menu.setCheckedKeys([])
       }
+      this.menuPlatform = 'admin'
+      this.portalCheckedKeys = []
+      this.adminCheckedKeys = []
+      this.portalMenuOptions = []
+      this.adminMenuOptions = []
       this.menuExpand = false,
       this.menuNodeAll = false,
       this.deptExpand = true,
@@ -509,6 +578,10 @@ export default {
       this.reset()
       const roleId = row.roleId || this.ids
       const roleMenu = this.getRoleMenuTreeselect(roleId)
+      // 预加载门户端已分配菜单，防止提交时丢失
+      roleMenuTreeselect(roleId, 'portal').then(response => {
+        this.portalCheckedKeys = response.checkedKeys;
+      });
       getRole(roleId).then(response => {
         this.form = response.data
         this.open = true
@@ -555,15 +628,22 @@ export default {
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {
+          // 合并管理端和门户端菜单IDs
+          let currentPlatformKeys = this.getMenuAllCheckedKeys()
+          let otherPlatformKeys = []
+          if (this.menuPlatform === 'admin') {
+            otherPlatformKeys = this.portalCheckedKeys
+          } else {
+            otherPlatformKeys = this.adminCheckedKeys
+          }
+          this.form.menuIds = [...new Set([...currentPlatformKeys, ...otherPlatformKeys])]
           if (this.form.roleId != undefined) {
-            this.form.menuIds = this.getMenuAllCheckedKeys()
             updateRole(this.form).then(() => {
               this.$modal.msgSuccess("修改成功")
               this.open = false
               this.getList()
             })
           } else {
-            this.form.menuIds = this.getMenuAllCheckedKeys()
             addRole(this.form).then(() => {
               this.$modal.msgSuccess("新增成功")
               this.open = false

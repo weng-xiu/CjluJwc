@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.yu.common.annotation.Log;
 import com.yu.common.constant.UserConstants;
@@ -59,9 +60,17 @@ public class SysMenuController extends BaseController
      * 获取菜单下拉树列表
      */
     @GetMapping("/treeselect")
-    public AjaxResult treeselect(SysMenu menu)
+    public AjaxResult treeselect(SysMenu menu, @RequestParam(value = "platform", required = false) String platform)
     {
-        List<SysMenu> menus = menuService.selectMenuList(menu, getUserId());
+        List<SysMenu> menus;
+        if (StringUtils.isNotEmpty(platform))
+        {
+            menus = menuService.selectMenuListByPlatform(getUserId(), platform);
+        }
+        else
+        {
+            menus = menuService.selectMenuList(menu, getUserId());
+        }
         return success(menuService.buildMenuTreeSelect(menus));
     }
 
@@ -69,11 +78,20 @@ public class SysMenuController extends BaseController
      * 加载对应角色菜单列表树
      */
     @GetMapping(value = "/roleMenuTreeselect/{roleId}")
-    public AjaxResult roleMenuTreeselect(@PathVariable("roleId") Long roleId)
+    public AjaxResult roleMenuTreeselect(@PathVariable("roleId") Long roleId, @RequestParam(value = "platform", required = false) String platform)
     {
-        List<SysMenu> menus = menuService.selectMenuList(getUserId());
+        List<SysMenu> menus;
         AjaxResult ajax = AjaxResult.success();
-        ajax.put("checkedKeys", menuService.selectMenuListByRoleId(roleId));
+        if (StringUtils.isNotEmpty(platform))
+        {
+            menus = menuService.selectMenuListByPlatform(getUserId(), platform);
+            ajax.put("checkedKeys", menuService.selectMenuListByRoleIdAndPlatform(roleId, platform));
+        }
+        else
+        {
+            menus = menuService.selectMenuList(getUserId());
+            ajax.put("checkedKeys", menuService.selectMenuListByRoleId(roleId));
+        }
         ajax.put("menus", menuService.buildMenuTreeSelect(menus));
         return ajax;
     }

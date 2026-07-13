@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.portal.mapper.PortalBannerMapper">
+    <resultMap type="PortalBanner" id="PortalBannerResult">
+        <result property="bannerId"          column="banner_id"          />
+        <result property="title"             column="title"              />
+        <result property="imageUrl"          column="image_url"          />
+        <result property="linkUrl"           column="link_url"           />
+        <result property="sortOrder"         column="sort_order"         />
+        <result property="isActive"          column="is_active"          />
+        <result property="startTime"         column="start_time"         />
+        <result property="endTime"           column="end_time"           />
+        <result property="createBy"          column="create_by"          />
+        <result property="createTime"        column="create_time"        />
+        <result property="updateBy"          column="update_by"          />
+        <result property="updateTime"        column="update_time"        />
+    </resultMap>
+    <sql id="selectPortalBannerVo">
+        select banner_id, title, image_url, link_url, sort_order, is_active, start_time, end_time, create_by, create_time, update_by, update_time from portal_banner
+    </sql>
+    <select id="selectPortalBannerList" parameterType="PortalBanner" resultMap="PortalBannerResult">
+        <include refid="selectPortalBannerVo"/>
+        <where>
+            <if test="title != null and title.trim() != ''"> and title like concat('%', #{title}, '%')</if>
+            <if test="isActive != null and isActive.trim() != ''"> and is_active = #{isActive}</if>
+        </where>
+        order by sort_order asc, create_time desc
+    </select>
+    <select id="selectPortalBannerById" parameterType="Long" resultMap="PortalBannerResult">
+        <include refid="selectPortalBannerVo"/> where banner_id = #{bannerId}
+    </select>
+    <select id="selectActiveBanners" resultMap="PortalBannerResult">
+        <include refid="selectPortalBannerVo"/>
+        <where>
+            is_active = '1'
+            and (start_time is null or start_time <![CDATA[<=]]> NOW())
+            and (end_time is null or end_time <![CDATA[>=]]> NOW())
+        </where>
+        order by sort_order asc
+    </select>
+    <insert id="insertPortalBanner" parameterType="PortalBanner" useGeneratedKeys="true" keyProperty="bannerId">
+        insert into portal_banner
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="title != null and title != ''">title,</if>
+            <if test="imageUrl != null and imageUrl != ''">image_url,</if>
+            <if test="linkUrl != null">link_url,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="isActive != null">is_active,</if>
+            <if test="startTime != null">start_time,</if>
+            <if test="endTime != null">end_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="title != null and title != ''">#{title},</if>
+            <if test="imageUrl != null and imageUrl != ''">#{imageUrl},</if>
+            <if test="linkUrl != null">#{linkUrl},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="isActive != null">#{isActive},</if>
+            <if test="startTime != null">#{startTime},</if>
+            <if test="endTime != null">#{endTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+    <update id="updatePortalBanner" parameterType="PortalBanner">
+        update portal_banner
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="imageUrl != null and imageUrl != ''">image_url = #{imageUrl},</if>
+            <if test="linkUrl != null">link_url = #{linkUrl},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where banner_id = #{bannerId}
+    </update>
+    <delete id="deletePortalBannerById" parameterType="Long">
+        delete from portal_banner where banner_id = #{bannerId}
+    </delete>
+    <delete id="deletePortalBannerByIds" parameterType="String">
+        delete from portal_banner where banner_id in
+        <foreach item="bannerId" collection="array" open="(" separator="," close=")">#{bannerId}</foreach>
+    </delete>
+</mapper>

@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.portal.mapper.PortalArticleMapper">
+    <resultMap type="PortalArticle" id="PortalArticleResult">
+        <result property="articleId"         column="article_id"         />
+        <result property="columnId"          column="column_id"          />
+        <result property="title"             column="title"              />
+        <result property="summary"           column="summary"            />
+        <result property="content"           column="content"            />
+        <result property="coverUrl"          column="cover_url"          />
+        <result property="source"            column="source"             />
+        <result property="author"            column="author"             />
+        <result property="publishStatus"     column="publish_status"     />
+        <result property="publishDate"       column="publish_date"       />
+        <result property="isTop"             column="is_top"             />
+        <result property="isFeatured"        column="is_featured"        />
+        <result property="viewCount"         column="view_count"         />
+        <result property="reviewerId"        column="reviewer_id"        />
+        <result property="reviewComment"     column="review_comment"     />
+        <result property="reviewTime"        column="review_time"        />
+        <result property="columnName"        column="column_name"        />
+        <result property="createBy"          column="create_by"          />
+        <result property="createTime"        column="create_time"        />
+        <result property="updateBy"          column="update_by"          />
+        <result property="updateTime"        column="update_time"        />
+        <result property="remark"            column="remark"             />
+    </resultMap>
+    <sql id="selectPortalArticleVo">
+        select a.article_id, a.column_id, a.title, a.summary, a.content, a.cover_url, a.source, a.author,
+               a.publish_status, a.publish_date, a.is_top, a.is_featured, a.view_count,
+               a.reviewer_id, a.review_comment, a.review_time,
+               a.create_by, a.create_time, a.update_by, a.update_time, a.remark,
+               c.column_name
+        from portal_article a
+        left join portal_column c on a.column_id = c.column_id
+    </sql>
+    <select id="selectPortalArticleList" parameterType="PortalArticle" resultMap="PortalArticleResult">
+        <include refid="selectPortalArticleVo"/>
+        <where>
+            <if test="title != null and title.trim() != ''"> and a.title like concat('%', #{title}, '%')</if>
+            <if test="columnId != null"> and a.column_id = #{columnId}</if>
+            <if test="publishStatus != null and publishStatus.trim() != ''"> and a.publish_status = #{publishStatus}</if>
+            <if test="isTop != null and isTop.trim() != ''"> and a.is_top = #{isTop}</if>
+            <if test="isFeatured != null and isFeatured.trim() != ''"> and a.is_featured = #{isFeatured}</if>
+        </where>
+        order by a.is_top desc, a.publish_date desc
+    </select>
+    <select id="selectPortalArticleById" parameterType="Long" resultMap="PortalArticleResult">
+        <include refid="selectPortalArticleVo"/>
+        where a.article_id = #{articleId}
+    </select>
+    <select id="selectPublishedArticlesByColumnCode" parameterType="String" resultMap="PortalArticleResult">
+        <include refid="selectPortalArticleVo"/>
+        <where>
+            a.publish_status = '2'
+            and c.column_code = #{columnCode}
+        </where>
+        order by a.is_top desc, a.publish_date desc
+    </select>
+    <select id="selectFeaturedArticles" resultMap="PortalArticleResult">
+        <include refid="selectPortalArticleVo"/>
+        <where>
+            a.publish_status = '2'
+            and a.is_featured = '1'
+        </where>
+        order by a.publish_date desc
+    </select>
+    <insert id="insertPortalArticle" parameterType="PortalArticle" useGeneratedKeys="true" keyProperty="articleId">
+        insert into portal_article
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="columnId != null">column_id,</if>
+            <if test="title != null and title != ''">title,</if>
+            <if test="summary != null">summary,</if>
+            <if test="content != null">content,</if>
+            <if test="coverUrl != null">cover_url,</if>
+            <if test="source != null">source,</if>
+            <if test="author != null">author,</if>
+            <if test="publishStatus != null">publish_status,</if>
+            <if test="publishDate != null">publish_date,</if>
+            <if test="isTop != null">is_top,</if>
+            <if test="isFeatured != null">is_featured,</if>
+            <if test="viewCount != null">view_count,</if>
+            <if test="reviewerId != null">reviewer_id,</if>
+            <if test="reviewComment != null">review_comment,</if>
+            <if test="reviewTime != null">review_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="columnId != null">#{columnId},</if>
+            <if test="title != null and title != ''">#{title},</if>
+            <if test="summary != null">#{summary},</if>
+            <if test="content != null">#{content},</if>
+            <if test="coverUrl != null">#{coverUrl},</if>
+            <if test="source != null">#{source},</if>
+            <if test="author != null">#{author},</if>
+            <if test="publishStatus != null">#{publishStatus},</if>
+            <if test="publishDate != null">#{publishDate},</if>
+            <if test="isTop != null">#{isTop},</if>
+            <if test="isFeatured != null">#{isFeatured},</if>
+            <if test="viewCount != null">#{viewCount},</if>
+            <if test="reviewerId != null">#{reviewerId},</if>
+            <if test="reviewComment != null">#{reviewComment},</if>
+            <if test="reviewTime != null">#{reviewTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updatePortalArticle" parameterType="PortalArticle">
+        update portal_article
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="columnId != null">column_id = #{columnId},</if>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="summary != null">summary = #{summary},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="coverUrl != null">cover_url = #{coverUrl},</if>
+            <if test="source != null">source = #{source},</if>
+            <if test="author != null">author = #{author},</if>
+            <if test="publishStatus != null">publish_status = #{publishStatus},</if>
+            <if test="publishDate != null">publish_date = #{publishDate},</if>
+            <if test="isTop != null">is_top = #{isTop},</if>
+            <if test="isFeatured != null">is_featured = #{isFeatured},</if>
+            <if test="viewCount != null">view_count = #{viewCount},</if>
+            <if test="reviewerId != null">reviewer_id = #{reviewerId},</if>
+            <if test="reviewComment != null">review_comment = #{reviewComment},</if>
+            <if test="reviewTime != null">review_time = #{reviewTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where article_id = #{articleId}
+    </update>
+    <update id="incrementViewCount" parameterType="Long">
+        update portal_article set view_count = view_count + 1 where article_id = #{articleId}
+    </update>
+    <delete id="deletePortalArticleById" parameterType="Long">
+        delete from portal_article where article_id = #{articleId}
+    </delete>
+    <delete id="deletePortalArticleByIds" parameterType="String">
+        delete from portal_article where article_id in
+        <foreach item="articleId" collection="array" open="(" separator="," close=")">#{articleId}</foreach>
+    </delete>
+</mapper>

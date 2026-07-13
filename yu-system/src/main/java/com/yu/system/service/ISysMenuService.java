@@ -157,4 +157,22 @@ public interface ISysMenuService
      * @return 结果
      */
     public boolean checkRouteConfigUnique(SysMenu menu);
+
+    /**
+     * 根据平台查询菜单列表
+     *
+     * @param userId 用户ID
+     * @param platform 平台标识(admin/portal)
+     * @return 菜单列表
+     */
+    public List<SysMenu> selectMenuListByPlatform(Long userId, String platform);
+
+    /**
+     * 根据角色ID和平台查询菜单ID列表
+     *
+     * @param roleId 角色ID
+     * @param platform 平台标识(admin/portal)
+     * @return 选中菜单列表
+     */
+    public List<Long> selectMenuListByRoleIdAndPlatform(Long roleId, String platform);
 }

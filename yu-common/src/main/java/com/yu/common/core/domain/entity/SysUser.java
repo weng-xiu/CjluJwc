@@ -5,6 +5,7 @@ import java.util.List;
 import jakarta.validation.constraints.*;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yu.common.annotation.Excel;
@@ -233,6 +234,7 @@ public class SysUser extends BaseEntity
     }
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @JSONField(serialize = true, deserialize = true)
     public String getPassword()
     {
         return password;

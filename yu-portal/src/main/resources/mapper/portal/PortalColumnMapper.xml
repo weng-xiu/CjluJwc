@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.portal.mapper.PortalColumnMapper">
+    <resultMap type="PortalColumn" id="PortalColumnResult">
+        <result property="columnId"          column="column_id"          />
+        <result property="columnName"        column="column_name"        />
+        <result property="columnCode"        column="column_code"        />
+        <result property="parentId"          column="parent_id"          />
+        <result property="columnType"        column="column_type"        />
+        <result property="icon"              column="icon"               />
+        <result property="sortOrder"         column="sort_order"         />
+        <result property="isVisible"         column="is_visible"         />
+        <result property="externalUrl"       column="external_url"       />
+        <result property="createBy"          column="create_by"          />
+        <result property="createTime"        column="create_time"        />
+        <result property="updateBy"          column="update_by"          />
+        <result property="updateTime"        column="update_time"        />
+        <result property="remark"            column="remark"             />
+    </resultMap>
+    <sql id="selectPortalColumnVo">
+        select column_id, column_name, column_code, parent_id, column_type, icon, sort_order, is_visible, external_url, create_by, create_time, update_by, update_time, remark from portal_column
+    </sql>
+    <select id="selectPortalColumnList" parameterType="PortalColumn" resultMap="PortalColumnResult">
+        <include refid="selectPortalColumnVo"/>
+        <where>
+            <if test="columnName != null and columnName.trim() != ''"> and column_name like concat('%', #{columnName}, '%')</if>
+            <if test="columnCode != null and columnCode.trim() != ''"> and column_code = #{columnCode}</if>
+            <if test="columnType != null and columnType.trim() != ''"> and column_type = #{columnType}</if>
+            <if test="isVisible != null and isVisible.trim() != ''"> and is_visible = #{isVisible}</if>
+            <if test="parentId != null"> and parent_id = #{parentId}</if>
+        </where>
+        order by sort_order asc, create_time desc
+    </select>
+    <select id="selectPortalColumnById" parameterType="Long" resultMap="PortalColumnResult">
+        <include refid="selectPortalColumnVo"/> where column_id = #{columnId}
+    </select>
+    <select id="selectPortalColumnByCode" parameterType="String" resultMap="PortalColumnResult">
+        <include refid="selectPortalColumnVo"/> where column_code = #{columnCode}
+    </select>
+    <insert id="insertPortalColumn" parameterType="PortalColumn" useGeneratedKeys="true" keyProperty="columnId">
+        insert into portal_column
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="columnName != null and columnName != ''">column_name,</if>
+            <if test="columnCode != null and columnCode != ''">column_code,</if>
+            <if test="parentId != null">parent_id,</if>
+            <if test="columnType != null">column_type,</if>
+            <if test="icon != null">icon,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="isVisible != null">is_visible,</if>
+            <if test="externalUrl != null">external_url,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="columnName != null and columnName != ''">#{columnName},</if>
+            <if test="columnCode != null and columnCode != ''">#{columnCode},</if>
+            <if test="parentId != null">#{parentId},</if>
+            <if test="columnType != null">#{columnType},</if>
+            <if test="icon != null">#{icon},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="isVisible != null">#{isVisible},</if>
+            <if test="externalUrl != null">#{externalUrl},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updatePortalColumn" parameterType="PortalColumn">
+        update portal_column
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="columnName != null and columnName != ''">column_name = #{columnName},</if>
+            <if test="columnCode != null and columnCode != ''">column_code = #{columnCode},</if>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="columnType != null">column_type = #{columnType},</if>
+            <if test="icon != null">icon = #{icon},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="isVisible != null">is_visible = #{isVisible},</if>
+            <if test="externalUrl != null">external_url = #{externalUrl},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where column_id = #{columnId}
+    </update>
+    <delete id="deletePortalColumnById" parameterType="Long">
+        delete from portal_column where column_id = #{columnId}
+    </delete>
+    <delete id="deletePortalColumnByIds" parameterType="String">
+        delete from portal_column where column_id in
+        <foreach item="columnId" collection="array" open="(" separator="," close=")">#{columnId}</foreach>
+    </delete>
+</mapper>

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.common.constant.Constants;
+import com.yu.common.constant.MenuConstants;
 import com.yu.common.constant.UserConstants;
 import com.yu.common.core.domain.TreeSelect;
 import com.yu.common.core.domain.entity.SysMenu;
@@ -161,6 +162,47 @@ public class SysMenuServiceImpl implements ISysMenuService
     {
         SysRole role = roleMapper.selectRoleById(roleId);
         return menuMapper.selectMenuListByRoleId(roleId, role.isMenuCheckStrictly());
+    }
+
+    /**
+     * 根据平台查询菜单列表
+     */
+    @Override
+    public List<SysMenu> selectMenuListByPlatform(Long userId, String platform)
+    {
+        List<SysMenu> menus = null;
+        if (SecurityUtils.isAdmin(userId))
+        {
+            menus = menuMapper.selectMenuListByPlatform(platform);
+        }
+        else
+        {
+            // 非管理员：先查所有权限菜单，再按平台ID范围过滤
+            menus = menuMapper.selectMenuTreeByUserId(userId);
+            if (MenuConstants.PLATFORM_PORTAL.equals(platform))
+            {
+                menus = menus.stream()
+                    .filter(m -> m.getMenuId() >= MenuConstants.PORTAL_MENU_MIN_ID && m.getMenuId() <= MenuConstants.PORTAL_MENU_MAX_ID)
+                    .collect(Collectors.toList());
+            }
+            else
+            {
+                menus = menus.stream()
+                    .filter(m -> m.getMenuId() <= MenuConstants.ADMIN_MENU_MAX_ID)
+                    .collect(Collectors.toList());
+            }
+        }
+        return menus;
+    }
+
+    /**
+     * 根据角色ID和平台查询菜单ID列表
+     */
+    @Override
+    public List<Long> selectMenuListByRoleIdAndPlatform(Long roleId, String platform)
+    {
+        SysRole role = roleMapper.selectRoleById(roleId);
+        return menuMapper.selectMenuListByRoleIdAndPlatform(roleId, platform, role.isMenuCheckStrictly());
     }
 
     /**

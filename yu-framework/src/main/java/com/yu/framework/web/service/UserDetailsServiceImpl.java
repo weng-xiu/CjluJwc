@@ -37,7 +37,8 @@ public class UserDetailsServiceImpl implements UserDetailsService
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException
     {
-        SysUser user = userService.selectUserByUserName(username);
+        // 认证时绕过Redis缓存，直接查询数据库，避免缓存中password字段因序列化丢失导致登录失败
+        SysUser user = userService.selectUserByUserNameWithoutCache(username);
         if (StringUtils.isNull(user))
         {
             log.info("登录用户：{} 不存在.", username);

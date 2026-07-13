@@ -212,4 +212,47 @@
 	    delete from sys_menu where menu_id = #{menuId}
 	</delete>
 
+	<select id="selectMenuListByPlatform" resultMap="SysMenuResult">
+		select distinct m.menu_id, m.parent_id, m.menu_name, m.path, m.component, m.`query`, m.route_name, m.visible, m.status, ifnull(m.perms,'') as perms, m.is_frame, m.is_cache, m.menu_type, m.icon, m.order_num, m.create_time
+		from sys_menu m
+		where m.menu_type in ('M', 'C') and m.status = 0
+		<choose>
+			<when test="platform == 'portal'">
+				and m.menu_id between 2500 and 2599
+			</when>
+			<otherwise>
+				and m.menu_id &lt; 2500
+			</otherwise>
+		</choose>
+		order by m.parent_id, m.order_num
+	</select>
+
+	<select id="selectMenuListByRoleIdAndPlatform" resultType="Long">
+		select m.menu_id
+		from sys_menu m
+			left join sys_role_menu rm on m.menu_id = rm.menu_id
+		where rm.role_id = #{roleId}
+		<choose>
+			<when test="platform == 'portal'">
+				and m.menu_id between 2500 and 2599
+			</when>
+			<otherwise>
+				and m.menu_id &lt; 2500
+			</otherwise>
+		</choose>
+		<if test="menuCheckStrictly">
+			and m.menu_id not in (select m.parent_id from sys_menu m inner join sys_role_menu rm on m.menu_id = rm.menu_id and rm.role_id = #{roleId}
+			<choose>
+				<when test="platform == 'portal'">
+					and m.menu_id between 2500 and 2599
+				</when>
+				<otherwise>
+					and m.menu_id &lt; 2500
+				</otherwise>
+			</choose>
+			)
+		</if>
+		order by m.parent_id, m.order_num
+	</select>
+
 </mapper> 

@@ -138,4 +138,22 @@ public interface SysMenuMapper
      * @return 匹配的菜单列表
      */
     public List<SysMenu> selectMenusByPathOrRouteName(@Param("path") String path, @Param("routeName") String routeName);
+
+    /**
+     * 根据平台查询菜单列表（M/C类型，用于角色菜单树）
+     *
+     * @param platform 平台标识(admin/portal)
+     * @return 菜单列表
+     */
+    public List<SysMenu> selectMenuListByPlatform(@Param("platform") String platform);
+
+    /**
+     * 根据角色ID和平台查询已分配菜单ID列表
+     *
+     * @param roleId 角色ID
+     * @param platform 平台标识(admin/portal)
+     * @param menuCheckStrictly 菜单树选择项是否关联显示
+     * @return 选中菜单列表
+     */
+    public List<Long> selectMenuListByRoleIdAndPlatform(@Param("roleId") Long roleId, @Param("platform") String platform, @Param("menuCheckStrictly") boolean menuCheckStrictly);
 }

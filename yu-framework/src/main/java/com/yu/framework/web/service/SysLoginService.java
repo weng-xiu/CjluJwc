@@ -97,6 +97,9 @@ public class SysLoginService
         }
         AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_SUCCESS, MessageUtils.message("user.login.success")));
         LoginUser loginUser = (LoginUser) authentication.getPrincipal();
+        // 登录成功后清除密码错误计数及用户缓存，防止陈旧缓存干扰下次登录
+        redisCache.deleteObject(CacheConstants.PWD_ERR_CNT_KEY + username);
+        redisCache.deleteObject(CacheConstants.SYS_USER_NAME_KEY + username);
         recordLoginInfo(loginUser.getUserId());
         // 生成token
         return tokenService.createToken(loginUser);

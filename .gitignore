@@ -44,6 +44,11 @@ nbdist/
 ######################################################################
 # Others
 *.log
+hs_err_pid*
+replay_pid*
+*.rdb
+query
+temp_*
 *.xml.versionsBackup
 *.swp
 
