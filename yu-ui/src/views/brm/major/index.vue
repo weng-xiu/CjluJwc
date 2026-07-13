@@ -31,7 +31,11 @@
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="专业编码" prop="majorCode"><el-input v-model="form.majorCode" placeholder="请输入专业编码" /></el-form-item>
         <el-form-item label="专业名称" prop="majorName"><el-input v-model="form.majorName" placeholder="请输入专业名称" /></el-form-item>
-        <el-form-item label="所属院系" prop="deptId"><el-input v-model="form.deptId" placeholder="请输入所属院系ID" /></el-form-item>
+        <el-form-item label="所属院系" prop="deptId">
+          <el-select v-model="form.deptId" placeholder="请选择院系" clearable filterable>
+            <el-option v-for="d in deptList" :key="d.deptId" :label="d.deptName" :value="d.deptId"/>
+          </el-select>
+        </el-form-item>
         <el-form-item label="学历层次"><el-select v-model="form.educationLevel" placeholder="请选择学历层次"><el-option label="本科" value="本科"/><el-option label="硕士" value="硕士"/><el-option label="博士" value="博士"/></el-select></el-form-item>
         <el-form-item label="学制(年)"><el-input-number v-model="form.duration" :min="1" :max="10" /></el-form-item>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
@@ -42,22 +46,24 @@
 </template>
 <script>
 import { listMajor, getMajor, delMajor, addMajor, updateMajor } from "@/api/brm/major"
+import { listDept } from "@/api/brm/dept"
 export default {
   name: "Major", dicts: ['sys_normal_disable'],
-  data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, majorList: [], title: "", open: false,
+  data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, majorList: [], deptList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, majorName: null, status: null },
-    form: {}, rules: { majorCode: [{ required: true, message: "专业编码不能为空", trigger: "blur" }], majorName: [{ required: true, message: "专业名称不能为空", trigger: "blur" }] } }
+    form: {}, rules: { majorCode: [{ required: true, message: "专业编码不能为空", trigger: "blur" }], majorName: [{ required: true, message: "专业名称不能为空", trigger: "blur" }], deptId: [{ required: true, message: "请选择院系", trigger: "change" }] } }
   },
   created() { this.getList() },
   methods: {
     getList() { this.loading = true; listMajor(this.queryParams).then(response => { this.majorList = response.rows; this.total = response.total; this.loading = false }) },
+    loadDepts() { listDept({ pageNum: 1, pageSize: 200 }).then(response => { this.deptList = response.rows }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { majorId: null, majorCode: null, majorName: null, deptId: null, educationLevel: null, duration: 4, status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.majorId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加专业" },
-    handleUpdate(row) { this.reset(); const majorId = row.majorId || this.ids; getMajor(majorId).then(response => { this.form = response.data; this.open = true; this.title = "修改专业" }) },
+    handleAdd() { this.reset(); this.loadDepts(); this.open = true; this.title = "添加专业" },
+    handleUpdate(row) { this.reset(); this.loadDepts(); const majorId = row.majorId || this.ids; getMajor(majorId).then(response => { this.form = response.data; this.open = true; this.title = "修改专业" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.majorId != null) { updateMajor(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addMajor(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const majorIds = row.majorId || this.ids; this.$modal.confirm('是否确认删除专业编号为"' + majorIds + '"的数据项？').then(function() { return delMajor(majorIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('brm/major/export', { ...this.queryParams }, `major_${new Date().getTime()}.xlsx`) }

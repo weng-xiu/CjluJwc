@@ -15,7 +15,11 @@
     <el-table v-loading="loading" :data="questionnaireList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="问卷标题" align="center" prop="title" :show-overflow-tooltip="true" />
-      <el-table-column label="学期ID" align="center" prop="semesterId" />
+      <el-table-column label="学期" align="center" prop="semesterId">
+        <template slot-scope="scope">
+          <span>{{ getSemesterName(scope.row.semesterId) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="题目数量" align="center" prop="questionCount" />
       <el-table-column label="满分" align="center" prop="fullScore" />
       <el-table-column label="开始时间" align="center" prop="startTime" width="160"><template slot-scope="scope"><span>{{ parseTime(scope.row.startTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span></template></el-table-column>
@@ -32,7 +36,16 @@
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" :visible.sync="open" width="650px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="学期ID" prop="semesterId"><el-input v-model="form.semesterId" placeholder="请输入学期ID" /></el-form-item>
+        <el-form-item label="学年">
+          <el-select v-model="formYearId" placeholder="请选择学年" clearable @change="handleFormYearChange" style="width:100%">
+            <el-option v-for="y in yearList" :key="y.yearId" :label="y.yearName" :value="y.yearId"/>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="学期" prop="semesterId">
+          <el-select v-model="form.semesterId" placeholder="请先选择学年" clearable :disabled="!formYearId" style="width:100%">
+            <el-option v-for="s in formSemesterList" :key="s.semesterId" :label="s.semesterName" :value="s.semesterId"/>
+          </el-select>
+        </el-form-item>
         <el-form-item label="问卷标题" prop="title"><el-input v-model="form.title" placeholder="请输入问卷标题" /></el-form-item>
         <el-form-item label="问卷说明" prop="description"><el-input v-model="form.description" type="textarea" placeholder="请输入问卷说明" /></el-form-item>
         <el-form-item label="题目数量" prop="questionCount"><el-input-number v-model="form.questionCount" placeholder="请输入题目数量" :min="0" style="width:100%" /></el-form-item>
@@ -48,22 +61,61 @@
 </template>
 <script>
 import { listQuestionnaire, getQuestionnaire, delQuestionnaire, addQuestionnaire, updateQuestionnaire } from "@/api/aem/questionnaire"
+import { listYear } from "@/api/brm/year"
+import { listSemester, getSemester } from "@/api/brm/semester"
 export default {
   name: "Questionnaire", dicts: ['aem_eval_status', 'aem_is_anonymous'],
-  data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, questionnaireList: [], title: "", open: false,
+  data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, questionnaireList: [], title: "", open: false, semesterNameMap: {},
     queryParams: { pageNum: 1, pageSize: 10, title: null, evalStatus: null },
-    form: {}, rules: { title: [{ required: true, message: "问卷标题不能为空", trigger: "blur" }] } }
-  },
-  created() { this.getList() },
+    form: {}, rules: { title: [{ required: true, message: "问卷标题不能为空", trigger: "blur" }] },
+    yearList: [], formYearId: null, formSemesterList: []
+  }},
+  created() { this.loadSemesterNameMap(); this.loadYears(); this.getList() },
   methods: {
+    loadYears() {
+      listYear({ pageNum: 1, pageSize: 100 }).then(r => { this.yearList = r.rows })
+    },
+    handleFormYearChange(yearId) {
+      this.formSemesterList = []
+      this.form.semesterId = null
+      if (yearId) {
+        listSemester({ academicYearId: yearId, pageNum: 1, pageSize: 50 }).then(r => { this.formSemesterList = r.rows })
+      }
+    },
+    loadSemesterNameMap() {
+      listSemester({ pageNum: 1, pageSize: 200 }).then(response => {
+        const map = {}
+        response.rows.forEach(s => { map[s.semesterId] = s.semesterName })
+        this.semesterNameMap = map
+      })
+    },
+    getSemesterName(semesterId) {
+      return this.semesterNameMap[semesterId] || semesterId
+    },
     getList() { this.loading = true; listQuestionnaire(this.queryParams).then(response => { this.questionnaireList = response.rows; this.total = response.total; this.loading = false }) },
     cancel() { this.open = false; this.reset() },
-    reset() { this.form = { questionnaireId: null, semesterId: null, title: null, description: null, questionCount: null, fullScore: null, startTime: null, endTime: null, evalStatus: "0", isAnonymous: "0" }; this.resetForm("form") },
+    reset() { this.form = { questionnaireId: null, semesterId: null, title: null, description: null, questionCount: null, fullScore: null, startTime: null, endTime: null, evalStatus: "0", isAnonymous: "0" }; this.formYearId = null; this.formSemesterList = []; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.questionnaireId); this.single = selection.length !== 1; this.multiple = !selection.length },
     handleAdd() { this.reset(); this.open = true; this.title = "添加评教问卷" },
-    handleUpdate(row) { this.reset(); const questionnaireId = row.questionnaireId || this.ids; getQuestionnaire(questionnaireId).then(response => { this.form = response.data; this.open = true; this.title = "修改评教问卷" }) },
+    handleUpdate(row) {
+      this.reset()
+      const questionnaireId = row.questionnaireId || this.ids
+      getQuestionnaire(questionnaireId).then(response => {
+        this.form = response.data
+        this.open = true
+        this.title = "修改评教问卷"
+        if (this.form.semesterId) {
+          getSemester(this.form.semesterId).then(res => {
+            if (res.data && res.data.academicYearId) {
+              this.formYearId = res.data.academicYearId
+              listSemester({ academicYearId: this.formYearId, pageNum: 1, pageSize: 50 }).then(r => { this.formSemesterList = r.rows })
+            }
+          })
+        }
+      })
+    },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.questionnaireId != null) { updateQuestionnaire(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addQuestionnaire(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const questionnaireIds = row.questionnaireId || this.ids; this.$modal.confirm('是否确认删除评教问卷编号为"' + questionnaireIds + '"的数据项？').then(function() { return delQuestionnaire(questionnaireIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('aem/questionnaire/export', { ...this.queryParams }, `questionnaire_${new Date().getTime()}.xlsx`) }

@@ -30,7 +30,11 @@
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学期名称" prop="semesterName"><el-input v-model="form.semesterName" placeholder="请输入学期名称" /></el-form-item>
-        <el-form-item label="学年" prop="academicYearId"><el-input v-model="form.academicYearId" placeholder="请输入学年ID" /></el-form-item>
+        <el-form-item label="学年" prop="academicYearId">
+          <el-select v-model="form.academicYearId" placeholder="请选择学年" clearable>
+            <el-option v-for="y in yearList" :key="y.yearId" :label="y.yearName" :value="y.yearId"/>
+          </el-select>
+        </el-form-item>
         <el-form-item label="开始日期" prop="startDate"><el-date-picker clearable v-model="form.startDate" type="date" value-format="yyyy-MM-dd" placeholder="请选择开始日期" /></el-form-item>
         <el-form-item label="结束日期" prop="endDate"><el-date-picker clearable v-model="form.endDate" type="date" value-format="yyyy-MM-dd" placeholder="请选择结束日期" /></el-form-item>
         <el-form-item label="排序"><el-input-number v-model="form.semesterOrder" :min="0" /></el-form-item>
@@ -42,22 +46,24 @@
 </template>
 <script>
 import { listSemester, getSemester, delSemester, addSemester, updateSemester } from "@/api/brm/semester"
+import { listYear } from "@/api/brm/year"
 export default {
   name: "Semester", dicts: ['sys_normal_disable'],
-  data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, semesterList: [], title: "", open: false,
+  data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, semesterList: [], yearList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, semesterName: null, status: null },
-    form: {}, rules: { semesterName: [{ required: true, message: "学期名称不能为空", trigger: "blur" }] } }
+    form: {}, rules: { semesterName: [{ required: true, message: "学期名称不能为空", trigger: "blur" }], academicYearId: [{ required: true, message: "请选择学年", trigger: "change" }] } }
   },
   created() { this.getList() },
   methods: {
     getList() { this.loading = true; listSemester(this.queryParams).then(response => { this.semesterList = response.rows; this.total = response.total; this.loading = false }) },
+    loadYears() { listYear({ pageNum: 1, pageSize: 100 }).then(response => { this.yearList = response.rows }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { semesterId: null, semesterName: null, academicYearId: null, startDate: null, endDate: null, semesterOrder: 1, status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.semesterId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加学期" },
-    handleUpdate(row) { this.reset(); const semesterId = row.semesterId || this.ids; getSemester(semesterId).then(response => { this.form = response.data; this.open = true; this.title = "修改学期" }) },
+    handleAdd() { this.reset(); this.loadYears(); this.open = true; this.title = "添加学期" },
+    handleUpdate(row) { this.reset(); this.loadYears(); const semesterId = row.semesterId || this.ids; getSemester(semesterId).then(response => { this.form = response.data; this.open = true; this.title = "修改学期" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.semesterId != null) { updateSemester(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addSemester(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const semesterIds = row.semesterId || this.ids; this.$modal.confirm('是否确认删除学期编号为"' + semesterIds + '"的数据项？').then(function() { return delSemester(semesterIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('brm/semester/export', { ...this.queryParams }, `semester_${new Date().getTime()}.xlsx`) }
