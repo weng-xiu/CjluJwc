@@ -10,11 +10,15 @@ export function listDefinition(query) {
   return request({ url: '/oa/workflow/definition/list', method: 'get', params: query })
 }
 
-// 获取流程图XML
+// 获取流程图XML（definitionId含特殊字符，用params传递）
 export function getDefinitionXml(definitionId) {
-  return request({ url: '/oa/workflow/definition/' + definitionId + '/xml', method: 'get' })
+  return request({ url: '/oa/workflow/definition/xml', method: 'get', params: { definitionId } })
 }
 
+// 新增流程定义（BPMN XML字符串）
+export function createDefinition(data) {
+  return request({ url: '/oa/workflow/definition/create', method: 'post', data: data })
+}
 // 删除部署
 export function delDeployment(deploymentId) {
   return request({ url: '/oa/workflow/definition/delete/' + deploymentId, method: 'post' })

@@ -84,11 +84,11 @@ public class OaWorkflowController extends BaseController
     }
 
     /**
-     * 获取流程图 XML
+     * 获取流程图 XML（definitionId 含特殊字符，用 RequestParam 传递）
      */
     @PreAuthorize("@ss.hasPermi('oa:definition:query')")
-    @GetMapping("/definition/{definitionId}/xml")
-    public AjaxResult getBpmnXml(@PathVariable("definitionId") String definitionId)
+    @GetMapping("/definition/xml")
+    public AjaxResult getBpmnXml(@RequestParam("definitionId") String definitionId)
     {
         return success(oaWorkflowService.getProcessBpmnXml(definitionId));
     }
@@ -176,6 +176,24 @@ public class OaWorkflowController extends BaseController
         String comment = params.get("comment");
         oaWorkflowService.transferTask(taskId, originalAssignee, newAssignee, comment);
         return success();
+    }
+
+    /**
+     * 新增流程定义（BPMN XML 字符串方式）
+     */
+    @PreAuthorize("@ss.hasPermi('oa:definition:deploy')")
+    @Log(title = "流程定义", businessType = BusinessType.INSERT)
+    @PostMapping("/definition/create")
+    public AjaxResult createDefinition(@RequestBody Map<String, String> params)
+    {
+        String processName = params.get("processName");
+        String bpmnXml = params.get("bpmnXml");
+        if (processName == null || bpmnXml == null)
+        {
+            return error("流程名称和BPMN XML不能为空");
+        }
+        Deployment deployment = oaWorkflowService.deployProcess(processName, bpmnXml);
+        return success(deployment.getId());
     }
 
     /**
