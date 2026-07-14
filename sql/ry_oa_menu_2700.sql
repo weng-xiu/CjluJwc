@@ -31,13 +31,13 @@ insert into sys_menu values('2710', '会议管理', '2708', '2', 'meeting', 'oa/
 -- 通知公告 (parent=2700)
 -- ====================
 insert into sys_menu values('2711', '通知公告', '2700', '4', 'notice-group', null, '', '', 1, 0, 'M', '0', '0', '', 'message', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('2712', '公告管理', '2711', '1', 'notice', 'oa/notice/index', '', '', 1, 0, 'C', '0', '0', 'oa:notice:list', 'edit', 'admin', sysdate(), '', null, '');
+insert into sys_menu values('2712', '公告管理', '2711', '1', 'oaNotice', 'oa/notice/index', '', '', 1, 0, 'C', '0', '0', 'oa:notice:list', 'edit', 'admin', sysdate(), '', null, '');
 
 -- ====================
 -- 日程安排 (parent=2700)
 -- ====================
-insert into sys_menu values('2713', '日程安排', '2700', '5', 'schedule-group', null, '', '', 1, 0, 'M', '0', '0', '', 'calendar', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('2714', '日程管理', '2713', '1', 'schedule', 'oa/schedule/index', '', '', 1, 0, 'C', '0', '0', 'oa:schedule:list', 'date', 'admin', sysdate(), '', null, '');
+insert into sys_menu values('2713', '日程安排', '2700', '5', 'oaSchedule-group', null, '', '', 1, 0, 'M', '0', '0', '', 'calendar', 'admin', sysdate(), '', null, '');
+insert into sys_menu values('2714', '日程管理', '2713', '1', 'oaSchedule', 'oa/schedule/index', '', '', 1, 0, 'C', '0', '0', 'oa:schedule:list', 'date', 'admin', sysdate(), '', null, '');
 
 -- ====================
 -- 按钮权限 - 流程定义 (parent=2702)
