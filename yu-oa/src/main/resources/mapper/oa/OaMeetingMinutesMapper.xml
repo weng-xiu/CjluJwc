@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.oa.mapper.OaMeetingMinutesMapper">
+    <resultMap type="OaMeetingMinutes" id="OaMeetingMinutesResult">
+        <result property="minutesId"     column="minutes_id"     />
+        <result property="meetingId"     column="meeting_id"     />
+        <result property="content"       column="content"        />
+        <result property="recorderId"    column="recorder_id"    />
+        <result property="recorderName"  column="recorder_name"  />
+        <result property="issueStatus"   column="issue_status"   />
+        <result property="status"        column="status"         />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"        column="remark"         />
+    </resultMap>
+    <sql id="selectOaMeetingMinutesVo">
+        select minutes_id, meeting_id, content, recorder_id, recorder_name, issue_status, status, create_by, create_time, update_by, update_time, remark from oa_meeting_minutes
+    </sql>
+    <select id="selectOaMeetingMinutesList" parameterType="OaMeetingMinutes" resultMap="OaMeetingMinutesResult">
+        <include refid="selectOaMeetingMinutesVo"/>
+        <where>
+            <if test="meetingId != null"> and meeting_id = #{meetingId}</if>
+            <if test="recorderName != null and recorderName.trim() != ''"> and recorder_name like concat('%', #{recorderName}, '%')</if>
+            <if test="issueStatus != null and issueStatus.trim() != ''"> and issue_status = #{issueStatus}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+        order by create_time desc
+    </select>
+    <select id="selectOaMeetingMinutesByMinutesId" parameterType="Long" resultMap="OaMeetingMinutesResult">
+        <include refid="selectOaMeetingMinutesVo"/> where minutes_id = #{minutesId}
+    </select>
+    <select id="selectOaMeetingMinutesByMeetingId" parameterType="Long" resultMap="OaMeetingMinutesResult">
+        <include refid="selectOaMeetingMinutesVo"/> where meeting_id = #{meetingId}
+    </select>
+    <insert id="insertOaMeetingMinutes" parameterType="OaMeetingMinutes" useGeneratedKeys="true" keyProperty="minutesId">
+        insert into oa_meeting_minutes
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="meetingId != null">meeting_id,</if>
+            <if test="content != null">content,</if>
+            <if test="recorderId != null">recorder_id,</if>
+            <if test="recorderName != null">recorder_name,</if>
+            <if test="issueStatus != null">issue_status,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="meetingId != null">#{meetingId},</if>
+            <if test="content != null">#{content},</if>
+            <if test="recorderId != null">#{recorderId},</if>
+            <if test="recorderName != null">#{recorderName},</if>
+            <if test="issueStatus != null">#{issueStatus},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateOaMeetingMinutes" parameterType="OaMeetingMinutes">
+        update oa_meeting_minutes
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="meetingId != null">meeting_id = #{meetingId},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="recorderId != null">recorder_id = #{recorderId},</if>
+            <if test="recorderName != null">recorder_name = #{recorderName},</if>
+            <if test="issueStatus != null">issue_status = #{issueStatus},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where minutes_id = #{minutesId}
+    </update>
+    <delete id="deleteOaMeetingMinutesByMeetingId" parameterType="Long">
+        delete from oa_meeting_minutes where meeting_id = #{meetingId}
+    </delete>
+    <delete id="deleteOaMeetingMinutesByMinutesIds" parameterType="String">
+        delete from oa_meeting_minutes where minutes_id in
+        <foreach item="minutesId" collection="array" open="(" separator="," close=")">#{minutesId}</foreach>
+    </delete>
+</mapper>

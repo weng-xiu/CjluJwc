@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.oa.mapper.OaProcessInstanceMapper">
+    <resultMap type="OaProcessInstance" id="OaProcessInstanceResult">
+        <result property="instanceId"      column="instance_id"       />
+        <result property="businessType"    column="business_type"     />
+        <result property="businessId"      column="business_id"       />
+        <result property="definitionId"    column="definition_id"     />
+        <result property="procInstId"      column="proc_inst_id"      />
+        <result property="starterId"       column="starter_id"        />
+        <result property="starterName"     column="starter_name"      />
+        <result property="currentTaskName" column="current_task_name" />
+        <result property="currentAssignee" column="current_assignee"  />
+        <result property="processStatus"   column="process_status"    />
+        <result property="startTime"       column="start_time"        />
+        <result property="endTime"         column="end_time"          />
+        <result property="createBy"        column="create_by"         />
+        <result property="createTime"      column="create_time"       />
+        <result property="updateBy"        column="update_by"         />
+        <result property="updateTime"      column="update_time"       />
+        <result property="remark"          column="remark"            />
+    </resultMap>
+    <sql id="selectOaProcessInstanceVo">
+        select instance_id, business_type, business_id, definition_id, proc_inst_id, starter_id, starter_name, current_task_name, current_assignee, process_status, start_time, end_time, create_by, create_time, update_by, update_time, remark from oa_process_instance
+    </sql>
+    <select id="selectOaProcessInstanceList" parameterType="OaProcessInstance" resultMap="OaProcessInstanceResult">
+        <include refid="selectOaProcessInstanceVo"/>
+        <where>
+            <if test="businessType != null and businessType.trim() != ''"> and business_type = #{businessType}</if>
+            <if test="businessId != null"> and business_id = #{businessId}</if>
+            <if test="definitionId != null"> and definition_id = #{definitionId}</if>
+            <if test="procInstId != null and procInstId.trim() != ''"> and proc_inst_id = #{procInstId}</if>
+            <if test="starterId != null"> and starter_id = #{starterId}</if>
+            <if test="starterName != null and starterName.trim() != ''"> and starter_name like concat('%', #{starterName}, '%')</if>
+            <if test="processStatus != null and processStatus.trim() != ''"> and process_status = #{processStatus}</if>
+        </where>
+        order by start_time desc
+    </select>
+    <select id="selectOaProcessInstanceByInstanceId" parameterType="Long" resultMap="OaProcessInstanceResult">
+        <include refid="selectOaProcessInstanceVo"/> where instance_id = #{instanceId}
+    </select>
+    <select id="selectOaProcessInstanceByBusiness" resultMap="OaProcessInstanceResult">
+        <include refid="selectOaProcessInstanceVo"/>
+        where business_type = #{businessType} and business_id = #{businessId}
+    </select>
+    <insert id="insertOaProcessInstance" parameterType="OaProcessInstance" useGeneratedKeys="true" keyProperty="instanceId">
+        insert into oa_process_instance
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="businessType != null and businessType != ''">business_type,</if>
+            <if test="businessId != null">business_id,</if>
+            <if test="definitionId != null">definition_id,</if>
+            <if test="procInstId != null">proc_inst_id,</if>
+            <if test="starterId != null">starter_id,</if>
+            <if test="starterName != null">starter_name,</if>
+            <if test="currentTaskName != null">current_task_name,</if>
+            <if test="currentAssignee != null">current_assignee,</if>
+            <if test="processStatus != null">process_status,</if>
+            <if test="startTime != null">start_time,</if>
+            <if test="endTime != null">end_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="businessType != null and businessType != ''">#{businessType},</if>
+            <if test="businessId != null">#{businessId},</if>
+            <if test="definitionId != null">#{definitionId},</if>
+            <if test="procInstId != null">#{procInstId},</if>
+            <if test="starterId != null">#{starterId},</if>
+            <if test="starterName != null">#{starterName},</if>
+            <if test="currentTaskName != null">#{currentTaskName},</if>
+            <if test="currentAssignee != null">#{currentAssignee},</if>
+            <if test="processStatus != null">#{processStatus},</if>
+            <if test="startTime != null">#{startTime},</if>
+            <if test="endTime != null">#{endTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateOaProcessInstance" parameterType="OaProcessInstance">
+        update oa_process_instance
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="businessType != null and businessType != ''">business_type = #{businessType},</if>
+            <if test="businessId != null">business_id = #{businessId},</if>
+            <if test="definitionId != null">definition_id = #{definitionId},</if>
+            <if test="procInstId != null">proc_inst_id = #{procInstId},</if>
+            <if test="starterId != null">starter_id = #{starterId},</if>
+            <if test="starterName != null">starter_name = #{starterName},</if>
+            <if test="currentTaskName != null">current_task_name = #{currentTaskName},</if>
+            <if test="currentAssignee != null">current_assignee = #{currentAssignee},</if>
+            <if test="processStatus != null">process_status = #{processStatus},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where instance_id = #{instanceId}
+    </update>
+    <delete id="deleteOaProcessInstanceByInstanceId" parameterType="Long">
+        delete from oa_process_instance where instance_id = #{instanceId}
+    </delete>
+    <delete id="deleteOaProcessInstanceByInstanceIds" parameterType="String">
+        delete from oa_process_instance where instance_id in
+        <foreach item="instanceId" collection="array" open="(" separator="," close=")">#{instanceId}</foreach>
+    </delete>
+</mapper>

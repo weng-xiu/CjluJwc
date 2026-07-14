@@ -1,0 +1,16 @@
+﻿SET FOREIGN_KEY_CHECKS=0;
+DROP TABLE IF EXISTS `act_ge_bytearray`;
+DROP TABLE IF EXISTS `act_ge_property`;
+DROP TABLE IF EXISTS `act_hi_entitylink`;
+DROP TABLE IF EXISTS `act_hi_identitylink`;
+DROP TABLE IF EXISTS `act_ru_deadletter_job`;
+DROP TABLE IF EXISTS `act_ru_entitylink`;
+DROP TABLE IF EXISTS `act_ru_external_job`;
+DROP TABLE IF EXISTS `act_ru_history_job`;
+DROP TABLE IF EXISTS `act_ru_identitylink`;
+DROP TABLE IF EXISTS `act_ru_job`;
+DROP TABLE IF EXISTS `act_ru_suspended_job`;
+DROP TABLE IF EXISTS `act_ru_timer_job`;
+DROP TABLE IF EXISTS `flw_ru_batch`;
+DROP TABLE IF EXISTS `flw_ru_batch_part`;
+SET FOREIGN_KEY_CHECKS=1;

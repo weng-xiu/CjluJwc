@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.oa.mapper.OaScheduleMapper">
+    <resultMap type="OaSchedule" id="OaScheduleResult">
+        <result property="scheduleId"       column="schedule_id"        />
+        <result property="scheduleTitle"    column="schedule_title"     />
+        <result property="scheduleType"     column="schedule_type"      />
+        <result property="startTime"        column="start_time"         />
+        <result property="endTime"          column="end_time"           />
+        <result property="allDay"           column="all_day"            />
+        <result property="remindType"       column="remind_type"        />
+        <result property="remindTime"       column="remind_time"        />
+        <result property="color"            column="color"              />
+        <result property="location"         column="location"           />
+        <result property="scheduleContent"  column="schedule_content"   />
+        <result property="ownerId"          column="owner_id"           />
+        <result property="ownerName"        column="owner_name"         />
+        <result property="scheduleStatus"   column="schedule_status"    />
+        <result property="status"           column="status"             />
+        <result property="createBy"         column="create_by"          />
+        <result property="createTime"       column="create_time"        />
+        <result property="updateBy"         column="update_by"          />
+        <result property="updateTime"       column="update_time"        />
+        <result property="remark"           column="remark"             />
+    </resultMap>
+    <sql id="selectOaScheduleVo">
+        select schedule_id, schedule_title, schedule_type, start_time, end_time, all_day, remind_type, remind_time, color, location, schedule_content, owner_id, owner_name, schedule_status, status, create_by, create_time, update_by, update_time, remark from oa_schedule
+    </sql>
+    <select id="selectOaScheduleList" parameterType="OaSchedule" resultMap="OaScheduleResult">
+        <include refid="selectOaScheduleVo"/>
+        <where>
+            <if test="scheduleTitle != null and scheduleTitle.trim() != ''"> and schedule_title like concat('%', #{scheduleTitle}, '%')</if>
+            <if test="scheduleType != null and scheduleType.trim() != ''"> and schedule_type = #{scheduleType}</if>
+            <if test="ownerId != null"> and owner_id = #{ownerId}</if>
+            <if test="ownerName != null and ownerName.trim() != ''"> and owner_name like concat('%', #{ownerName}, '%')</if>
+            <if test="scheduleStatus != null and scheduleStatus.trim() != ''"> and schedule_status = #{scheduleStatus}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            <if test="params.beginTime != null and params.beginTime != ''"> and start_time &gt;= #{params.beginTime}</if>
+            <if test="params.endTime != null and params.endTime != ''"> and end_time &lt;= #{params.endTime}</if>
+        </where>
+        order by start_time desc
+    </select>
+    <select id="selectOaScheduleByScheduleId" parameterType="Long" resultMap="OaScheduleResult">
+        <include refid="selectOaScheduleVo"/> where schedule_id = #{scheduleId}
+    </select>
+    <insert id="insertOaSchedule" parameterType="OaSchedule" useGeneratedKeys="true" keyProperty="scheduleId">
+        insert into oa_schedule
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="scheduleTitle != null and scheduleTitle != ''">schedule_title,</if>
+            <if test="scheduleType != null">schedule_type,</if>
+            <if test="startTime != null">start_time,</if>
+            <if test="endTime != null">end_time,</if>
+            <if test="allDay != null">all_day,</if>
+            <if test="remindType != null">remind_type,</if>
+            <if test="remindTime != null">remind_time,</if>
+            <if test="color != null">color,</if>
+            <if test="location != null">location,</if>
+            <if test="scheduleContent != null">schedule_content,</if>
+            <if test="ownerId != null">owner_id,</if>
+            <if test="ownerName != null">owner_name,</if>
+            <if test="scheduleStatus != null">schedule_status,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="scheduleTitle != null and scheduleTitle != ''">#{scheduleTitle},</if>
+            <if test="scheduleType != null">#{scheduleType},</if>
+            <if test="startTime != null">#{startTime},</if>
+            <if test="endTime != null">#{endTime},</if>
+            <if test="allDay != null">#{allDay},</if>
+            <if test="remindType != null">#{remindType},</if>
+            <if test="remindTime != null">#{remindTime},</if>
+            <if test="color != null">#{color},</if>
+            <if test="location != null">#{location},</if>
+            <if test="scheduleContent != null">#{scheduleContent},</if>
+            <if test="ownerId != null">#{ownerId},</if>
+            <if test="ownerName != null">#{ownerName},</if>
+            <if test="scheduleStatus != null">#{scheduleStatus},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateOaSchedule" parameterType="OaSchedule">
+        update oa_schedule
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="scheduleTitle != null and scheduleTitle != ''">schedule_title = #{scheduleTitle},</if>
+            <if test="scheduleType != null">schedule_type = #{scheduleType},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="allDay != null">all_day = #{allDay},</if>
+            <if test="remindType != null">remind_type = #{remindType},</if>
+            <if test="remindTime != null">remind_time = #{remindTime},</if>
+            <if test="color != null">color = #{color},</if>
+            <if test="location != null">location = #{location},</if>
+            <if test="scheduleContent != null">schedule_content = #{scheduleContent},</if>
+            <if test="ownerId != null">owner_id = #{ownerId},</if>
+            <if test="ownerName != null">owner_name = #{ownerName},</if>
+            <if test="scheduleStatus != null">schedule_status = #{scheduleStatus},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where schedule_id = #{scheduleId}
+    </update>
+    <delete id="deleteOaScheduleByScheduleId" parameterType="Long">
+        delete from oa_schedule where schedule_id = #{scheduleId}
+    </delete>
+    <delete id="deleteOaScheduleByScheduleIds" parameterType="String">
+        delete from oa_schedule where schedule_id in
+        <foreach item="scheduleId" collection="array" open="(" separator="," close=")">#{scheduleId}</foreach>
+    </delete>
+</mapper>

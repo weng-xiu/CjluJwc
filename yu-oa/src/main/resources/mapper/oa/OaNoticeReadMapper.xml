@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.oa.mapper.OaNoticeReadMapper">
+    <resultMap type="OaNoticeRead" id="OaNoticeReadResult">
+        <result property="readId"     column="read_id"        />
+        <result property="noticeId"   column="notice_id"      />
+        <result property="userId"     column="user_id"        />
+        <result property="userName"   column="user_name"      />
+        <result property="readTime"   column="read_time"      />
+        <result property="createBy"   column="create_by"      />
+        <result property="createTime" column="create_time"    />
+    </resultMap>
+    <sql id="selectOaNoticeReadVo">
+        select read_id, notice_id, user_id, user_name, read_time, create_by, create_time from oa_notice_read
+    </sql>
+    <select id="selectOaNoticeReadList" parameterType="OaNoticeRead" resultMap="OaNoticeReadResult">
+        <include refid="selectOaNoticeReadVo"/>
+        <where>
+            <if test="noticeId != null"> and notice_id = #{noticeId}</if>
+            <if test="userId != null"> and user_id = #{userId}</if>
+            <if test="userName != null and userName.trim() != ''"> and user_name like concat('%', #{userName}, '%')</if>
+        </where>
+        order by read_time desc
+    </select>
+    <select id="selectOaNoticeReadByReadId" parameterType="Long" resultMap="OaNoticeReadResult">
+        <include refid="selectOaNoticeReadVo"/> where read_id = #{readId}
+    </select>
+    <select id="selectOaNoticeReadByUser" resultMap="OaNoticeReadResult">
+        <include refid="selectOaNoticeReadVo"/>
+        where notice_id = #{noticeId} and user_id = #{userId}
+    </select>
+    <insert id="insertOaNoticeRead" parameterType="OaNoticeRead" useGeneratedKeys="true" keyProperty="readId">
+        insert into oa_notice_read
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="noticeId != null">notice_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="userName != null">user_name,</if>
+            <if test="readTime != null">read_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="noticeId != null">#{noticeId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="userName != null">#{userName},</if>
+            <if test="readTime != null">#{readTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+    <update id="updateOaNoticeRead" parameterType="OaNoticeRead">
+        update oa_notice_read
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="noticeId != null">notice_id = #{noticeId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="userName != null">user_name = #{userName},</if>
+            <if test="readTime != null">read_time = #{readTime},</if>
+        </trim>
+        where read_id = #{readId}
+    </update>
+    <delete id="deleteOaNoticeReadByNoticeId" parameterType="Long">
+        delete from oa_notice_read where notice_id = #{noticeId}
+    </delete>
+    <delete id="deleteOaNoticeReadByReadIds" parameterType="String">
+        delete from oa_notice_read where read_id in
+        <foreach item="readId" collection="array" open="(" separator="," close=")">#{readId}</foreach>
+    </delete>
+</mapper>

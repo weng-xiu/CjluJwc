@@ -90,6 +90,12 @@
             <artifactId>yu-portal</artifactId>
         </dependency>
 
+        <!-- 办公自动化 -->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-oa</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

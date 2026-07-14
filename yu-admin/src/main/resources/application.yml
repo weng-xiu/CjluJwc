@@ -47,6 +47,15 @@ user:
 
 # Spring配置
 spring:
+  # 自动配置排除项（Flowable 7.1.0 重名前的 Spring Boot 2/3 自动配置类，在 SB4 下不存在，需要排除）
+  autoconfigure:
+    exclude:
+      - org.flowable.spring.boot.eventregistry.EventRegistryAutoConfiguration
+      - org.flowable.spring.boot.eventregistry.EventRegistryServicesAutoConfiguration
+      - org.flowable.spring.boot.FlowableSecurityAutoConfiguration
+      - org.flowable.spring.boot.actuate.info.FlowableInfoAutoConfiguration
+      - org.flowable.spring.boot.rest.FlowableRestAutoConfiguration
+      - org.flowable.spring.boot.rest.FlowableRestServletAutoConfiguration
   # 资源信息
   messages:
     # 国际化资源文件路径
@@ -145,3 +154,23 @@ xss:
   excludes: /system/notice
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
+
+# Flowable 工作流引擎配置
+flowable:
+  # 启动时自动创建/升级 ACT_* 表（首次启动使用 true。若表不存在，需先手动建库后启动）
+  database-schema-update: true
+  # 开发阶段关闭异步任务执行器
+  async-executor-activate: false
+  # 开发阶段关闭历史数据异步处理
+  async-history-executor-activate: false
+  # 关闭不需要的模型子引擎，CMMN/DMN/App 引擎不需要，关闭后只保留流程引擎（BPMN）
+  cmmn:
+    enabled: false
+  dmn:
+    enabled: false
+  idm:
+    enabled: false
+  content:
+    enabled: false
+  app:
+    enabled: false

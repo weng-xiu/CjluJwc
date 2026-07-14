@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.oa.mapper.OaMeetingParticipantMapper">
+    <resultMap type="OaMeetingParticipant" id="OaMeetingParticipantResult">
+        <result property="participantId" column="participant_id" />
+        <result property="meetingId"     column="meeting_id"     />
+        <result property="userId"        column="user_id"        />
+        <result property="userName"      column="user_name"      />
+        <result property="deptName"      column="dept_name"      />
+        <result property="attendStatus"  column="attend_status"  />
+        <result property="signStatus"    column="sign_status"    />
+        <result property="signTime"      column="sign_time"      />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+    </resultMap>
+    <sql id="selectOaMeetingParticipantVo">
+        select participant_id, meeting_id, user_id, user_name, dept_name, attend_status, sign_status, sign_time, create_by, create_time from oa_meeting_participant
+    </sql>
+    <select id="selectOaMeetingParticipantList" parameterType="OaMeetingParticipant" resultMap="OaMeetingParticipantResult">
+        <include refid="selectOaMeetingParticipantVo"/>
+        <where>
+            <if test="meetingId != null"> and meeting_id = #{meetingId}</if>
+            <if test="userId != null"> and user_id = #{userId}</if>
+            <if test="userName != null and userName.trim() != ''"> and user_name like concat('%', #{userName}, '%')</if>
+            <if test="attendStatus != null and attendStatus.trim() != ''"> and attend_status = #{attendStatus}</if>
+            <if test="signStatus != null and signStatus.trim() != ''"> and sign_status = #{signStatus}</if>
+        </where>
+        order by create_time desc
+    </select>
+    <select id="selectOaMeetingParticipantByParticipantId" parameterType="Long" resultMap="OaMeetingParticipantResult">
+        <include refid="selectOaMeetingParticipantVo"/> where participant_id = #{participantId}
+    </select>
+    <select id="selectOaMeetingParticipantByMeetingId" parameterType="Long" resultMap="OaMeetingParticipantResult">
+        <include refid="selectOaMeetingParticipantVo"/> where meeting_id = #{meetingId} order by create_time
+    </select>
+    <insert id="insertOaMeetingParticipant" parameterType="OaMeetingParticipant" useGeneratedKeys="true" keyProperty="participantId">
+        insert into oa_meeting_participant
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="meetingId != null">meeting_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="userName != null">user_name,</if>
+            <if test="deptName != null">dept_name,</if>
+            <if test="attendStatus != null">attend_status,</if>
+            <if test="signStatus != null">sign_status,</if>
+            <if test="signTime != null">sign_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="meetingId != null">#{meetingId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="userName != null">#{userName},</if>
+            <if test="deptName != null">#{deptName},</if>
+            <if test="attendStatus != null">#{attendStatus},</if>
+            <if test="signStatus != null">#{signStatus},</if>
+            <if test="signTime != null">#{signTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+    <update id="updateOaMeetingParticipant" parameterType="OaMeetingParticipant">
+        update oa_meeting_participant
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="meetingId != null">meeting_id = #{meetingId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="userName != null">user_name = #{userName},</if>
+            <if test="deptName != null">dept_name = #{deptName},</if>
+            <if test="attendStatus != null">attend_status = #{attendStatus},</if>
+            <if test="signStatus != null">sign_status = #{signStatus},</if>
+            <if test="signTime != null">sign_time = #{signTime},</if>
+        </trim>
+        where participant_id = #{participantId}
+    </update>
+    <delete id="deleteOaMeetingParticipantByMeetingId" parameterType="Long">
+        delete from oa_meeting_participant where meeting_id = #{meetingId}
+    </delete>
+    <delete id="deleteOaMeetingParticipantByParticipantIds" parameterType="String">
+        delete from oa_meeting_participant where participant_id in
+        <foreach item="participantId" collection="array" open="(" separator="," close=")">#{participantId}</foreach>
+    </delete>
+</mapper>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.oa.mapper.OaScheduleShareMapper">
+    <resultMap type="OaScheduleShare" id="OaScheduleShareResult">
+        <result property="shareId"    column="share_id"     />
+        <result property="scheduleId" column="schedule_id"  />
+        <result property="userId"     column="user_id"      />
+        <result property="userName"   column="user_name"    />
+        <result property="createBy"   column="create_by"    />
+        <result property="createTime" column="create_time"  />
+    </resultMap>
+    <sql id="selectOaScheduleShareVo">
+        select share_id, schedule_id, user_id, user_name, create_by, create_time from oa_schedule_share
+    </sql>
+    <select id="selectOaScheduleShareByShareId" parameterType="Long" resultMap="OaScheduleShareResult">
+        <include refid="selectOaScheduleShareVo"/> where share_id = #{shareId}
+    </select>
+    <select id="selectOaScheduleShareByScheduleId" parameterType="Long" resultMap="OaScheduleShareResult">
+        <include refid="selectOaScheduleShareVo"/> where schedule_id = #{scheduleId}
+    </select>
+    <insert id="insertOaScheduleShare" parameterType="OaScheduleShare" useGeneratedKeys="true" keyProperty="shareId">
+        insert into oa_schedule_share
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="scheduleId != null">schedule_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="userName != null">user_name,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="scheduleId != null">#{scheduleId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="userName != null">#{userName},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+    <update id="updateOaScheduleShare" parameterType="OaScheduleShare">
+        update oa_schedule_share
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="scheduleId != null">schedule_id = #{scheduleId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="userName != null">user_name = #{userName},</if>
+        </trim>
+        where share_id = #{shareId}
+    </update>
+    <delete id="deleteOaScheduleShareByScheduleId" parameterType="Long">
+        delete from oa_schedule_share where schedule_id = #{scheduleId}
+    </delete>
+    <delete id="deleteOaScheduleShareByShareIds" parameterType="String">
+        delete from oa_schedule_share where share_id in
+        <foreach item="shareId" collection="array" open="(" separator="," close=")">#{shareId}</foreach>
+    </delete>
+</mapper>

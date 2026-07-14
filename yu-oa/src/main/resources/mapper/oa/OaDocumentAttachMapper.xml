@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.oa.mapper.OaDocumentAttachMapper">
+    <resultMap type="OaDocumentAttach" id="OaDocumentAttachResult">
+        <result property="attachId"   column="attach_id"    />
+        <result property="documentId" column="document_id"  />
+        <result property="fileName"   column="file_name"    />
+        <result property="fileUrl"    column="file_url"     />
+        <result property="fileSize"   column="file_size"    />
+        <result property="createBy"   column="create_by"    />
+        <result property="createTime" column="create_time"  />
+    </resultMap>
+    <sql id="selectOaDocumentAttachVo">
+        select attach_id, document_id, file_name, file_url, file_size, create_by, create_time from oa_document_attach
+    </sql>
+    <select id="selectOaDocumentAttachByAttachId" parameterType="Long" resultMap="OaDocumentAttachResult">
+        <include refid="selectOaDocumentAttachVo"/> where attach_id = #{attachId}
+    </select>
+    <select id="selectOaDocumentAttachByDocumentId" parameterType="Long" resultMap="OaDocumentAttachResult">
+        <include refid="selectOaDocumentAttachVo"/> where document_id = #{documentId}
+    </select>
+    <insert id="insertOaDocumentAttach" parameterType="OaDocumentAttach" useGeneratedKeys="true" keyProperty="attachId">
+        insert into oa_document_attach
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="documentId != null">document_id,</if>
+            <if test="fileName != null">file_name,</if>
+            <if test="fileUrl != null">file_url,</if>
+            <if test="fileSize != null">file_size,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="documentId != null">#{documentId},</if>
+            <if test="fileName != null">#{fileName},</if>
+            <if test="fileUrl != null">#{fileUrl},</if>
+            <if test="fileSize != null">#{fileSize},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+    <update id="updateOaDocumentAttach" parameterType="OaDocumentAttach">
+        update oa_document_attach
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="documentId != null">document_id = #{documentId},</if>
+            <if test="fileName != null">file_name = #{fileName},</if>
+            <if test="fileUrl != null">file_url = #{fileUrl},</if>
+            <if test="fileSize != null">file_size = #{fileSize},</if>
+        </trim>
+        where attach_id = #{attachId}
+    </update>
+    <delete id="deleteOaDocumentAttachByDocumentId" parameterType="Long">
+        delete from oa_document_attach where document_id = #{documentId}
+    </delete>
+    <delete id="deleteOaDocumentAttachByAttachIds" parameterType="String">
+        delete from oa_document_attach where attach_id in
+        <foreach item="attachId" collection="array" open="(" separator="," close=")">#{attachId}</foreach>
+    </delete>
+</mapper>

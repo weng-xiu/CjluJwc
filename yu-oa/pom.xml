@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>yu</artifactId>
+        <groupId>com.yu</groupId>
+        <version>3.9.2</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>yu-oa</artifactId>
+
+    <description>
+        办公自动化模块
+    </description>
+
+    <dependencies>
+
+        <!-- 通用工具 -->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-common</artifactId>
+        </dependency>
+
+        <!-- 系统模块（用户、部门、角色、菜单） -->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-system</artifactId>
+        </dependency>
+
+        <!-- 基础资源管理模块（部门、教师等） -->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-brm</artifactId>
+        </dependency>
+
+        <!-- Flowable 工作流引擎 -->
+        <dependency>
+            <groupId>org.flowable</groupId>
+            <artifactId>flowable-spring-boot-starter</artifactId>
+            <version>7.1.0</version>
+        </dependency>
+
+    </dependencies>
+
+</project>

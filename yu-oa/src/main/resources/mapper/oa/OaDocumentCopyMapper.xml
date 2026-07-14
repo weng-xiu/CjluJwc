@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.oa.mapper.OaDocumentCopyMapper">
+    <resultMap type="OaDocumentCopy" id="OaDocumentCopyResult">
+        <result property="copyId"     column="copy_id"      />
+        <result property="documentId" column="document_id"  />
+        <result property="userId"     column="user_id"      />
+        <result property="userName"   column="user_name"    />
+        <result property="readStatus" column="read_status"  />
+        <result property="readTime"   column="read_time"    />
+        <result property="createBy"   column="create_by"    />
+        <result property="createTime" column="create_time"  />
+    </resultMap>
+    <sql id="selectOaDocumentCopyVo">
+        select copy_id, document_id, user_id, user_name, read_status, read_time, create_by, create_time from oa_document_copy
+    </sql>
+    <select id="selectOaDocumentCopyByCopyId" parameterType="Long" resultMap="OaDocumentCopyResult">
+        <include refid="selectOaDocumentCopyVo"/> where copy_id = #{copyId}
+    </select>
+    <select id="selectOaDocumentCopyByDocumentId" parameterType="Long" resultMap="OaDocumentCopyResult">
+        <include refid="selectOaDocumentCopyVo"/> where document_id = #{documentId}
+    </select>
+    <insert id="insertOaDocumentCopy" parameterType="OaDocumentCopy" useGeneratedKeys="true" keyProperty="copyId">
+        insert into oa_document_copy
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="documentId != null">document_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="userName != null">user_name,</if>
+            <if test="readStatus != null">read_status,</if>
+            <if test="readTime != null">read_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="documentId != null">#{documentId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="userName != null">#{userName},</if>
+            <if test="readStatus != null">#{readStatus},</if>
+            <if test="readTime != null">#{readTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+    <update id="updateOaDocumentCopy" parameterType="OaDocumentCopy">
+        update oa_document_copy
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="documentId != null">document_id = #{documentId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="userName != null">user_name = #{userName},</if>
+            <if test="readStatus != null">read_status = #{readStatus},</if>
+            <if test="readTime != null">read_time = #{readTime},</if>
+        </trim>
+        where copy_id = #{copyId}
+    </update>
+    <delete id="deleteOaDocumentCopyByDocumentId" parameterType="Long">
+        delete from oa_document_copy where document_id = #{documentId}
+    </delete>
+    <delete id="deleteOaDocumentCopyByCopyIds" parameterType="String">
+        delete from oa_document_copy where copy_id in
+        <foreach item="copyId" collection="array" open="(" separator="," close=")">#{copyId}</foreach>
+    </delete>
+</mapper>

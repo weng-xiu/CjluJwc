@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.oa.mapper.OaNoticeMapper">
+    <resultMap type="OaNotice" id="OaNoticeResult">
+        <result property="noticeId"       column="notice_id"        />
+        <result property="noticeTitle"    column="notice_title"     />
+        <result property="noticeContent"  column="notice_content"   />
+        <result property="noticeType"     column="notice_type"      />
+        <result property="publishScope"   column="publish_scope"    />
+        <result property="isTop"          column="is_top"           />
+        <result property="publishStatus"  column="publish_status"   />
+        <result property="publisherId"    column="publisher_id"     />
+        <result property="publisherName"  column="publisher_name"   />
+        <result property="publishTime"    column="publish_time"     />
+        <result property="endTime"        column="end_time"         />
+        <result property="readCount"      column="read_count"       />
+        <result property="status"         column="status"           />
+        <result property="createBy"       column="create_by"        />
+        <result property="createTime"     column="create_time"      />
+        <result property="updateBy"       column="update_by"        />
+        <result property="updateTime"     column="update_time"      />
+        <result property="remark"         column="remark"           />
+    </resultMap>
+    <sql id="selectOaNoticeVo">
+        select notice_id, notice_title, notice_content, notice_type, publish_scope, is_top, publish_status, publisher_id, publisher_name, publish_time, end_time, read_count, status, create_by, create_time, update_by, update_time, remark from oa_notice
+    </sql>
+    <select id="selectOaNoticeList" parameterType="OaNotice" resultMap="OaNoticeResult">
+        <include refid="selectOaNoticeVo"/>
+        <where>
+            <if test="noticeTitle != null and noticeTitle.trim() != ''"> and notice_title like concat('%', #{noticeTitle}, '%')</if>
+            <if test="noticeType != null and noticeType.trim() != ''"> and notice_type = #{noticeType}</if>
+            <if test="publishScope != null and publishScope.trim() != ''"> and publish_scope = #{publishScope}</if>
+            <if test="publishStatus != null and publishStatus.trim() != ''"> and publish_status = #{publishStatus}</if>
+            <if test="publisherName != null and publisherName.trim() != ''"> and publisher_name like concat('%', #{publisherName}, '%')</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+        order by is_top desc, publish_time desc
+    </select>
+    <select id="selectOaNoticeByNoticeId" parameterType="Long" resultMap="OaNoticeResult">
+        <include refid="selectOaNoticeVo"/> where notice_id = #{noticeId}
+    </select>
+    <insert id="insertOaNotice" parameterType="OaNotice" useGeneratedKeys="true" keyProperty="noticeId">
+        insert into oa_notice
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="noticeTitle != null and noticeTitle != ''">notice_title,</if>
+            <if test="noticeContent != null">notice_content,</if>
+            <if test="noticeType != null">notice_type,</if>
+            <if test="publishScope != null">publish_scope,</if>
+            <if test="isTop != null">is_top,</if>
+            <if test="publishStatus != null">publish_status,</if>
+            <if test="publisherId != null">publisher_id,</if>
+            <if test="publisherName != null">publisher_name,</if>
+            <if test="publishTime != null">publish_time,</if>
+            <if test="endTime != null">end_time,</if>
+            <if test="readCount != null">read_count,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="noticeTitle != null and noticeTitle != ''">#{noticeTitle},</if>
+            <if test="noticeContent != null">#{noticeContent},</if>
+            <if test="noticeType != null">#{noticeType},</if>
+            <if test="publishScope != null">#{publishScope},</if>
+            <if test="isTop != null">#{isTop},</if>
+            <if test="publishStatus != null">#{publishStatus},</if>
+            <if test="publisherId != null">#{publisherId},</if>
+            <if test="publisherName != null">#{publisherName},</if>
+            <if test="publishTime != null">#{publishTime},</if>
+            <if test="endTime != null">#{endTime},</if>
+            <if test="readCount != null">#{readCount},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateOaNotice" parameterType="OaNotice">
+        update oa_notice
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="noticeTitle != null and noticeTitle != ''">notice_title = #{noticeTitle},</if>
+            <if test="noticeContent != null">notice_content = #{noticeContent},</if>
+            <if test="noticeType != null">notice_type = #{noticeType},</if>
+            <if test="publishScope != null">publish_scope = #{publishScope},</if>
+            <if test="isTop != null">is_top = #{isTop},</if>
+            <if test="publishStatus != null">publish_status = #{publishStatus},</if>
+            <if test="publisherId != null">publisher_id = #{publisherId},</if>
+            <if test="publisherName != null">publisher_name = #{publisherName},</if>
+            <if test="publishTime != null">publish_time = #{publishTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="readCount != null">read_count = #{readCount},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where notice_id = #{noticeId}
+    </update>
+    <delete id="deleteOaNoticeByNoticeId" parameterType="Long">
+        delete from oa_notice where notice_id = #{noticeId}
+    </delete>
+    <delete id="deleteOaNoticeByNoticeIds" parameterType="String">
+        delete from oa_notice where notice_id in
+        <foreach item="noticeId" collection="array" open="(" separator="," close=")">#{noticeId}</foreach>
+    </delete>
+</mapper>

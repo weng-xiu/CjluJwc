@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.oa.mapper.OaTaskRecordMapper">
+    <resultMap type="OaTaskRecord" id="OaTaskRecordResult">
+        <result property="recordId"     column="record_id"      />
+        <result property="instanceId"   column="instance_id"    />
+        <result property="taskId"       column="task_id"        />
+        <result property="taskName"     column="task_name"      />
+        <result property="assigneeId"   column="assignee_id"    />
+        <result property="assigneeName" column="assignee_name"  />
+        <result property="actionType"   column="action_type"    />
+        <result property="comment"      column="comment"          />
+        <result property="startTime"    column="start_time"     />
+        <result property="endTime"      column="end_time"       />
+        <result property="createBy"     column="create_by"      />
+        <result property="createTime"   column="create_time"    />
+        <result property="updateBy"     column="update_by"      />
+        <result property="updateTime"   column="update_time"    />
+        <result property="remark"       column="remark"         />
+    </resultMap>
+    <sql id="selectOaTaskRecordVo">
+        select record_id, instance_id, task_id, task_name, assignee_id, assignee_name, action_type, comment, start_time, end_time, create_by, create_time, update_by, update_time, remark from oa_task_record
+    </sql>
+    <select id="selectOaTaskRecordList" parameterType="OaTaskRecord" resultMap="OaTaskRecordResult">
+        <include refid="selectOaTaskRecordVo"/>
+        <where>
+            <if test="instanceId != null"> and instance_id = #{instanceId}</if>
+            <if test="taskName != null and taskName.trim() != ''"> and task_name like concat('%', #{taskName}, '%')</if>
+            <if test="assigneeName != null and assigneeName.trim() != ''"> and assignee_name like concat('%', #{assigneeName}, '%')</if>
+            <if test="actionType != null and actionType.trim() != ''"> and action_type = #{actionType}</if>
+        </where>
+        order by start_time desc
+    </select>
+    <select id="selectOaTaskRecordByRecordId" parameterType="Long" resultMap="OaTaskRecordResult">
+        <include refid="selectOaTaskRecordVo"/> where record_id = #{recordId}
+    </select>
+    <select id="selectOaTaskRecordByInstanceId" parameterType="Long" resultMap="OaTaskRecordResult">
+        <include refid="selectOaTaskRecordVo"/> where instance_id = #{instanceId} order by start_time asc
+    </select>
+    <insert id="insertOaTaskRecord" parameterType="OaTaskRecord" useGeneratedKeys="true" keyProperty="recordId">
+        insert into oa_task_record
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="instanceId != null">instance_id,</if>
+            <if test="taskId != null">task_id,</if>
+            <if test="taskName != null">task_name,</if>
+            <if test="assigneeId != null">assignee_id,</if>
+            <if test="assigneeName != null">assignee_name,</if>
+            <if test="actionType != null">action_type,</if>
+            <if test="comment != null">comment,</if>
+            <if test="startTime != null">start_time,</if>
+            <if test="endTime != null">end_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="instanceId != null">#{instanceId},</if>
+            <if test="taskId != null">#{taskId},</if>
+            <if test="taskName != null">#{taskName},</if>
+            <if test="assigneeId != null">#{assigneeId},</if>
+            <if test="assigneeName != null">#{assigneeName},</if>
+            <if test="actionType != null">#{actionType},</if>
+            <if test="comment != null">#{comment},</if>
+            <if test="startTime != null">#{startTime},</if>
+            <if test="endTime != null">#{endTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateOaTaskRecord" parameterType="OaTaskRecord">
+        update oa_task_record
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="instanceId != null">instance_id = #{instanceId},</if>
+            <if test="taskId != null">task_id = #{taskId},</if>
+            <if test="taskName != null">task_name = #{taskName},</if>
+            <if test="assigneeId != null">assignee_id = #{assigneeId},</if>
+            <if test="assigneeName != null">assignee_name = #{assigneeName},</if>
+            <if test="actionType != null">action_type = #{actionType},</if>
+            <if test="comment != null">comment = #{comment},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where record_id = #{recordId}
+    </update>
+    <delete id="deleteOaTaskRecordByRecordId" parameterType="Long">
+        delete from oa_task_record where record_id = #{recordId}
+    </delete>
+    <delete id="deleteOaTaskRecordByRecordIds" parameterType="String">
+        delete from oa_task_record where record_id in
+        <foreach item="recordId" collection="array" open="(" separator="," close=")">#{recordId}</foreach>
+    </delete>
+</mapper>

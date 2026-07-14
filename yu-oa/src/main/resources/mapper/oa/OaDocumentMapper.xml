@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.oa.mapper.OaDocumentMapper">
+    <resultMap type="OaDocument" id="OaDocumentResult">
+        <result property="documentId"        column="document_id"         />
+        <result property="documentNo"        column="document_no"         />
+        <result property="title"             column="title"               />
+        <result property="documentType"      column="document_type"       />
+        <result property="secretLevel"       column="secret_level"        />
+        <result property="urgentLevel"       column="urgent_level"        />
+        <result property="content"           column="content"             />
+        <result property="attachments"       column="attachments"         />
+        <result property="originatorId"      column="originator_id"       />
+        <result property="originatorName"    column="originator_name"     />
+        <result property="originDeptId"      column="origin_dept_id"      />
+        <result property="originDeptName"    column="origin_dept_name"    />
+        <result property="processInstanceId" column="process_instance_id" />
+        <result property="documentStatus"    column="document_status"     />
+        <result property="publishTime"       column="publish_time"        />
+        <result property="status"            column="status"              />
+        <result property="createBy"          column="create_by"           />
+        <result property="createTime"        column="create_time"         />
+        <result property="updateBy"          column="update_by"           />
+        <result property="updateTime"        column="update_time"         />
+        <result property="remark"            column="remark"              />
+    </resultMap>
+    <sql id="selectOaDocumentVo">
+        select document_id, document_no, title, document_type, secret_level, urgent_level, content, attachments, originator_id, originator_name, origin_dept_id, origin_dept_name, process_instance_id, document_status, publish_time, status, create_by, create_time, update_by, update_time, remark from oa_document
+    </sql>
+    <select id="selectOaDocumentList" parameterType="OaDocument" resultMap="OaDocumentResult">
+        <include refid="selectOaDocumentVo"/>
+        <where>
+            <if test="documentNo != null and documentNo.trim() != ''"> and document_no like concat('%', #{documentNo}, '%')</if>
+            <if test="title != null and title.trim() != ''"> and title like concat('%', #{title}, '%')</if>
+            <if test="documentType != null and documentType.trim() != ''"> and document_type = #{documentType}</if>
+            <if test="secretLevel != null and secretLevel.trim() != ''"> and secret_level = #{secretLevel}</if>
+            <if test="urgentLevel != null and urgentLevel.trim() != ''"> and urgent_level = #{urgentLevel}</if>
+            <if test="originatorName != null and originatorName.trim() != ''"> and originator_name like concat('%', #{originatorName}, '%')</if>
+            <if test="originDeptName != null and originDeptName.trim() != ''"> and origin_dept_name like concat('%', #{originDeptName}, '%')</if>
+            <if test="documentStatus != null and documentStatus.trim() != ''"> and document_status = #{documentStatus}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+        order by create_time desc
+    </select>
+    <select id="selectOaDocumentByDocumentId" parameterType="Long" resultMap="OaDocumentResult">
+        <include refid="selectOaDocumentVo"/> where document_id = #{documentId}
+    </select>
+    <insert id="insertOaDocument" parameterType="OaDocument" useGeneratedKeys="true" keyProperty="documentId">
+        insert into oa_document
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="documentNo != null">document_no,</if>
+            <if test="title != null and title != ''">title,</if>
+            <if test="documentType != null">document_type,</if>
+            <if test="secretLevel != null">secret_level,</if>
+            <if test="urgentLevel != null">urgent_level,</if>
+            <if test="content != null">content,</if>
+            <if test="attachments != null">attachments,</if>
+            <if test="originatorId != null">originator_id,</if>
+            <if test="originatorName != null">originator_name,</if>
+            <if test="originDeptId != null">origin_dept_id,</if>
+            <if test="originDeptName != null">origin_dept_name,</if>
+            <if test="processInstanceId != null">process_instance_id,</if>
+            <if test="documentStatus != null">document_status,</if>
+            <if test="publishTime != null">publish_time,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="documentNo != null">#{documentNo},</if>
+            <if test="title != null and title != ''">#{title},</if>
+            <if test="documentType != null">#{documentType},</if>
+            <if test="secretLevel != null">#{secretLevel},</if>
+            <if test="urgentLevel != null">#{urgentLevel},</if>
+            <if test="content != null">#{content},</if>
+            <if test="attachments != null">#{attachments},</if>
+            <if test="originatorId != null">#{originatorId},</if>
+            <if test="originatorName != null">#{originatorName},</if>
+            <if test="originDeptId != null">#{originDeptId},</if>
+            <if test="originDeptName != null">#{originDeptName},</if>
+            <if test="processInstanceId != null">#{processInstanceId},</if>
+            <if test="documentStatus != null">#{documentStatus},</if>
+            <if test="publishTime != null">#{publishTime},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateOaDocument" parameterType="OaDocument">
+        update oa_document
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="documentNo != null">document_no = #{documentNo},</if>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="documentType != null">document_type = #{documentType},</if>
+            <if test="secretLevel != null">secret_level = #{secretLevel},</if>
+            <if test="urgentLevel != null">urgent_level = #{urgentLevel},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="attachments != null">attachments = #{attachments},</if>
+            <if test="originatorId != null">originator_id = #{originatorId},</if>
+            <if test="originatorName != null">originator_name = #{originatorName},</if>
+            <if test="originDeptId != null">origin_dept_id = #{originDeptId},</if>
+            <if test="originDeptName != null">origin_dept_name = #{originDeptName},</if>
+            <if test="processInstanceId != null">process_instance_id = #{processInstanceId},</if>
+            <if test="documentStatus != null">document_status = #{documentStatus},</if>
+            <if test="publishTime != null">publish_time = #{publishTime},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where document_id = #{documentId}
+    </update>
+    <delete id="deleteOaDocumentByDocumentId" parameterType="Long">
+        delete from oa_document where document_id = #{documentId}
+    </delete>
+    <delete id="deleteOaDocumentByDocumentIds" parameterType="String">
+        delete from oa_document where document_id in
+        <foreach item="documentId" collection="array" open="(" separator="," close=")">#{documentId}</foreach>
+    </delete>
+</mapper>

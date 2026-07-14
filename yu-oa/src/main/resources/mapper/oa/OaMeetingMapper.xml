@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.oa.mapper.OaMeetingMapper">
+    <resultMap type="OaMeeting" id="OaMeetingResult">
+        <result property="meetingId"         column="meeting_id"          />
+        <result property="meetingTheme"      column="meeting_theme"       />
+        <result property="roomId"            column="room_id"             />
+        <result property="roomName"          column="room_name"           />
+        <result property="startTime"         column="start_time"          />
+        <result property="endTime"           column="end_time"            />
+        <result property="organizerId"       column="organizer_id"        />
+        <result property="organizerName"     column="organizer_name"      />
+        <result property="meetingType"       column="meeting_type"        />
+        <result property="meetingStatus"     column="meeting_status"      />
+        <result property="content"           column="content"             />
+        <result property="attachmentUrl"     column="attachment_url"      />
+        <result property="processInstanceId" column="process_instance_id" />
+        <result property="status"            column="status"              />
+        <result property="createBy"          column="create_by"           />
+        <result property="createTime"        column="create_time"         />
+        <result property="updateBy"          column="update_by"           />
+        <result property="updateTime"        column="update_time"         />
+        <result property="remark"            column="remark"              />
+    </resultMap>
+    <sql id="selectOaMeetingVo">
+        select meeting_id, meeting_theme, room_id, room_name, start_time, end_time, organizer_id, organizer_name, meeting_type, meeting_status, content, attachment_url, process_instance_id, status, create_by, create_time, update_by, update_time, remark from oa_meeting
+    </sql>
+    <select id="selectOaMeetingList" parameterType="OaMeeting" resultMap="OaMeetingResult">
+        <include refid="selectOaMeetingVo"/>
+        <where>
+            <if test="meetingTheme != null and meetingTheme.trim() != ''"> and meeting_theme like concat('%', #{meetingTheme}, '%')</if>
+            <if test="roomId != null"> and room_id = #{roomId}</if>
+            <if test="roomName != null and roomName.trim() != ''"> and room_name like concat('%', #{roomName}, '%')</if>
+            <if test="organizerName != null and organizerName.trim() != ''"> and organizer_name like concat('%', #{organizerName}, '%')</if>
+            <if test="meetingType != null and meetingType.trim() != ''"> and meeting_type = #{meetingType}</if>
+            <if test="meetingStatus != null and meetingStatus.trim() != ''"> and meeting_status = #{meetingStatus}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+        order by start_time desc
+    </select>
+    <select id="selectOaMeetingByMeetingId" parameterType="Long" resultMap="OaMeetingResult">
+        <include refid="selectOaMeetingVo"/> where meeting_id = #{meetingId}
+    </select>
+    <insert id="insertOaMeeting" parameterType="OaMeeting" useGeneratedKeys="true" keyProperty="meetingId">
+        insert into oa_meeting
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="meetingTheme != null and meetingTheme != ''">meeting_theme,</if>
+            <if test="roomId != null">room_id,</if>
+            <if test="roomName != null">room_name,</if>
+            <if test="startTime != null">start_time,</if>
+            <if test="endTime != null">end_time,</if>
+            <if test="organizerId != null">organizer_id,</if>
+            <if test="organizerName != null">organizer_name,</if>
+            <if test="meetingType != null">meeting_type,</if>
+            <if test="meetingStatus != null">meeting_status,</if>
+            <if test="content != null">content,</if>
+            <if test="attachmentUrl != null">attachment_url,</if>
+            <if test="processInstanceId != null">process_instance_id,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="meetingTheme != null and meetingTheme != ''">#{meetingTheme},</if>
+            <if test="roomId != null">#{roomId},</if>
+            <if test="roomName != null">#{roomName},</if>
+            <if test="startTime != null">#{startTime},</if>
+            <if test="endTime != null">#{endTime},</if>
+            <if test="organizerId != null">#{organizerId},</if>
+            <if test="organizerName != null">#{organizerName},</if>
+            <if test="meetingType != null">#{meetingType},</if>
+            <if test="meetingStatus != null">#{meetingStatus},</if>
+            <if test="content != null">#{content},</if>
+            <if test="attachmentUrl != null">#{attachmentUrl},</if>
+            <if test="processInstanceId != null">#{processInstanceId},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateOaMeeting" parameterType="OaMeeting">
+        update oa_meeting
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="meetingTheme != null and meetingTheme != ''">meeting_theme = #{meetingTheme},</if>
+            <if test="roomId != null">room_id = #{roomId},</if>
+            <if test="roomName != null">room_name = #{roomName},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="organizerId != null">organizer_id = #{organizerId},</if>
+            <if test="organizerName != null">organizer_name = #{organizerName},</if>
+            <if test="meetingType != null">meeting_type = #{meetingType},</if>
+            <if test="meetingStatus != null">meeting_status = #{meetingStatus},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="attachmentUrl != null">attachment_url = #{attachmentUrl},</if>
+            <if test="processInstanceId != null">process_instance_id = #{processInstanceId},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where meeting_id = #{meetingId}
+    </update>
+    <delete id="deleteOaMeetingByMeetingId" parameterType="Long">
+        delete from oa_meeting where meeting_id = #{meetingId}
+    </delete>
+    <delete id="deleteOaMeetingByMeetingIds" parameterType="String">
+        delete from oa_meeting where meeting_id in
+        <foreach item="meetingId" collection="array" open="(" separator="," close=")">#{meetingId}</foreach>
+    </delete>
+    <select id="countMeetingConflict" parameterType="java.util.HashMap" resultType="int">
+        select count(*) from oa_meeting
+        where room_id = #{roomId}
+        and meeting_status != '3'
+        <if test="meetingId != null">and meeting_id != #{meetingId}</if>
+        and (
+            (start_time &gt;= #{startTime} and start_time &lt; #{endTime})
+            or (end_time &gt; #{startTime} and end_time &lt;= #{endTime})
+            or (start_time &lt;= #{startTime} and end_time &gt;= #{endTime})
+        )
+    </select>
+</mapper>
