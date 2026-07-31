@@ -13,17 +13,21 @@
         <result property="createTime"        column="create_time"         />
         <result property="updateBy"          column="update_by"           />
         <result property="updateTime"        column="update_time"         />
-        <result property="remark"            column="remark"              />
+        <result property="remark"           column="remark"              />
+        <result property="academicYearName" column="academic_year_name"    />
     </resultMap>
     <sql id="selectBrmSemesterVo">
         select semester_id, semester_name, academic_year_id, start_date, end_date, semester_order, status, create_by, create_time, update_by, update_time, remark from brm_semester
     </sql>
     <select id="selectBrmSemesterList" parameterType="BrmSemester" resultMap="BrmSemesterResult">
-        <include refid="selectBrmSemesterVo"/>
+        select s.semester_id, s.semester_name, s.academic_year_id, s.start_date, s.end_date, s.semester_order, s.status, s.create_by, s.create_time, s.update_by, s.update_time, s.remark,
+               y.year_name as academic_year_name
+        from brm_semester s
+        left join brm_academic_year y on s.academic_year_id = y.year_id
         <where>
-            <if test="semesterName != null and semesterName.trim() != ''"> and semester_name like concat('%', #{semesterName}, '%')</if>
-            <if test="academicYearId != null"> and academic_year_id = #{academicYearId}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            <if test="semesterName != null and semesterName.trim() != ''"> and s.semester_name like concat('%', #{semesterName}, '%')</if>
+            <if test="academicYearId != null"> and s.academic_year_id = #{academicYearId}</if>
+            <if test="status != null and status.trim() != ''"> and s.status = #{status}</if>
         </where>
     </select>
     <select id="selectBrmSemesterBySemesterId" parameterType="Long" resultMap="BrmSemesterResult">

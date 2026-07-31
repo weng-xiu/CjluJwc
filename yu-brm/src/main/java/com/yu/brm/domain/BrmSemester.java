@@ -50,6 +50,9 @@ public class BrmSemester extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 所属学年名称（关联查询） */
+    private String academicYearName;
+
     public Long getSemesterId() { return semesterId; }
     public void setSemesterId(Long semesterId) { this.semesterId = semesterId; }
 
@@ -73,6 +76,9 @@ public class BrmSemester extends BaseEntity
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getAcademicYearName() { return academicYearName; }
+    public void setAcademicYearName(String academicYearName) { this.academicYearName = academicYearName; }
 
     @Override
     public String toString() {

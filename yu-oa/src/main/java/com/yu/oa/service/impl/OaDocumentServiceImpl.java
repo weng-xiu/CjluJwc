@@ -231,7 +231,7 @@ public class OaDocumentServiceImpl implements IOaDocumentService
     public List<OaDocument> selectTodoList(OaDocument oaDocument)
     {
         String assignee = SecurityUtils.getUsername();
-        List<Task> tasks = oaWorkflowService.listTodoTasks(assignee);
+        List<Task> tasks = oaWorkflowService.listTodoTasks(assignee, null);
         List<OaDocument> result = new ArrayList<>();
         for (Task task : tasks)
         {
@@ -285,7 +285,7 @@ public class OaDocumentServiceImpl implements IOaDocumentService
         {
             return;
         }
-        List<Task> tasks = oaWorkflowService.listTodoTasks(SecurityUtils.getUsername());
+        List<Task> tasks = oaWorkflowService.listTodoTasks(SecurityUtils.getUsername(), null);
         boolean active = false;
         for (Task task : tasks)
         {

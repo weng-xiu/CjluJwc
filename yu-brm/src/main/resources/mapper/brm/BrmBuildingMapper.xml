@@ -12,14 +12,19 @@
         <result property="createTime"    column="create_time"     />
         <result property="updateBy"      column="update_by"       />
         <result property="updateTime"    column="update_time"     />
-        <result property="remark"        column="remark"          />
+       <result property="remark"        column="remark"          />
+        <result property="campusName"    column="campus_name"     />
     </resultMap>
     <sql id="selectBrmBuildingVo">select building_id, building_name, building_code, campus_id, floor_count, status, create_by, create_time, update_by, update_time, remark from brm_building</sql>
     <select id="selectBrmBuildingList" parameterType="BrmBuilding" resultMap="BrmBuildingResult">
-        <include refid="selectBrmBuildingVo"/><where>
-            <if test="buildingName != null and buildingName.trim() != ''"> and building_name like concat('%', #{buildingName}, '%')</if>
-            <if test="campusId != null"> and campus_id = #{campusId}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        select b.building_id, b.building_name, b.building_code, b.campus_id, b.floor_count, b.status, b.create_by, b.create_time, b.update_by, b.update_time, b.remark,
+               c.campus_name as campus_name
+        from brm_building b
+        left join brm_campus c on b.campus_id = c.campus_id
+        <where>
+            <if test="buildingName != null and buildingName.trim() != ''"> and b.building_name like concat('%', #{buildingName}, '%')</if>
+            <if test="campusId != null"> and b.campus_id = #{campusId}</if>
+            <if test="status != null and status.trim() != ''"> and b.status = #{status}</if>
         </where>
     </select>
     <select id="selectBrmBuildingByBuildingId" parameterType="Long" resultMap="BrmBuildingResult"><include refid="selectBrmBuildingVo"/> where building_id = #{buildingId}</select>

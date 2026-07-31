@@ -13,14 +13,17 @@
         <result property="createTime"    column="create_time"    />
         <result property="updateBy"      column="update_by"      />
         <result property="updateTime"    column="update_time"    />
-        <result property="remark"        column="remark"         />
+        <result property="remark"         column="remark"         />
+        <result property="majorName"      column="major_name"     />
+        <result property="deptName"       column="dept_name"      />
     </resultMap>
     <sql id="selectBrmClassVo">select class_id, class_code, class_name, major_id, grade, student_count, status, create_by, create_time, update_by, update_time, remark from brm_class</sql>
     <select id="selectBrmClassList" parameterType="BrmClass" resultMap="BrmClassResult">
-        select c.class_id, c.class_code, c.class_name, c.major_id, c.grade, c.student_count, c.status, c.create_by, c.create_time, c.update_by, c.update_time, c.remark
+        select c.class_id, c.class_code, c.class_name, c.major_id, c.grade, c.student_count, c.status, c.create_by, c.create_time, c.update_by, c.update_time, c.remark,
+               m.major_name as major_name, d.dept_name as dept_name
         from brm_class c
         left join brm_major m on c.major_id = m.major_id
-        left join sys_dept d on m.dept_id = d.dept_id
+        left join brm_department d on m.dept_id = d.dept_id
         <where>
             <if test="className != null and className.trim() != ''"> and c.class_name like concat('%', #{className}, '%')</if>
             <if test="classCode != null and classCode.trim() != ''"> and c.class_code like concat('%', #{classCode}, '%')</if>

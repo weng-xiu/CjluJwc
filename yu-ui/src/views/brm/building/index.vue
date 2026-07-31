@@ -2,6 +2,7 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="教学楼名称" prop="buildingName"><el-input v-model="queryParams.buildingName" placeholder="请输入教学楼名称" clearable @keyup.enter.native="handleQuery"/></el-form-item>
+      <el-form-item label="所属校区" prop="campusId"><el-select v-model="queryParams.campusId" placeholder="请选择所属校区" clearable><el-option v-for="item in campusList" :key="item.campusId" :label="item.campusName" :value="item.campusId"/></el-select></el-form-item>
       <el-form-item label="状态" prop="status"><el-select v-model="queryParams.status" placeholder="请选择状态" clearable><el-option v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.label" :value="dict.value"/></el-select></el-form-item>
       <el-form-item><el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button><el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
@@ -16,6 +17,7 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="教学楼名称" align="center" prop="buildingName" />
       <el-table-column label="教学楼编码" align="center" prop="buildingCode" />
+      <el-table-column label="所属校区" align="center" prop="campusName" />
       <el-table-column label="楼层数" align="center" prop="floorCount" />
       <el-table-column label="状态" align="center" prop="status"><template slot-scope="scope"><dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/></template></el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -30,7 +32,7 @@
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="教学楼名称" prop="buildingName"><el-input v-model="form.buildingName" placeholder="请输入教学楼名称" /></el-form-item>
         <el-form-item label="教学楼编码" prop="buildingCode"><el-input v-model="form.buildingCode" placeholder="请输入教学楼编码" /></el-form-item>
-        <el-form-item label="所属校区" prop="campusId"><el-input v-model="form.campusId" placeholder="请输入所属校区ID" /></el-form-item>
+        <el-form-item label="所属校区" prop="campusId"><el-select v-model="form.campusId" placeholder="请选择所属校区" style="width:100%"><el-option v-for="item in campusList" :key="item.campusId" :label="item.campusName" :value="item.campusId"/></el-select></el-form-item>
         <el-form-item label="楼层数"><el-input-number v-model="form.floorCount" :min="1" /></el-form-item>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
@@ -40,14 +42,16 @@
 </template>
 <script>
 import { listBuilding, getBuilding, delBuilding, addBuilding, updateBuilding } from "@/api/brm/building"
+import { listCampus } from "@/api/brm/campus"
 export default {
   name: "Building", dicts: ['sys_normal_disable'],
-  data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, buildingList: [], title: "", open: false,
-    queryParams: { pageNum: 1, pageSize: 10, buildingName: null, status: null },
-    form: {}, rules: { buildingName: [{ required: true, message: "教学楼名称不能为空", trigger: "blur" }] } }
+  data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, buildingList: [], campusList: [], title: "", open: false,
+    queryParams: { pageNum: 1, pageSize: 10, buildingName: null, campusId: null, status: null },
+    form: {}, rules: { buildingName: [{ required: true, message: "教学楼名称不能为空", trigger: "blur" }], campusId: [{ required: true, message: "所属校区不能为空", trigger: "change" }] } }
   },
-  created() { this.getList() },
+  created() { this.getList(); this.loadCampus() },
   methods: {
+    loadCampus() { listCampus({ pageNum: 1, pageSize: 999 }).then(response => { this.campusList = response.rows }) },
     getList() { this.loading = true; listBuilding(this.queryParams).then(response => { this.buildingList = response.rows; this.total = response.total; this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { buildingId: null, buildingName: null, buildingCode: null, campusId: null, floorCount: 1, status: "0" }; this.resetForm("form") },

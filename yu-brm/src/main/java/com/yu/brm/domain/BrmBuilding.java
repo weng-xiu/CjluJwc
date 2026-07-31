@@ -41,6 +41,9 @@ public class BrmBuilding extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 所属校区名称（关联查询） */
+    private String campusName;
+
     public Long getBuildingId() { return buildingId; }
     public void setBuildingId(Long buildingId) { this.buildingId = buildingId; }
 
@@ -63,6 +66,9 @@ public class BrmBuilding extends BaseEntity
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getCampusName() { return campusName; }
+    public void setCampusName(String campusName) { this.campusName = campusName; }
 
     @Override
     public String toString() {

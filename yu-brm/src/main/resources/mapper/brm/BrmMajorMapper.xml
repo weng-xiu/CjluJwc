@@ -14,15 +14,19 @@
         <result property="updateBy"      column="update_by"       />
         <result property="updateTime"    column="update_time"     />
         <result property="remark"        column="remark"          />
+        <result property="deptName"      column="dept_name"       />
     </resultMap>
     <sql id="selectBrmMajorVo">select major_id, major_code, major_name, dept_id, education_level, duration, status, create_by, create_time, update_by, update_time, remark from brm_major</sql>
     <select id="selectBrmMajorList" parameterType="BrmMajor" resultMap="BrmMajorResult">
-        <include refid="selectBrmMajorVo"/>
+        select m.major_id, m.major_code, m.major_name, m.dept_id, m.education_level, m.duration, m.status, m.create_by, m.create_time, m.update_by, m.update_time, m.remark,
+               d.dept_name as dept_name
+        from brm_major m
+        left join brm_department d on m.dept_id = d.dept_id
         <where>
-            <if test="majorName != null and majorName.trim() != ''"> and major_name like concat('%', #{majorName}, '%')</if>
-            <if test="majorCode != null and majorCode.trim() != ''"> and major_code like concat('%', #{majorCode}, '%')</if>
-            <if test="deptId != null"> and dept_id = #{deptId}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            <if test="majorName != null and majorName.trim() != ''"> and m.major_name like concat('%', #{majorName}, '%')</if>
+            <if test="majorCode != null and majorCode.trim() != ''"> and m.major_code like concat('%', #{majorCode}, '%')</if>
+            <if test="deptId != null"> and m.dept_id = #{deptId}</if>
+            <if test="status != null and status.trim() != ''"> and m.status = #{status}</if>
         </where>
     </select>
     <select id="selectBrmMajorByMajorId" parameterType="Long" resultMap="BrmMajorResult"><include refid="selectBrmMajorVo"/> where major_id = #{majorId}</select>

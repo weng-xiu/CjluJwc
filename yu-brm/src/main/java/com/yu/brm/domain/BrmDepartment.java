@@ -44,6 +44,9 @@ public class BrmDepartment extends TreeEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 删除标志（0代表存在 2代表删除） */
+    private String delFlag;
+
     public Long getDeptId() { return deptId; }
     public void setDeptId(Long deptId) { this.deptId = deptId; }
 
@@ -70,6 +73,9 @@ public class BrmDepartment extends TreeEntity
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getDelFlag() { return delFlag; }
+    public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
 
     @Override
     public String toString() {

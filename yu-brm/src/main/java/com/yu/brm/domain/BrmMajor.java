@@ -45,6 +45,9 @@ public class BrmMajor extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 所属院系名称（关联查询） */
+    private String deptName;
+
     public Long getMajorId() { return majorId; }
     public void setMajorId(Long majorId) { this.majorId = majorId; }
 
@@ -70,6 +73,9 @@ public class BrmMajor extends BaseEntity
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getDeptName() { return deptName; }
+    public void setDeptName(String deptName) { this.deptName = deptName; }
 
     @Override
     public String toString() {

@@ -13,14 +13,22 @@
         <result property="updateBy"        column="update_by"          />
         <result property="updateTime"      column="update_time"        />
         <result property="remark"          column="remark"             />
+        <result property="buildingName"    column="building_name"      />
+        <result property="typeName"        column="type_name"          />
     </resultMap>
     <sql id="selectBrmClassroomVo">select classroom_id, classroom_name, building_id, type_id, capacity, status, create_by, create_time, update_by, update_time, remark from brm_classroom</sql>
     <select id="selectBrmClassroomList" parameterType="BrmClassroom" resultMap="BrmClassroomResult">
-        <include refid="selectBrmClassroomVo"/><where>
-            <if test="classroomName != null and classroomName.trim() != ''"> and classroom_name like concat('%', #{classroomName}, '%')</if>
-            <if test="buildingId != null"> and building_id = #{buildingId}</if>
-            <if test="typeId != null"> and type_id = #{typeId}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        select c.classroom_id, c.classroom_name, c.building_id, c.type_id, c.capacity, c.status, c.create_by, c.create_time, c.update_by, c.update_time, c.remark,
+               b.building_name as building_name,
+               ct.type_name as type_name
+        from brm_classroom c
+        left join brm_building b on c.building_id = b.building_id
+        left join brm_classroom_type ct on c.type_id = ct.type_id
+        <where>
+            <if test="classroomName != null and classroomName.trim() != ''"> and c.classroom_name like concat('%', #{classroomName}, '%')</if>
+            <if test="buildingId != null"> and c.building_id = #{buildingId}</if>
+            <if test="typeId != null"> and c.type_id = #{typeId}</if>
+            <if test="status != null and status.trim() != ''"> and c.status = #{status}</if>
         </where>
     </select>
     <select id="selectBrmClassroomByClassroomId" parameterType="Long" resultMap="BrmClassroomResult"><include refid="selectBrmClassroomVo"/> where classroom_id = #{classroomId}</select>
