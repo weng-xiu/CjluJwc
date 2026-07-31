@@ -103,8 +103,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="24">
-            <el-form-item label="封面图" prop="coverImage">
-              <image-upload v-model="form.coverImage" :limit="1" :fileSize="5" fileType="['png','jpg','jpeg']"/>
+            <el-form-item label="封面图" prop="coverUrl">
+              <image-upload v-model="form.coverUrl" :limit="1" :fileSize="5" :fileType="['png','jpg','jpeg']"/>
             </el-form-item>
           </el-col>
           <el-col :span="24">
@@ -220,7 +220,7 @@ export default {
         title: null,
         columnId: null,
         summary: null,
-        coverImage: null,
+        coverUrl: null,
         content: null,
         source: null,
         author: null,

@@ -377,14 +377,3 @@ export default {
   }
 }
 </style>
-<template>
-  <div class="public-article">
-    <h1>文章详情</h1>
-  </div>
-</template>
-
-<script>
-export default {
-  name: 'PublicArticle'
-}
-</script>

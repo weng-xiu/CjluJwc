@@ -1,40 +1,46 @@
 <template>
   <div class="public-layout">
-    <!-- 顶部信息栏（深蓝色背景） -->
-    <div class="top-bar">
-      <div class="container">
-        <div class="top-left">
+    <!-- 整体蓝色头部（参考长江大学官网版式：左侧校标校名，右侧工具行+主导航行） -->
+    <header class="site-header">
+      <div class="container header-inner">
+        <div class="header-brand">
           <div class="logo-icon">
-            <svg viewBox="0 0 40 40" width="36" height="36">
+            <svg viewBox="0 0 40 40" width="44" height="44">
               <circle cx="20" cy="20" r="18" fill="none" stroke="#fff" stroke-width="2"/>
               <text x="20" y="26" text-anchor="middle" fill="#fff" font-size="16" font-weight="bold">长</text>
             </svg>
           </div>
-          <span class="school-name">长江大学教务系统</span>
+          <div class="brand-text">
+            <span class="school-name">长江大学教务系统</span>
+            <span class="school-name-en">YANGTZE UNIVERSITY</span>
+          </div>
         </div>
-        <div class="top-right">
-          <router-link to="/login" class="login-link">
-            <i class="el-icon-user"></i> 登录
-          </router-link>
+        <div class="header-right">
+          <div class="utility-row">
+            <a href="https://www.yangtzeu.edu.cn" target="_blank">长江大学官网</a>
+            <span class="divider">|</span>
+            <a href="https://jwc.yangtzeu.edu.cn" target="_blank">教务处</a>
+            <span class="divider">|</span>
+            <router-link to="/login" class="login-link"><i class="el-icon-user"></i> 登录</router-link>
+            <router-link to="/public/search" class="search-btn" title="搜索">
+              <i class="el-icon-search"></i>
+            </router-link>
+          </div>
+          <nav class="nav-row">
+            <ul class="nav-list">
+              <li v-for="item in navItems" :key="item.code"
+                  :class="{ active: activeNav === item.code }">
+                <router-link :to="item.path">{{ item.name }}</router-link>
+              </li>
+            </ul>
+          </nav>
         </div>
-      </div>
-    </div>
-
-    <!-- 主导航栏（白色背景+蓝色底边） -->
-    <nav class="main-nav" :class="{ 'nav-fixed': isNavFixed }">
-      <div class="container nav-inner">
-        <ul class="nav-list">
-          <li v-for="item in navItems" :key="item.code"
-              :class="{ active: activeNav === item.code }">
-            <router-link :to="item.path">{{ item.name }}</router-link>
-          </li>
-        </ul>
         <!-- 移动端汉堡菜单按钮 -->
         <div class="mobile-menu-btn" @click="mobileMenuOpen = !mobileMenuOpen">
           <i :class="mobileMenuOpen ? 'el-icon-close' : 'el-icon-s-fold'"></i>
         </div>
       </div>
-    </nav>
+    </header>
 
     <!-- 移动端侧边菜单 -->
     <transition name="fade">
@@ -86,7 +92,6 @@ export default {
   data() {
     return {
       mobileMenuOpen: false,
-      isNavFixed: false,
       navItems: [
         { name: '首页', code: 'home', path: '/public/home' },
         { name: '新闻资讯', code: 'news', path: '/public/column/news' },
@@ -113,17 +118,7 @@ export default {
       return ''
     }
   },
-  mounted() {
-    window.addEventListener('scroll', this.handleScroll)
-  },
-  beforeDestroy() {
-    window.removeEventListener('scroll', this.handleScroll)
-  },
   methods: {
-    handleScroll() {
-      // 顶部栏高度约60px，滚动超过后固定导航
-      this.isNavFixed = window.scrollY > 60
-    }
   }
 }
 </script>
@@ -145,25 +140,26 @@ export default {
   box-sizing: border-box;
 }
 
-/* ========== 顶部信息栏 ========== */
-.top-bar {
-  background: #003366;
-  height: 60px;
-  display: flex;
-  align-items: center;
+/* ========== 整体蓝色头部 ========== */
+.site-header {
+  background: linear-gradient(180deg, #0088cc 0%, #007ab8 100%);
+  box-shadow: 0 2px 8px rgba(0, 51, 102, 0.15);
   flex-shrink: 0;
+  position: relative;
+  z-index: 100;
 }
 
-.top-bar .container {
+.header-inner {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
 }
 
-.top-left {
+.header-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  padding: 16px 0;
 }
 
 .logo-icon {
@@ -171,64 +167,74 @@ export default {
   align-items: center;
 }
 
-.school-name {
-  color: #fff;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 2px;
+.brand-text {
+  display: flex;
+  flex-direction: column;
 }
 
-.top-right {
+.school-name {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  line-height: 1.3;
+}
+
+.school-name-en {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  letter-spacing: 3.5px;
+  margin-top: 2px;
+}
+
+/* 右侧：上方工具行 + 下方主导航行 */
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.utility-row {
+  height: 40px;
   display: flex;
   align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.utility-row a {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.utility-row a:hover {
+  color: #fff;
+}
+
+.divider {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.search-btn {
+  font-size: 15px;
+  margin-left: 4px;
+  padding: 4px;
 }
 
 .login-link {
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  font-size: 14px;
-  padding: 6px 16px;
+  padding: 3px 12px;
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 4px;
-  transition: all 0.3s;
 }
 
 .login-link:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.7);
-  color: #fff;
 }
 
-/* ========== 主导航栏 ========== */
-.main-nav {
-  background: #fff;
-  border-bottom: 3px solid #007ab8;
-  position: relative;
-  z-index: 100;
-  flex-shrink: 0;
-  transition: box-shadow 0.3s;
-}
-
-.main-nav.nav-fixed {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-}
-
-/* 导航固定时占位，防止内容跳动 */
-.main-nav.nav-fixed + .public-main {
-  padding-top: 50px;
-}
-
-.nav-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
+/* ========== 主导航（白字蓝底） ========== */
 .nav-list {
   list-style: none;
   margin: 0;
@@ -243,40 +249,45 @@ export default {
 
 .nav-list li a {
   display: block;
-  padding: 14px 20px;
-  color: #333;
+  padding: 0 18px;
+  line-height: 52px;
+  color: rgba(255, 255, 255, 0.9);
   text-decoration: none;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
-  transition: color 0.3s;
   position: relative;
+  transition: all 0.3s;
 }
 
 .nav-list li a:hover {
-  color: #007ab8;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .nav-list li.active a {
-  color: #007ab8;
+  color: #fff;
+  font-weight: 600;
 }
 
-.nav-list li.active::after {
+.nav-list li.active a::after {
   content: '';
   position: absolute;
-  bottom: -3px;
-  left: 20px;
-  right: 20px;
+  left: 18px;
+  right: 18px;
+  bottom: 0;
   height: 3px;
-  background: #007ab8;
+  background: #fff;
+  border-radius: 2px;
 }
 
 /* ========== 移动端菜单按钮 ========== */
 .mobile-menu-btn {
   display: none;
+  align-items: center;
   padding: 12px;
   cursor: pointer;
   font-size: 24px;
-  color: #333;
+  color: #fff;
 }
 
 /* ========== 移动端侧边菜单 ========== */
@@ -389,16 +400,25 @@ export default {
 /* ========== 响应式 ========== */
 @media (max-width: 768px) {
   .school-name {
-    font-size: 16px;
+    font-size: 17px;
     letter-spacing: 1px;
   }
 
-  .nav-list {
+  .school-name-en {
+    font-size: 9px;
+    letter-spacing: 2px;
+  }
+
+  .header-brand {
+    padding: 12px 0;
+  }
+
+  .header-right {
     display: none;
   }
 
   .mobile-menu-btn {
-    display: block;
+    display: flex;
   }
 
   .footer-content {

@@ -5,11 +5,11 @@
       <el-carousel height="400px" :interval="5000" arrow="hover" v-if="banners.length > 0">
         <el-carousel-item v-for="banner in banners" :key="banner.bannerId">
           <a :href="banner.linkUrl" target="_blank" v-if="banner.linkUrl" class="banner-link">
-            <img :src="banner.imageUrl" :alt="banner.title" class="banner-img" />
+            <img :src="imgUrl(banner.imageUrl)" :alt="banner.title" class="banner-img" />
             <div class="banner-title">{{ banner.title }}</div>
           </a>
           <div v-else class="banner-link">
-            <img :src="banner.imageUrl" :alt="banner.title" class="banner-img" />
+            <img :src="imgUrl(banner.imageUrl)" :alt="banner.title" class="banner-img" />
             <div class="banner-title">{{ banner.title }}</div>
           </div>
         </el-carousel-item>
@@ -37,7 +37,7 @@
           <div class="news-card" v-for="item in newsArticles" :key="item.articleId"
                @click="goArticle(item.articleId)">
             <div class="card-img">
-              <img :src="item.coverUrl || defaultCover" :alt="item.title"
+              <img :src="imgUrl(item.coverUrl) || defaultCover" :alt="item.title"
                    @error="handleImgError" />
               <span class="card-date">{{ formatDate(item.publishDate) }}</span>
             </div>
@@ -101,14 +101,14 @@
           </div>
           <div class="campus-grid" v-if="campusArticles.length">
             <div class="campus-main" v-if="campusArticles[0]" @click="goArticle(campusArticles[0].articleId)">
-              <img :src="campusArticles[0].coverUrl || defaultCover" :alt="campusArticles[0].title"
+              <img :src="imgUrl(campusArticles[0].coverUrl) || defaultCover" :alt="campusArticles[0].title"
                    @error="handleImgError" />
               <p class="campus-title">{{ campusArticles[0].title }}</p>
             </div>
             <div class="campus-sub">
               <div v-for="item in campusArticles.slice(1, 3)" :key="item.articleId"
                    class="campus-sub-item" @click="goArticle(item.articleId)">
-                <img :src="item.coverUrl || defaultCover" :alt="item.title"
+                <img :src="imgUrl(item.coverUrl) || defaultCover" :alt="item.title"
                      @error="handleImgError" />
                 <p class="campus-title">{{ item.title }}</p>
               </div>
@@ -147,7 +147,7 @@
         </div>
         <div class="people-card" v-if="peopleArticles[0]" @click="goArticle(peopleArticles[0].articleId)">
           <div class="people-img">
-            <img :src="peopleArticles[0].coverUrl || defaultCover" :alt="peopleArticles[0].title"
+            <img :src="imgUrl(peopleArticles[0].coverUrl) || defaultCover" :alt="peopleArticles[0].title"
                  @error="handleImgError" />
           </div>
           <div class="people-info">
@@ -173,7 +173,7 @@
         <div class="topic-scroll" v-if="topicArticles.length">
           <div class="topic-card" v-for="item in topicArticles" :key="item.articleId"
                @click="goArticle(item.articleId)">
-            <img :src="item.coverUrl || defaultCover" :alt="item.title"
+            <img :src="imgUrl(item.coverUrl) || defaultCover" :alt="item.title"
                  @error="handleImgError" />
             <p class="topic-title">{{ item.title }}</p>
           </div>
@@ -205,6 +205,7 @@
 
 <script>
 import { getHomeData, getColumnArticles, getBanners } from '@/api/public'
+import { imgUrl } from '@/utils/image'
 
 export default {
   name: 'PublicHome',
@@ -239,6 +240,7 @@ export default {
     this.loadHomeData()
   },
   methods: {
+    imgUrl,
     async loadHomeData() {
       // 尝试从聚合接口获取首页数据
       try {

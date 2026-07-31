@@ -24,7 +24,7 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="缩略图" align="center" prop="imageUrl" width="140">
         <template slot-scope="scope">
-          <el-image v-if="scope.row.imageUrl" :src="scope.row.imageUrl" style="width: 120px; height: 60px" fit="cover" :preview-src-list="[scope.row.imageUrl]"/>
+          <image-preview v-if="scope.row.imageUrl" :src="scope.row.imageUrl" :width="120" :height="60"/>
           <span v-else>无</span>
         </template>
       </el-table-column>
@@ -64,7 +64,7 @@
           </el-col>
           <el-col :span="24">
             <el-form-item label="轮播图片" prop="imageUrl">
-              <image-upload v-model="form.imageUrl" :limit="1" :fileSize="5" fileType="['png','jpg','jpeg']"/>
+              <image-upload v-model="form.imageUrl" :limit="1" :fileSize="5" :fileType="['png','jpg','jpeg']"/>
             </el-form-item>
           </el-col>
           <el-col :span="24">

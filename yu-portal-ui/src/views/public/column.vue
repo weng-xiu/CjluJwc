@@ -16,7 +16,7 @@
         <div class="article-item" v-for="item in articles" :key="item.articleId"
              @click="goArticle(item.articleId)">
           <div class="item-cover" v-if="item.coverUrl">
-            <img :src="item.coverUrl" :alt="item.title" @error="handleImgError" />
+            <img :src="imgUrl(item.coverUrl)" :alt="item.title" @error="handleImgError" />
           </div>
           <div class="item-content">
             <h3 class="item-title">{{ item.title }}</h3>
@@ -48,6 +48,7 @@
 
 <script>
 import { getColumnArticles } from '@/api/public'
+import { imgUrl } from '@/utils/image'
 
 const columnNames = {
   news: '新闻资讯',
@@ -90,6 +91,7 @@ export default {
     }
   },
   methods: {
+    imgUrl,
     async loadData() {
       this.loading = true
       try {
