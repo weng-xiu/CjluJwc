@@ -92,9 +92,9 @@
           </div>
           <div v-loading="loading.article">
             <div class="list-item" v-for="item in articleList" :key="item.articleId">
-              <span class="list-dot" :class="item.status === '1' ? 'dot-published' : 'dot-draft'"></span>
+              <span class="list-dot" :class="item.publishStatus === '2' ? 'dot-published' : 'dot-draft'"></span>
               <span class="list-title" :title="item.title">{{ item.title }}</span>
-              <el-tag size="mini" :type="item.status === '1' ? 'success' : 'info'">{{ item.status === '1' ? '已发布' : '未发布' }}</el-tag>
+              <el-tag size="mini" :type="item.publishStatus === '2' ? 'success' : 'info'">{{ item.publishStatus === '2' ? '已发布' : '未发布' }}</el-tag>
               <span class="list-date">{{ formatDate(item.publishDate || item.createTime) }}</span>
             </div>
             <el-empty v-if="!loading.article && articleList.length === 0" description="暂无文章" :image-size="60"></el-empty>

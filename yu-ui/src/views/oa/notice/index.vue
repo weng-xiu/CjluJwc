@@ -161,7 +161,7 @@
 </template>
 
 <script>
-import { listNotice, getNotice, delNotice, addNotice, updateNotice, publishNotice, revokeNotice } from "@/api/oa/notice"
+import { listNotice, getNotice, delNotice, addNotice, updateNotice, publishNotice, revokeNotice, readNotice } from "@/api/oa/notice"
 import { deptTreeSelect } from "@/api/system/user"
 import Treeselect from "@riophae/vue-treeselect"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css"
@@ -273,6 +273,10 @@ export default {
       getNotice(row.noticeId).then(response => {
         this.viewForm = response.data
         this.viewLoading = false
+        // 已发布公告上报阅读记录并刷新阅读次数
+        if (row.publishStatus === '1') {
+          readNotice(row.noticeId).then(() => this.getList()).catch(() => {})
+        }
       })
     },
     submitForm() {

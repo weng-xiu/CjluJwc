@@ -126,4 +126,12 @@ router.beforeEach((to, from, next) => {
   next()
 })
 
+/** 根据路由 meta.title 设置页面标题（文章详情页由页面内自行设置） */
+router.afterEach((to) => {
+  const title = to.meta && to.meta.title
+  if (title && to.name !== 'PublicArticle') {
+    document.title = title + ' - 长江大学教务系统'
+  }
+})
+
 export default router

@@ -14,16 +14,20 @@ import org.flowable.engine.RepositoryService;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
 import org.flowable.engine.history.HistoricProcessInstance;
-import org.flowable.engine.history.HistoricTaskInstance;
+import org.flowable.engine.history.HistoricProcessInstanceQuery;
 import org.flowable.engine.repository.Deployment;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.engine.runtime.ProcessInstance;
+import org.flowable.engine.task.Comment;
 import org.flowable.task.api.Task;
+import org.flowable.task.api.TaskQuery;
+import org.flowable.task.api.history.HistoricTaskInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.yu.common.utils.DateUtils;
+import com.yu.common.utils.StringUtils;
 import com.yu.oa.domain.OaProcessInstance;
 import com.yu.oa.domain.OaTaskRecord;
 import com.yu.oa.mapper.OaProcessInstanceMapper;
@@ -83,14 +87,32 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
     }
 
     @Override
-    public List<Map<String, Object>> listProcessInstances()
+    public List<Map<String, Object>> listProcessInstances(String processDefinitionName, String startUserId, String status)
     {
-        List<HistoricProcessInstance> list = historyService.createHistoricProcessInstanceQuery()
-                .orderByProcessInstanceStartTime().desc()
-                .list();
+        HistoricProcessInstanceQuery query = historyService.createHistoricProcessInstanceQuery();
+        if (StringUtils.isNotEmpty(startUserId))
+        {
+            query.startedBy(startUserId);
+        }
+        if ("running".equals(status))
+        {
+            query.unfinished();
+        }
+        else if ("finished".equals(status))
+        {
+            query.finished();
+        }
+        List<HistoricProcessInstance> list = query.orderByProcessInstanceStartTime().desc().list();
         List<Map<String, Object>> result = new ArrayList<>();
         for (HistoricProcessInstance hpi : list)
         {
+            // Flowable 仅支持流程名称精确查询，模糊匹配在内存中过滤
+            if (StringUtils.isNotEmpty(processDefinitionName)
+                    && (hpi.getProcessDefinitionName() == null
+                        || !hpi.getProcessDefinitionName().contains(processDefinitionName)))
+            {
+                continue;
+            }
             Map<String, Object> map = new HashMap<>();
             map.put("processInstanceId", hpi.getId());
             map.put("processDefinitionId", hpi.getProcessDefinitionId());
@@ -107,6 +129,52 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
     }
 
     @Override
+    public Map<String, Object> getProcessInstanceDetail(String processInstanceId)
+    {
+        HistoricProcessInstance hpi = historyService.createHistoricProcessInstanceQuery()
+                .processInstanceId(processInstanceId).singleResult();
+        if (hpi == null)
+        {
+            return null;
+        }
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("processInstanceId", hpi.getId());
+        detail.put("processDefinitionId", hpi.getProcessDefinitionId());
+        detail.put("processDefinitionName", hpi.getProcessDefinitionName());
+        detail.put("businessKey", hpi.getBusinessKey());
+        detail.put("startUserId", hpi.getStartUserId());
+        detail.put("startTime", hpi.getStartTime());
+        detail.put("endTime", hpi.getEndTime());
+        detail.put("durationInMillis", hpi.getDurationInMillis());
+        detail.put("deleteReason", hpi.getDeleteReason());
+        // 历史任务链（含进行中任务）及各任务审批意见
+        List<HistoricTaskInstance> tasks = historyService.createHistoricTaskInstanceQuery()
+                .processInstanceId(processInstanceId)
+                .orderByHistoricTaskInstanceStartTime().asc()
+                .list();
+        List<Map<String, Object>> taskList = new ArrayList<>();
+        for (HistoricTaskInstance hti : tasks)
+        {
+            Map<String, Object> t = new HashMap<>();
+            t.put("taskId", hti.getId());
+            t.put("taskName", hti.getName());
+            t.put("assignee", hti.getAssignee());
+            t.put("startTime", hti.getStartTime());
+            t.put("endTime", hti.getEndTime());
+            t.put("durationInMillis", hti.getDurationInMillis());
+            List<String> comments = new ArrayList<>();
+            for (Comment c : taskService.getTaskComments(hti.getId()))
+            {
+                comments.add(c.getFullMessage());
+            }
+            t.put("comments", comments);
+            taskList.add(t);
+        }
+        detail.put("tasks", taskList);
+        return detail;
+    }
+
+    @Override
     @Transactional
     public ProcessInstance startProcessInstance(String processKey, String businessKey, Map<String, Object> variables)
     {
@@ -114,12 +182,14 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
     }
 
     @Override
-    public List<Task> listTodoTasks(String assignee)
+    public List<Task> listTodoTasks(String assignee, String taskName)
     {
-        return taskService.createTaskQuery()
-                .taskAssignee(assignee)
-                .orderByTaskCreateTime().desc()
-                .list();
+        TaskQuery query = taskService.createTaskQuery().taskAssignee(assignee);
+        if (StringUtils.isNotEmpty(taskName))
+        {
+            query.taskNameLike("%" + taskName + "%");
+        }
+        return query.orderByTaskCreateTime().desc().list();
     }
 
     @Override

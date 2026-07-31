@@ -27,14 +27,14 @@
           <div class="article-content" v-html="article.content"></div>
 
           <!-- 上一篇/下一篇 -->
-          <div class="article-nav" v-if="article.prevId || article.nextId">
-            <div class="nav-prev" v-if="article.prevId" @click="goArticle(article.prevId)">
+          <div class="article-nav" v-if="prev || next">
+            <div class="nav-prev" v-if="prev" @click="goArticle(prev.articleId)">
               <span class="nav-label">上一篇</span>
-              <span class="nav-title">{{ article.prevTitle || '点击查看' }}</span>
+              <span class="nav-title">{{ prev.title || '点击查看' }}</span>
             </div>
-            <div class="nav-next" v-if="article.nextId" @click="goArticle(article.nextId)">
+            <div class="nav-next" v-if="next" @click="goArticle(next.articleId)">
               <span class="nav-label">下一篇</span>
-              <span class="nav-title">{{ article.nextTitle || '点击查看' }}</span>
+              <span class="nav-title">{{ next.title || '点击查看' }}</span>
             </div>
           </div>
         </template>
@@ -56,6 +56,8 @@ export default {
   data() {
     return {
       article: {},
+      prev: null,
+      next: null,
       loading: false
     }
   },
@@ -65,6 +67,8 @@ export default {
       handler(newId) {
         if (newId) {
           this.article = {}
+          this.prev = null
+          this.next = null
           this.loadArticle(newId)
         }
       }
@@ -76,7 +80,13 @@ export default {
       try {
         const res = await getArticleDetail(id)
         if (res.code === 200) {
-          this.article = res.data || res
+          this.article = res.data || {}
+          this.prev = res.prev || null
+          this.next = res.next || null
+          // 更新页面标题
+          if (this.article.title) {
+            document.title = this.article.title + ' - 长江大学教务系统'
+          }
         }
       } catch (e) {
         // 静默处理

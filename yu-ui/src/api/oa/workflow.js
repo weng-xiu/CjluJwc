@@ -29,6 +29,16 @@ export function listInstance(query) {
   return request({ url: '/oa/workflow/instance/list', method: 'get', params: query })
 }
 
+// 获取流程实例详情（含历史任务与审批意见）
+export function getInstanceDetail(processInstanceId) {
+  return request({ url: '/oa/workflow/instance/detail', method: 'get', params: { processInstanceId } })
+}
+
+// 终止运行中的流程实例
+export function cancelInstance(data) {
+  return request({ url: '/oa/workflow/instance/cancel', method: 'post', data: data })
+}
+
 // 查询待办任务
 export function listTodoTask(query) {
   return request({ url: '/oa/workflow/task/todo', method: 'get', params: query })

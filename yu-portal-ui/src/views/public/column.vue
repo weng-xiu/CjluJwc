@@ -16,7 +16,7 @@
         <div class="article-item" v-for="item in articles" :key="item.articleId"
              @click="goArticle(item.articleId)">
           <div class="item-cover" v-if="item.coverUrl">
-            <img :src="imgUrl(item.coverUrl)" :alt="item.title" @error="handleImgError" />
+            <img :src="imgUrl(item.coverUrl)" :alt="item.title" loading="lazy" @error="handleImgError" />
           </div>
           <div class="item-content">
             <h3 class="item-title">{{ item.title }}</h3>

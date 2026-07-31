@@ -4,9 +4,17 @@
       <el-form-item label="公文标题" prop="title">
         <el-input v-model="queryParams.title" placeholder="请输入公文标题" clearable @keyup.enter.native="handleQuery" />
       </el-form-item>
+      <el-form-item label="文号" prop="documentNo">
+        <el-input v-model="queryParams.documentNo" placeholder="请输入文号" clearable @keyup.enter.native="handleQuery" />
+      </el-form-item>
       <el-form-item label="公文类型" prop="documentType">
         <el-select v-model="queryParams.documentType" placeholder="公文类型" clearable>
           <el-option v-for="dict in dict.type.oa_document_type" :key="dict.value" :label="dict.label" :value="dict.value" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="紧急程度" prop="urgentLevel">
+        <el-select v-model="queryParams.urgentLevel" placeholder="紧急程度" clearable>
+          <el-option v-for="dict in dict.type.oa_urgent_level" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="公文状态" prop="documentStatus">
@@ -63,8 +71,9 @@
       </el-table-column>
       <el-table-column label="发起人" align="center" prop="originatorName" width="100" />
       <el-table-column label="发起部门" align="center" prop="originDeptName" width="120" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="220">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="280">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row)" v-hasPermi="['oa:document:query']">查看</el-button>
           <el-button size="mini" type="text" icon="el-icon-s-promotion" @click="handleSubmit(scope.row)" v-if="scope.row.documentStatus === '0'" v-hasPermi="['oa:document:submit']">提交</el-button>
           <el-button size="mini" type="text" icon="el-icon-refresh-left" @click="handleCancel(scope.row)" v-if="scope.row.documentStatus === '1'" v-hasPermi="['oa:document:edit']">撤回</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['oa:document:edit']">修改</el-button>
@@ -138,6 +147,50 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- 公文详情 -->
+    <el-dialog title="公文详情" :visible.sync="viewOpen" width="800px" append-to-body v-dialogDrag>
+      <el-descriptions :column="2" border size="medium">
+        <el-descriptions-item label="公文标题" :span="2">{{ viewForm.title }}</el-descriptions-item>
+        <el-descriptions-item label="文号">{{ viewForm.documentNo }}</el-descriptions-item>
+        <el-descriptions-item label="公文类型">
+          <dict-tag :options="dict.type.oa_document_type" :value="viewForm.documentType" />
+        </el-descriptions-item>
+        <el-descriptions-item label="密级">
+          <dict-tag :options="dict.type.oa_secret_level" :value="viewForm.secretLevel" />
+        </el-descriptions-item>
+        <el-descriptions-item label="紧急程度">
+          <dict-tag :options="dict.type.oa_urgent_level" :value="viewForm.urgentLevel" />
+        </el-descriptions-item>
+        <el-descriptions-item label="公文状态">
+          <dict-tag :options="dict.type.oa_document_status" :value="viewForm.documentStatus" />
+        </el-descriptions-item>
+        <el-descriptions-item label="发起人">{{ viewForm.originatorName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="发起部门">{{ viewForm.originDeptName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="发布时间">{{ viewForm.publishTime ? parseTime(viewForm.publishTime) : '-' }}</el-descriptions-item>
+        <el-descriptions-item label="抄送人员" :span="2">
+          <template v-if="viewForm.copyList && viewForm.copyList.length">
+            <el-tag v-for="c in viewForm.copyList" :key="c.userId" size="small" style="margin-right: 6px;">{{ c.userName }}</el-tag>
+          </template>
+          <span v-else>无</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="附件" :span="2">
+          <template v-if="viewForm.attachList && viewForm.attachList.length">
+            <div v-for="(a, i) in viewForm.attachList" :key="i">
+              <el-link type="primary" :href="attachHref(a.fileUrl)" target="_blank" icon="el-icon-paperclip">{{ a.fileName || a.fileUrl }}</el-link>
+            </div>
+          </template>
+          <span v-else>无</span>
+        </el-descriptions-item>
+      </el-descriptions>
+      <div class="content-title">正文内容</div>
+      <div v-if="viewForm.content" class="content-body" v-html="viewForm.content"></div>
+      <div v-else class="content-body" style="color: #909399;">无正文内容</div>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" icon="el-icon-edit" v-if="viewForm.documentStatus === '0'" @click="viewOpen = false; handleUpdate(viewForm)" v-hasPermi="['oa:document:edit']">编 辑</el-button>
+        <el-button @click="viewOpen = false">关 闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -163,6 +216,8 @@ export default {
       documentList: [],
       title: "",
       open: false,
+      viewOpen: false,
+      viewForm: {},
       userOptions: [],
       deptOptions: [],
       selectedCopyUserIds: [],
@@ -170,7 +225,9 @@ export default {
         pageNum: 1,
         pageSize: 10,
         title: undefined,
+        documentNo: undefined,
         documentType: undefined,
+        urgentLevel: undefined,
         documentStatus: undefined
       },
       form: {},
@@ -252,6 +309,18 @@ export default {
       this.single = selection.length !== 1
       this.multiple = !selection.length
     },
+    /** 查看公文详情 */
+    handleView(row) {
+      getDocument(row.documentId).then(response => {
+        this.viewForm = response.data || {}
+        this.viewOpen = true
+      })
+    },
+    /** 附件链接拼接后端前缀 */
+    attachHref(url) {
+      if (!url) return '#'
+      return /^https?:\/\//.test(url) ? url : process.env.VUE_APP_BASE_API + url
+    },
     handleAdd() {
       this.reset()
       this.open = true
@@ -331,3 +400,27 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.content-title {
+  margin: 18px 0 10px;
+  padding-left: 8px;
+  border-left: 3px solid #007ab8;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+.content-body {
+  padding: 12px 16px;
+  min-height: 120px;
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  background: #fafbfc;
+  line-height: 1.8;
+  ::v-deep img {
+    max-width: 100%;
+  }
+}
+</style>

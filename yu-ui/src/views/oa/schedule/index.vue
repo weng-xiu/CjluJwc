@@ -14,6 +14,9 @@
           <el-option v-for="dict in dict.type.oa_schedule_status" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
+      <el-form-item label="日程日期">
+        <el-date-picker v-model="daterangeTime" style="width: 240px" value-format="yyyy-MM-dd" type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期"></el-date-picker>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
@@ -70,8 +73,9 @@
           <dict-tag :options="dict.type.oa_schedule_status" :value="scope.row.scheduleStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="180">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="220">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row)" v-hasPermi="['oa:schedule:query']">查看</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['oa:schedule:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['oa:schedule:remove']">删除</el-button>
         </template>
@@ -167,6 +171,45 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- 日程详情 -->
+    <el-dialog title="日程详情" :visible.sync="viewOpen" width="680px" append-to-body v-dialogDrag>
+      <el-descriptions :column="2" border size="medium">
+        <el-descriptions-item label="日程标题" :span="2">
+          <span :style="{ borderLeft: '3px solid ' + (viewForm.color || '#409EFF'), paddingLeft: '8px' }">{{ viewForm.scheduleTitle }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="日程类型">
+          <dict-tag :options="dict.type.oa_schedule_type" :value="viewForm.scheduleType" />
+        </el-descriptions-item>
+        <el-descriptions-item label="日程状态">
+          <dict-tag :options="dict.type.oa_schedule_status" :value="viewForm.scheduleStatus" />
+        </el-descriptions-item>
+        <el-descriptions-item label="开始时间">{{ parseTime(viewForm.startTime) }}</el-descriptions-item>
+        <el-descriptions-item label="结束时间">{{ parseTime(viewForm.endTime) }}</el-descriptions-item>
+        <el-descriptions-item label="全天">
+          <dict-tag :options="dict.type.sys_yes_no" :value="viewForm.allDay" />
+        </el-descriptions-item>
+        <el-descriptions-item label="提醒方式">
+          <dict-tag :options="dict.type.oa_remind_type" :value="viewForm.remindType" />
+        </el-descriptions-item>
+        <el-descriptions-item label="提醒时间">{{ viewForm.remindTime ? parseTime(viewForm.remindTime) : '-' }}</el-descriptions-item>
+        <el-descriptions-item label="地点">{{ viewForm.location || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="所有人">{{ viewForm.ownerName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="共享人员">
+          <template v-if="viewForm.shareList && viewForm.shareList.length">
+            <el-tag v-for="s in viewForm.shareList" :key="s.userId" size="small" style="margin: 2px 6px 2px 0;">{{ s.userName || s.userId }}</el-tag>
+          </template>
+          <span v-else>无</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="日程内容" :span="2">
+          <span style="white-space: pre-wrap;">{{ viewForm.scheduleContent || '无' }}</span>
+        </el-descriptions-item>
+      </el-descriptions>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" icon="el-icon-edit" @click="viewOpen = false; handleUpdate(viewForm)" v-hasPermi="['oa:schedule:edit']">编 辑</el-button>
+        <el-button @click="viewOpen = false">关 闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -188,8 +231,11 @@ export default {
       scheduleList: [],
       title: "",
       open: false,
+      viewOpen: false,
+      viewForm: {},
       userOptions: [],
       selectedShareUserIds: [],
+      daterangeTime: [],
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -213,7 +259,14 @@ export default {
   methods: {
     getList() {
       this.loading = true
-      listSchedule(this.queryParams).then(response => {
+      const params = { ...this.queryParams }
+      if (this.daterangeTime && this.daterangeTime.length === 2) {
+        params.params = {
+          beginTime: this.daterangeTime[0],
+          endTime: this.daterangeTime[1]
+        }
+      }
+      listSchedule(params).then(response => {
         this.scheduleList = response.rows
         this.total = response.total
         this.loading = false
@@ -252,6 +305,7 @@ export default {
       this.getList()
     },
     resetQuery() {
+      this.daterangeTime = []
       this.resetForm("queryForm")
       this.handleQuery()
     },
@@ -275,6 +329,14 @@ export default {
         }
         this.open = true
         this.title = "修改日程"
+      })
+    },
+    /** 查看日程详情 */
+    handleView(row) {
+      this.viewForm = {}
+      getSchedule(row.scheduleId).then(response => {
+        this.viewForm = response.data
+        this.viewOpen = true
       })
     },
     submitForm() {

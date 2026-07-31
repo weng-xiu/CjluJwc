@@ -36,9 +36,18 @@ public interface IOaWorkflowService
     public List<ProcessDefinition> listProcessDefinitions();
 
     /**
-     * 查询流程实例列表
+     * 查询流程实例列表（支持按流程名称、发起人、状态筛选）
+     * 
+     * @param processDefinitionName 流程名称（模糊）
+     * @param startUserId 发起人
+     * @param status 状态：running 运行中 / finished 已结束，空为全部
      */
-    public List<Map<String, Object>> listProcessInstances();
+    public List<Map<String, Object>> listProcessInstances(String processDefinitionName, String startUserId, String status);
+
+    /**
+     * 获取流程实例详情（含历史任务与审批意见）
+     */
+    public Map<String, Object> getProcessInstanceDetail(String processInstanceId);
 
     /**
      * 启动流程实例
@@ -50,9 +59,9 @@ public interface IOaWorkflowService
     public ProcessInstance startProcessInstance(String processKey, String businessKey, Map<String, Object> variables);
 
     /**
-     * 查询待办任务
+     * 查询待办任务（支持按任务名称模糊筛选）
      */
-    public List<Task> listTodoTasks(String assignee);
+    public List<Task> listTodoTasks(String assignee, String taskName);
 
     /**
      * 完成任务

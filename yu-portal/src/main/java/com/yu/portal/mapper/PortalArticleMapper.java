@@ -1,6 +1,7 @@
 package com.yu.portal.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.yu.portal.domain.PortalArticle;
 
 /**
@@ -41,6 +42,24 @@ public interface PortalArticleMapper
      * @return 门户文章集合
      */
     public List<PortalArticle> selectFeaturedArticles();
+
+    /**
+     * 查询同栏目上一篇已发布文章
+     *
+     * @param columnId 栏目ID
+     * @param articleId 当前文章ID
+     * @return 门户文章
+     */
+    public PortalArticle selectPrevArticle(@Param("columnId") Long columnId, @Param("articleId") Long articleId);
+
+    /**
+     * 查询同栏目下一篇已发布文章
+     *
+     * @param columnId 栏目ID
+     * @param articleId 当前文章ID
+     * @return 门户文章
+     */
+    public PortalArticle selectNextArticle(@Param("columnId") Long columnId, @Param("articleId") Long articleId);
 
     /**
      * 新增门户文章

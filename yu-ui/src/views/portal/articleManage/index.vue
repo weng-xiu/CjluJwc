@@ -9,8 +9,8 @@
           <el-option v-for="item in columnOptions" :key="item.columnId" :label="item.columnName" :value="item.columnId"/>
         </el-select>
       </el-form-item>
-      <el-form-item label="发布状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择" clearable>
+      <el-form-item label="发布状态" prop="publishStatus">
+        <el-select v-model="queryParams.publishStatus" placeholder="请选择" clearable>
           <el-option v-for="dict in dict.type.portal_article_status" :key="dict.value" :label="dict.label" :value="dict.value"/>
         </el-select>
       </el-form-item>
@@ -27,10 +27,16 @@
     <el-table v-loading="loading" :data="articleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="文章标题" align="center" prop="title" show-overflow-tooltip />
-      <el-table-column label="所属栏目" align="center" prop="columnName" width="120" />
-      <el-table-column label="发布状态" align="center" prop="status" width="100">
+      <el-table-column label="封面" align="center" prop="coverUrl" width="110">
         <template slot-scope="scope">
-          <el-tag :type="statusTagType(scope.row.status)" size="small">{{ statusLabel(scope.row.status) }}</el-tag>
+          <image-preview v-if="scope.row.coverUrl" :src="scope.row.coverUrl" :width="90" :height="50"/>
+          <span v-else style="color: #c0c4cc">无</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="所属栏目" align="center" prop="columnName" width="120" />
+      <el-table-column label="发布状态" align="center" prop="publishStatus" width="100">
+        <template slot-scope="scope">
+          <el-tag :type="statusTagType(scope.row.publishStatus)" size="small">{{ statusLabel(scope.row.publishStatus) }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="是否置顶" align="center" prop="isTop" width="80">
@@ -53,10 +59,10 @@
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['portal:article:edit']">编辑</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['portal:article:remove']">删除</el-button>
-          <el-button v-if="scope.row.status === '0'" size="mini" type="text" icon="el-icon-s-promotion" @click="handleSubmit(scope.row)" v-hasPermi="['portal:article:edit']">提交审核</el-button>
-          <el-button v-if="scope.row.status === '0' || scope.row.status === '1'" size="mini" type="text" icon="el-icon-upload" @click="handlePublish(scope.row)" v-hasPermi="['portal:article:edit']">发布</el-button>
-          <el-button v-if="scope.row.status === '2'" size="mini" type="text" icon="el-icon-refresh-left" @click="handleWithdraw(scope.row)" v-hasPermi="['portal:article:edit']">撤回</el-button>
-          <el-button v-if="scope.row.status === '1'" size="mini" type="text" icon="el-icon-s-check" @click="handleReview(scope.row)" v-hasPermi="['portal:article:review']">审核</el-button>
+          <el-button v-if="scope.row.publishStatus === '0'" size="mini" type="text" icon="el-icon-s-promotion" @click="handleSubmit(scope.row)" v-hasPermi="['portal:article:edit']">提交审核</el-button>
+          <el-button v-if="scope.row.publishStatus === '0' || scope.row.publishStatus === '1'" size="mini" type="text" icon="el-icon-upload" @click="handlePublish(scope.row)" v-hasPermi="['portal:article:edit']">发布</el-button>
+          <el-button v-if="scope.row.publishStatus === '2'" size="mini" type="text" icon="el-icon-refresh-left" @click="handleWithdraw(scope.row)" v-hasPermi="['portal:article:edit']">撤回</el-button>
+          <el-button v-if="scope.row.publishStatus === '1'" size="mini" type="text" icon="el-icon-s-check" @click="handleReview(scope.row)" v-hasPermi="['portal:article:review']">审核</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -168,7 +174,7 @@ export default {
         pageSize: 10,
         title: null,
         columnId: null,
-        status: null
+        publishStatus: null
       },
       form: {},
       rules: {
@@ -226,7 +232,7 @@ export default {
         author: null,
         isTop: "0",
         isFeatured: "0",
-        status: "0",
+        publishStatus: "0",
         remark: null
       }
       this.resetForm("form")

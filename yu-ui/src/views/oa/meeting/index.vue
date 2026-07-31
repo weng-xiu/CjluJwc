@@ -9,6 +9,11 @@
           <el-option v-for="item in roomOptions" :key="item.roomId" :label="item.roomName" :value="item.roomId" />
         </el-select>
       </el-form-item>
+      <el-form-item label="会议类型" prop="meetingType">
+        <el-select v-model="queryParams.meetingType" placeholder="会议类型" clearable>
+          <el-option v-for="dict in dict.type.oa_meeting_type" :key="dict.value" :label="dict.label" :value="dict.value" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="会议状态" prop="meetingStatus">
         <el-select v-model="queryParams.meetingStatus" placeholder="会议状态" clearable>
           <el-option v-for="dict in dict.type.oa_meeting_status" :key="dict.value" :label="dict.label" :value="dict.value" />
@@ -62,8 +67,9 @@
         </template>
       </el-table-column>
       <el-table-column label="组织者" align="center" prop="organizerName" width="100" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="220">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="280">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-view" @click="handleView(scope.row)" v-hasPermi="['oa:meeting:query']">查看</el-button>
           <el-button size="mini" type="text" icon="el-icon-document" @click="handleMinutes(scope.row)" v-hasPermi="['oa:meeting:edit']">纪要</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['oa:meeting:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['oa:meeting:remove']">删除</el-button>
@@ -139,6 +145,43 @@
         <el-button @click="minutesOpen = false">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- 会议详情 -->
+    <el-dialog title="会议详情" :visible.sync="viewOpen" width="720px" append-to-body v-dialogDrag>
+      <el-descriptions :column="2" border size="medium">
+        <el-descriptions-item label="会议主题" :span="2">{{ viewForm.meetingTheme }}</el-descriptions-item>
+        <el-descriptions-item label="会议室">{{ viewForm.roomName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="组织者">{{ viewForm.organizerName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="开始时间">{{ parseTime(viewForm.startTime) }}</el-descriptions-item>
+        <el-descriptions-item label="结束时间">{{ parseTime(viewForm.endTime) }}</el-descriptions-item>
+        <el-descriptions-item label="会议类型">
+          <dict-tag :options="dict.type.oa_meeting_type" :value="viewForm.meetingType" />
+        </el-descriptions-item>
+        <el-descriptions-item label="会议状态">
+          <dict-tag :options="dict.type.oa_meeting_status" :value="viewForm.meetingStatus" />
+        </el-descriptions-item>
+        <el-descriptions-item label="参会人员" :span="2">
+          <template v-if="viewForm.participantList && viewForm.participantList.length">
+            <el-tag v-for="p in viewForm.participantList" :key="p.userId" size="small" style="margin: 2px 6px 2px 0;"
+                    :type="p.attendStatus === '1' ? 'success' : (p.attendStatus === '2' ? 'danger' : 'info')">
+              {{ p.userName }}
+            </el-tag>
+          </template>
+          <span v-else>无</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="会议内容" :span="2">
+          <span style="white-space: pre-wrap;">{{ viewForm.content || '无' }}</span>
+        </el-descriptions-item>
+      </el-descriptions>
+      <template v-if="viewForm.minutes && viewForm.minutes.minutesContent">
+        <div class="content-title">会议纪要</div>
+        <div class="content-body" v-html="viewForm.minutes.minutesContent"></div>
+      </template>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" icon="el-icon-edit" @click="viewOpen = false; handleUpdate(viewForm)" v-hasPermi="['oa:meeting:edit']">编 辑</el-button>
+        <el-button @click="viewOpen = false">关 闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -164,12 +207,15 @@ export default {
       title: "",
       open: false,
       minutesOpen: false,
+      viewOpen: false,
+      viewForm: {},
       selectedParticipantIds: [],
       queryParams: {
         pageNum: 1,
         pageSize: 10,
         meetingTheme: undefined,
         roomId: undefined,
+        meetingType: undefined,
         meetingStatus: undefined
       },
       form: {},
@@ -249,6 +295,13 @@ export default {
       this.ids = selection.map(item => item.meetingId)
       this.single = selection.length !== 1
       this.multiple = !selection.length
+    },
+    /** 查看会议详情（含参会人员与纪要） */
+    handleView(row) {
+      getMeeting(row.meetingId).then(response => {
+        this.viewForm = response.data || {}
+        this.viewOpen = true
+      })
     },
     handleAdd() {
       this.reset()
@@ -331,3 +384,26 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.content-title {
+  margin: 18px 0 10px;
+  padding-left: 8px;
+  border-left: 3px solid #007ab8;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+.content-body {
+  padding: 12px 16px;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  background: #fafbfc;
+  line-height: 1.8;
+  ::v-deep img {
+    max-width: 100%;
+  }
+}
+</style>

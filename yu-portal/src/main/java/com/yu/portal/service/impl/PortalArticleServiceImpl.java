@@ -46,6 +46,18 @@ public class PortalArticleServiceImpl implements IPortalArticleService
         return portalArticleMapper.selectFeaturedArticles();
     }
 
+    @Override
+    public PortalArticle selectPrevArticle(Long columnId, Long articleId)
+    {
+        return portalArticleMapper.selectPrevArticle(columnId, articleId);
+    }
+
+    @Override
+    public PortalArticle selectNextArticle(Long columnId, Long articleId)
+    {
+        return portalArticleMapper.selectNextArticle(columnId, articleId);
+    }
+
     @Transactional
     @Override
     public int insertPortalArticle(PortalArticle portalArticle)

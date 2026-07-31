@@ -75,17 +75,23 @@ public class PortalPublicController extends BaseController
     }
 
     /**
-     * 文章详情，同时增加浏览次数
+     * 文章详情（仅已发布），同时增加浏览次数，并返回同栏目上一篇/下一篇
      */
     @GetMapping("/article/{id}")
     public AjaxResult article(@PathVariable("id") Long id)
     {
         PortalArticle article = portalArticleService.selectPortalArticleById(id);
-        if (article != null)
+        if (article == null || !"2".equals(article.getPublishStatus()))
         {
-            portalArticleService.incrementViewCount(id);
+            return error("文章不存在或未发布");
         }
-        return success(article);
+        portalArticleService.incrementViewCount(id);
+        // 浏览次数同步至返回结果
+        article.setViewCount((article.getViewCount() == null ? 0 : article.getViewCount()) + 1);
+        AjaxResult ajax = success(article);
+        ajax.put("prev", portalArticleService.selectPrevArticle(article.getColumnId(), id));
+        ajax.put("next", portalArticleService.selectNextArticle(article.getColumnId(), id));
+        return ajax;
     }
 
     /**

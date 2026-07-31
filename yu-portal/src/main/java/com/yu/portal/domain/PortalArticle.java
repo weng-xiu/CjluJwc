@@ -88,6 +88,9 @@ public class PortalArticle extends BaseEntity
     @Excel(name = "栏目名称")
     private String columnName;
 
+    /** 栏目编码（非持久化，用于前台面包屑跳转） */
+    private String columnCode;
+
     public Long getArticleId() { return articleId; }
     public void setArticleId(Long articleId) { this.articleId = articleId; }
 
@@ -146,6 +149,9 @@ public class PortalArticle extends BaseEntity
     public String getColumnName() { return columnName; }
     public void setColumnName(String columnName) { this.columnName = columnName; }
 
+    public String getColumnCode() { return columnCode; }
+    public void setColumnCode(String columnCode) { this.columnCode = columnCode; }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -166,6 +172,7 @@ public class PortalArticle extends BaseEntity
             .append("reviewComment", getReviewComment())
             .append("reviewTime", getReviewTime())
             .append("columnName", getColumnName())
+            .append("columnCode", getColumnCode())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

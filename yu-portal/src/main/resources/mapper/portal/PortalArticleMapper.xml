@@ -21,6 +21,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="reviewComment"     column="review_comment"     />
         <result property="reviewTime"        column="review_time"        />
         <result property="columnName"        column="column_name"        />
+        <result property="columnCode"        column="column_code"        />
         <result property="createBy"          column="create_by"          />
         <result property="createTime"        column="create_time"        />
         <result property="updateBy"          column="update_by"          />
@@ -32,7 +33,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                a.publish_status, a.publish_date, a.is_top, a.is_featured, a.view_count,
                a.reviewer_id, a.review_comment, a.review_time,
                a.create_by, a.create_time, a.update_by, a.update_time, a.remark,
-               c.column_name
+               c.column_name, c.column_code
         from portal_article a
         left join portal_column c on a.column_id = c.column_id
     </sql>
@@ -66,6 +67,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             and a.is_featured = '1'
         </where>
         order by a.publish_date desc
+    </select>
+    <select id="selectPrevArticle" resultMap="PortalArticleResult">
+        select a.article_id, a.title, c.column_code
+        from portal_article a
+        left join portal_column c on a.column_id = c.column_id
+        where a.column_id = #{columnId} and a.publish_status = '2' and a.article_id &lt; #{articleId}
+        order by a.article_id desc
+        limit 1
+    </select>
+    <select id="selectNextArticle" resultMap="PortalArticleResult">
+        select a.article_id, a.title, c.column_code
+        from portal_article a
+        left join portal_column c on a.column_id = c.column_id
+        where a.column_id = #{columnId} and a.publish_status = '2' and a.article_id &gt; #{articleId}
+        order by a.article_id asc
+        limit 1
     </select>
     <insert id="insertPortalArticle" parameterType="PortalArticle" useGeneratedKeys="true" keyProperty="articleId">
         insert into portal_article

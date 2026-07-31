@@ -90,31 +90,73 @@ public class OaWorkflowController extends BaseController
     @GetMapping("/definition/xml")
     public AjaxResult getBpmnXml(@RequestParam("definitionId") String definitionId)
     {
-        return success(oaWorkflowService.getProcessBpmnXml(definitionId));
+        String bpmnXml = oaWorkflowService.getProcessBpmnXml(definitionId);
+        if (bpmnXml == null)
+        {
+            return error("流程定义不存在或已被删除");
+        }
+        // 注意：不能直接 success(bpmnXml)，会命中 success(String message) 重载导致 XML 被当作 msg
+        return AjaxResult.success("操作成功", bpmnXml);
     }
 
     /**
-     * 查询流程实例列表
+     * 查询流程实例列表（支持按流程名称、发起人、状态筛选）
      */
     @PreAuthorize("@ss.hasPermi('oa:instance:list')")
     @GetMapping("/instance/list")
-    public TableDataInfo instanceList()
+    public TableDataInfo instanceList(@RequestParam(value = "processDefinitionName", required = false) String processDefinitionName,
+                                      @RequestParam(value = "startUserId", required = false) String startUserId,
+                                      @RequestParam(value = "status", required = false) String status)
     {
         startPage();
-        List<Map<String, Object>> list = oaWorkflowService.listProcessInstances();
+        List<Map<String, Object>> list = oaWorkflowService.listProcessInstances(processDefinitionName, startUserId, status);
         return getDataTable(list);
     }
 
     /**
-     * 查询当前用户待办任务
+     * 获取流程实例详情（含历史任务与审批意见，ID含特殊字符用 RequestParam 传递；待办任务页详情也复用此接口）
+     */
+    @PreAuthorize("@ss.hasAnyPermi('oa:instance:query,oa:task:list')")
+    @GetMapping("/instance/detail")
+    public AjaxResult instanceDetail(@RequestParam("processInstanceId") String processInstanceId)
+    {
+        Map<String, Object> detail = oaWorkflowService.getProcessInstanceDetail(processInstanceId);
+        if (detail == null)
+        {
+            return error("流程实例不存在或已被删除");
+        }
+        return success(detail);
+    }
+
+    /**
+     * 终止运行中的流程实例
+     */
+    @PreAuthorize("@ss.hasPermi('oa:instance:cancel')")
+    @Log(title = "流程实例", businessType = BusinessType.DELETE)
+    @PostMapping("/instance/cancel")
+    public AjaxResult cancelInstance(@RequestBody Map<String, String> params)
+    {
+        String processInstanceId = params.get("processInstanceId");
+        if (processInstanceId == null || processInstanceId.trim().isEmpty())
+        {
+            return error("流程实例ID不能为空");
+        }
+        String reason = params.get("reason");
+        oaWorkflowService.cancelProcessInstance(processInstanceId,
+                (reason == null || reason.trim().isEmpty()) ? "管理员终止" : reason);
+        return success();
+    }
+
+    /**
+     * 查询当前用户待办任务（支持按任务名称模糊筛选）
      */
     @PreAuthorize("@ss.hasPermi('oa:task:list')")
     @GetMapping("/task/todo")
-    public TableDataInfo todoList()
+    public TableDataInfo todoList(@RequestParam(value = "taskName", required = false) String taskName)
     {
         startPage();
         String assignee = SecurityUtils.getUsername();
-        List<Task> list = oaWorkflowService.listTodoTasks(assignee);
+        List<Task> list = oaWorkflowService.listTodoTasks(assignee, taskName);
         List<Map<String, Object>> result = new ArrayList<>();
         for (Task task : list)
         {
@@ -193,7 +235,8 @@ public class OaWorkflowController extends BaseController
             return error("流程名称和BPMN XML不能为空");
         }
         Deployment deployment = oaWorkflowService.deployProcess(processName, bpmnXml);
-        return success(deployment.getId());
+        // 避免 success(String) 重载：部署ID应放入 data 而非 msg
+        return AjaxResult.success("新增流程定义成功", deployment.getId());
     }
 
     /**

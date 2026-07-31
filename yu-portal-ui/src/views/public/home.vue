@@ -37,7 +37,7 @@
           <div class="news-card" v-for="item in newsArticles" :key="item.articleId"
                @click="goArticle(item.articleId)">
             <div class="card-img">
-              <img :src="imgUrl(item.coverUrl) || defaultCover" :alt="item.title"
+              <img :src="imgUrl(item.coverUrl) || defaultCover" :alt="item.title" loading="lazy"
                    @error="handleImgError" />
               <span class="card-date">{{ formatDate(item.publishDate) }}</span>
             </div>
@@ -101,14 +101,14 @@
           </div>
           <div class="campus-grid" v-if="campusArticles.length">
             <div class="campus-main" v-if="campusArticles[0]" @click="goArticle(campusArticles[0].articleId)">
-              <img :src="imgUrl(campusArticles[0].coverUrl) || defaultCover" :alt="campusArticles[0].title"
+              <img :src="imgUrl(campusArticles[0].coverUrl) || defaultCover" :alt="campusArticles[0].title" loading="lazy"
                    @error="handleImgError" />
               <p class="campus-title">{{ campusArticles[0].title }}</p>
             </div>
             <div class="campus-sub">
               <div v-for="item in campusArticles.slice(1, 3)" :key="item.articleId"
                    class="campus-sub-item" @click="goArticle(item.articleId)">
-                <img :src="imgUrl(item.coverUrl) || defaultCover" :alt="item.title"
+                <img :src="imgUrl(item.coverUrl) || defaultCover" :alt="item.title" loading="lazy"
                      @error="handleImgError" />
                 <p class="campus-title">{{ item.title }}</p>
               </div>
@@ -147,7 +147,7 @@
         </div>
         <div class="people-card" v-if="peopleArticles[0]" @click="goArticle(peopleArticles[0].articleId)">
           <div class="people-img">
-            <img :src="imgUrl(peopleArticles[0].coverUrl) || defaultCover" :alt="peopleArticles[0].title"
+            <img :src="imgUrl(peopleArticles[0].coverUrl) || defaultCover" :alt="peopleArticles[0].title" loading="lazy"
                  @error="handleImgError" />
           </div>
           <div class="people-info">
@@ -173,7 +173,7 @@
         <div class="topic-scroll" v-if="topicArticles.length">
           <div class="topic-card" v-for="item in topicArticles" :key="item.articleId"
                @click="goArticle(item.articleId)">
-            <img :src="imgUrl(item.coverUrl) || defaultCover" :alt="item.title"
+            <img :src="imgUrl(item.coverUrl) || defaultCover" :alt="item.title" loading="lazy"
                  @error="handleImgError" />
             <p class="topic-title">{{ item.title }}</p>
           </div>
@@ -242,36 +242,29 @@ export default {
   methods: {
     imgUrl,
     async loadHomeData() {
-      // 尝试从聚合接口获取首页数据
+      // 从聚合接口获取首页数据（banners/news/academic/notice/campus 一次返回，减少请求数）
       try {
         const res = await getHomeData()
-        const data = res.data || res
         if (res.code === 200) {
-          this.banners = data.banners || data.bannerList || []
-          // 如果聚合接口已返回各栏目数据，直接使用
-          if (data.newsArticles) this.newsArticles = data.newsArticles
-          if (data.academicArticles) this.academicArticles = data.academicArticles
-          if (data.noticeArticles) this.noticeArticles = data.noticeArticles
-          if (data.campusArticles) this.campusArticles = data.campusArticles
-          if (data.mediaArticles) this.mediaArticles = data.mediaArticles
-          if (data.peopleArticles) this.peopleArticles = data.peopleArticles
-          if (data.topicArticles) this.topicArticles = data.topicArticles
+          this.banners = res.banners || []
+          this.newsArticles = res.news || []
+          this.academicArticles = res.academic || []
+          this.noticeArticles = res.notice || []
+          this.campusArticles = res.campus || []
         }
       } catch (e) {
-        // 静默处理，继续加载各栏目
+        // 静默处理，降级到各栏目单独加载
       }
-      // 分别加载各栏目数据（确保即使聚合接口未返回也能拿到数据）
-      this.loadColumnData('news', 'newsArticles', 3)
-      this.loadColumnData('academic', 'academicArticles', 6)
-      this.loadColumnData('notice', 'noticeArticles', 8)
-      this.loadColumnData('campus', 'campusArticles', 4)
+      // 聚合接口未覆盖的栏目单独加载
       this.loadColumnData('media', 'mediaArticles', 6)
       this.loadColumnData('people', 'peopleArticles', 1)
       this.loadColumnData('topic', 'topicArticles', 8)
-      // 如果聚合接口未返回banners，单独获取
-      if (!this.banners.length) {
-        this.loadBanners()
-      }
+      // 降级兼容：聚合接口失败时补拉各栏目数据
+      if (!this.newsArticles.length) this.loadColumnData('news', 'newsArticles', 3)
+      if (!this.academicArticles.length) this.loadColumnData('academic', 'academicArticles', 6)
+      if (!this.noticeArticles.length) this.loadColumnData('notice', 'noticeArticles', 8)
+      if (!this.campusArticles.length) this.loadColumnData('campus', 'campusArticles', 4)
+      if (!this.banners.length) this.loadBanners()
     },
     async loadColumnData(code, field, limit) {
       try {
