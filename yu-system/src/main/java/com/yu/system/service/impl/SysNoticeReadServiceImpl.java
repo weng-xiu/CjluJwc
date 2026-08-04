@@ -2,6 +2,7 @@ package com.yu.system.service.impl;
 
 import java.util.List;
 import java.util.Map;
+import com.github.pagehelper.PageHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.yu.system.domain.SysNotice;
@@ -47,6 +48,7 @@ public class SysNoticeReadServiceImpl implements ISysNoticeReadService
     @Override
     public List<SysNotice> selectNoticeListWithReadStatus(Long userId, int limit)
     {
+        PageHelper.clearPage();
         return noticeReadMapper.selectNoticeListWithReadStatus(userId, limit);
     }
 

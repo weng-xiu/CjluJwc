@@ -24,6 +24,8 @@ target/
 *.iws
 *.iml
 *.ipr
+*.zip
+*.html
 
 ### JRebel ###
 rebel.xml
