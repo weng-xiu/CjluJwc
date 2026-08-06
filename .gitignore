@@ -61,3 +61,5 @@ temp_*
 /软件设计文档/*.pdf
 /软件设计文档/*.docx
 /软件设计文档/*.doc
+
+/build-temp/

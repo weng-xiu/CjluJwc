@@ -22,6 +22,9 @@
       <el-col :span="1.5">
         <el-button type="info" plain icon="el-icon-sort" size="mini" @click="toggleExpandAll">展开/折叠</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button type="success" plain icon="el-icon-refresh" size="mini" @click="handleSync" v-hasPermi="['brm:dept:add']">从部门同步</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -120,7 +123,7 @@
 </template>
 
 <script>
-import { listDept, getDept, delDept, addDept, updateDept } from "@/api/brm/dept"
+import { listDept, getDept, delDept, addDept, updateDept, syncFromSys } from "@/api/brm/dept"
 import Treeselect from "@riophae/vue-treeselect"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css"
 
@@ -202,6 +205,15 @@ export default {
       this.refreshTable = false
       this.isExpandAll = !this.isExpandAll
       this.$nextTick(() => { this.refreshTable = true })
+    },
+    /** 从部门管理一键同步院系数据 */
+    handleSync() {
+      this.$modal.confirm("确认将【部门管理】中的组织数据同步到【学院管理】？同步后院系数据与部门保持一致。").then(() => {
+        return syncFromSys()
+      }).then(() => {
+        this.$modal.msgSuccess("同步成功")
+        this.getList()
+      }).catch(() => {})
     },
     handleUpdate(row) {
       this.reset()

@@ -19,3 +19,7 @@ export function updateDept(data) {
 export function delDept(deptId) {
   return request({ url: '/brm/dept/' + deptId, method: 'delete' })
 }
+
+export function syncFromSys() {
+  return request({ url: '/brm/dept/syncFromSys', method: 'post' })
+}

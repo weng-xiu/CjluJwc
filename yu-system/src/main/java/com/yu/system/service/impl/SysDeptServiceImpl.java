@@ -20,6 +20,7 @@ import com.yu.common.utils.spring.SpringUtils;
 import com.yu.system.mapper.SysDeptMapper;
 import com.yu.system.mapper.SysRoleMapper;
 import com.yu.system.service.ISysDeptService;
+import com.yu.brm.service.IBrmDepartmentService;
 
 /**
  * 部门管理 服务实现
@@ -34,6 +35,9 @@ public class SysDeptServiceImpl implements ISysDeptService
 
     @Autowired
     private SysRoleMapper roleMapper;
+
+    @Autowired
+    private IBrmDepartmentService brmDepartmentService;
 
     /**
      * 查询部门管理数据
@@ -218,7 +222,10 @@ public class SysDeptServiceImpl implements ISysDeptService
             throw new ServiceException("部门停用，不允许新增");
         }
         dept.setAncestors(info.getAncestors() + "," + dept.getParentId());
-        return deptMapper.insertDept(dept);
+        int rows = deptMapper.insertDept(dept);
+        // 部门新增后同步到院系（学院管理），实现两功能数据融合
+        brmDepartmentService.upsertFromSysDept(dept);
+        return rows;
     }
 
     /**
@@ -246,6 +253,8 @@ public class SysDeptServiceImpl implements ISysDeptService
             // 如果该部门是启用状态，则启用该部门的所有上级部门
             updateParentDeptStatusNormal(dept);
         }
+        // 部门修改后同步到院系（学院管理）
+        brmDepartmentService.upsertFromSysDept(dept);
         return result;
     }
 
@@ -316,7 +325,10 @@ public class SysDeptServiceImpl implements ISysDeptService
     @Override
     public int deleteDeptById(Long deptId)
     {
-        return deptMapper.deleteDeptById(deptId);
+        int rows = deptMapper.deleteDeptById(deptId);
+        // 部门删除后同步删除院系（学院管理）对应记录
+        brmDepartmentService.deleteByDeptId(deptId);
+        return rows;
     }
 
     /**

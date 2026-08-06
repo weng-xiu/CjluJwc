@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.yu.brm.mapper.BrmDepartmentMapper">
+
+    <resultMap id="SysDeptResult" type="com.yu.common.core.domain.entity.SysDept">
+        <id column="dept_id" property="deptId"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="ancestors" property="ancestors"/>
+        <result column="dept_name" property="deptName"/>
+        <result column="order_num" property="orderNum"/>
+        <result column="leader" property="leader"/>
+        <result column="phone" property="phone"/>
+        <result column="email" property="email"/>
+        <result column="status" property="status"/>
+        <result column="del_flag" property="delFlag"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
     <resultMap type="BrmDepartment" id="BrmDepartmentResult">
         <result property="deptId"     column="dept_id"      />
         <result property="parentId"   column="parent_id"    />
@@ -40,36 +57,11 @@
     <select id="checkDeptNameUnique" parameterType="String" resultMap="BrmDepartmentResult">
         <include refid="selectBrmDepartmentVo"/> where d.dept_name=#{deptName} and d.parent_id = #{parentId} and d.del_flag = '0' limit 1
     </select>
-    <insert id="insertBrmDepartment" parameterType="BrmDepartment" useGeneratedKeys="true" keyProperty="deptId">
+    <insert id="insertBrmDepartment" parameterType="BrmDepartment">
         insert into brm_department
-        <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="parentId != null">parent_id,</if>
-            <if test="ancestors != null">ancestors,</if>
-            <if test="deptCode != null and deptCode != ''">dept_code,</if>
-            <if test="deptName != null and deptName != ''">dept_name,</if>
-            <if test="leader != null">leader,</if>
-            <if test="phone != null">phone,</if>
-            <if test="email != null">email,</if>
-            <if test="orderNum != null">order_num,</if>
-            <if test="status != null">status,</if>
-            <if test="createBy != null">create_by,</if>
-            <if test="createTime != null">create_time,</if>
-            <if test="remark != null">remark,</if>
-        </trim>
-        <trim prefix="values (" suffix=")" suffixOverrides=",">
-            <if test="parentId != null">#{parentId},</if>
-            <if test="ancestors != null">#{ancestors},</if>
-            <if test="deptCode != null and deptCode != ''">#{deptCode},</if>
-            <if test="deptName != null and deptName != ''">#{deptName},</if>
-            <if test="leader != null">#{leader},</if>
-            <if test="phone != null">#{phone},</if>
-            <if test="email != null">#{email},</if>
-            <if test="orderNum != null">#{orderNum},</if>
-            <if test="status != null">#{status},</if>
-            <if test="createBy != null">#{createBy},</if>
-            <if test="createTime != null">#{createTime},</if>
-            <if test="remark != null">#{remark},</if>
-        </trim>
+        (dept_id, parent_id, ancestors, dept_code, dept_name, leader, phone, email, order_num, status, del_flag, create_by, create_time, update_by, update_time, remark)
+        values
+        (#{deptId}, #{parentId}, #{ancestors}, #{deptCode}, #{deptName}, #{leader}, #{phone}, #{email}, #{orderNum}, #{status}, #{delFlag}, #{createBy}, #{createTime}, #{updateBy}, #{updateTime}, #{remark})
     </insert>
     <update id="updateBrmDepartment" parameterType="BrmDepartment">
         update brm_department
@@ -104,4 +96,17 @@
         update brm_department set del_flag = '2' where dept_id in
         <foreach item="deptId" collection="array" open="(" separator="," close=")">#{deptId}</foreach>
     </delete>
+
+    <!-- 全量同步用：清空 brm_department（物理清空，同步前重置） -->
+    <delete id="deleteAllBrmDepartment">
+        delete from brm_department
+    </delete>
+
+    <!-- 全量同步用：直接查询 sys_dept（与 brm_department 同库，共享 dept_id） -->
+    <select id="selectAllSysDept" resultMap="SysDeptResult">
+        select dept_id, parent_id, ancestors, dept_name, leader, phone, email, order_num, status, del_flag, create_by, create_time, update_by, update_time
+        from sys_dept
+        where del_flag = '0'
+        order by parent_id, order_num
+    </select>
 </mapper>

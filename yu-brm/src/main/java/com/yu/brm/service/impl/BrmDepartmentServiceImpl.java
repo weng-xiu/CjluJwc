@@ -15,6 +15,8 @@ import com.yu.brm.mapper.BrmMajorMapper;
 import com.yu.brm.domain.BrmDepartment;
 import com.yu.brm.domain.BrmMajor;
 import com.yu.brm.service.IBrmDepartmentService;
+import com.yu.common.core.domain.entity.SysDept;
+import com.yu.common.utils.StringUtils;
 
 /**
  * 院系Service业务层处理
@@ -156,5 +158,103 @@ public class BrmDepartmentServiceImpl implements IBrmDepartmentService
             }
         }
         return brmDepartmentMapper.deleteBrmDepartmentByDeptIds(deptIds);
+    }
+
+    /**
+     * 生成院系编码：与同步脚本一致，格式为 D + 4 位零填充的 dept_id
+     */
+    private String buildDeptCode(Long deptId)
+    {
+        return "D" + String.format("%04d", deptId);
+    }
+
+    /**
+     * 全量同步：清空 brm_department 后，将 sys_dept（部门管理）整树灌入 brm_department（院系管理），
+     * 共享同一 dept_id，零风险。dept_code 由 dept_id 生成。
+     */
+    @Override
+    @Transactional
+    public int syncFromSysDept()
+    {
+        brmDepartmentMapper.deleteAllBrmDepartment();
+        List<SysDept> sysDepts = brmDepartmentMapper.selectAllSysDept();
+        int count = 0;
+        for (SysDept s : sysDepts)
+        {
+            BrmDepartment dept = new BrmDepartment();
+            dept.setDeptId(s.getDeptId());
+            dept.setParentId(s.getParentId());
+            dept.setAncestors(s.getAncestors());
+            dept.setDeptCode(buildDeptCode(s.getDeptId()));
+            dept.setDeptName(s.getDeptName());
+            dept.setLeader(s.getLeader());
+            dept.setPhone(s.getPhone());
+            dept.setEmail(s.getEmail());
+            dept.setOrderNum(s.getOrderNum());
+            dept.setStatus(s.getStatus());
+            dept.setDelFlag("0");
+            dept.setCreateBy(StringUtils.isNotEmpty(s.getCreateBy()) ? s.getCreateBy() : "admin");
+            dept.setCreateTime(s.getCreateTime());
+            dept.setUpdateBy(s.getUpdateBy());
+            dept.setUpdateTime(s.getUpdateTime());
+            dept.setRemark("由 sys_dept 同步导入");
+            brmDepartmentMapper.insertBrmDepartment(dept);
+            count++;
+        }
+        return count;
+    }
+
+    /**
+     * 单条 upsert：部门增改时，将对应部门同步到 brm_department
+     */
+    @Override
+    @Transactional
+    public int upsertFromSysDept(SysDept s)
+    {
+        BrmDepartment existing = brmDepartmentMapper.selectBrmDepartmentByDeptId(s.getDeptId());
+        if (existing == null)
+        {
+            BrmDepartment dept = new BrmDepartment();
+            dept.setDeptId(s.getDeptId());
+            dept.setParentId(s.getParentId());
+            dept.setAncestors(s.getAncestors());
+            dept.setDeptCode(buildDeptCode(s.getDeptId()));
+            dept.setDeptName(s.getDeptName());
+            dept.setLeader(s.getLeader());
+            dept.setPhone(s.getPhone());
+            dept.setEmail(s.getEmail());
+            dept.setOrderNum(s.getOrderNum());
+            dept.setStatus(s.getStatus());
+            dept.setDelFlag("0");
+            dept.setCreateBy(StringUtils.isNotEmpty(s.getCreateBy()) ? s.getCreateBy() : "admin");
+            dept.setCreateTime(s.getCreateTime());
+            dept.setUpdateBy(s.getUpdateBy());
+            dept.setUpdateTime(s.getUpdateTime());
+            dept.setRemark("由 sys_dept 同步导入");
+            return brmDepartmentMapper.insertBrmDepartment(dept);
+        }
+        else
+        {
+            existing.setParentId(s.getParentId());
+            existing.setAncestors(s.getAncestors());
+            existing.setDeptName(s.getDeptName());
+            existing.setLeader(s.getLeader());
+            existing.setPhone(s.getPhone());
+            existing.setEmail(s.getEmail());
+            existing.setOrderNum(s.getOrderNum());
+            existing.setStatus(s.getStatus());
+            existing.setUpdateTime(s.getUpdateTime());
+            return brmDepartmentMapper.updateBrmDepartment(existing);
+        }
+    }
+
+    /**
+     * 单条删除：部门删除时，同步逻辑删除 brm_department 对应记录
+     */
+    @Override
+    @Transactional
+    public int deleteByDeptId(Long deptId)
+    {
+        return brmDepartmentMapper.deleteBrmDepartmentByDeptId(deptId);
     }
 }

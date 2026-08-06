@@ -55,6 +55,9 @@
           @click="toggleExpandAll"
         >展开/折叠</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button type="success" plain icon="el-icon-refresh" size="mini" @click="handleSyncToCollege" v-hasPermi="['brm:dept:add']">同步到学院</el-button>
+      </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -173,6 +176,7 @@
 
 <script>
 import { listDept, getDept, delDept, addDept, updateDept, updateDeptSort, listDeptExcludeChild } from "@/api/system/dept"
+import { syncFromSys } from "@/api/brm/dept"
 import Treeselect from "@riophae/vue-treeselect"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css"
 
@@ -299,6 +303,14 @@ export default {
       listDept().then(response => {
         this.deptOptions = this.handleTree(response.data, "deptId")
       })
+    },
+    /** 将部门数据同步到学院（院系管理） */
+    handleSyncToCollege() {
+      this.$modal.confirm("确认将当前部门数据同步到【学院管理】？同步后院系与部门数据保持一致。").then(() => {
+        return syncFromSys()
+      }).then(() => {
+        this.$modal.msgSuccess("同步成功")
+      }).catch(() => {})
     },
     /** 展开/折叠操作 */
     toggleExpandAll() {

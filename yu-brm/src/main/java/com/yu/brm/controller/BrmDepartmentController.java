@@ -111,4 +111,13 @@ public class BrmDepartmentController extends BaseController
         }
         return toAjax(brmDepartmentService.deleteBrmDepartmentByDeptIds(deptIds));
     }
+
+    @PreAuthorize("@ss.hasPermi('brm:dept:add')")
+    @Log(title = "院系", businessType = BusinessType.OTHER)
+    @PostMapping("/syncFromSys")
+    public AjaxResult syncFromSys()
+    {
+        int count = brmDepartmentService.syncFromSysDept();
+        return success("已从部门管理同步 " + count + " 条院系数据");
+    }
 }
