@@ -17,4 +17,13 @@ public interface IAemExamInvigilationService
     public int updateAemExamInvigilation(AemExamInvigilation aemExamInvigilation);
     public int deleteAemExamInvigilationByInvigilationIds(Long[] invigilationIds);
     public int deleteAemExamInvigilationByInvigilationId(Long invigilationId);
+
+    /**
+     * 自动派发监考教师
+     * 智能分配监考，回避同一教师多场时间冲突
+     *
+     * @param examId 考试ID
+     * @return 派发结果统计
+     */
+    public java.util.Map<String, Object> autoDispatchInvigilators(Long examId);
 }

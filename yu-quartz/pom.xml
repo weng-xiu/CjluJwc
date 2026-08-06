@@ -35,6 +35,12 @@
             <artifactId>yu-sam</artifactId>
         </dependency>
 
+        <!-- 系统模块（定时任务失败告警使用 ISysNoticeService）-->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-system</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

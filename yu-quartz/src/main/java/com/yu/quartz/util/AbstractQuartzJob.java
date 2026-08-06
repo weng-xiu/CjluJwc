@@ -85,6 +85,16 @@ public abstract class AbstractQuartzJob implements Job
             sysJobLog.setStatus(Constants.FAIL);
             String errorMsg = StringUtils.substring(ExceptionUtil.getExceptionMessage(e), 0, 2000);
             sysJobLog.setExceptionInfo(errorMsg);
+
+            // 关键定时任务失败告警：向系统通知公告写入告警通知
+            try
+            {
+                SpringUtils.getBean(JobFailureAlertService.class).sendJobFailureAlert(sysJob, errorMsg);
+            }
+            catch (Exception ex)
+            {
+                log.error("触发任务失败告警时出现异常：", ex);
+            }
         }
         else
         {

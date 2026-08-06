@@ -52,6 +52,9 @@ public class OaDocumentServiceImpl implements IOaDocumentService
     @Autowired
     private IOaWorkflowService oaWorkflowService;
 
+    @Autowired
+    private com.yu.system.service.ISysDeptService sysDeptService;
+
     @Override
     public OaDocument selectOaDocumentByDocumentId(Long documentId)
     {
@@ -128,10 +131,29 @@ public class OaDocumentServiceImpl implements IOaDocumentService
         }
         String starter = SecurityUtils.getUsername();
         Map<String, Object> variables = new HashMap<>();
-        variables.put("deptLeader", starter);
-        variables.put("officeApprover", starter);
-        variables.put("publisher", starter);
         variables.put("documentId", documentId);
+        variables.put("starter", starter);
+        // 查找发起人所在部门的领导作为审批人（防止自审批）
+        String deptLeader = starter;
+        String officeApprover = starter;
+        if (document.getOriginDeptId() != null)
+        {
+            com.yu.common.core.domain.entity.SysDept dept = sysDeptService.selectDeptById(document.getOriginDeptId());
+            if (dept != null && dept.getLeader() != null && !dept.getLeader().trim().isEmpty())
+            {
+                deptLeader = dept.getLeader();
+                // 办公室审批人暂用部门领导（可扩展为上级部门领导）
+                officeApprover = deptLeader;
+            }
+        }
+        // 确保审批人不是发起人本人
+        if (deptLeader.equals(starter))
+        {
+            throw new RuntimeException("审批人不能是发起人本人，请配置部门领导");
+        }
+        variables.put("deptLeader", deptLeader);
+        variables.put("officeApprover", officeApprover);
+        variables.put("publisher", officeApprover);
 
         ProcessInstance processInstance = oaWorkflowService.startProcessInstance(
                 "oa-document-flow", "document:" + documentId, variables);
@@ -160,11 +182,16 @@ public class OaDocumentServiceImpl implements IOaDocumentService
     public int approveDocument(Long documentId, String taskId, String comment)
     {
         String assignee = SecurityUtils.getUsername();
+        // 自审批校验：审批人不能是发起人
+        OaDocument document = oaDocumentMapper.selectOaDocumentByDocumentId(documentId);
+        if (document != null && assignee.equals(document.getOriginatorName()))
+        {
+            throw new RuntimeException("不能审批自己发起的公文");
+        }
         Map<String, Object> variables = new HashMap<>();
         variables.put("approved", true);
         oaWorkflowService.completeTask(taskId, assignee, variables, comment);
 
-        OaDocument document = oaDocumentMapper.selectOaDocumentByDocumentId(documentId);
         if (document != null && document.getProcessInstanceId() != null)
         {
             recordTask(document.getProcessInstanceId(), taskId, assignee, "0", comment);
@@ -179,9 +206,14 @@ public class OaDocumentServiceImpl implements IOaDocumentService
     public int rejectDocument(Long documentId, String taskId, String comment)
     {
         String assignee = SecurityUtils.getUsername();
+        // 自审批校验：审批人不能是发起人
+        OaDocument document = oaDocumentMapper.selectOaDocumentByDocumentId(documentId);
+        if (document != null && assignee.equals(document.getOriginatorName()))
+        {
+            throw new RuntimeException("不能审批自己发起的公文");
+        }
         oaWorkflowService.rejectTask(taskId, assignee, comment);
 
-        OaDocument document = oaDocumentMapper.selectOaDocumentByDocumentId(documentId);
         if (document != null && document.getProcessInstanceId() != null)
         {
             recordTask(document.getProcessInstanceId(), taskId, assignee, "1", comment);

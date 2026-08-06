@@ -35,11 +35,18 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
     /** 冲突类型：教师冲突 */
     private static final String TEACHER_CONFLICT = "TEACHER_CONFLICT";
 
+    /** 冲突类型：班级冲突 */
+    private static final String CLASS_CONFLICT = "CLASS_CONFLICT";
+
     @Autowired
     private TpmScheduleMapper scheduleMapper;
 
     @Autowired
     private BrmClassroomMapper classroomMapper;
+
+    /** 默认课程容量（从配置读取） */
+    @org.springframework.beans.factory.annotation.Value("${tpm.schedule.defaultCapacity:30}")
+    private int defaultCapacity;
 
     /**
      * 检测指定学期的所有排课冲突
@@ -79,6 +86,9 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
         // 实际教师冲突需要teacherId，这里通过offeringId关联同一教师的多个开课
         detectTeacherConflicts(schedules, conflicts);
 
+        // 按开课ID分组检测班级冲突（同一班级在同一时间有多门课程）
+        detectClassConflicts(schedules, conflicts);
+
         return conflicts;
     }
 
@@ -111,20 +121,33 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
 
     /**
      * 检测教师冲突：同一教师在同一时间有多个不同开课的排课
-     * 通过offeringId关联查询，同一教师的多个开课间的时间冲突
-     * 简化策略：按开课ID分组后，比较不同开课组之间的时间冲突
-     * 这里假设每个offering对应一位教师，需查询teacherId
-     * 由于Mapper未直接提供teacherId，采用offeringId分组后两两比较的方式
-     * 实际生产环境建议在schedule表增加teacherId冗余字段以提升性能
+     * 通过teacherId分组，检测同一教师的多个排课间的时间冲突
      */
     private void detectTeacherConflicts(List<TpmSchedule> schedules, List<ScheduleConflict> conflicts)
     {
-        // 按offeringId分组
+        // 按教师ID分组（跳过未关联教师的排课）
+        Map<Long, List<TpmSchedule>> teacherGroups = schedules.stream()
+                .filter(s -> s.getTeacherId() != null)
+                .collect(Collectors.groupingBy(TpmSchedule::getTeacherId));
+        for (Map.Entry<Long, List<TpmSchedule>> entry : teacherGroups.entrySet())
+        {
+            List<TpmSchedule> group = entry.getValue();
+            detectPairConflicts(group, conflicts, TEACHER_CONFLICT);
+        }
+    }
+
+    /**
+     * 检测班级冲突：同一班级在同一时间有多门不同课程的排课
+     * 简化策略：按课程ID分组后，检测同课程不同开课间的时间冲突
+     * 以及通过选课名单检测学生跨开课的时间冲突
+     */
+    private void detectClassConflicts(List<TpmSchedule> schedules, List<ScheduleConflict> conflicts)
+    {
+        // 按开课ID分组
         Map<Long, List<TpmSchedule>> offeringGroups = schedules.stream()
                 .collect(Collectors.groupingBy(TpmSchedule::getOfferingId));
         List<Long> offeringIds = new ArrayList<>(offeringGroups.keySet());
-        // 两两比较不同开课的排课（简化：不区分教师，需teacherId支持）
-        // TODO: 当schedule表增加teacherId冗余字段后可优化为按teacherId分组
+        // 两两比较不同开课的排课，检测班级时间冲突
         for (int i = 0; i < offeringIds.size(); i++)
         {
             for (int j = i + 1; j < offeringIds.size(); j++)
@@ -135,15 +158,14 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
                 {
                     for (TpmSchedule s2 : group2)
                     {
-                        // 仅检测已分配教室的排课
                         if (s1.getClassroomId() == null || s2.getClassroomId() == null) { continue; }
                         boolean hasConflict = TimeSlotUtils.hasTimeConflict(
                                 s1.getWeekDay(), s1.getStartPeriod(), s1.getEndPeriod(), s1.getStartWeek(), s1.getEndWeek(),
                                 s2.getWeekDay(), s2.getStartPeriod(), s2.getEndPeriod(), s2.getStartWeek(), s2.getEndWeek());
                         if (hasConflict)
                         {
-                            // 这里先标记为教师冲突，后续可结合teacherId确认
-                            // 当前简化为：同一时段不同开课 = 可能教师冲突
+                            ScheduleConflict conflict = buildConflict(s1, s2, CLASS_CONFLICT);
+                            conflicts.add(conflict);
                         }
                     }
                 }
@@ -164,7 +186,14 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
         conflict.setCourseName2(s2.getCourseName() != null ? s2.getCourseName() : "未知课程");
         conflict.setClassroomName(s1.getClassroomName() != null ? s1.getClassroomName() : "未分配");
         conflict.setTimeDesc(buildTimeDesc(s1));
-        String typeLabel = CLASSROOM_CONFLICT.equals(conflictType) ? "教室" : "教师";
+        String typeLabel;
+        if (CLASSROOM_CONFLICT.equals(conflictType)) {
+            typeLabel = "教室";
+        } else if (TEACHER_CONFLICT.equals(conflictType)) {
+            typeLabel = "教师";
+        } else {
+            typeLabel = "班级";
+        }
         conflict.setMessage(String.format("%s冲突：%s 与 %s 在 %s 时间段冲突",
                 typeLabel, conflict.getCourseName1(), conflict.getCourseName2(), conflict.getTimeDesc()));
         return conflict;
@@ -272,7 +301,7 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
         for (TpmSchedule schedule : unassigned)
         {
             // 获取所需容量（取开课的maxStudents，无则默认30）
-            int requiredCapacity = (schedule.getMaxStudents() != null) ? schedule.getMaxStudents() : 30;
+            int requiredCapacity = (schedule.getMaxStudents() != null) ? schedule.getMaxStudents() : defaultCapacity;
 
             // 查找满足容量且时间可用的教室
             List<AvailableClassroom> available = findAvailableClassrooms(

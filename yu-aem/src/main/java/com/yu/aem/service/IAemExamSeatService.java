@@ -17,4 +17,14 @@ public interface IAemExamSeatService
     public int updateAemExamSeat(AemExamSeat aemExamSeat);
     public int deleteAemExamSeatBySeatIds(Long[] seatIds);
     public int deleteAemExamSeatBySeatId(Long seatId);
+
+    /**
+     * 自动编排考场座位
+     * 按学号排序，蛇形分配座位，同考场考生错开相邻座位
+     *
+     * @param examId      考试ID
+     * @param classroomId 教室ID
+     * @return 编排结果统计
+     */
+    public java.util.Map<String, Object> autoArrangeSeats(Long examId, Long classroomId);
 }

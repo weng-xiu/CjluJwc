@@ -17,4 +17,7 @@ public interface AemExamInvigilationMapper
     public int updateAemExamInvigilation(AemExamInvigilation aemExamInvigilation);
     public int deleteAemExamInvigilationByInvigilationId(Long invigilationId);
     public int deleteAemExamInvigilationByInvigilationIds(Long[] invigilationIds);
+
+    /** 根据考试ID删除监考记录 */
+    public int deleteByExamId(Long examId);
 }

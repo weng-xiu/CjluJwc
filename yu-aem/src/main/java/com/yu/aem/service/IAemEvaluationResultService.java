@@ -1,6 +1,7 @@
 package com.yu.aem.service;
 
 import java.util.List;
+import java.util.Map;
 import com.yu.aem.domain.AemEvaluationResult;
 
 /**
@@ -17,4 +18,13 @@ public interface IAemEvaluationResultService
     public int updateAemEvaluationResult(AemEvaluationResult aemEvaluationResult);
     public int deleteAemEvaluationResultByResultIds(Long[] resultIds);
     public int deleteAemEvaluationResultByResultId(Long resultId);
+
+    /**
+     * 按教师和课程聚合评教结果
+     *
+     * @param teacherId 教师ID
+     * @param courseId   课程ID
+     * @return 聚合结果
+     */
+    public Map<String, Object> aggregateByTeacher(Long teacherId, Long courseId);
 }

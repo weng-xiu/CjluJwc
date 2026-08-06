@@ -25,20 +25,15 @@ public class AcademicWarningTask
     /**
      * 批量生成学业预警（由Quartz调度，建议每日凌晨2:00执行）
      * 可通过若依定时任务管理页面配置
-     * 
+     *
+     * 异常不在此处捕获，向上抛出由 AbstractQuartzJob 统一记录失败日志并触发告警
+     *
      * @param semesterId 学期ID
      */
     public void generateWarnings(Long semesterId)
     {
         log.info("学业预警定时任务开始执行，学期ID：{}", semesterId);
-        try
-        {
-            academicWarningEngine.generateWarningsBatch(semesterId);
-            log.info("学业预警定时任务执行完成");
-        }
-        catch (Exception e)
-        {
-            log.error("学业预警定时任务执行失败：{}", e.getMessage(), e);
-        }
+        academicWarningEngine.generateWarningsBatch(semesterId);
+        log.info("学业预警定时任务执行完成");
     }
 }

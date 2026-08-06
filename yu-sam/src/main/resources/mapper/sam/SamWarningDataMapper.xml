@@ -48,4 +48,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select count(1) from sam_student where status = '0'
     </select>
 
+    <!-- 查询学生不及格课程数（出勤预警参考指标） -->
+    <select id="selectStudentFailCourseCount" resultType="java.lang.Integer">
+        select count(1)
+        from aem_grade_record gr
+        where gr.student_id = #{studentId}
+          and gr.semester_id = #{semesterId}
+          and gr.is_pass = '0'
+          and gr.status = '0'
+    </select>
+
 </mapper>

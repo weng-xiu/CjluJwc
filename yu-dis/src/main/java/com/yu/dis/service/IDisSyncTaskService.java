@@ -17,4 +17,13 @@ public interface IDisSyncTaskService
     public int updateDisSyncTask(DisSyncTask disSyncTask);
     public int deleteDisSyncTaskByTaskId(Long taskId);
     public int deleteDisSyncTaskByTaskIds(Long[] taskIds);
+
+    /**
+     * 执行同步任务
+     * 调用外部系统接口进行数据交换，支持重试
+     *
+     * @param taskId 任务ID
+     * @return 执行结果
+     */
+    public java.util.Map<String, Object> executeSyncTask(Long taskId);
 }

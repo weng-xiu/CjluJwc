@@ -54,4 +54,14 @@ public interface SamWarningDataMapper
      * @return 学生总数
      */
     int selectStudentCount();
+
+    /**
+     * 查询学生不及格课程数（作为出勤预警的参考指标）
+     * 多门课程不及格可能暗示出勤问题
+     * 
+     * @param studentId 学生ID
+     * @param semesterId 学期ID
+     * @return 不及格课程数
+     */
+    Integer selectStudentFailCourseCount(@Param("studentId") Long studentId, @Param("semesterId") Long semesterId);
 }

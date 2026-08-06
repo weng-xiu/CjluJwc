@@ -161,8 +161,7 @@ public class AcademicWarningEngine
             case "CREDIT_LOW":
                 return evaluateCreditRule(studentId, semesterId, rule);
             case "ATTENDANCE_LOW":
-                // 出勤预警暂不实现，预留接口
-                return null;
+                return evaluateAttendanceRule(studentId, semesterId, rule);
             default:
                 log.warn("未知规则代码：{}", ruleCode);
                 return null;
@@ -225,6 +224,36 @@ public class AcademicWarningEngine
             String reason = rule.getMessageTemplate()
                     .replace("{earned}", String.valueOf(earnedCredits))
                     .replace("{required}", String.valueOf(requiredCredits))
+                    .replace("{threshold}", rule.getThresholdValue());
+            warning.setWarningReason(reason);
+            warning.setWarningDate(new Date());
+            return warning;
+        }
+        return null;
+    }
+
+    /**
+     * 评估出勤预警
+     * 以不及格课程数作为出勤问题的参考指标
+     * 不及格课程数达到阈值时触发预警
+     */
+    private SamWarning evaluateAttendanceRule(Long studentId, Long semesterId, SamWarningRuleConfig rule)
+    {
+        Integer failCount = samWarningDataMapper.selectStudentFailCourseCount(studentId, semesterId);
+        if (failCount == null || failCount == 0)
+        {
+            return null;
+        }
+        double threshold = Double.parseDouble(rule.getThresholdValue());
+        if (failCount >= threshold)
+        {
+            SamWarning warning = new SamWarning();
+            warning.setStudentId(studentId);
+            warning.setSemesterId(semesterId);
+            warning.setWarningType(rule.getWarningType());
+            warning.setWarningLevel(rule.getWarningLevel());
+            String reason = rule.getMessageTemplate()
+                    .replace("{failCount}", String.valueOf(failCount))
                     .replace("{threshold}", rule.getThresholdValue());
             warning.setWarningReason(reason);
             warning.setWarningDate(new Date());

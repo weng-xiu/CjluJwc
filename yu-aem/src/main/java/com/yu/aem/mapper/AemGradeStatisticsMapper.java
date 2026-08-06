@@ -1,6 +1,7 @@
 package com.yu.aem.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.yu.aem.domain.AemGradeStatistics;
 
 /**
@@ -17,4 +18,7 @@ public interface AemGradeStatisticsMapper
     public int updateAemGradeStatistics(AemGradeStatistics aemGradeStatistics);
     public int deleteAemGradeStatisticsByStatId(Long statId);
     public int deleteAemGradeStatisticsByStatIds(Long[] statIds);
+
+    /** 按课程和学期查询统计记录 */
+    public AemGradeStatistics selectByCourseAndSemester(@Param("courseId") Long courseId, @Param("semesterId") Long semesterId);
 }

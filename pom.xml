@@ -240,6 +240,7 @@
     <packaging>pom</packaging>
 
     <build>
+        <directory>h:/project_open/CjluJwc/build-temp/${project.artifactId}</directory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

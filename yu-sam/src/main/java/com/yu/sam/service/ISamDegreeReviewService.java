@@ -11,4 +11,13 @@ public interface ISamDegreeReviewService
     public int updateSamDegreeReview(SamDegreeReview samDegreeReview);
     public int deleteSamDegreeReviewByReviewIds(Long[] reviewIds);
     public int deleteSamDegreeReviewByReviewId(Long reviewId);
+
+    /**
+     * 自动审核学位资格
+     * 校验绩点、学位课程、论文等条件
+     *
+     * @param studentId 学生ID
+     * @return 审核结果
+     */
+    public SamDegreeReview autoReview(Long studentId);
 }

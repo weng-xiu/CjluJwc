@@ -84,4 +84,26 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from aem_exam_seat where seat_id in
         <foreach item="seatId" collection="array" open="(" separator="," close=")">#{seatId}</foreach>
     </delete>
+
+    <delete id="deleteByExamId" parameterType="Long">
+        delete from aem_exam_seat where exam_id = #{examId}
+    </delete>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        insert into aem_exam_seat (exam_id, classroom_id, student_id, seat_number, row_number, col_number, status, create_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.examId}, #{item.classroomId}, #{item.studentId}, #{item.seatNumber}, #{item.rowNumber}, #{item.colNumber}, #{item.status}, #{item.createTime})
+        </foreach>
+    </insert>
+
+    <select id="selectStudentIdsByCourseAndSemester" resultType="java.lang.Long">
+        select distinct e.student_id
+        from tpm_selection_enrollment e
+        inner join tpm_course_offering o on e.course_offering_id = o.offering_id
+        where o.course_id = #{courseId}
+          and o.semester_id = #{semesterId}
+          and e.result_status != '3'
+        order by e.student_id
+    </select>
 </mapper>

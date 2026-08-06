@@ -1,6 +1,7 @@
 package com.yu.tpm.service;
 
 import java.util.List;
+import java.util.Map;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.tpm.domain.TpmSelectionEnrollment;
 import com.yu.tpm.domain.dto.ConflictWarning;
@@ -50,4 +51,12 @@ public interface ITpmSelectionEnrollmentService
      * @return 操作结果
      */
     public AjaxResult enrollWithValidation(Long studentId, Long courseOfferingId, Long roundId);
+
+    /**
+     * 执行抽签（超容量课程公平抽签）
+     *
+     * @param roundId 轮次ID
+     * @return 抽签结果统计
+     */
+    public Map<String, Object> runLottery(Long roundId);
 }

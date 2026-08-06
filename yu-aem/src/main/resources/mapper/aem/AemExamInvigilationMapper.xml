@@ -88,4 +88,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from aem_exam_invigilation where invigilation_id in
         <foreach item="invigilationId" collection="array" open="(" separator="," close=")">#{invigilationId}</foreach>
     </delete>
+
+    <delete id="deleteByExamId" parameterType="Long">
+        delete from aem_exam_invigilation where exam_id = #{examId}
+    </delete>
 </mapper>

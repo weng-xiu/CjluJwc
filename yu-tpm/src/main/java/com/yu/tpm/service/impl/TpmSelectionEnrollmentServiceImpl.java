@@ -1,7 +1,9 @@
 package com.yu.tpm.service.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,8 +40,9 @@ import com.yu.tpm.service.ITpmSelectionEnrollmentService;
 @Service
 public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmentService 
 {
-    /** 默认学分上限 */
-    private static final double DEFAULT_MAX_CREDITS = 30.0;
+    /** 默认学分上限（从配置读取） */
+    @org.springframework.beans.factory.annotation.Value("${tpm.selection.maxCredits:30.0}")
+    private double defaultMaxCredits;
 
     /** 星期名称映射 */
     private static final String[] WEEK_DAY_NAMES = {"", "周一", "周二", "周三", "周四", "周五", "周六", "周日"};
@@ -220,14 +223,8 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
                 }
             }
 
-            // 获取轮次学分上限（使用maxCoursesPerStudent作为上限参考，或默认30）
-            double maxCredits = DEFAULT_MAX_CREDITS;
-            TpmSelectionRound round = tpmSelectionRoundMapper.selectTpmSelectionRoundByRoundId(roundId);
-            if (round != null && round.getMaxCoursesPerStudent() != null)
-            {
-                // 如果轮次有maxCredits字段则用，否则使用默认值
-                maxCredits = DEFAULT_MAX_CREDITS;
-            }
+            // 获取学分上限（从配置读取）
+            double maxCredits = defaultMaxCredits;
 
             if (totalCredits + targetCredit > maxCredits)
             {
@@ -386,6 +383,26 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
     @Override
     public AjaxResult enrollWithValidation(Long studentId, Long courseOfferingId, Long roundId)
     {
+        // 0. 校验轮次状态
+        TpmSelectionRound round = tpmSelectionRoundMapper.selectTpmSelectionRoundByRoundId(roundId);
+        if (round == null)
+        {
+            return AjaxResult.error("选课轮次不存在");
+        }
+        String roundStatus = round.getRoundStatus();
+        if (!"1".equals(roundStatus))
+        {
+            String statusDesc = "0".equals(roundStatus) ? "未开始" : "2".equals(roundStatus) ? "已结束" : "未知";
+            return AjaxResult.error("选课轮次" + statusDesc + "，无法选课");
+        }
+        // 校验选课门数上限
+        List<TpmSelectionEnrollment> enrolledList = tpmSelectionEnrollmentMapper.selectByStudentAndRound(studentId, roundId);
+        if (round.getMaxCoursesPerStudent() != null && enrolledList != null
+                && enrolledList.size() >= round.getMaxCoursesPerStudent())
+        {
+            return AjaxResult.error("已达到本轮次选课门数上限" + round.getMaxCoursesPerStudent() + "门");
+        }
+
         // 1. 冲突检测
         List<ConflictWarning> conflicts = checkSelectionConflicts(studentId, courseOfferingId, roundId);
         if (!conflicts.isEmpty())
@@ -494,5 +511,112 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         return schedules.stream()
                 .map(this::buildScheduleDesc)
                 .collect(Collectors.joining("; "));
+    }
+
+    /**
+     * 执行抽签（超容量课程公平抽签）
+     * 对轮次下所有超容量的开课，随机抽取学生至容量上限，未中签学生标记为落选
+     *
+     * @param roundId 轮次ID
+     * @return 抽签结果统计
+     */
+    @Transactional
+    @Override
+    public Map<String, Object> runLottery(Long roundId)
+    {
+        Map<String, Object> result = new HashMap<>();
+        TpmSelectionRound round = tpmSelectionRoundMapper.selectTpmSelectionRoundByRoundId(roundId);
+        if (round == null)
+        {
+            result.put("message", "轮次不存在");
+            return result;
+        }
+        // 查询轮次下所有选课记录（状态为已选但未抽签的）
+        TpmSelectionEnrollment query = new TpmSelectionEnrollment();
+        query.setRoundId(roundId);
+        query.setResultStatus("1"); // 选中状态
+        List<TpmSelectionEnrollment> allEnrollments = tpmSelectionEnrollmentMapper.selectTpmSelectionEnrollmentList(query);
+
+        if (allEnrollments == null || allEnrollments.isEmpty())
+        {
+            result.put("message", "无选课记录需要抽签");
+            return result;
+        }
+
+        // 按开课ID分组
+        Map<Long, List<TpmSelectionEnrollment>> offeringMap = allEnrollments.stream()
+                .collect(Collectors.groupingBy(TpmSelectionEnrollment::getCourseOfferingId));
+
+        int lotteryCount = 0;
+        int successCount = 0;
+        int failCount = 0;
+        List<TpmSelectionEnrollment> toUpdate = new ArrayList<>();
+
+        for (Map.Entry<Long, List<TpmSelectionEnrollment>> entry : offeringMap.entrySet())
+        {
+            Long offeringId = entry.getKey();
+            List<TpmSelectionEnrollment> enrollments = entry.getValue();
+
+            // 获取开课容量
+            TpmCourseOffering offering = tpmCourseOfferingMapper.selectTpmCourseOfferingByOfferingId(offeringId);
+            if (offering == null || offering.getMaxStudents() == null)
+            {
+                continue;
+            }
+            int maxCapacity = offering.getMaxStudents();
+
+            // 如果未超容量，全部中签
+            if (enrollments.size() <= maxCapacity)
+            {
+                for (TpmSelectionEnrollment e : enrollments)
+                {
+                    e.setLotteryResult("1"); // 中签
+                    e.setResultStatus("1");  // 选中
+                    toUpdate.add(e);
+                    successCount++;
+                }
+                continue;
+            }
+
+            // 超容量，执行随机抽签
+            Collections.shuffle(enrollments);
+            lotteryCount++;
+
+            for (int i = 0; i < enrollments.size(); i++)
+            {
+                TpmSelectionEnrollment e = enrollments.get(i);
+                if (i < maxCapacity)
+                {
+                    e.setLotteryResult("1"); // 中签
+                    e.setResultStatus("1");  // 选中
+                    successCount++;
+                }
+                else
+                {
+                    e.setLotteryResult("2"); // 落选
+                    e.setResultStatus("2");  // 未选中
+                    failCount++;
+                }
+                toUpdate.add(e);
+            }
+        }
+
+        // 批量更新
+        for (TpmSelectionEnrollment e : toUpdate)
+        {
+            e.setUpdateTime(new Date());
+            tpmSelectionEnrollmentMapper.updateTpmSelectionEnrollment(e);
+        }
+
+        // 更新轮次状态为已结束
+        round.setRoundStatus("2");
+        round.setUpdateTime(new Date());
+        tpmSelectionRoundMapper.updateTpmSelectionRound(round);
+
+        result.put("lotteryCourses", lotteryCount);
+        result.put("successCount", successCount);
+        result.put("failCount", failCount);
+        result.put("message", String.format("抽签完成：涉及%d门课程，中签%d人，落选%d人", lotteryCount, successCount, failCount));
+        return result;
     }
 }

@@ -106,4 +106,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from aem_grade_statistics where stat_id in
         <foreach item="statId" collection="array" open="(" separator="," close=")">#{statId}</foreach>
     </delete>
+    <select id="selectByCourseAndSemester" resultMap="AemGradeStatisticsResult">
+        <include refid="selectAemGradeStatisticsVo"/>
+        where course_id = #{courseId} and semester_id = #{semesterId} and (class_id is null or class_id = 0)
+        limit 1
+    </select>
 </mapper>

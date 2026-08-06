@@ -27,6 +27,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="classroomName" column="classroom_name" />
         <result property="buildingName"  column="building_name"  />
         <result property="maxStudents"   column="max_students"   />
+        <result property="teacherId"     column="teacher_id"     />
     </resultMap>
     <sql id="selectTpmScheduleVo">
         select schedule_id, offering_id, classroom_id, week_day, start_period, end_period, start_week, end_week, schedule_type, status, create_by, create_time, update_by, update_time, remark from tpm_schedule
@@ -110,6 +111,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                cr.classroom_name as classroom_name,
                b.building_name as building_name,
                o.max_students as max_students
+               , o.teacher_id as teacher_id
         from tpm_schedule s
         inner join tpm_course_offering o on s.offering_id = o.offering_id
         left join tpm_course_library cl on o.course_id = cl.course_id
@@ -134,6 +136,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                s.start_week, s.end_week, s.schedule_type, s.status,
                cl.course_name as course_name,
                o.max_students as max_students
+               , o.teacher_id as teacher_id
         from tpm_schedule s
         inner join tpm_course_offering o on s.offering_id = o.offering_id
         left join tpm_course_library cl on o.course_id = cl.course_id

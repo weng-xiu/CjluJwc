@@ -57,3 +57,7 @@ temp_*
 !*/build/*.java
 !*/build/*.html
 !*/build/*.xml
+
+/软件设计文档/*.pdf
+/软件设计文档/*.docx
+/软件设计文档/*.doc

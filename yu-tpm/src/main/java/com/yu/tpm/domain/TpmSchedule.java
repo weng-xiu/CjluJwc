@@ -72,6 +72,9 @@ public class TpmSchedule extends BaseEntity
     /** 开课容量上限（关联查询） */
     private Integer maxStudents;
 
+    /** 教师ID（关联查询） */
+    private Long teacherId;
+
     public Long getScheduleId() { return scheduleId; }
     public void setScheduleId(Long scheduleId) { this.scheduleId = scheduleId; }
 
@@ -118,6 +121,9 @@ public class TpmSchedule extends BaseEntity
     public Integer getMaxStudents() { return maxStudents; }
     public void setMaxStudents(Integer maxStudents) { this.maxStudents = maxStudents; }
 
+    public Long getTeacherId() { return teacherId; }
+    public void setTeacherId(Long teacherId) { this.teacherId = teacherId; }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -131,6 +137,7 @@ public class TpmSchedule extends BaseEntity
             .append("endWeek", getEndWeek())
             .append("scheduleType", getScheduleType())
             .append("status", getStatus())
+            .append("teacherId", getTeacherId())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())
