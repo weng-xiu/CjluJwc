@@ -41,9 +41,13 @@ public class AcademicWarningEngine
     @Autowired
     private SamWarningDataMapper samWarningDataMapper;
 
+    @Autowired
+    private com.yu.sam.mapper.SamWarningMapper samWarningMapper;
+
     /**
-     * 为指定学生生成预警
-     * 
+     * 为指定学生生成预警。
+     * 生成前先清理该学生该学期的"未解除"旧预警，避免重复批量生成时产生重复记录。
+     *
      * @param studentId 学生ID
      * @param semesterId 学期ID
      * @return 生成的预警列表
@@ -51,6 +55,9 @@ public class AcademicWarningEngine
     @Transactional
     public List<SamWarning> generateWarningsForStudent(Long studentId, Long semesterId)
     {
+        // 清理该学生该学期未解除的旧预警（联动去重）
+        samWarningMapper.deleteActiveWarningsByStudentAndSemester(studentId, semesterId);
+
         List<SamWarning> warnings = new ArrayList<>();
         List<SamWarningRuleConfig> rules = warningRuleConfigService.selectEnabledRules();
 

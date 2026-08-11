@@ -141,7 +141,7 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
         }
         // 4. 清除原有监考记录
         aemExamInvigilationMapper.deleteByExamId(examId);
-        // 5. 分配监考（每个考场1主1副，回避冲突）
+        // 5. 分配监考（每个考场1主1副，回避冲突：同场不重复 + 跨考试时间不冲突）
         List<AemExamInvigilation> dispatchList = new ArrayList<>();
         Set<Long> usedTeacherIds = new HashSet<>(); // 已分配的教师（避免同一场考试重复分配）
         int assignedCount = 0;
@@ -149,19 +149,19 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
         List<String> failReasons = new ArrayList<>();
         for (Long classroomId : classroomIds)
         {
-            // 分配主监考
-            Long mainTeacherId = findAvailableTeacher(teachers, usedTeacherIds);
+            // 分配主监考：检查跨考试时间冲突
+            Long mainTeacherId = findAvailableTeacher(teachers, usedTeacherIds, examPlan, examId);
             if (mainTeacherId == null)
             {
                 failCount++;
-                failReasons.add("教室[" + classroomId + "]无可用主监考教师");
+                failReasons.add("教室[" + classroomId + "]无可用主监考教师（均时间冲突）");
                 continue;
             }
             usedTeacherIds.add(mainTeacherId);
             AemExamInvigilation mainInvigilation = buildInvigilation(examId, classroomId, mainTeacherId, examPlan, "0");
             dispatchList.add(mainInvigilation);
             // 分配副监考
-            Long assistTeacherId = findAvailableTeacher(teachers, usedTeacherIds);
+            Long assistTeacherId = findAvailableTeacher(teachers, usedTeacherIds, examPlan, examId);
             if (assistTeacherId != null)
             {
                 usedTeacherIds.add(assistTeacherId);
@@ -185,15 +185,26 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
     }
 
     /**
-     * 从教师列表中查找未使用的教师
+     * 从教师列表中查找可用教师。
+     * 双重校验：1) 同一场考试未分配过；2) 在考试时间段内无其他监考任务（跨考试冲突）。
      */
-    private Long findAvailableTeacher(List<BrmTeacher> teachers, Set<Long> usedTeacherIds)
+    private Long findAvailableTeacher(List<BrmTeacher> teachers, Set<Long> usedTeacherIds,
+                                     AemExamPlan examPlan, Long excludeExamId)
     {
         for (BrmTeacher teacher : teachers)
         {
-            if (!usedTeacherIds.contains(teacher.getTeacherId()))
+            Long tid = teacher.getTeacherId();
+            if (usedTeacherIds.contains(tid))
             {
-                return teacher.getTeacherId();
+                continue;
+            }
+            // 跨考试时间冲突检测
+            int conflict = aemExamInvigilationMapper.countTeacherTimeConflict(
+                    tid, examPlan.getExamDate(), examPlan.getStartTime(),
+                    examPlan.getEndTime(), excludeExamId);
+            if (conflict == 0)
+            {
+                return tid;
             }
         }
         return null;

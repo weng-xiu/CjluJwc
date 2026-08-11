@@ -92,4 +92,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <delete id="deleteByExamId" parameterType="Long">
         delete from aem_exam_invigilation where exam_id = #{examId}
     </delete>
+
+    <!-- 统计某教师在指定时段已有的监考任务数（跨考试时间冲突检测） -->
+    <select id="countTeacherTimeConflict" resultType="int">
+        select count(1) from aem_exam_invigilation
+        where teacher_id = #{teacherId}
+          and exam_date = #{examDate}
+          and status = '0'
+          <if test="excludeExamId != null">and exam_id != #{excludeExamId}</if>
+          and (
+              (start_time &lt;= #{startTime} and end_time &gt; #{startTime})
+              or (start_time &lt; #{endTime} and end_time &gt;= #{endTime})
+              or (start_time &gt;= #{startTime} and end_time &lt;= #{endTime})
+          )
+    </select>
 </mapper>

@@ -43,36 +43,52 @@ public class SamDegreeReviewServiceImpl implements ISamDegreeReviewService
 
     /**
      * 自动审核学位资格
-     * 校验条件：GPA达标、学位课程合格、论文合格
+     * 校验条件：GPA达标、学位课程（必修）全部合格
+     * 数据来源：跨模块查询 aem_grade_record + tpm_course_library
+     * 注：论文校验需对接论文管理系统，当前数据模型中无论文表，保留默认合格并记录审核意见
      */
     @Override
     @Transactional
     public SamDegreeReview autoReview(Long studentId)
     {
-        // 查询学生GPA（取所有学期）
+        // 查询学生GPA（全部学期累计加权）
         Double gpa = samWarningDataMapper.selectStudentGpa(studentId, null);
-        // 构建审核记录
+        // 学位课程（必修课）不及格门数
+        Integer degreeFail = samWarningDataMapper.countDegreeCourseFail(studentId, null);
+
         SamDegreeReview review = new SamDegreeReview();
         review.setStudentId(studentId);
         review.setGpa(gpa != null ? gpa : 0.0);
+
         // GPA校验（默认要求GPA >= 2.0）
         boolean gpaQualified = gpa != null && gpa >= 2.0;
         review.setIsGpaQualified(gpaQualified ? "1" : "0");
-        // 学位课程校验（预留，默认合格）
-        review.setIsDegreeCourseQualified("1");
-        // 论文校验（预留，默认合格，需对接论文管理系统后完善）
+
+        // 学位课程校验（必修课程全部通过）
+        boolean degreeCourseQualified = degreeFail == null || degreeFail == 0;
+        review.setIsDegreeCourseQualified(degreeCourseQualified ? "1" : "0");
+
+        // 论文校验：当前无论文管理模块，默认合格（待对接论文系统后完善）
         review.setIsThesisQualified("1");
+
         // 综合审核结果
-        boolean allQualified = gpaQualified;
+        boolean allQualified = gpaQualified && degreeCourseQualified;
         review.setReviewStatus(allQualified ? "1" : "2");
         review.setReviewDate(new Date());
         review.setReviewer("系统自动审核");
-        review.setReviewOpinion(allQualified
-                ? "自动审核通过：GPA=" + gpa
-                : "自动审核不通过：GPA=" + (gpa != null ? gpa : "无") + "，未达到2.0要求");
+
+        StringBuilder opinion = new StringBuilder();
+        if (allQualified) {
+            opinion.append("自动审核通过：GPA=").append(gpa).append("，学位课程全部合格");
+        } else {
+            opinion.append("自动审核不通过：");
+            if (!gpaQualified) opinion.append("GPA=").append(gpa != null ? gpa : "无").append("，未达到2.0要求；");
+            if (!degreeCourseQualified) opinion.append("有").append(degreeFail).append("门学位课程（必修）未通过；");
+        }
+        review.setReviewOpinion(opinion.toString());
         review.setStatus("0");
         review.setCreateTime(DateUtils.getNowDate());
-        // 保存
+
         samDegreeReviewMapper.insertSamDegreeReview(review);
         log.info("学生[{}]学位资格自动审核完成：{}", studentId, allQualified ? "通过" : "不通过");
         return review;

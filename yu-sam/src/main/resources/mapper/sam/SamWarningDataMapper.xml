@@ -4,7 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.yu.sam.mapper.SamWarningDataMapper">
 
-    <!-- 计算学生某学期GPA（加权平均绩点） -->
+    <!-- 计算学生某学期GPA（加权平均绩点）。semesterId 为 null 时统计全部学期 -->
     <select id="selectStudentGpa" resultType="java.lang.Double">
         select
             case when sum(cl.credit) = 0 then null
@@ -13,28 +13,34 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from aem_grade_record gr
         left join tpm_course_library cl on gr.course_id = cl.course_id
         where gr.student_id = #{studentId}
-          and gr.semester_id = #{semesterId}
+          <if test="semesterId != null">
+              and gr.semester_id = #{semesterId}
+          </if>
           and gr.status = '0'
     </select>
 
-    <!-- 统计学生已获得学分（已通过课程） -->
+    <!-- 统计学生已获得学分（已通过课程）。semesterId 为 null 时统计全部学期 -->
     <select id="selectStudentEarnedCredits" resultType="java.lang.Double">
         select coalesce(sum(cl.credit), 0)
         from aem_grade_record gr
         left join tpm_course_library cl on gr.course_id = cl.course_id
         where gr.student_id = #{studentId}
-          and gr.semester_id = #{semesterId}
+          <if test="semesterId != null">
+              and gr.semester_id = #{semesterId}
+          </if>
           and gr.is_pass = '1'
           and gr.status = '0'
     </select>
 
-    <!-- 查询学生应修总学分（该学期所有已修课程） -->
+    <!-- 查询学生应修总学分（该学期所有已修课程）。semesterId 为 null 时统计全部学期 -->
     <select id="selectStudentRequiredCredits" resultType="java.lang.Double">
         select coalesce(sum(cl.credit), 0)
         from aem_grade_record gr
         left join tpm_course_library cl on gr.course_id = cl.course_id
         where gr.student_id = #{studentId}
-          and gr.semester_id = #{semesterId}
+          <if test="semesterId != null">
+              and gr.semester_id = #{semesterId}
+          </if>
           and gr.status = '0'
     </select>
 
@@ -48,14 +54,60 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select count(1) from sam_student where status = '0'
     </select>
 
-    <!-- 查询学生不及格课程数（出勤预警参考指标） -->
+    <!-- 查询学生不及格课程数。semesterId 为 null 时统计全部学期 -->
     <select id="selectStudentFailCourseCount" resultType="java.lang.Integer">
         select count(1)
         from aem_grade_record gr
         where gr.student_id = #{studentId}
-          and gr.semester_id = #{semesterId}
+          <if test="semesterId != null">
+              and gr.semester_id = #{semesterId}
+          </if>
           and gr.is_pass = '0'
           and gr.status = '0'
+    </select>
+
+    <!-- 按课程分类统计学生是否有不及格课程：0=全部通过，>0=存在不及格。category 为 null 时统计全部课程 -->
+    <select id="countFailByCourseCategory" resultType="java.lang.Integer">
+        select count(1)
+        from aem_grade_record gr
+        left join tpm_course_library cl on gr.course_id = cl.course_id
+        where gr.student_id = #{studentId}
+          <if test="semesterId != null">
+              and gr.semester_id = #{semesterId}
+          </if>
+          and gr.is_pass = '0'
+          and gr.status = '0'
+          <if test="category != null and category != ''">
+              and cl.course_category = #{category}
+          </if>
+    </select>
+
+    <!-- 统计学生某类课程是否均已通过：返回未通过课程数。courseNameKeyword 为课程名模糊匹配关键词（如"英语"/"体育"） -->
+    <select id="countFailByCourseNameKeyword" resultType="java.lang.Integer">
+        select count(1)
+        from aem_grade_record gr
+        left join tpm_course_library cl on gr.course_id = cl.course_id
+        where gr.student_id = #{studentId}
+          <if test="semesterId != null">
+              and gr.semester_id = #{semesterId}
+          </if>
+          and gr.is_pass = '0'
+          and gr.status = '0'
+          and cl.course_name like concat('%', #{keyword}, '%')
+    </select>
+
+    <!-- 统计学生学位课程（必修）不及格门数 -->
+    <select id="countDegreeCourseFail" resultType="java.lang.Integer">
+        select count(1)
+        from aem_grade_record gr
+        left join tpm_course_library cl on gr.course_id = cl.course_id
+        where gr.student_id = #{studentId}
+          <if test="semesterId != null">
+              and gr.semester_id = #{semesterId}
+          </if>
+          and gr.is_pass = '0'
+          and gr.status = '0'
+          and cl.course_type = '必修'
     </select>
 
 </mapper>

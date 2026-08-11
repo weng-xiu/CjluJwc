@@ -97,4 +97,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from sam_warning where warning_id in
         <foreach item="warningId" collection="array" open="(" separator="," close=")">#{warningId}</foreach>
     </delete>
+
+    <!-- 删除某学生某学期未解除的预警（批量重新生成前去重） -->
+    <delete id="deleteActiveWarningsByStudentAndSemester">
+        delete from sam_warning
+        where student_id = #{studentId}
+          and (is_resolved = '0' or is_resolved is null)
+          <if test="semesterId != null">and semester_id = #{semesterId}</if>
+    </delete>
 </mapper>
