@@ -7,5 +7,5 @@ export function listAdjustment(query) {
 
 // 提交调停课申请
 export function addAdjustment(data) {
-  return request({ url: '/portal/adjustment', method: 'post', data: data })
+  return request({ url: '/portal/adjustment/apply', method: 'post', data: data })
 }

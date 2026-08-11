@@ -21,7 +21,7 @@
     <!-- 新建申请 -->
     <el-dialog title="调停课申请" :visible.sync="dialogVisible" width="550px" :close-on-click-modal="false">
       <el-form ref="applyForm" :model="applyForm" label-width="100px" :rules="rules">
-        <el-form-item label="课程" prop="courseId"><el-select v-model="applyForm.courseId" placeholder="请选择课程" style="width:100%"><el-option v-for="c in myCourses" :key="c.courseId" :label="c.courseName" :value="c.courseId" /></el-select></el-form-item>
+        <el-form-item label="课程" prop="offeringId"><el-select v-model="applyForm.offeringId" placeholder="请选择课程" filterable style="width:100%"><el-option v-for="c in myCourses" :key="c.offeringId" :label="c.courseName" :value="c.offeringId" /></el-select></el-form-item>
         <el-form-item label="申请类型" prop="adjustType"><el-radio-group v-model="applyForm.adjustType"><el-radio label="adjust">调课</el-radio><el-radio label="cancel">停课</el-radio><el-radio label="makeup">补课</el-radio></el-radio-group></el-form-item>
         <el-form-item label="原上课时间" prop="originalTime"><el-date-picker v-model="applyForm.originalTime" type="datetime" placeholder="选择原上课时间" style="width:100%" /></el-form-item>
         <el-form-item label="新上课时间" prop="newTime" v-if="applyForm.adjustType !== 'cancel'"><el-date-picker v-model="applyForm.newTime" type="datetime" placeholder="选择新上课时间" style="width:100%" /></el-form-item>
@@ -33,13 +33,15 @@
 </template>
 <script>
 import { listAdjustments, applyAdjustment } from '@/api/portal/adjustment'
+import { listTeachingTasks } from '@/api/portal/teachingTask'
 export default {
   name: 'TeacherAdjustment',
-  data() { return { loading: false, total: 0, adjustmentList: [], queryParams: { pageNum: 1, pageSize: 10 }, dialogVisible: false, myCourses: [{ courseId: 1, courseName: '高等数学A' }, { courseId: 2, courseName: '线性代数' }], applyForm: { courseId: '', adjustType: 'adjust', originalTime: '', newTime: '', reason: '' }, rules: { courseId: [{ required: true, message: '请选择课程', trigger: 'change' }], adjustType: [{ required: true, message: '请选择类型', trigger: 'change' }], originalTime: [{ required: true, message: '请选择时间', trigger: 'change' }], reason: [{ required: true, message: '请输入原因', trigger: 'blur' }] } } },
-  created() { this.getList() },
+  data() { return { loading: false, total: 0, adjustmentList: [], queryParams: { pageNum: 1, pageSize: 10 }, dialogVisible: false, myCourses: [], applyForm: { offeringId: '', adjustType: 'adjust', originalTime: '', newTime: '', reason: '' }, rules: { offeringId: [{ required: true, message: '请选择课程', trigger: 'change' }], adjustType: [{ required: true, message: '请选择类型', trigger: 'change' }], originalTime: [{ required: true, message: '请选择时间', trigger: 'change' }], reason: [{ required: true, message: '请输入原因', trigger: 'blur' }] } } },
+  created() { this.fetchCourses(); this.getList() },
   methods: {
+    fetchCourses() { listTeachingTasks({ pageNum: 1, pageSize: 200 }).then(r => { this.myCourses = r.rows || [] }) },
     getList() { this.loading = true; listAdjustments(this.queryParams).then(r => { this.adjustmentList = r.rows || []; this.total = r.total || 0 }).finally(() => { this.loading = false }) },
-    openApply() { this.applyForm = { courseId: '', adjustType: 'adjust', originalTime: '', newTime: '', reason: '' }; this.dialogVisible = true },
+    openApply() { this.applyForm = { offeringId: '', adjustType: 'adjust', originalTime: '', newTime: '', reason: '' }; this.dialogVisible = true },
     submitApply() { this.$refs.applyForm.validate(valid => { if (!valid) return; applyAdjustment(this.applyForm).then(() => { this.$message.success('申请已提交'); this.dialogVisible = false; this.getList() }) }) },
     typeText(t) { return { adjust: '调课', cancel: '停课', makeup: '补课' }[t] || t },
     typeColor(t) { return { adjust: 'primary', cancel: 'danger', makeup: 'success' }[t] || 'info' },

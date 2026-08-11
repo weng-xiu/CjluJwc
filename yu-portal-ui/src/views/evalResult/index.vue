@@ -18,23 +18,30 @@
       <div v-if="currentDetail">
         <el-alert :title="'课程: ' + currentDetail.courseName + ' | 平均分: ' + currentDetail.avgScore + '分'" type="info" :closable="false" style="margin-bottom:16px" />
         <h4>评语汇总</h4>
-        <div v-for="(c, idx) in currentDetail.comments" :key="idx" style="padding:8px;margin-bottom:4px;background:#f5f7fa;border-radius:4px">{{ idx + 1 }}. {{ c }}</div>
-        <el-empty v-if="!currentDetail.comments || currentDetail.comments.length === 0" description="暂无评语" />
+        <div v-if="commentsLoading" style="text-align:center;color:#909399;padding:12px"><i class="el-icon-loading"></i> 加载中...</div>
+        <div v-else-if="currentDetail.comments && currentDetail.comments.length > 0">
+          <div v-for="(c, idx) in currentDetail.comments" :key="idx" style="padding:8px;margin-bottom:4px;background:#f5f7fa;border-radius:4px">{{ idx + 1 }}. {{ c }}</div>
+        </div>
+        <el-empty v-else description="暂无评语" />
       </div>
     </el-dialog>
   </div>
 </template>
 <script>
-import { getTeacherEvalResults } from '@/api/portal/evaluation'
+import { getTeacherEvalResults, getCourseComments } from '@/api/portal/evaluation'
 export default {
   name: 'TeacherEvalResult',
-  data() { return { loading: false, evalResults: [], detailVisible: false, currentDetail: null } },
+  data() { return { loading: false, evalResults: [], detailVisible: false, currentDetail: null, commentsLoading: false } },
   created() { this.getList() },
   methods: {
     getList() { this.loading = true; getTeacherEvalResults().then(r => { this.evalResults = r.rows || [] }).finally(() => { this.loading = false }) },
     viewDetail(row) {
-      this.currentDetail = { ...row, comments: ['教师备课认真，讲解清晰', '课堂互动较好，能激发学习兴趣', '建议增加更多实践环节'] }
+      this.currentDetail = { ...row, comments: [] }
       this.detailVisible = true
+      this.commentsLoading = true
+      getCourseComments(row.courseId).then(r => {
+        this.$set(this.currentDetail, 'comments', r.data || [])
+      }).finally(() => { this.commentsLoading = false })
     }
   }
 }

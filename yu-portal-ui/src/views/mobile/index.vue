@@ -102,7 +102,8 @@ export default {
   methods: {
     loadWarningCount() {
       getWarningStatistics().then(r => {
-        this.warningCount = r.data?.totalCount || r.data?.unreadCount || 0
+        // 未解除预警数作为提醒角标；无则回退到总数
+        this.warningCount = r.data?.unresolvedCount || r.data?.totalCount || 0
       }).catch(() => {})
     },
     loadTodaySchedule() {

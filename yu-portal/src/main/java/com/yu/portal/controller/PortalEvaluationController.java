@@ -135,4 +135,19 @@ public class PortalEvaluationController extends BaseController
         )).values().stream().collect(Collectors.toList());
         return getDataTable(resultList);
     }
+
+    /** 教师端：获取某门课程的真实评语列表（非空评语） */
+    @PreAuthorize("@ss.hasPermi('portal:evalResult:list') and @ss.hasAnyRoles('admin,teacher')")
+    @GetMapping("/comments/{courseId}")
+    public AjaxResult courseComments(@PathVariable Long courseId)
+    {
+        AemEvaluationResult query = new AemEvaluationResult();
+        query.setCourseId(courseId);
+        List<AemEvaluationResult> list = aemEvaluationResultService.selectAemEvaluationResultList(query);
+        List<String> comments = list.stream()
+                .map(AemEvaluationResult::getComment)
+                .filter(c -> c != null && !c.trim().isEmpty())
+                .collect(Collectors.toList());
+        return success(comments);
+    }
 }

@@ -49,6 +49,6 @@ export function getMyWarnings(params) {
 }
 
 /** 查询预警统计 */
-export function getWarningStatistics() {
-  return request({ url: '/sam/warning/statistics', method: 'get' })
+export function getWarningStatistics(params) {
+  return request({ url: '/sam/warning/statistics', method: 'get', params })
 }

@@ -5,7 +5,7 @@ export function listNotice(query) {
 }
 
 export function getNotice(noticeId) {
-  return request({ url: '/portal/notice/' + noticeId, method: 'get' })
+  return request({ url: '/portal/notice/detail', method: 'get', params: { noticeId } })
 }
 
 export function addNotice(data) {

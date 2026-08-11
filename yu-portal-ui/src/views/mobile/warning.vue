@@ -86,10 +86,11 @@ export default {
     loadStatistics() {
       getWarningStatistics().then(r => {
         const data = r.data || {}
+        // 后端返回字段：highRiskCount(高危) / seriousCount(严重) / normalCount(一般)
         this.statCounts = {
           high: data.highRiskCount || data.dangerCount || 0,
-          medium: data.mediumRiskCount || data.warningCount || 0,
-          low: data.lowRiskCount || data.infoCount || 0
+          medium: data.seriousCount || data.mediumRiskCount || data.warningCount || 0,
+          low: data.normalCount || data.lowRiskCount || data.infoCount || 0
         }
       }).catch(() => {})
     },

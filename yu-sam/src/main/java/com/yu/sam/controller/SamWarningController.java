@@ -65,13 +65,19 @@ public class SamWarningController extends BaseController
     public AjaxResult remove(@PathVariable Long[] warningIds) { return toAjax(samWarningService.deleteSamWarningByWarningIds(warningIds)); }
 
     /**
-     * 学生查看自己的预警
+     * 学生查看自己的预警。
+     * studentId 可不传，默认取当前登录用户ID。
      */
     @PreAuthorize("@ss.hasPermi('sam:warning:myList')")
     @GetMapping("/myWarnings")
-    public TableDataInfo myWarnings(@RequestParam Long studentId, @RequestParam(required = false) Long semesterId)
+    public TableDataInfo myWarnings(@RequestParam(required = false) Long studentId,
+                                    @RequestParam(required = false) Long semesterId)
     {
         startPage();
+        if (studentId == null)
+        {
+            studentId = getUserId();
+        }
         SamWarning query = new SamWarning();
         query.setStudentId(studentId);
         query.setSemesterId(semesterId);
@@ -80,14 +86,20 @@ public class SamWarningController extends BaseController
     }
 
     /**
-     * 预警统计
+     * 预警统计。
+     * semesterId 不传时查询全部学期；学生角色只统计本人。
      */
     @PreAuthorize("@ss.hasPermi('sam:warning:statistics')")
     @GetMapping("/statistics")
-    public AjaxResult statistics(@RequestParam Long semesterId)
+    public AjaxResult statistics(@RequestParam(required = false) Long semesterId)
     {
         SamWarning query = new SamWarning();
         query.setSemesterId(semesterId);
+        // 非管理员只统计本人数据
+        if (!com.yu.common.utils.SecurityUtils.isAdmin(getUserId()))
+        {
+            query.setStudentId(getUserId());
+        }
         List<SamWarning> list = samWarningService.selectSamWarningList(query);
 
         Map<String, Object> result = new HashMap<>();
