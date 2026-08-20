@@ -77,6 +77,26 @@ public class TpmScheduleAdjustmentController extends BaseController
         return toAjax(tpmScheduleAdjustmentService.updateTpmScheduleAdjustment(tpmScheduleAdjustment));
     }
 
+    @PreAuthorize("@ss.hasPermi('tpm:adjust:edit')")
+    @Log(title = "调停课审批通过", businessType = BusinessType.UPDATE)
+    @PutMapping("/approve/{adjustId}")
+    public AjaxResult approve(@PathVariable("adjustId") Long adjustId,
+                              @RequestBody TpmScheduleAdjustment tpmScheduleAdjustment)
+    {
+        tpmScheduleAdjustmentService.approve(adjustId, tpmScheduleAdjustment.getApproveComment());
+        return success();
+    }
+
+    @PreAuthorize("@ss.hasPermi('tpm:adjust:edit')")
+    @Log(title = "调停课审批驳回", businessType = BusinessType.UPDATE)
+    @PutMapping("/reject/{adjustId}")
+    public AjaxResult reject(@PathVariable("adjustId") Long adjustId,
+                             @RequestBody TpmScheduleAdjustment tpmScheduleAdjustment)
+    {
+        tpmScheduleAdjustmentService.reject(adjustId, tpmScheduleAdjustment.getApproveComment());
+        return success();
+    }
+
     @PreAuthorize("@ss.hasPermi('tpm:adjust:remove')")
     @Log(title = "调停课管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{adjustIds}")

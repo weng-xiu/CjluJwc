@@ -24,3 +24,18 @@ export function updatePlan(data) {
 export function delPlan(planId) {
   return request({ url: '/tpm/plan/' + planId, method: 'delete' })
 }
+
+// 发布培养方案
+export function publishPlan(planId) {
+  return request({ url: '/tpm/plan/publish/' + planId, method: 'put' })
+}
+
+// 废止培养方案
+export function deprecatePlan(planId) {
+  return request({ url: '/tpm/plan/deprecate/' + planId, method: 'put' })
+}
+
+// 保存培养方案主表及子表（课程库、学分结构）
+export function savePlanWithChildren(data) {
+  return request({ url: '/tpm/plan/saveWithChildren', method: 'post', data: data })
+}

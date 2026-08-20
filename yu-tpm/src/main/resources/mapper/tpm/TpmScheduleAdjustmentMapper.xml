@@ -18,29 +18,59 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="approveStatus"   column="approve_status"     />
         <result property="approveBy"       column="approve_by"         />
         <result property="approveTime"     column="approve_time"       />
+        <result property="approveComment"  column="approve_comment"    />
         <result property="status"          column="status"             />
+        <result property="delFlag"         column="del_flag"           />
         <result property="createBy"        column="create_by"          />
         <result property="createTime"      column="create_time"        />
         <result property="updateBy"        column="update_by"          />
         <result property="updateTime"      column="update_time"        />
         <result property="remark"          column="remark"             />
+        <result property="courseName"             column="course_name"              />
+        <result property="originalClassroomName"  column="original_classroom_name"  />
+        <result property="originalWeekDay"        column="original_week_day"        />
+        <result property="originalStartPeriod"    column="original_start_period"    />
+        <result property="originalEndPeriod"      column="original_end_period"      />
+        <result property="newClassName"           column="new_class_name"           />
     </resultMap>
+
     <sql id="selectTpmScheduleAdjustmentVo">
-        select adjust_id, schedule_id, adjust_type, original_date, new_date, new_classroom_id, new_week_day, new_start_period, new_end_period, reason, applicant, approve_status, approve_by, approve_time, status, create_by, create_time, update_by, update_time, remark from tpm_schedule_adjustment
+        select a.adjust_id, a.schedule_id, a.adjust_type, a.original_date, a.new_date,
+               a.new_classroom_id, a.new_week_day, a.new_start_period, a.new_end_period,
+               a.reason, a.applicant, a.approve_status, a.approve_by, a.approve_time, a.approve_comment,
+               a.status, a.del_flag, a.create_by, a.create_time, a.update_by, a.update_time, a.remark,
+               cl.course_name as course_name,
+               bc.classroom_name as original_classroom_name,
+               s.week_day as original_week_day,
+               s.start_period as original_start_period,
+               s.end_period as original_end_period,
+               bc2.classroom_name as new_class_name
+        from tpm_schedule_adjustment a
+        left join tpm_schedule s on a.schedule_id = s.schedule_id and s.del_flag = '0'
+        left join tpm_course_offering o on s.offering_id = o.offering_id
+        left join tpm_course_library cl on o.course_id = cl.course_id
+        left join brm_classroom bc on s.classroom_id = bc.classroom_id
+        left join brm_classroom bc2 on a.new_classroom_id = bc2.classroom_id
     </sql>
+
     <select id="selectTpmScheduleAdjustmentList" parameterType="TpmScheduleAdjustment" resultMap="TpmScheduleAdjustmentResult">
         <include refid="selectTpmScheduleAdjustmentVo"/>
         <where>
-            <if test="scheduleId != null"> and schedule_id = #{scheduleId}</if>
-            <if test="adjustType != null and adjustType.trim() != ''"> and adjust_type = #{adjustType}</if>
-            <if test="applicant != null and applicant.trim() != ''"> and applicant like concat('%', #{applicant}, '%')</if>
-            <if test="approveStatus != null and approveStatus.trim() != ''"> and approve_status = #{approveStatus}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            a.del_flag = '0'
+            <if test="scheduleId != null"> and a.schedule_id = #{scheduleId}</if>
+            <if test="adjustType != null and adjustType.trim() != ''"> and a.adjust_type = #{adjustType}</if>
+            <if test="applicant != null and applicant.trim() != ''"> and a.applicant like concat('%', #{applicant}, '%')</if>
+            <if test="approveStatus != null and approveStatus.trim() != ''"> and a.approve_status = #{approveStatus}</if>
+            <if test="status != null and status.trim() != ''"> and a.status = #{status}</if>
+            <if test="courseName != null and courseName.trim() != ''"> and cl.course_name like concat('%', #{courseName}, '%')</if>
         </where>
+        order by a.create_time desc
     </select>
+
     <select id="selectTpmScheduleAdjustmentByAdjustId" parameterType="Long" resultMap="TpmScheduleAdjustmentResult">
-        <include refid="selectTpmScheduleAdjustmentVo"/> where adjust_id = #{adjustId}
+        <include refid="selectTpmScheduleAdjustmentVo"/> where a.adjust_id = #{adjustId} and a.del_flag = '0'
     </select>
+
     <insert id="insertTpmScheduleAdjustment" parameterType="TpmScheduleAdjustment" useGeneratedKeys="true" keyProperty="adjustId">
         insert into tpm_schedule_adjustment
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -54,9 +84,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="newEndPeriod != null">new_end_period,</if>
             <if test="reason != null">reason,</if>
             <if test="applicant != null">applicant,</if>
-            <if test="approveStatus != null">approve_status,</if>
-            <if test="approveBy != null">approve_by,</if>
-            <if test="approveTime != null">approve_time,</if>
             <if test="status != null">status,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
@@ -73,15 +100,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="newEndPeriod != null">#{newEndPeriod},</if>
             <if test="reason != null">#{reason},</if>
             <if test="applicant != null">#{applicant},</if>
-            <if test="approveStatus != null">#{approveStatus},</if>
-            <if test="approveBy != null">#{approveBy},</if>
-            <if test="approveTime != null">#{approveTime},</if>
             <if test="status != null">#{status},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="remark != null">#{remark},</if>
         </trim>
     </insert>
+
     <update id="updateTpmScheduleAdjustment" parameterType="TpmScheduleAdjustment">
         update tpm_schedule_adjustment
         <trim prefix="SET" suffixOverrides=",">
@@ -98,6 +123,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="approveStatus != null">approve_status = #{approveStatus},</if>
             <if test="approveBy != null">approve_by = #{approveBy},</if>
             <if test="approveTime != null">approve_time = #{approveTime},</if>
+            <if test="approveComment != null">approve_comment = #{approveComment},</if>
             <if test="status != null">status = #{status},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
@@ -105,11 +131,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </trim>
         where adjust_id = #{adjustId}
     </update>
-    <delete id="deleteTpmScheduleAdjustmentByAdjustId" parameterType="Long">
-        delete from tpm_schedule_adjustment where adjust_id = #{adjustId}
-    </delete>
-    <delete id="deleteTpmScheduleAdjustmentByAdjustIds" parameterType="String">
-        delete from tpm_schedule_adjustment where adjust_id in
+
+    <update id="deleteTpmScheduleAdjustmentByAdjustId" parameterType="Long">
+        update tpm_schedule_adjustment set del_flag = '2' where adjust_id = #{adjustId}
+    </update>
+
+    <update id="deleteTpmScheduleAdjustmentByAdjustIds" parameterType="String">
+        update tpm_schedule_adjustment set del_flag = '2' where adjust_id in
         <foreach item="adjustId" collection="array" open="(" separator="," close=")">#{adjustId}</foreach>
-    </delete>
+    </update>
 </mapper>

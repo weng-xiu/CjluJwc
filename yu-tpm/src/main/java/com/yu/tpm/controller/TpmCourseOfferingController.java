@@ -84,4 +84,26 @@ public class TpmCourseOfferingController extends BaseController
     {
         return toAjax(tpmCourseOfferingService.deleteTpmCourseOfferingByOfferingIds(offeringIds));
     }
+
+    /**
+     * 确认开课
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:offering:edit')")
+    @Log(title = "开课计划", businessType = BusinessType.UPDATE)
+    @PutMapping("/confirm/{offeringId}")
+    public AjaxResult confirm(@PathVariable Long offeringId)
+    {
+        return toAjax(tpmCourseOfferingService.confirmOffering(offeringId));
+    }
+
+    /**
+     * 取消开课
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:offering:edit')")
+    @Log(title = "开课计划", businessType = BusinessType.UPDATE)
+    @PutMapping("/cancel/{offeringId}")
+    public AjaxResult cancel(@PathVariable Long offeringId)
+    {
+        return toAjax(tpmCourseOfferingService.cancelOffering(offeringId));
+    }
 }

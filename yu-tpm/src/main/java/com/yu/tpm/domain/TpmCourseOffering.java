@@ -8,7 +8,7 @@ import com.yu.common.core.domain.BaseEntity;
 
 /**
  * 开课计划对象 tpm_course_offering
- * 
+ *
  * @author ruoyi
  * @date 2026-05-09
  */
@@ -51,6 +51,26 @@ public class TpmCourseOffering extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 删除标志（0存在 2删除） */
+    private String delFlag;
+
+    // ========== 以下为关联查询的冗余字段，不映射到数据库 ==========
+
+    /** 学期名称（关联查询） */
+    private String semesterName;
+
+    /** 课程名称（关联查询） */
+    private String courseName;
+
+    /** 课程编码（关联查询） */
+    private String courseCode;
+
+    /** 教师姓名（关联查询） */
+    private String teacherName;
+
+    /** 校区名称（关联查询） */
+    private String campusName;
+
     public Long getOfferingId() { return offeringId; }
     public void setOfferingId(Long offeringId) { this.offeringId = offeringId; }
 
@@ -80,6 +100,24 @@ public class TpmCourseOffering extends BaseEntity
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
+    public String getDelFlag() { return delFlag; }
+    public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
+
+    public String getSemesterName() { return semesterName; }
+    public void setSemesterName(String semesterName) { this.semesterName = semesterName; }
+
+    public String getCourseName() { return courseName; }
+    public void setCourseName(String courseName) { this.courseName = courseName; }
+
+    public String getCourseCode() { return courseCode; }
+    public void setCourseCode(String courseCode) { this.courseCode = courseCode; }
+
+    public String getTeacherName() { return teacherName; }
+    public void setTeacherName(String teacherName) { this.teacherName = teacherName; }
+
+    public String getCampusName() { return campusName; }
+    public void setCampusName(String campusName) { this.campusName = campusName; }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -92,6 +130,7 @@ public class TpmCourseOffering extends BaseEntity
             .append("maxStudents", getMaxStudents())
             .append("offeringStatus", getOfferingStatus())
             .append("status", getStatus())
+            .append("delFlag", getDelFlag())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

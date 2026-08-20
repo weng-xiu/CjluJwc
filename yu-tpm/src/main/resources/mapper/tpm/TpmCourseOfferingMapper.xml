@@ -13,21 +13,37 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="maxStudents"    column="max_students"     />
         <result property="offeringStatus" column="offering_status"  />
         <result property="status"         column="status"           />
+        <result property="delFlag"        column="del_flag"         />
         <result property="createBy"       column="create_by"        />
         <result property="createTime"     column="create_time"      />
         <result property="updateBy"       column="update_by"        />
         <result property="updateTime"     column="update_time"      />
         <result property="remark"         column="remark"           />
+        <result property="semesterName"   column="semester_name"    />
+        <result property="courseName"     column="course_name"      />
+        <result property="courseCode"     column="course_code"      />
+        <result property="teacherName"    column="teacher_name"     />
+        <result property="campusName"     column="campus_name"      />
     </resultMap>
     <sql id="selectTpmCourseOfferingVo">
-        select offering_id, semester_id, course_id, teacher_id, campus_id, class_count, max_students, offering_status, status, create_by, create_time, update_by, update_time, remark from tpm_course_offering
+        select offering_id, semester_id, course_id, teacher_id, campus_id, class_count, max_students, offering_status, status, del_flag, create_by, create_time, update_by, update_time, remark from tpm_course_offering
     </sql>
     <select id="selectTpmCourseOfferingList" parameterType="TpmCourseOffering" resultMap="TpmCourseOfferingResult">
-        select co.offering_id, co.semester_id, co.course_id, co.teacher_id, co.campus_id, co.class_count, co.max_students, co.offering_status, co.status, co.create_by, co.create_time, co.update_by, co.update_time, co.remark
+        select co.offering_id, co.semester_id, co.course_id, co.teacher_id, co.campus_id, co.class_count, co.max_students,
+               co.offering_status, co.status, co.del_flag, co.create_by, co.create_time, co.update_by, co.update_time, co.remark,
+               se.semester_name as semester_name,
+               cl.course_name as course_name,
+               cl.course_code as course_code,
+               t.teacher_name as teacher_name,
+               ca.campus_name as campus_name
         from tpm_course_offering co
+        left join brm_semester se on co.semester_id = se.semester_id
+        left join tpm_course_library cl on co.course_id = cl.course_id
         left join brm_teacher t on co.teacher_id = t.teacher_id
         left join sys_dept d on t.dept_id = d.dept_id
+        left join brm_campus ca on co.campus_id = ca.campus_id
         <where>
+            co.del_flag = '0'
             <if test="semesterId != null"> and co.semester_id = #{semesterId}</if>
             <if test="courseId != null"> and co.course_id = #{courseId}</if>
             <if test="teacherId != null"> and co.teacher_id = #{teacherId}</if>
@@ -39,7 +55,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </where>
     </select>
     <select id="selectTpmCourseOfferingByOfferingId" parameterType="Long" resultMap="TpmCourseOfferingResult">
-        <include refid="selectTpmCourseOfferingVo"/> where offering_id = #{offeringId}
+        <include refid="selectTpmCourseOfferingVo"/> where offering_id = #{offeringId} and del_flag = '0'
     </select>
     <insert id="insertTpmCourseOffering" parameterType="TpmCourseOffering" useGeneratedKeys="true" keyProperty="offeringId">
         insert into tpm_course_offering
@@ -87,11 +103,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </trim>
         where offering_id = #{offeringId}
     </update>
-    <delete id="deleteTpmCourseOfferingByOfferingId" parameterType="Long">
-        delete from tpm_course_offering where offering_id = #{offeringId}
-    </delete>
-    <delete id="deleteTpmCourseOfferingByOfferingIds" parameterType="String">
-        delete from tpm_course_offering where offering_id in
+    <update id="deleteTpmCourseOfferingByOfferingId" parameterType="Long">
+        update tpm_course_offering set del_flag = '2' where offering_id = #{offeringId}
+    </update>
+    <update id="deleteTpmCourseOfferingByOfferingIds" parameterType="String">
+        update tpm_course_offering set del_flag = '2' where offering_id in
         <foreach item="offeringId" collection="array" open="(" separator="," close=")">#{offeringId}</foreach>
-    </delete>
+    </update>
 </mapper>

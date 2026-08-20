@@ -59,4 +59,12 @@ public interface ITpmSelectionEnrollmentService
      * @return 抽签结果统计
      */
     public Map<String, Object> runLottery(Long roundId);
+
+    /**
+     * 学生退课：将结果状态置为退课并回补Redis容量
+     *
+     * @param enrollId 选课记录ID
+     * @return 操作结果
+     */
+    public AjaxResult dropCourse(Long enrollId);
 }

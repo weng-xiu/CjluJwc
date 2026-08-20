@@ -24,3 +24,13 @@ export function updateAdjust(data) {
 export function delAdjust(adjustId) {
   return request({ url: '/tpm/adjust/' + adjustId, method: 'delete' })
 }
+
+// 审批通过
+export function approveAdjust(adjustId, data) {
+  return request({ url: '/tpm/adjust/approve/' + adjustId, method: 'put', data: data })
+}
+
+// 审批驳回
+export function rejectAdjust(adjustId, data) {
+  return request({ url: '/tpm/adjust/reject/' + adjustId, method: 'put', data: data })
+}

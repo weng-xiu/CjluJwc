@@ -24,3 +24,13 @@ export function updateOffering(data) {
 export function delOffering(offeringId) {
   return request({ url: '/tpm/offering/' + offeringId, method: 'delete' })
 }
+
+// 确认开课
+export function confirmOffering(offeringId) {
+  return request({ url: '/tpm/offering/confirm/' + offeringId, method: 'put' })
+}
+
+// 取消开课
+export function cancelOffering(offeringId) {
+  return request({ url: '/tpm/offering/cancel/' + offeringId, method: 'put' })
+}

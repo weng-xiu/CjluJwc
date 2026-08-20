@@ -13,26 +13,33 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="maxCoursesPerStudent" column="max_courses_per_student" />
         <result property="roundStatus"          column="round_status"            />
         <result property="status"               column="status"                  />
+        <result property="delFlag"              column="del_flag"                />
         <result property="createBy"             column="create_by"               />
         <result property="createTime"           column="create_time"             />
         <result property="updateBy"             column="update_by"               />
         <result property="updateTime"           column="update_time"             />
         <result property="remark"               column="remark"                  />
+        <result property="semesterName"         column="semester_name"           />
     </resultMap>
     <sql id="selectTpmSelectionRoundVo">
-        select round_id, semester_id, round_name, round_order, start_time, end_time, max_courses_per_student, round_status, status, create_by, create_time, update_by, update_time, remark from tpm_selection_round
+        select r.round_id, r.semester_id, r.round_name, r.round_order, r.start_time, r.end_time, r.max_courses_per_student, r.round_status, r.status, r.del_flag, r.create_by, r.create_time, r.update_by, r.update_time, r.remark,
+        s.semester_name as semester_name
+        from tpm_selection_round r
+        left join brm_semester s on r.semester_id = s.semester_id
     </sql>
     <select id="selectTpmSelectionRoundList" parameterType="TpmSelectionRound" resultMap="TpmSelectionRoundResult">
         <include refid="selectTpmSelectionRoundVo"/>
         <where>
-            <if test="semesterId != null"> and semester_id = #{semesterId}</if>
-            <if test="roundName != null and roundName.trim() != ''"> and round_name like concat('%', #{roundName}, '%')</if>
-            <if test="roundStatus != null and roundStatus.trim() != ''"> and round_status = #{roundStatus}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            r.del_flag = '0'
+            <if test="semesterId != null"> and r.semester_id = #{semesterId}</if>
+            <if test="roundName != null and roundName.trim() != ''"> and r.round_name like concat('%', #{roundName}, '%')</if>
+            <if test="roundStatus != null and roundStatus.trim() != ''"> and r.round_status = #{roundStatus}</if>
+            <if test="status != null and status.trim() != ''"> and r.status = #{status}</if>
         </where>
+        order by r.round_order asc
     </select>
     <select id="selectTpmSelectionRoundByRoundId" parameterType="Long" resultMap="TpmSelectionRoundResult">
-        <include refid="selectTpmSelectionRoundVo"/> where round_id = #{roundId}
+        <include refid="selectTpmSelectionRoundVo"/> where r.round_id = #{roundId} and r.del_flag = '0'
     </select>
     <insert id="insertTpmSelectionRound" parameterType="TpmSelectionRound" useGeneratedKeys="true" keyProperty="roundId">
         insert into tpm_selection_round
@@ -48,6 +55,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="remark != null">remark,</if>
+            del_flag,
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="semesterId != null">#{semesterId},</if>
@@ -61,6 +69,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="remark != null">#{remark},</if>
+            '0',
         </trim>
     </insert>
     <update id="updateTpmSelectionRound" parameterType="TpmSelectionRound">
@@ -80,11 +89,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </trim>
         where round_id = #{roundId}
     </update>
-    <delete id="deleteTpmSelectionRoundByRoundId" parameterType="Long">
-        delete from tpm_selection_round where round_id = #{roundId}
-    </delete>
-    <delete id="deleteTpmSelectionRoundByRoundIds" parameterType="String">
-        delete from tpm_selection_round where round_id in
+    <update id="deleteTpmSelectionRoundByRoundId" parameterType="Long">
+        update tpm_selection_round set del_flag = '2' where round_id = #{roundId}
+    </update>
+    <update id="deleteTpmSelectionRoundByRoundIds" parameterType="String">
+        update tpm_selection_round set del_flag = '2' where round_id in
         <foreach item="roundId" collection="array" open="(" separator="," close=")">#{roundId}</foreach>
-    </delete>
+    </update>
 </mapper>

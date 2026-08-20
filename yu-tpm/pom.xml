@@ -29,6 +29,12 @@
             <artifactId>yu-brm</artifactId>
         </dependency>
 
+        <!-- 学籍学位模块（查询学生专业/院系信息用于选课规则校验）-->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-sam</artifactId>
+        </dependency>
+
         <!-- 框架核心（Redis缓存等）-->
         <dependency>
             <groupId>com.yu</groupId>

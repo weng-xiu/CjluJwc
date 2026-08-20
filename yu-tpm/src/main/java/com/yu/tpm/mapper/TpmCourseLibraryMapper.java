@@ -12,6 +12,7 @@ import com.yu.tpm.domain.TpmCourseLibrary;
 public interface TpmCourseLibraryMapper 
 {
     public TpmCourseLibrary selectTpmCourseLibraryByCourseId(Long courseId);
+    public TpmCourseLibrary selectTpmCourseLibraryByCourseCode(String courseCode);
     public List<TpmCourseLibrary> selectTpmCourseLibraryList(TpmCourseLibrary tpmCourseLibrary);
     public int insertTpmCourseLibrary(TpmCourseLibrary tpmCourseLibrary);
     public int updateTpmCourseLibrary(TpmCourseLibrary tpmCourseLibrary);

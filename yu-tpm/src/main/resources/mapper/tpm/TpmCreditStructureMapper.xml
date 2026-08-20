@@ -12,6 +12,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="minCredit"       column="min_credit"        />
         <result property="description"     column="description"       />
         <result property="status"          column="status"            />
+        <result property="delFlag"         column="del_flag"          />
+        <result property="planName"        column="plan_name"         />
         <result property="createBy"        column="create_by"         />
         <result property="createTime"      column="create_time"       />
         <result property="updateBy"        column="update_by"         />
@@ -19,19 +21,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"          column="remark"            />
     </resultMap>
     <sql id="selectTpmCreditStructureVo">
-        select struct_id, plan_id, credit_type, credit_type_name, required_credit, min_credit, description, status, create_by, create_time, update_by, update_time, remark from tpm_credit_structure
+        select struct_id, plan_id, credit_type, credit_type_name, required_credit, min_credit, description, status, del_flag, create_by, create_time, update_by, update_time, remark from tpm_credit_structure
     </sql>
     <select id="selectTpmCreditStructureList" parameterType="TpmCreditStructure" resultMap="TpmCreditStructureResult">
-        <include refid="selectTpmCreditStructureVo"/>
+        select cs.struct_id, cs.plan_id, cs.credit_type, cs.credit_type_name, cs.required_credit, cs.min_credit, cs.description, cs.status, cs.del_flag, cs.create_by, cs.create_time, cs.update_by, cs.update_time, cs.remark,
+               tp.plan_name as plan_name
+        from tpm_credit_structure cs
+        left join tpm_training_plan tp on cs.plan_id = tp.plan_id
         <where>
-            <if test="planId != null"> and plan_id = #{planId}</if>
-            <if test="creditType != null and creditType.trim() != ''"> and credit_type = #{creditType}</if>
-            <if test="creditTypeName != null and creditTypeName.trim() != ''"> and credit_type_name like concat('%', #{creditTypeName}, '%')</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            cs.del_flag = '0'
+            <if test="planId != null"> and cs.plan_id = #{planId}</if>
+            <if test="creditType != null and creditType.trim() != ''"> and cs.credit_type = #{creditType}</if>
+            <if test="creditTypeName != null and creditTypeName.trim() != ''"> and cs.credit_type_name like concat('%', #{creditTypeName}, '%')</if>
+            <if test="status != null and status.trim() != ''"> and cs.status = #{status}</if>
         </where>
     </select>
     <select id="selectTpmCreditStructureByStructId" parameterType="Long" resultMap="TpmCreditStructureResult">
-        <include refid="selectTpmCreditStructureVo"/> where struct_id = #{structId}
+        <include refid="selectTpmCreditStructureVo"/> where struct_id = #{structId} and del_flag = '0'
     </select>
     <insert id="insertTpmCreditStructure" parameterType="TpmCreditStructure" useGeneratedKeys="true" keyProperty="structId">
         insert into tpm_credit_structure
@@ -77,10 +83,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where struct_id = #{structId}
     </update>
     <delete id="deleteTpmCreditStructureByStructId" parameterType="Long">
-        delete from tpm_credit_structure where struct_id = #{structId}
+        update tpm_credit_structure set del_flag = '2' where struct_id = #{structId}
     </delete>
     <delete id="deleteTpmCreditStructureByStructIds" parameterType="String">
-        delete from tpm_credit_structure where struct_id in
+        update tpm_credit_structure set del_flag = '2' where struct_id in
         <foreach item="structId" collection="array" open="(" separator="," close=")">#{structId}</foreach>
     </delete>
 </mapper>

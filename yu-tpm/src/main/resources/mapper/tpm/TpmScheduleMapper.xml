@@ -14,6 +14,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="endWeek"      column="end_week"       />
         <result property="scheduleType" column="schedule_type"  />
         <result property="status"       column="status"         />
+        <result property="delFlag"      column="del_flag"       />
         <result property="createBy"     column="create_by"      />
         <result property="createTime"   column="create_time"    />
         <result property="updateBy"     column="update_by"      />
@@ -28,22 +29,40 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="buildingName"  column="building_name"  />
         <result property="maxStudents"   column="max_students"   />
         <result property="teacherId"     column="teacher_id"     />
+        <result property="semesterId"    column="semester_id"    />
     </resultMap>
     <sql id="selectTpmScheduleVo">
-        select schedule_id, offering_id, classroom_id, week_day, start_period, end_period, start_week, end_week, schedule_type, status, create_by, create_time, update_by, update_time, remark from tpm_schedule
+        select schedule_id, offering_id, classroom_id, week_day, start_period, end_period, start_week, end_week, schedule_type, status, del_flag, create_by, create_time, update_by, update_time, remark from tpm_schedule
     </sql>
-    <select id="selectTpmScheduleList" parameterType="TpmSchedule" resultMap="TpmScheduleResult">
-        <include refid="selectTpmScheduleVo"/>
+    <select id="selectTpmScheduleList" parameterType="TpmSchedule" resultMap="TpmScheduleWithInfoResult">
+        select s.schedule_id, s.offering_id, s.classroom_id, s.week_day, s.start_period, s.end_period,
+               s.start_week, s.end_week, s.schedule_type, s.status, s.del_flag, s.create_by, s.create_time, s.update_by, s.update_time, s.remark,
+               cl.course_name as course_name,
+               t.teacher_name as teacher_name,
+               cr.classroom_name as classroom_name,
+               b.building_name as building_name,
+               o.max_students as max_students,
+               o.teacher_id as teacher_id,
+               o.semester_id as semester_id
+        from tpm_schedule s
+        inner join tpm_course_offering o on s.offering_id = o.offering_id
+        left join tpm_course_library cl on o.course_id = cl.course_id
+        left join brm_teacher t on o.teacher_id = t.teacher_id
+        left join brm_classroom cr on s.classroom_id = cr.classroom_id
+        left join brm_building b on cr.building_id = b.building_id
         <where>
-            <if test="offeringId != null"> and offering_id = #{offeringId}</if>
-            <if test="classroomId != null"> and classroom_id = #{classroomId}</if>
-            <if test="weekDay != null"> and week_day = #{weekDay}</if>
-            <if test="scheduleType != null and scheduleType.trim() != ''"> and schedule_type = #{scheduleType}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            s.del_flag = '0' and o.del_flag = '0'
+            <if test="offeringId != null"> and s.offering_id = #{offeringId}</if>
+            <if test="classroomId != null"> and s.classroom_id = #{classroomId}</if>
+            <if test="weekDay != null"> and s.week_day = #{weekDay}</if>
+            <if test="semesterId != null"> and o.semester_id = #{semesterId}</if>
+            <if test="scheduleType != null and scheduleType.trim() != ''"> and s.schedule_type = #{scheduleType}</if>
+            <if test="status != null and status.trim() != ''"> and s.status = #{status}</if>
         </where>
+        order by s.week_day, s.start_period
     </select>
     <select id="selectTpmScheduleByScheduleId" parameterType="Long" resultMap="TpmScheduleResult">
-        <include refid="selectTpmScheduleVo"/> where schedule_id = #{scheduleId}
+        <include refid="selectTpmScheduleVo"/> where schedule_id = #{scheduleId} and del_flag = '0'
     </select>
     <insert id="insertTpmSchedule" parameterType="TpmSchedule" useGeneratedKeys="true" keyProperty="scheduleId">
         insert into tpm_schedule
@@ -94,18 +113,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </trim>
         where schedule_id = #{scheduleId}
     </update>
-    <delete id="deleteTpmScheduleByScheduleId" parameterType="Long">
-        delete from tpm_schedule where schedule_id = #{scheduleId}
-    </delete>
-    <delete id="deleteTpmScheduleByScheduleIds" parameterType="String">
-        delete from tpm_schedule where schedule_id in
+    <update id="deleteTpmScheduleByScheduleId" parameterType="Long">
+        update tpm_schedule set del_flag = '2' where schedule_id = #{scheduleId}
+    </update>
+    <update id="deleteTpmScheduleByScheduleIds" parameterType="String">
+        update tpm_schedule set del_flag = '2' where schedule_id in
         <foreach item="scheduleId" collection="array" open="(" separator="," close=")">#{scheduleId}</foreach>
-    </delete>
+    </update>
 
     <!-- 按学期查询所有排课（含课程名、教师名、教室名等关联信息） -->
     <select id="selectSchedulesBySemester" resultMap="TpmScheduleWithInfoResult">
         select s.schedule_id, s.offering_id, s.classroom_id, s.week_day, s.start_period, s.end_period,
-               s.start_week, s.end_week, s.schedule_type, s.status,
+               s.start_week, s.end_week, s.schedule_type, s.status, s.del_flag,
                cl.course_name as course_name,
                t.teacher_name as teacher_name,
                cr.classroom_name as classroom_name,
@@ -118,29 +137,49 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         left join brm_teacher t on o.teacher_id = t.teacher_id
         left join brm_classroom cr on s.classroom_id = cr.classroom_id
         left join brm_building b on cr.building_id = b.building_id
-        where o.semester_id = #{semesterId}
+        where s.del_flag = '0' and o.del_flag = '0'
+          and o.semester_id = #{semesterId}
         order by s.week_day, s.start_period
     </select>
 
     <!-- 查询某教室指定时间段的排课（用于冲突检测） -->
     <select id="selectByClassroomAndTime" resultMap="TpmScheduleResult">
         <include refid="selectTpmScheduleVo"/>
-        where classroom_id = #{classroomId}
+        where del_flag = '0'
+          and classroom_id = #{classroomId}
           and week_day = #{weekDay}
           and not (end_period &lt; #{startPeriod} or start_period &gt; #{endPeriod})
+    </select>
+
+    <!-- 查询某教师指定星期几和节次有重叠的排课（用于教师冲突校验） -->
+    <select id="selectByTeacherAndTime" resultMap="TpmScheduleWithInfoResult">
+        select s.schedule_id, s.offering_id, s.classroom_id, s.week_day, s.start_period, s.end_period,
+               s.start_week, s.end_week, s.schedule_type, s.status, s.del_flag,
+               cl.course_name as course_name,
+               t.teacher_name as teacher_name,
+               o.teacher_id as teacher_id
+        from tpm_schedule s
+        inner join tpm_course_offering o on s.offering_id = o.offering_id
+        left join tpm_course_library cl on o.course_id = cl.course_id
+        left join brm_teacher t on o.teacher_id = t.teacher_id
+        where s.del_flag = '0' and o.del_flag = '0'
+          and o.teacher_id = #{teacherId}
+          and s.week_day = #{weekDay}
+          and not (s.end_period &lt; #{startPeriod} or s.start_period &gt; #{endPeriod})
     </select>
 
     <!-- 查询未分配教室的排课（含开课容量信息） -->
     <select id="selectUnassignedSchedules" resultMap="TpmScheduleWithInfoResult">
         select s.schedule_id, s.offering_id, s.classroom_id, s.week_day, s.start_period, s.end_period,
-               s.start_week, s.end_week, s.schedule_type, s.status,
+               s.start_week, s.end_week, s.schedule_type, s.status, s.del_flag,
                cl.course_name as course_name,
                o.max_students as max_students
                , o.teacher_id as teacher_id
         from tpm_schedule s
         inner join tpm_course_offering o on s.offering_id = o.offering_id
         left join tpm_course_library cl on o.course_id = cl.course_id
-        where o.semester_id = #{semesterId}
+        where s.del_flag = '0' and o.del_flag = '0'
+          and o.semester_id = #{semesterId}
           and (s.classroom_id is null)
         order by o.max_students desc
     </select>
@@ -148,14 +187,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 根据多个开课ID批量查询排课信息 -->
     <select id="selectByOfferingIds" resultMap="TpmScheduleResult">
         <include refid="selectTpmScheduleVo"/>
-        where offering_id in
+        where del_flag = '0' and offering_id in
         <foreach item="offeringId" collection="offeringIds" open="(" separator="," close=")">#{offeringId}</foreach>
     </select>
 
     <!-- 根据教室和时间范围查询排课（用于教室占用检测） -->
     <select id="selectByClassroomAndTimeRange" resultMap="TpmScheduleResult">
         <include refid="selectTpmScheduleVo"/>
-        where classroom_id = #{classroomId}
+        where del_flag = '0'
+        and classroom_id = #{classroomId}
         and week_day = #{weekDay}
         and start_period &lt;= #{endPeriod}
         and end_period &gt;= #{startPeriod}

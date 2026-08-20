@@ -49,6 +49,9 @@ public class TpmSelectionRule extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 删除标志（0代表存在 2代表删除） */
+    private String delFlag;
+
     public Long getRuleId() { return ruleId; }
     public void setRuleId(Long ruleId) { this.ruleId = ruleId; }
 
@@ -77,6 +80,9 @@ public class TpmSelectionRule extends BaseEntity
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getDelFlag() { return delFlag; }
+    public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
 
     @Override
     public String toString() {

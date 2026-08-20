@@ -84,4 +84,26 @@ public class TpmSelectionRoundController extends BaseController
     {
         return toAjax(tpmSelectionRoundService.deleteTpmSelectionRoundByRoundIds(roundIds));
     }
+
+    /**
+     * 开启选课轮次
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:round:edit')")
+    @Log(title = "开启选课轮次", businessType = BusinessType.UPDATE)
+    @PutMapping("/start/{roundId}")
+    public AjaxResult start(@PathVariable Long roundId)
+    {
+        return toAjax(tpmSelectionRoundService.startRound(roundId));
+    }
+
+    /**
+     * 结束选课轮次
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:round:edit')")
+    @Log(title = "结束选课轮次", businessType = BusinessType.UPDATE)
+    @PutMapping("/finish/{roundId}")
+    public AjaxResult finish(@PathVariable Long roundId)
+    {
+        return toAjax(tpmSelectionRoundService.finishRound(roundId));
+    }
 }

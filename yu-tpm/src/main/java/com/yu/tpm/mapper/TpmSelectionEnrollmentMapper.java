@@ -35,4 +35,13 @@ public interface TpmSelectionEnrollmentMapper
      * @return 选课记录列表
      */
     public List<TpmSelectionEnrollment> selectByStudentAndRound(@Param("studentId") Long studentId, @Param("roundId") Long roundId);
+
+    /**
+     * 统计学生已完成（选中）的指定课程数量（先修课校验用）
+     *
+     * @param studentId 学生ID
+     * @param courseIds 课程ID列表
+     * @return 已完成的课程门数
+     */
+    public int countCompletedCourses(@Param("studentId") Long studentId, @Param("courseIds") List<Long> courseIds);
 }

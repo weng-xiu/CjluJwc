@@ -49,6 +49,13 @@ public class TpmCreditStructure extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 删除标志（0代表存在 2代表删除） */
+    private String delFlag;
+
+    /** 所属培养方案名称（非持久化） */
+    @Excel(name = "所属方案")
+    private String planName;
+
     public Long getStructId() { return structId; }
     public void setStructId(Long structId) { this.structId = structId; }
 
@@ -78,6 +85,12 @@ public class TpmCreditStructure extends BaseEntity
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
+    public String getDelFlag() { return delFlag; }
+    public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
+
+    public String getPlanName() { return planName; }
+    public void setPlanName(String planName) { this.planName = planName; }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -89,6 +102,8 @@ public class TpmCreditStructure extends BaseEntity
             .append("minCredit", getMinCredit())
             .append("description", getDescription())
             .append("status", getStatus())
+            .append("delFlag", getDelFlag())
+            .append("planName", getPlanName())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

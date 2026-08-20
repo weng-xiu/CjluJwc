@@ -58,6 +58,13 @@ public class TpmSelectionRound extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 删除标志（0代表存在 2代表删除） */
+    private String delFlag;
+
+    /** 学期名称（关联查询，非持久化） */
+    @Excel(name = "学期名称")
+    private String semesterName;
+
     public Long getRoundId() { return roundId; }
     public void setRoundId(Long roundId) { this.roundId = roundId; }
 
@@ -89,6 +96,12 @@ public class TpmSelectionRound extends BaseEntity
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getDelFlag() { return delFlag; }
+    public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
+
+    public String getSemesterName() { return semesterName; }
+    public void setSemesterName(String semesterName) { this.semesterName = semesterName; }
 
     @Override
     public String toString() {

@@ -77,21 +77,60 @@
 
 ## 快速开始
 
+### 环境准备
+
+启动前请确保已安装并运行以下服务：
+
+- **JDK 17+**、**Maven 3.8+**
+- **MySQL 8.x**：创建数据库（默认库名 `yu-CjluJwc`），并导入 `sql/` 目录下的 SQL 脚本。
+- **Redis 5.x+**：默认连接 `127.0.0.1:6379`，无密码。
+- **Node.js 16+**、**npm 8+**
+
+### 配置说明
+
+后端核心配置位于 `yu-admin/src/main/resources/`：
+
+- `application-druid.yml`：数据库连接配置，默认 `localhost:3306`，库名 `yu-CjluJwc`，用户名/密码 `root/123456`。
+- `application.yml`：服务端口、Redis、文件上传路径等配置，后端默认端口 `8080`。
+
+以上配置均支持通过环境变量覆盖，无需改动文件即可适配不同环境：
+
+| 环境变量 | 说明 | 默认值 |
+|---|---|---|
+| `DB_HOST` / `DB_PORT` / `DB_NAME` | 数据库地址、端口、库名 | `localhost` / `3306` / `yu-CjluJwc` |
+| `DB_USER` / `DB_PASSWORD` | 数据库用户名、密码 | `root` / `123456` |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | Redis 地址、端口、密码 | `127.0.0.1` / `6379` / （空） |
+| `RUIYI_PROFILE` | 文件上传存储路径 | Windows 下为项目内 `ruoyi/uploadPath` |
+
 ### 后端启动
 
-1. 创建数据库并导入 `sql/` 目录下的 SQL 文件。
-2. 修改 `yu-admin/src/main/resources/application-druid.yml` 中的数据库连接配置。
-3. 修改 `yu-admin/src/main/resources/application.yml` 中的 Redis 连接配置。
-4. 在项目根目录执行：
+**方式一：Maven 命令**
+
+在项目根目录执行：
 
 ```bash
 mvn clean install
 mvn spring-boot:run -pl yu-admin
 ```
 
+**方式二：启动脚本（Windows）**
+
+```bash
+ry.bat
+```
+
+或使用 `bin/start-backend.bat`。
+
+启动成功后，后端服务运行在 `http://localhost:8080`：
+
+- 接口文档（Swagger）：`http://localhost:8080/swagger-ui.html`
+- Druid 监控控制台：`http://localhost:8080/druid`（默认账号 `ruoyi` / `123456`）
+
 ### 前端启动
 
-管理端：
+项目包含两个独立的前端工程，分别对应后台管理端与师生门户端，均可独立启动。前端默认将 `/dev-api` 前缀的请求代理至 `http://localhost:8080`，因此**请先启动后端**。
+
+#### 管理端（yu-ui）
 
 ```bash
 cd yu-ui
@@ -99,13 +138,33 @@ npm install
 npm run dev
 ```
 
-门户端：
+- 默认端口：`80`，访问地址：`http://localhost`
+- 页面标题：长江大学教务处
+
+#### 门户端（yu-portal-ui）
 
 ```bash
 cd yu-portal-ui
 npm install
 npm run dev
 ```
+
+- 默认端口：`81`，访问地址：`http://localhost:81`
+- 页面标题：师生互动服务门户
+
+#### 前端构建
+
+```bash
+# 管理端生产构建（产物在 yu-ui/dist）
+cd yu-ui
+npm run build:prod
+
+# 门户端生产构建（产物在 yu-portal-ui/dist）
+cd yu-portal-ui
+npm run build:prod
+```
+
+> 提示：若 `80` / `81` 端口被占用，可设置 `port` 环境变量，或修改对应 `vue.config.js` 中的 `port`。
 
 ## 项目结构
 

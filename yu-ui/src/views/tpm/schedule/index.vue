@@ -1,8 +1,21 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="开课ID" prop="offeringId"><el-input v-model="queryParams.offeringId" placeholder="请输入开课ID" clearable @keyup.enter.native="handleQuery"/></el-form-item>
-      <el-form-item label="教室ID" prop="classroomId"><el-input v-model="queryParams.classroomId" placeholder="请输入教室ID" clearable @keyup.enter.native="handleQuery"/></el-form-item>
+      <el-form-item label="学期" prop="semesterId">
+        <el-select v-model="queryParams.semesterId" placeholder="请选择学期" clearable filterable>
+          <el-option v-for="item in semesterOptions" :key="item.semesterId" :label="item.semesterName" :value="item.semesterId" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="开课" prop="offeringId">
+        <el-select v-model="queryParams.offeringId" placeholder="请选择开课" clearable filterable>
+          <el-option v-for="item in offeringOptions" :key="item.offeringId" :label="offeringLabel(item)" :value="item.offeringId" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="教室" prop="classroomId">
+        <el-select v-model="queryParams.classroomId" placeholder="请选择教室" clearable filterable>
+          <el-option v-for="item in classroomOptions" :key="item.classroomId" :label="item.classroomName" :value="item.classroomId" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="状态" prop="status"><el-select v-model="queryParams.status" placeholder="请选择状态" clearable><el-option v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.label" :value="dict.value"/></el-select></el-form-item>
       <el-form-item><el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button><el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
@@ -17,23 +30,23 @@
     </el-row>
     <el-table v-loading="loading" :data="scheduleList" @selection-change="handleSelectionChange" :row-class-name="tableRowClassName">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="排课ID" align="center" prop="scheduleId" width="80" />
-      <el-table-column label="课程名称" align="center" prop="courseName" min-width="120" />
-      <el-table-column label="教师" align="center" prop="teacherName" width="100" />
-      <el-table-column label="教室" align="center" prop="classroomName" width="120" />
-      <el-table-column label="教学楼" align="center" prop="buildingName" width="100" />
-      <el-table-column label="星期" align="center" prop="weekDay" width="70">
-        <template slot-scope="scope">{{ weekDayLabel(scope.row.weekDay) }}</template>
+      <el-table-column label="课程名称" align="center" prop="courseName" min-width="140" show-overflow-tooltip />
+      <el-table-column label="教师" align="center" prop="teacherName" width="100" show-overflow-tooltip />
+      <el-table-column label="教室" align="center" prop="classroomName" width="120" show-overflow-tooltip />
+      <el-table-column label="教学楼" align="center" prop="buildingName" width="110" show-overflow-tooltip />
+      <el-table-column label="上课时间" align="center" width="180">
+        <template slot-scope="scope">
+          <span>{{ weekDayLabel(scope.row.weekDay) }} 第{{ scope.row.startPeriod }}-{{ scope.row.endPeriod }}节（第{{ scope.row.startWeek }}-{{ scope.row.endWeek }}周）</span>
+        </template>
       </el-table-column>
-      <el-table-column label="节次" align="center" width="100">
-        <template slot-scope="scope">{{ scope.row.startPeriod }}-{{ scope.row.endPeriod }}节</template>
+      <el-table-column label="排课方式" align="center" prop="scheduleType" width="90">
+        <template slot-scope="scope"><dict-tag :options="dict.type.tpm_schedule_type" :value="scope.row.scheduleType" /></template>
       </el-table-column>
-      <el-table-column label="周次" align="center" width="100">
-        <template slot-scope="scope">{{ scope.row.startWeek }}-{{ scope.row.endWeek }}周</template>
-      </el-table-column>
-      <el-table-column label="排课方式" align="center" prop="scheduleType" width="80" />
       <el-table-column label="状态" align="center" prop="status" width="70"><template slot-scope="scope"><dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/></template></el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150">
+      <el-table-column label="创建时间" align="center" prop="createTime" width="160">
+        <template slot-scope="scope"><span>{{ parseTime(scope.row.createTime) }}</span></template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="180">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['tpm:schedule:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-office-building" @click="handleRecommendClassroom(scope.row)" v-hasPermi="['tpm:schedule:findClassroom']">推荐教室</el-button>
@@ -46,25 +59,34 @@
     <!-- 新增/修改对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="开课ID" prop="offeringId"><el-input v-model="form.offeringId" placeholder="请输入开课ID" /></el-form-item>
-        <el-form-item label="教室ID" prop="classroomId">
-          <el-input v-model="form.classroomId" placeholder="请输入教室ID">
-            <el-button slot="append" icon="el-icon-search" @click="openClassroomRecommend">推荐</el-button>
-          </el-input>
+        <el-form-item label="开课" prop="offeringId">
+          <el-select v-model="form.offeringId" placeholder="请选择开课（课程名-教师名）" filterable clearable style="width:100%">
+            <el-option v-for="item in offeringOptions" :key="item.offeringId" :label="offeringLabel(item)" :value="item.offeringId" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="教室" prop="classroomId">
+          <el-select v-model="form.classroomId" placeholder="请选择教室" filterable clearable style="width:calc(100% - 90px)">
+            <el-option v-for="item in classroomOptions" :key="item.classroomId" :label="item.classroomName" :value="item.classroomId" />
+          </el-select>
+          <el-button type="primary" plain icon="el-icon-search" style="margin-left:10px" @click="openClassroomRecommend">推荐</el-button>
         </el-form-item>
         <el-row :gutter="20">
           <el-col :span="12"><el-form-item label="星期几" prop="weekDay">
-            <el-select v-model="form.weekDay" placeholder="请选择"><el-option v-for="d in weekDayOptions" :key="d.value" :label="d.label" :value="d.value"/></el-select>
+            <el-select v-model="form.weekDay" placeholder="请选择" style="width:100%"><el-option v-for="d in weekDayOptions" :key="d.value" :label="d.label" :value="d.value"/></el-select>
           </el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="排课方式" prop="scheduleType"><el-input v-model="form.scheduleType" placeholder="manual/auto" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="排课方式" prop="scheduleType">
+            <el-radio-group v-model="form.scheduleType">
+              <el-radio v-for="dict in dict.type.tpm_schedule_type" :key="dict.value" :label="dict.value">{{ dict.label }}</el-radio>
+            </el-radio-group>
+          </el-form-item></el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="12"><el-form-item label="开始节次" prop="startPeriod"><el-input-number v-model="form.startPeriod" :min="1" :max="12" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="结束节次" prop="endPeriod"><el-input-number v-model="form.endPeriod" :min="1" :max="12" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="开始节次" prop="startPeriod"><el-input-number v-model="form.startPeriod" :min="1" :max="12" controls-position="right" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="结束节次" prop="endPeriod"><el-input-number v-model="form.endPeriod" :min="1" :max="12" controls-position="right" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="12"><el-form-item label="起始周" prop="startWeek"><el-input-number v-model="form.startWeek" :min="1" :max="20" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="结束周" prop="endWeek"><el-input-number v-model="form.endWeek" :min="1" :max="20" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="起始周" prop="startWeek"><el-input-number v-model="form.startWeek" :min="1" :max="30" controls-position="right" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="结束周" prop="endWeek"><el-input-number v-model="form.endWeek" :min="1" :max="30" controls-position="right" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
@@ -81,8 +103,8 @@
         <el-table :data="conflictList" border size="small" max-height="400">
           <el-table-column label="冲突类型" align="center" width="100">
             <template slot-scope="scope">
-              <el-tag :type="scope.row.conflictType === 'CLASSROOM_CONFLICT' ? 'danger' : 'warning'" size="small">
-                {{ scope.row.conflictType === 'CLASSROOM_CONFLICT' ? '教室冲突' : '教师冲突' }}
+              <el-tag :type="scope.row.conflictType === 'CLASSROOM_CONFLICT' ? 'danger' : (scope.row.conflictType === 'TEACHER_CONFLICT' ? 'warning' : 'info')" size="small">
+                {{ scope.row.conflictType === 'CLASSROOM_CONFLICT' ? '教室冲突' : (scope.row.conflictType === 'TEACHER_CONFLICT' ? '教师冲突' : '班级冲突') }}
               </el-tag>
             </template>
           </el-table-column>
@@ -96,6 +118,21 @@
         </el-table>
       </div>
       <div slot="footer"><el-button type="primary" @click="conflictDialogVisible = false">关 闭</el-button></div>
+    </el-dialog>
+
+    <!-- 学期选择对话框（用于冲突检测/自动分配） -->
+    <el-dialog title="选择学期" :visible.sync="semesterDialogVisible" width="400px" append-to-body>
+      <el-form label-width="80px">
+        <el-form-item label="学期">
+          <el-select v-model="semesterDialogValue" placeholder="请选择学期" filterable clearable style="width:100%">
+            <el-option v-for="item in semesterOptions" :key="item.semesterId" :label="item.semesterName" :value="item.semesterId" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer">
+        <el-button type="primary" @click="confirmSemesterAction">确 定</el-button>
+        <el-button @click="semesterDialogVisible = false">取 消</el-button>
+      </div>
     </el-dialog>
 
     <!-- 推荐教室对话框 -->
@@ -117,7 +154,7 @@
     </el-dialog>
 
     <!-- 自动分配结果对话框 -->
-    <el-dialog title="自动分配教室结果" :visible.sync="autoAssignDialogVisible" width="600px" append-to-body>
+    <el-dialog title="自动分配教室结果" :visible.sync="autoAssignDialogVisible" width="650px" append-to-body>
       <div v-if="autoAssignResult">
         <el-descriptions :column="2" border size="small" style="margin-bottom:15px">
           <el-descriptions-item label="总排课数">{{ autoAssignResult.totalCount }}</el-descriptions-item>
@@ -127,11 +164,10 @@
         </el-descriptions>
         <div v-if="autoAssignResult.failReasons && autoAssignResult.failReasons.length > 0">
           <el-alert title="失败原因" type="warning" :closable="false" show-icon style="margin-bottom:8px" />
-          <el-scrollbar style="max-height:200px">
-            <ul style="padding-left:20px;margin:0">
-              <li v-for="(reason, idx) in autoAssignResult.failReasons" :key="idx" style="color:#909399;font-size:12px;line-height:1.8">{{ reason }}</li>
-            </ul>
-          </el-scrollbar>
+          <el-table :data="failReasonRows" border size="small" max-height="260">
+            <el-table-column label="序号" type="index" width="60" align="center" />
+            <el-table-column label="失败原因" prop="reason" show-overflow-tooltip />
+          </el-table>
         </div>
       </div>
       <div slot="footer"><el-button type="primary" @click="autoAssignDialogVisible = false">关 闭</el-button></div>
@@ -140,17 +176,26 @@
 </template>
 <script>
 import { listSchedule, getSchedule, delSchedule, addSchedule, updateSchedule } from "@/api/tpm/schedule"
+import { listOffering } from "@/api/tpm/offering"
+import { listClassroom } from "@/api/brm/classroom"
+import { listSemester } from "@/api/brm/semester"
 import { detectConflicts, findAvailableClassrooms, autoAssignClassrooms } from "@/api/tpm/scheduleOpt"
 export default {
-  name: "Schedule", dicts: ['sys_normal_disable'],
+  name: "Schedule", dicts: ['sys_normal_disable', 'tpm_schedule_type'],
   data() {
     return {
       loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0,
       scheduleList: [], title: "", open: false,
+      // 下拉选项
+      offeringOptions: [], classroomOptions: [], semesterOptions: [],
       // 冲突相关
       conflictIds: new Set(),
       conflictList: [],
       conflictDialogVisible: false,
+      // 学期选择对话框
+      semesterDialogVisible: false,
+      semesterDialogValue: null,
+      semesterAction: null, // 'detect' | 'autoAssign'
       // 教室推荐相关
       classroomDialogVisible: false,
       classroomLoading: false,
@@ -165,13 +210,30 @@ export default {
         { value: 1, label: '周一' }, { value: 2, label: '周二' }, { value: 3, label: '周三' },
         { value: 4, label: '周四' }, { value: 5, label: '周五' }, { value: 6, label: '周六' }, { value: 7, label: '周日' }
       ],
-      queryParams: { pageNum: 1, pageSize: 10, offeringId: null, classroomId: null, status: null },
+      queryParams: { pageNum: 1, pageSize: 10, semesterId: null, offeringId: null, classroomId: null, status: null },
       form: {},
-      rules: { offeringId: [{ required: true, message: "开课ID不能为空", trigger: "blur" }] }
+      rules: { offeringId: [{ required: true, message: "开课不能为空", trigger: "change" }] }
     }
   },
-  created() { this.getList() },
+  computed: {
+    failReasonRows() {
+      const reasons = (this.autoAssignResult && this.autoAssignResult.failReasons) || []
+      return reasons.map(r => ({ reason: r }))
+    }
+  },
+  created() { this.getList(); this.loadOptions() },
   methods: {
+    offeringLabel(item) {
+      if (!item) return ''
+      const course = item.courseName || ''
+      const teacher = item.teacherName ? '-' + item.teacherName : ''
+      return course + teacher
+    },
+    loadOptions() {
+      listOffering({ pageNum: 1, pageSize: 1000 }).then(res => { this.offeringOptions = res.rows || [] })
+      listClassroom({ pageNum: 1, pageSize: 1000 }).then(res => { this.classroomOptions = res.rows || [] })
+      listSemester({ pageNum: 1, pageSize: 1000 }).then(res => { this.semesterOptions = res.rows || [] })
+    },
     weekDayLabel(day) {
       const labels = { 1:'周一', 2:'周二', 3:'周三', 4:'周四', 5:'周五', 6:'周六', 7:'周日' }
       return labels[day] || day
@@ -190,7 +252,7 @@ export default {
     },
     cancel() { this.open = false; this.reset() },
     reset() {
-      this.form = { scheduleId: null, offeringId: null, classroomId: null, weekDay: null, startPeriod: null, endPeriod: null, startWeek: null, endWeek: null, scheduleType: null, status: "0" }
+      this.form = { scheduleId: null, offeringId: null, classroomId: null, weekDay: null, startPeriod: null, endPeriod: null, startWeek: null, endWeek: null, scheduleType: "manual", status: "0" }
       this.resetForm("form")
     },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
@@ -221,17 +283,27 @@ export default {
 
     /** 冲突检测 */
     handleDetectConflicts() {
-      this.$prompt('请输入要检测的学期ID', '排课冲突检测', {
-        confirmButtonText: '检测',
-        cancelButtonText: '取消',
-        inputPattern: /^[1-9]\d*$/,
-        inputErrorMessage: '学期ID必须为正整数'
-      }).then(({ value }) => {
+      this.semesterAction = 'detect'
+      this.semesterDialogValue = null
+      this.semesterDialogVisible = true
+    },
+
+    /** 自动分配教室 */
+    handleAutoAssign() {
+      this.semesterAction = 'autoAssign'
+      this.semesterDialogValue = null
+      this.semesterDialogVisible = true
+    },
+
+    confirmSemesterAction() {
+      if (!this.semesterDialogValue) { this.$modal.msgWarning("请选择学期"); return }
+      const semesterId = this.semesterDialogValue
+      this.semesterDialogVisible = false
+      if (this.semesterAction === 'detect') {
         this.$modal.loading("正在检测排课冲突...")
-        detectConflicts(parseInt(value)).then(response => {
+        detectConflicts(semesterId).then(response => {
           this.$modal.closeLoading()
           this.conflictList = response.data || []
-          // 标记冲突行
           this.conflictIds = new Set()
           this.conflictList.forEach(c => {
             if (c.scheduleId1) this.conflictIds.add(c.scheduleId1)
@@ -239,7 +311,17 @@ export default {
           })
           this.conflictDialogVisible = true
         }).catch(() => { this.$modal.closeLoading() })
-      }).catch(() => {})
+      } else if (this.semesterAction === 'autoAssign') {
+        this.$modal.confirm('自动分配将为该学期所有未分配教室的排课自动匹配教室，是否继续？').then(() => {
+          this.$modal.loading("正在自动分配教室...")
+          autoAssignClassrooms(semesterId).then(response => {
+            this.$modal.closeLoading()
+            this.autoAssignResult = response.data
+            this.autoAssignDialogVisible = true
+            this.getList()
+          }).catch(() => { this.$modal.closeLoading() })
+        }).catch(() => {})
+      }
     },
 
     /** 推荐教室 - 从表格操作列触发 */
@@ -249,7 +331,7 @@ export default {
       this.classroomQuery.endPeriod = row.endPeriod
       this.classroomQuery.startWeek = row.startWeek
       this.classroomQuery.endWeek = row.endWeek
-      this.classroomQuery.minCapacity = 30
+      this.classroomQuery.minCapacity = row.maxStudents || 30
       this.selectedClassroom = null
       this.availableClassrooms = []
       this.classroomDialogVisible = true
@@ -304,39 +386,20 @@ export default {
     confirmClassroomSelect() {
       if (!this.selectedClassroom) return
       const cr = this.selectedClassroom
-      if (this._recommendTargetRow) {
-        // 从表格操作列触发，直接更新该行的教室ID
-        this.form.classroomId = cr.classroomId
-        // 如果表单未打开，提示用户手动修改
-        if (!this.open) {
-          this.$modal.msgSuccess(`推荐教室：${cr.classroomName}（${cr.buildingName}，容量${cr.capacity}），请在修改排课时使用`)
-        }
+      const targetRow = this._recommendTargetRow
+      if (targetRow && !this.open) {
+        // 从表格操作列触发且表单未打开：直接持久化该行的教室ID
+        updateSchedule({ scheduleId: targetRow.scheduleId, classroomId: cr.classroomId }).then(() => {
+          this.$modal.msgSuccess(`已为该排课分配教室：${cr.classroomName}（${cr.buildingName || ''}，容量${cr.capacity}）`)
+          this.classroomDialogVisible = false
+          this.getList()
+        })
       } else {
-        // 从表单推荐按钮触发，直接填入form
+        // 表单已打开（或从表单推荐按钮触发）：填入form
         this.form.classroomId = cr.classroomId
         this.$modal.msgSuccess(`已选择教室：${cr.classroomName}`)
+        this.classroomDialogVisible = false
       }
-      this.classroomDialogVisible = false
-    },
-
-    /** 自动分配教室 */
-    handleAutoAssign() {
-      this.$prompt('请输入要自动分配教室的学期ID', '自动排教室', {
-        confirmButtonText: '开始分配',
-        cancelButtonText: '取消',
-        inputPattern: /^[1-9]\d*$/,
-        inputErrorMessage: '学期ID必须为正整数'
-      }).then(({ value }) => {
-        this.$modal.confirm('自动分配将为该学期所有未分配教室的排课自动匹配教室，是否继续？').then(() => {
-          this.$modal.loading("正在自动分配教室...")
-          autoAssignClassrooms(parseInt(value)).then(response => {
-            this.$modal.closeLoading()
-            this.autoAssignResult = response.data
-            this.autoAssignDialogVisible = true
-            this.getList()
-          }).catch(() => { this.$modal.closeLoading() })
-        }).catch(() => {})
-      }).catch(() => {})
     }
   }
 }

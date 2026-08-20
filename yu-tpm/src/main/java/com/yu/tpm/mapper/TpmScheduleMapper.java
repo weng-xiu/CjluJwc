@@ -49,4 +49,18 @@ public interface TpmScheduleMapper
      * @return 排课列表
      */
     public List<TpmSchedule> selectByClassroomAndTimeRange(@Param("classroomId") Long classroomId, @Param("weekDay") Integer weekDay, @Param("startPeriod") Integer startPeriod, @Param("endPeriod") Integer endPeriod);
+
+    /**
+     * 查询某教师在指定星期几和节次有重叠的排课（用于教师冲突校验）
+     *
+     * @param teacherId   教师ID
+     * @param weekDay     星期几
+     * @param startPeriod 开始节次
+     * @param endPeriod   结束节次
+     * @return 排课列表
+     */
+    public List<TpmSchedule> selectByTeacherAndTime(@Param("teacherId") Long teacherId,
+                                                    @Param("weekDay") Integer weekDay,
+                                                    @Param("startPeriod") Integer startPeriod,
+                                                    @Param("endPeriod") Integer endPeriod);
 }

@@ -64,6 +64,17 @@ public class TpmTrainingPlan extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 删除标志（0代表存在 2代表删除） */
+    private String delFlag;
+
+    /** 所属专业名称（非持久化） */
+    @Excel(name = "所属专业")
+    private String majorName;
+
+    /** 所属院系名称（非持久化） */
+    @Excel(name = "所属院系")
+    private String deptName;
+
     public Long getPlanId() { return planId; }
     public void setPlanId(Long planId) { this.planId = planId; }
 
@@ -99,6 +110,15 @@ public class TpmTrainingPlan extends BaseEntity
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
+    public String getDelFlag() { return delFlag; }
+    public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
+
+    public String getMajorName() { return majorName; }
+    public void setMajorName(String majorName) { this.majorName = majorName; }
+
+    public String getDeptName() { return deptName; }
+    public void setDeptName(String deptName) { this.deptName = deptName; }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -113,6 +133,9 @@ public class TpmTrainingPlan extends BaseEntity
             .append("publishDate", getPublishDate())
             .append("version", getVersion())
             .append("status", getStatus())
+            .append("delFlag", getDelFlag())
+            .append("majorName", getMajorName())
+            .append("deptName", getDeptName())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

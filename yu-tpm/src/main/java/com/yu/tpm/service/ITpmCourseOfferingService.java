@@ -17,4 +17,20 @@ public interface ITpmCourseOfferingService
     public int updateTpmCourseOffering(TpmCourseOffering tpmCourseOffering);
     public int deleteTpmCourseOfferingByOfferingIds(Long[] offeringIds);
     public int deleteTpmCourseOfferingByOfferingId(Long offeringId);
+
+    /**
+     * 确认开课：将开课状态置为已确认(1)
+     *
+     * @param offeringId 开课ID
+     * @return 结果
+     */
+    public int confirmOffering(Long offeringId);
+
+    /**
+     * 取消开课：将开课状态置为已取消(2)
+     *
+     * @param offeringId 开课ID
+     * @return 结果
+     */
+    public int cancelOffering(Long offeringId);
 }

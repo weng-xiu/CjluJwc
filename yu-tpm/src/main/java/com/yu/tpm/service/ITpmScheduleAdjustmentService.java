@@ -17,4 +17,20 @@ public interface ITpmScheduleAdjustmentService
     public int updateTpmScheduleAdjustment(TpmScheduleAdjustment tpmScheduleAdjustment);
     public int deleteTpmScheduleAdjustmentByAdjustIds(Long[] adjustIds);
     public int deleteTpmScheduleAdjustmentByAdjustId(Long adjustId);
+
+    /**
+     * 审批通过
+     *
+     * @param adjustId       调停课申请ID
+     * @param approveComment 审批意见
+     */
+    public void approve(Long adjustId, String approveComment);
+
+    /**
+     * 审批驳回
+     *
+     * @param adjustId       调停课申请ID
+     * @param approveComment 审批意见
+     */
+    public void reject(Long adjustId, String approveComment);
 }

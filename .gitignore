@@ -63,6 +63,10 @@ temp_*
 /软件设计文档/*.doc
 
 /build-temp/
+/node_modules/
+/test-screenshots/
+/aqua-melody/
+/.m2-local/
 
 ######################################################################
 # Database migration artifacts (contain data, do NOT commit)

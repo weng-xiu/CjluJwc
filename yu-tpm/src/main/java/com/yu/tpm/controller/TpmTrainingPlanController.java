@@ -1,6 +1,7 @@
 package com.yu.tpm.controller;
 
 import java.util.List;
+import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,11 +14,16 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.enums.BusinessType;
+import com.yu.common.utils.SecurityUtils;
 import com.yu.tpm.domain.TpmTrainingPlan;
+import com.yu.tpm.domain.TpmCourseLibrary;
+import com.yu.tpm.domain.TpmCreditStructure;
 import com.yu.tpm.service.ITpmTrainingPlanService;
 import com.yu.common.utils.poi.ExcelUtil;
 import com.yu.common.core.page.TableDataInfo;
@@ -34,6 +40,9 @@ public class TpmTrainingPlanController extends BaseController
 {
     @Autowired
     private ITpmTrainingPlanService tpmTrainingPlanService;
+
+    /** Jackson 对象映射（静态实例，无需 Spring Bean） */
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @PreAuthorize("@ss.hasPermi('tpm:plan:list')")
     @GetMapping("/list")
@@ -83,5 +92,71 @@ public class TpmTrainingPlanController extends BaseController
     public AjaxResult remove(@PathVariable Long[] planIds)
     {
         return toAjax(tpmTrainingPlanService.deleteTpmTrainingPlanByPlanIds(planIds));
+    }
+
+    @PreAuthorize("@ss.hasPermi('tpm:plan:edit')")
+    @Log(title = "培养方案", businessType = BusinessType.UPDATE)
+    @PutMapping("/publish/{planId}")
+    public AjaxResult publish(@PathVariable Long planId)
+    {
+        return toAjax(tpmTrainingPlanService.publishTrainingPlan(planId));
+    }
+
+    @PreAuthorize("@ss.hasPermi('tpm:plan:edit')")
+    @Log(title = "培养方案", businessType = BusinessType.UPDATE)
+    @PutMapping("/deprecate/{planId}")
+    public AjaxResult deprecate(@PathVariable Long planId)
+    {
+        return toAjax(tpmTrainingPlanService.deprecateTrainingPlan(planId));
+    }
+
+    @PreAuthorize("@ss.hasAnyPermi('tpm:plan:add,tpm:plan:edit')")
+    @Log(title = "培养方案", businessType = BusinessType.UPDATE)
+    @PostMapping("/saveWithChildren")
+    public AjaxResult saveWithChildren(@RequestBody Map<String, Object> body) throws Exception
+    {
+        TpmTrainingPlan plan = OBJECT_MAPPER.convertValue(body.get("plan"), TpmTrainingPlan.class);
+        List<TpmCourseLibrary> courseList = OBJECT_MAPPER.convertValue(body.get("courseList"),
+                new TypeReference<List<TpmCourseLibrary>>() {});
+        List<TpmCreditStructure> creditList = OBJECT_MAPPER.convertValue(body.get("creditList"),
+                new TypeReference<List<TpmCreditStructure>>() {});
+        String username = SecurityUtils.getUsername();
+        if (plan.getPlanId() == null)
+        {
+            plan.setCreateBy(username);
+        }
+        else
+        {
+            plan.setUpdateBy(username);
+        }
+        if (courseList != null)
+        {
+            for (TpmCourseLibrary course : courseList)
+            {
+                if (course.getCourseId() == null)
+                {
+                    course.setCreateBy(username);
+                }
+                else
+                {
+                    course.setUpdateBy(username);
+                }
+            }
+        }
+        if (creditList != null)
+        {
+            for (TpmCreditStructure credit : creditList)
+            {
+                if (credit.getStructId() == null)
+                {
+                    credit.setCreateBy(username);
+                }
+                else
+                {
+                    credit.setUpdateBy(username);
+                }
+            }
+        }
+        return toAjax(tpmTrainingPlanService.savePlanWithChildren(plan, courseList, creditList));
     }
 }

@@ -1,6 +1,7 @@
 package com.yu.tpm.controller;
 
 import java.util.List;
+import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -123,5 +124,28 @@ public class TpmSelectionEnrollmentController extends BaseController
     {
         return tpmSelectionEnrollmentService
                 .enrollWithValidation(enrollment.getStudentId(), enrollment.getCourseOfferingId(), enrollment.getRoundId());
+    }
+
+    /**
+     * 执行抽签
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:enroll:edit')")
+    @PostMapping("/lottery/{roundId}")
+    @Log(title = "选课抽签", businessType = BusinessType.UPDATE)
+    public AjaxResult lottery(@PathVariable Long roundId)
+    {
+        Map<String, Object> result = tpmSelectionEnrollmentService.runLottery(roundId);
+        return success(result);
+    }
+
+    /**
+     * 学生退课
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:enroll:edit')")
+    @PostMapping("/drop/{enrollId}")
+    @Log(title = "学生退课", businessType = BusinessType.UPDATE)
+    public AjaxResult drop(@PathVariable Long enrollId)
+    {
+        return tpmSelectionEnrollmentService.dropCourse(enrollId);
     }
 }

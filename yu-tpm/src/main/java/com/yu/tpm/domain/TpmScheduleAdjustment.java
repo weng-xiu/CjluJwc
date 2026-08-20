@@ -79,9 +79,36 @@ public class TpmScheduleAdjustment extends BaseEntity
     @Excel(name = "审批时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date approveTime;
 
+    /** 审批意见 */
+    @Excel(name = "审批意见")
+    private String approveComment;
+
     /** 状态 */
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
+
+    /** 删除标志（0存在 2删除） */
+    private String delFlag;
+
+    // ========== 以下为关联查询的冗余字段，不映射到数据库 ==========
+
+    /** 课程名称（关联查询） */
+    private String courseName;
+
+    /** 原教室名称（关联查询） */
+    private String originalClassroomName;
+
+    /** 原星期几（关联查询） */
+    private Integer originalWeekDay;
+
+    /** 原开始节次（关联查询） */
+    private Integer originalStartPeriod;
+
+    /** 原结束节次（关联查询） */
+    private Integer originalEndPeriod;
+
+    /** 新教室名称（关联查询） */
+    private String newClassName;
 
     public Long getAdjustId() { return adjustId; }
     public void setAdjustId(Long adjustId) { this.adjustId = adjustId; }
@@ -130,8 +157,32 @@ public class TpmScheduleAdjustment extends BaseEntity
     public Date getApproveTime() { return approveTime; }
     public void setApproveTime(Date approveTime) { this.approveTime = approveTime; }
 
+    public String getApproveComment() { return approveComment; }
+    public void setApproveComment(String approveComment) { this.approveComment = approveComment; }
+
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getDelFlag() { return delFlag; }
+    public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
+
+    public String getCourseName() { return courseName; }
+    public void setCourseName(String courseName) { this.courseName = courseName; }
+
+    public String getOriginalClassroomName() { return originalClassroomName; }
+    public void setOriginalClassroomName(String originalClassroomName) { this.originalClassroomName = originalClassroomName; }
+
+    public Integer getOriginalWeekDay() { return originalWeekDay; }
+    public void setOriginalWeekDay(Integer originalWeekDay) { this.originalWeekDay = originalWeekDay; }
+
+    public Integer getOriginalStartPeriod() { return originalStartPeriod; }
+    public void setOriginalStartPeriod(Integer originalStartPeriod) { this.originalStartPeriod = originalStartPeriod; }
+
+    public Integer getOriginalEndPeriod() { return originalEndPeriod; }
+    public void setOriginalEndPeriod(Integer originalEndPeriod) { this.originalEndPeriod = originalEndPeriod; }
+
+    public String getNewClassName() { return newClassName; }
+    public void setNewClassName(String newClassName) { this.newClassName = newClassName; }
 
     @Override
     public String toString() {
@@ -150,6 +201,7 @@ public class TpmScheduleAdjustment extends BaseEntity
             .append("approveStatus", getApproveStatus())
             .append("approveBy", getApproveBy())
             .append("approveTime", getApproveTime())
+            .append("approveComment", getApproveComment())
             .append("status", getStatus())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())

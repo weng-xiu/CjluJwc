@@ -42,6 +42,20 @@ public class ScheduleOptimizationController extends BaseController
     }
 
     /**
+     * 检查指定教室在某时间段是否可用
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:schedule:findClassroom')")
+    @GetMapping("/canAssign")
+    public AjaxResult canAssign(@RequestParam Long classroomId, @RequestParam Integer weekDay,
+                                @RequestParam Integer startPeriod, @RequestParam Integer endPeriod,
+                                @RequestParam Integer startWeek, @RequestParam Integer endWeek)
+    {
+        boolean canAssign = scheduleOptimizationService.canAssignClassroom(
+                classroomId, weekDay, startPeriod, endPeriod, startWeek, endWeek);
+        return success(canAssign);
+    }
+
+    /**
      * 查询可用教室
      */
     @PreAuthorize("@ss.hasPermi('tpm:schedule:findClassroom')")

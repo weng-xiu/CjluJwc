@@ -24,3 +24,13 @@ export function updateRound(data) {
 export function delRound(roundId) {
   return request({ url: '/tpm/round/' + roundId, method: 'delete' })
 }
+
+// 开启选课轮次
+export function startRound(roundId) {
+  return request({ url: '/tpm/round/start/' + roundId, method: 'put' })
+}
+
+// 结束选课轮次
+export function finishRound(roundId) {
+  return request({ url: '/tpm/round/finish/' + roundId, method: 'put' })
+}

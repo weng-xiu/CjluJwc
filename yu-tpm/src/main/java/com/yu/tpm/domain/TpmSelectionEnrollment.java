@@ -56,6 +56,25 @@ public class TpmSelectionEnrollment extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 删除标志（0代表存在 2代表删除） */
+    private String delFlag;
+
+    /** 学号（关联查询，非持久化） */
+    @Excel(name = "学号")
+    private String studentCode;
+
+    /** 学生姓名（关联查询，非持久化） */
+    @Excel(name = "学生姓名")
+    private String studentName;
+
+    /** 课程名称（关联查询，非持久化） */
+    @Excel(name = "课程名称")
+    private String courseName;
+
+    /** 轮次名称（关联查询，非持久化） */
+    @Excel(name = "轮次名称")
+    private String roundName;
+
     public Long getEnrollId() { return enrollId; }
     public void setEnrollId(Long enrollId) { this.enrollId = enrollId; }
 
@@ -85,6 +104,21 @@ public class TpmSelectionEnrollment extends BaseEntity
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getDelFlag() { return delFlag; }
+    public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
+
+    public String getStudentCode() { return studentCode; }
+    public void setStudentCode(String studentCode) { this.studentCode = studentCode; }
+
+    public String getStudentName() { return studentName; }
+    public void setStudentName(String studentName) { this.studentName = studentName; }
+
+    public String getCourseName() { return courseName; }
+    public void setCourseName(String courseName) { this.courseName = courseName; }
+
+    public String getRoundName() { return roundName; }
+    public void setRoundName(String roundName) { this.roundName = roundName; }
 
     @Override
     public String toString() {

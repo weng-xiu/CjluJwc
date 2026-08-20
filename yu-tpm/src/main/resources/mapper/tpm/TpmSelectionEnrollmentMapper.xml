@@ -13,28 +13,44 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="resultStatus"     column="result_status"       />
         <result property="dropTime"         column="drop_time"           />
         <result property="status"           column="status"              />
+        <result property="delFlag"          column="del_flag"            />
         <result property="createBy"         column="create_by"           />
         <result property="createTime"       column="create_time"         />
         <result property="updateBy"         column="update_by"           />
         <result property="updateTime"       column="update_time"         />
         <result property="remark"           column="remark"              />
+        <result property="studentCode"      column="student_code"        />
+        <result property="studentName"      column="student_name"        />
+        <result property="courseName"       column="course_name"         />
+        <result property="roundName"        column="round_name"          />
     </resultMap>
     <sql id="selectTpmSelectionEnrollmentVo">
-        select enroll_id, round_id, student_id, course_offering_id, select_time, lottery_result, result_status, drop_time, status, create_by, create_time, update_by, update_time, remark from tpm_selection_enrollment
+        select e.enroll_id, e.round_id, e.student_id, e.course_offering_id, e.select_time, e.lottery_result, e.result_status, e.drop_time, e.status, e.del_flag, e.create_by, e.create_time, e.update_by, e.update_time, e.remark,
+        ss.student_no as student_code,
+        ss.student_name as student_name,
+        cl.course_name as course_name,
+        r.round_name as round_name
+        from tpm_selection_enrollment e
+        left join sam_student ss on e.student_id = ss.student_id
+        left join tpm_course_offering o on e.course_offering_id = o.offering_id
+        left join tpm_course_library cl on o.course_id = cl.course_id
+        left join tpm_selection_round r on e.round_id = r.round_id
     </sql>
     <select id="selectTpmSelectionEnrollmentList" parameterType="TpmSelectionEnrollment" resultMap="TpmSelectionEnrollmentResult">
         <include refid="selectTpmSelectionEnrollmentVo"/>
         <where>
-            <if test="roundId != null"> and round_id = #{roundId}</if>
-            <if test="studentId != null"> and student_id = #{studentId}</if>
-            <if test="courseOfferingId != null"> and course_offering_id = #{courseOfferingId}</if>
-            <if test="lotteryResult != null and lotteryResult.trim() != ''"> and lottery_result = #{lotteryResult}</if>
-            <if test="resultStatus != null and resultStatus.trim() != ''"> and result_status = #{resultStatus}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            e.del_flag = '0'
+            <if test="roundId != null"> and e.round_id = #{roundId}</if>
+            <if test="studentId != null"> and e.student_id = #{studentId}</if>
+            <if test="courseOfferingId != null"> and e.course_offering_id = #{courseOfferingId}</if>
+            <if test="lotteryResult != null and lotteryResult.trim() != ''"> and e.lottery_result = #{lotteryResult}</if>
+            <if test="resultStatus != null and resultStatus.trim() != ''"> and e.result_status = #{resultStatus}</if>
+            <if test="status != null and status.trim() != ''"> and e.status = #{status}</if>
         </where>
+        order by e.select_time desc
     </select>
     <select id="selectTpmSelectionEnrollmentByEnrollId" parameterType="Long" resultMap="TpmSelectionEnrollmentResult">
-        <include refid="selectTpmSelectionEnrollmentVo"/> where enroll_id = #{enrollId}
+        <include refid="selectTpmSelectionEnrollmentVo"/> where e.enroll_id = #{enrollId} and e.del_flag = '0'
     </select>
     <insert id="insertTpmSelectionEnrollment" parameterType="TpmSelectionEnrollment" useGeneratedKeys="true" keyProperty="enrollId">
         insert into tpm_selection_enrollment
@@ -50,6 +66,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="remark != null">remark,</if>
+            del_flag,
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="roundId != null">#{roundId},</if>
@@ -63,6 +80,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="remark != null">#{remark},</if>
+            '0',
         </trim>
     </insert>
     <update id="updateTpmSelectionEnrollment" parameterType="TpmSelectionEnrollment">
@@ -82,22 +100,34 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </trim>
         where enroll_id = #{enrollId}
     </update>
-    <delete id="deleteTpmSelectionEnrollmentByEnrollId" parameterType="Long">
-        delete from tpm_selection_enrollment where enroll_id = #{enrollId}
-    </delete>
-    <delete id="deleteTpmSelectionEnrollmentByEnrollIds" parameterType="String">
-        delete from tpm_selection_enrollment where enroll_id in
+    <update id="deleteTpmSelectionEnrollmentByEnrollId" parameterType="Long">
+        update tpm_selection_enrollment set del_flag = '2' where enroll_id = #{enrollId}
+    </update>
+    <update id="deleteTpmSelectionEnrollmentByEnrollIds" parameterType="String">
+        update tpm_selection_enrollment set del_flag = '2' where enroll_id in
         <foreach item="enrollId" collection="array" open="(" separator="," close=")">#{enrollId}</foreach>
-    </delete>
-    <select id="selectCountByOffering" parameterType="Long" resultType="int">
+    </update>
+    <select id="selectCountByOffering" resultType="int">
         select count(1) from tpm_selection_enrollment
         where course_offering_id = #{courseOfferingId}
         and result_status != '3'
+        and del_flag = '0'
     </select>
     <select id="selectByStudentAndRound" resultMap="TpmSelectionEnrollmentResult">
         <include refid="selectTpmSelectionEnrollmentVo"/>
-        where student_id = #{studentId}
-        and round_id = #{roundId}
-        and result_status != '3'
+        where e.student_id = #{studentId}
+        and e.round_id = #{roundId}
+        and e.result_status != '3'
+        and e.del_flag = '0'
+    </select>
+    <select id="countCompletedCourses" resultType="int">
+        select count(distinct o.course_id)
+        from tpm_selection_enrollment e
+        left join tpm_course_offering o on e.course_offering_id = o.offering_id
+        where e.student_id = #{studentId}
+        and e.result_status = '1'
+        and e.del_flag = '0'
+        and o.course_id in
+        <foreach item="courseId" collection="courseIds" open="(" separator="," close=")">#{courseId}</foreach>
     </select>
 </mapper>

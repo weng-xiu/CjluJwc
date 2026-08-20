@@ -24,3 +24,28 @@ export function updateEnroll(data) {
 export function delEnroll(enrollId) {
   return request({ url: '/tpm/enroll/' + enrollId, method: 'delete' })
 }
+
+// 选课冲突检测
+export function validateSelection(data) {
+  return request({ url: '/tpm/enroll/validate', method: 'post', data: data })
+}
+
+// 带验证选课（含冲突检测+Redis并发控制）
+export function enrollWithValidation(data) {
+  return request({ url: '/tpm/enroll/enrollWithValidation', method: 'post', data: data })
+}
+
+// 获取替代课程建议
+export function getSuggestions(courseOfferingId, query) {
+  return request({ url: '/tpm/enroll/suggestions/' + courseOfferingId, method: 'get', params: query })
+}
+
+// 发起抽签
+export function runLottery(roundId) {
+  return request({ url: '/tpm/enroll/lottery/' + roundId, method: 'post' })
+}
+
+// 学生退课
+export function dropCourse(enrollId) {
+  return request({ url: '/tpm/enroll/drop/' + enrollId, method: 'post' })
+}

@@ -3,6 +3,7 @@ package com.yu.tpm.service.impl;
 import java.util.List;
 import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
+import com.yu.framework.cache.SelectionCacheManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,9 @@ public class TpmSelectionRoundServiceImpl implements ITpmSelectionRoundService
 
     @Autowired
     private TpmSelectionEnrollmentMapper tpmSelectionEnrollmentMapper;
+
+    @Autowired
+    private SelectionCacheManager selectionCacheManager;
 
     @Override
     public TpmSelectionRound selectTpmSelectionRoundByRoundId(Long roundId)
@@ -103,5 +107,62 @@ public class TpmSelectionRoundServiceImpl implements ITpmSelectionRoundService
             }
         }
         return tpmSelectionRoundMapper.deleteTpmSelectionRoundByRoundIds(roundIds);
+    }
+
+    @Transactional
+    @Override
+    public int startRound(Long roundId)
+    {
+        TpmSelectionRound round = tpmSelectionRoundMapper.selectTpmSelectionRoundByRoundId(roundId);
+        if (round == null)
+        {
+            throw new ServiceException("选课轮次不存在");
+        }
+        if (!"0".equals(round.getRoundStatus()))
+        {
+            throw new ServiceException("只有未开始的轮次才能开启，当前状态：" + roundStatusDesc(round.getRoundStatus()));
+        }
+        round.setRoundStatus("1");
+        round.setUpdateTime(DateUtils.getNowDate());
+        int rows = tpmSelectionRoundMapper.updateTpmSelectionRound(round);
+        selectionCacheManager.clearRoundCache(roundId);
+        return rows;
+    }
+
+    @Transactional
+    @Override
+    public int finishRound(Long roundId)
+    {
+        TpmSelectionRound round = tpmSelectionRoundMapper.selectTpmSelectionRoundByRoundId(roundId);
+        if (round == null)
+        {
+            throw new ServiceException("选课轮次不存在");
+        }
+        if ("2".equals(round.getRoundStatus()))
+        {
+            throw new ServiceException("轮次已结束，无需重复操作");
+        }
+        round.setRoundStatus("2");
+        round.setUpdateTime(DateUtils.getNowDate());
+        int rows = tpmSelectionRoundMapper.updateTpmSelectionRound(round);
+        selectionCacheManager.clearRoundCache(roundId);
+        return rows;
+    }
+
+    private String roundStatusDesc(String status)
+    {
+        if ("0".equals(status))
+        {
+            return "未开始";
+        }
+        if ("1".equals(status))
+        {
+            return "进行中";
+        }
+        if ("2".equals(status))
+        {
+            return "已结束";
+        }
+        return "未知";
     }
 }

@@ -18,6 +18,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="semesterOrder"    column="semester_order"    />
         <result property="planId"           column="plan_id"           />
         <result property="status"           column="status"            />
+        <result property="delFlag"          column="del_flag"          />
+        <result property="planName"         column="plan_name"         />
         <result property="createBy"         column="create_by"         />
         <result property="createTime"       column="create_time"       />
         <result property="updateBy"         column="update_by"         />
@@ -25,21 +27,28 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"           column="remark"            />
     </resultMap>
     <sql id="selectTpmCourseLibraryVo">
-        select course_id, course_code, course_name, course_name_en, credit, theory_hours, practice_hours, total_hours, course_type, course_category, assessment_method, semester_order, plan_id, status, create_by, create_time, update_by, update_time, remark from tpm_course_library
+        select course_id, course_code, course_name, course_name_en, credit, theory_hours, practice_hours, total_hours, course_type, course_category, assessment_method, semester_order, plan_id, status, del_flag, create_by, create_time, update_by, update_time, remark from tpm_course_library
     </sql>
     <select id="selectTpmCourseLibraryList" parameterType="TpmCourseLibrary" resultMap="TpmCourseLibraryResult">
-        <include refid="selectTpmCourseLibraryVo"/>
+        select cl.course_id, cl.course_code, cl.course_name, cl.course_name_en, cl.credit, cl.theory_hours, cl.practice_hours, cl.total_hours, cl.course_type, cl.course_category, cl.assessment_method, cl.semester_order, cl.plan_id, cl.status, cl.del_flag, cl.create_by, cl.create_time, cl.update_by, cl.update_time, cl.remark,
+               tp.plan_name as plan_name
+        from tpm_course_library cl
+        left join tpm_training_plan tp on cl.plan_id = tp.plan_id
         <where>
-            <if test="courseCode != null and courseCode.trim() != ''"> and course_code like concat('%', #{courseCode}, '%')</if>
-            <if test="courseName != null and courseName.trim() != ''"> and course_name like concat('%', #{courseName}, '%')</if>
-            <if test="courseType != null and courseType.trim() != ''"> and course_type = #{courseType}</if>
-            <if test="courseCategory != null and courseCategory.trim() != ''"> and course_category = #{courseCategory}</if>
-            <if test="planId != null"> and plan_id = #{planId}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            cl.del_flag = '0'
+            <if test="courseCode != null and courseCode.trim() != ''"> and cl.course_code like concat('%', #{courseCode}, '%')</if>
+            <if test="courseName != null and courseName.trim() != ''"> and cl.course_name like concat('%', #{courseName}, '%')</if>
+            <if test="courseType != null and courseType.trim() != ''"> and cl.course_type = #{courseType}</if>
+            <if test="courseCategory != null and courseCategory.trim() != ''"> and cl.course_category = #{courseCategory}</if>
+            <if test="planId != null"> and cl.plan_id = #{planId}</if>
+            <if test="status != null and status.trim() != ''"> and cl.status = #{status}</if>
         </where>
     </select>
     <select id="selectTpmCourseLibraryByCourseId" parameterType="Long" resultMap="TpmCourseLibraryResult">
-        <include refid="selectTpmCourseLibraryVo"/> where course_id = #{courseId}
+        <include refid="selectTpmCourseLibraryVo"/> where course_id = #{courseId} and del_flag = '0'
+    </select>
+    <select id="selectTpmCourseLibraryByCourseCode" parameterType="String" resultMap="TpmCourseLibraryResult">
+        <include refid="selectTpmCourseLibraryVo"/> where course_code = #{courseCode} and del_flag = '0' limit 1
     </select>
     <insert id="insertTpmCourseLibrary" parameterType="TpmCourseLibrary" useGeneratedKeys="true" keyProperty="courseId">
         insert into tpm_course_library
@@ -103,10 +112,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where course_id = #{courseId}
     </update>
     <delete id="deleteTpmCourseLibraryByCourseId" parameterType="Long">
-        delete from tpm_course_library where course_id = #{courseId}
+        update tpm_course_library set del_flag = '2' where course_id = #{courseId}
     </delete>
     <delete id="deleteTpmCourseLibraryByCourseIds" parameterType="String">
-        delete from tpm_course_library where course_id in
+        update tpm_course_library set del_flag = '2' where course_id in
         <foreach item="courseId" collection="array" open="(" separator="," close=")">#{courseId}</foreach>
     </delete>
 </mapper>

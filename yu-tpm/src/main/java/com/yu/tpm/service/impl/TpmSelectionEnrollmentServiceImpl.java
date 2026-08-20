@@ -23,6 +23,7 @@ import com.yu.tpm.mapper.TpmCourseLibraryMapper;
 import com.yu.tpm.mapper.TpmCourseOfferingMapper;
 import com.yu.tpm.mapper.TpmScheduleMapper;
 import com.yu.tpm.mapper.TpmSelectionRoundMapper;
+import com.yu.tpm.service.ITpmSelectionRuleService;
 import com.yu.brm.mapper.BrmTeacherMapper;
 import com.yu.brm.domain.BrmTeacher;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +68,9 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
 
     @Autowired
     private SelectionCacheManager selectionCacheManager;
+
+    @Autowired
+    private ITpmSelectionRuleService tpmSelectionRuleService;
 
     @Override
     public TpmSelectionEnrollment selectTpmSelectionEnrollmentByEnrollId(Long enrollId)
@@ -244,6 +248,16 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
                     "COURSE_FULL",
                     "课程已满：当前已选" + enrolledCount + "人，容量上限" + offering.getMaxStudents() + "人"
             ));
+        }
+
+        // 7. 选课规则校验（专业/年级/院系/人数上限/先修课程）
+        List<String> ruleViolations = tpmSelectionRuleService.validate(roundId, studentId, courseOfferingId);
+        if (ruleViolations != null && !ruleViolations.isEmpty())
+        {
+            for (String violation : ruleViolations)
+            {
+                warnings.add(new ConflictWarning("RULE_VIOLATION", violation));
+            }
         }
 
         return warnings;
@@ -618,5 +632,46 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         result.put("failCount", failCount);
         result.put("message", String.format("抽签完成：涉及%d门课程，中签%d人，落选%d人", lotteryCount, successCount, failCount));
         return result;
+    }
+
+    /**
+     * 学生退课
+     * 校验记录存在、当前为选中状态、轮次进行中；置为退课状态并回补Redis容量
+     */
+    @Transactional
+    @Override
+    public AjaxResult dropCourse(Long enrollId)
+    {
+        TpmSelectionEnrollment enrollment = tpmSelectionEnrollmentMapper.selectTpmSelectionEnrollmentByEnrollId(enrollId);
+        if (enrollment == null)
+        {
+            return AjaxResult.error("选课记录不存在");
+        }
+        if (!"1".equals(enrollment.getResultStatus()))
+        {
+            return AjaxResult.error("当前选课记录状态不允许退课");
+        }
+        TpmSelectionRound round = tpmSelectionRoundMapper.selectTpmSelectionRoundByRoundId(enrollment.getRoundId());
+        if (round == null)
+        {
+            return AjaxResult.error("选课轮次不存在");
+        }
+        if (!"1".equals(round.getRoundStatus()))
+        {
+            return AjaxResult.error("选课轮次非进行中，不允许退课");
+        }
+
+        // 更新为退课状态
+        enrollment.setResultStatus("3");
+        enrollment.setDropTime(new Date());
+        enrollment.setUpdateTime(DateUtils.getNowDate());
+        tpmSelectionEnrollmentMapper.updateTpmSelectionEnrollment(enrollment);
+
+        // 回补Redis容量
+        selectionCacheManager.incrementCapacity(enrollment.getCourseOfferingId());
+        // 清除学生选课缓存
+        selectionCacheManager.clearStudentCache(enrollment.getStudentId(), enrollment.getRoundId());
+
+        return AjaxResult.success("退课成功");
     }
 }

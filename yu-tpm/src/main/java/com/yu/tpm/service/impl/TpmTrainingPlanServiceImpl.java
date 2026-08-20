@@ -9,9 +9,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.tpm.mapper.TpmTrainingPlanMapper;
 import com.yu.tpm.mapper.TpmCreditStructureMapper;
+import com.yu.tpm.mapper.TpmCourseLibraryMapper;
 import com.yu.tpm.domain.TpmTrainingPlan;
 import com.yu.tpm.domain.TpmCreditStructure;
+import com.yu.tpm.domain.TpmCourseLibrary;
 import com.yu.tpm.service.ITpmTrainingPlanService;
+import com.yu.tpm.service.ITpmCourseLibraryService;
+import com.yu.tpm.service.ITpmCreditStructureService;
 
 /**
  * 人才培养方案Service业务层处理
@@ -27,6 +31,15 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
 
     @Autowired
     private TpmCreditStructureMapper tpmCreditStructureMapper;
+
+    @Autowired
+    private TpmCourseLibraryMapper tpmCourseLibraryMapper;
+
+    @Autowired
+    private ITpmCourseLibraryService tpmCourseLibraryService;
+
+    @Autowired
+    private ITpmCreditStructureService tpmCreditStructureService;
 
     @Override
     public TpmTrainingPlan selectTpmTrainingPlanByPlanId(Long planId)
@@ -61,13 +74,7 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
     @Override
     public int deleteTpmTrainingPlanByPlanId(Long planId)
     {
-        TpmCreditStructure query = new TpmCreditStructure();
-        query.setPlanId(planId);
-        List<TpmCreditStructure> structures = tpmCreditStructureMapper.selectTpmCreditStructureList(query);
-        if (structures != null && !structures.isEmpty())
-        {
-            throw new ServiceException("该培养方案下存在学分结构，不允许删除");
-        }
+        checkCanDelete(planId);
         return tpmTrainingPlanMapper.deleteTpmTrainingPlanByPlanId(planId);
     }
 
@@ -77,14 +84,106 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
     {
         for (Long planId : planIds)
         {
-            TpmCreditStructure query = new TpmCreditStructure();
-            query.setPlanId(planId);
-            List<TpmCreditStructure> structures = tpmCreditStructureMapper.selectTpmCreditStructureList(query);
-            if (structures != null && !structures.isEmpty())
-            {
-                throw new ServiceException("该培养方案下存在学分结构，不允许删除");
-            }
+            checkCanDelete(planId);
         }
         return tpmTrainingPlanMapper.deleteTpmTrainingPlanByPlanIds(planIds);
+    }
+
+    /**
+     * 删除前级联校验：不允许存在学分结构或课程
+     */
+    private void checkCanDelete(Long planId)
+    {
+        TpmCreditStructure structQuery = new TpmCreditStructure();
+        structQuery.setPlanId(planId);
+        List<TpmCreditStructure> structures = tpmCreditStructureMapper.selectTpmCreditStructureList(structQuery);
+        if (structures != null && !structures.isEmpty())
+        {
+            throw new ServiceException("该培养方案下存在学分结构，不允许删除");
+        }
+        TpmCourseLibrary courseQuery = new TpmCourseLibrary();
+        courseQuery.setPlanId(planId);
+        List<TpmCourseLibrary> courses = tpmCourseLibraryMapper.selectTpmCourseLibraryList(courseQuery);
+        if (courses != null && !courses.isEmpty())
+        {
+            throw new ServiceException("该培养方案下存在课程，不允许删除");
+        }
+    }
+
+    @Transactional
+    @Override
+    public int publishTrainingPlan(Long planId)
+    {
+        TpmTrainingPlan plan = new TpmTrainingPlan();
+        plan.setPlanId(planId);
+        plan.setPublishStatus("1");
+        plan.setPublishDate(DateUtils.getNowDate());
+        plan.setUpdateTime(DateUtils.getNowDate());
+        return tpmTrainingPlanMapper.updateTpmTrainingPlan(plan);
+    }
+
+    @Transactional
+    @Override
+    public int deprecateTrainingPlan(Long planId)
+    {
+        TpmTrainingPlan plan = new TpmTrainingPlan();
+        plan.setPlanId(planId);
+        plan.setPublishStatus("2");
+        plan.setUpdateTime(DateUtils.getNowDate());
+        return tpmTrainingPlanMapper.updateTpmTrainingPlan(plan);
+    }
+
+    @Transactional
+    @Override
+    public int savePlanWithChildren(TpmTrainingPlan plan, List<TpmCourseLibrary> courseList, List<TpmCreditStructure> creditList)
+    {
+        int rows;
+        if (plan.getPlanId() == null)
+        {
+            rows = insertTpmTrainingPlan(plan);
+        }
+        else
+        {
+            rows = updateTpmTrainingPlan(plan);
+        }
+        if (courseList != null)
+        {
+            for (TpmCourseLibrary course : courseList)
+            {
+                course.setPlanId(plan.getPlanId());
+                if (course.getStatus() == null)
+                {
+                    course.setStatus("0");
+                }
+                if (course.getCourseId() == null)
+                {
+                    tpmCourseLibraryService.insertTpmCourseLibrary(course);
+                }
+                else
+                {
+                    tpmCourseLibraryService.updateTpmCourseLibrary(course);
+                }
+            }
+        }
+        if (creditList != null)
+        {
+            for (TpmCreditStructure credit : creditList)
+            {
+                credit.setPlanId(plan.getPlanId());
+                if (credit.getStatus() == null)
+                {
+                    credit.setStatus("0");
+                }
+                if (credit.getStructId() == null)
+                {
+                    tpmCreditStructureService.insertTpmCreditStructure(credit);
+                }
+                else
+                {
+                    tpmCreditStructureService.updateTpmCreditStructure(credit);
+                }
+            }
+        }
+        return rows;
     }
 }

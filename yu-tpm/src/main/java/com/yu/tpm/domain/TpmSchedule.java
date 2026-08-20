@@ -55,6 +55,9 @@ public class TpmSchedule extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 删除标志（0存在 2删除） */
+    private String delFlag;
+
     // ========== 以下为关联查询的冗余字段，不映射到数据库 ==========
 
     /** 课程名称（关联查询） */
@@ -74,6 +77,9 @@ public class TpmSchedule extends BaseEntity
 
     /** 教师ID（关联查询） */
     private Long teacherId;
+
+    /** 学期ID（关联查询） */
+    private Long semesterId;
 
     public Long getScheduleId() { return scheduleId; }
     public void setScheduleId(Long scheduleId) { this.scheduleId = scheduleId; }
@@ -106,6 +112,9 @@ public class TpmSchedule extends BaseEntity
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
+    public String getDelFlag() { return delFlag; }
+    public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
+
     public String getCourseName() { return courseName; }
     public void setCourseName(String courseName) { this.courseName = courseName; }
 
@@ -123,6 +132,9 @@ public class TpmSchedule extends BaseEntity
 
     public Long getTeacherId() { return teacherId; }
     public void setTeacherId(Long teacherId) { this.teacherId = teacherId; }
+
+    public Long getSemesterId() { return semesterId; }
+    public void setSemesterId(Long semesterId) { this.semesterId = semesterId; }
 
     @Override
     public String toString() {

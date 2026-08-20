@@ -44,10 +44,8 @@ public class TpmCourseLibraryServiceImpl implements ITpmCourseLibraryService
     public int insertTpmCourseLibrary(TpmCourseLibrary tpmCourseLibrary)
     {
         // 唯一性校验：课程编码不能重复
-        TpmCourseLibrary query = new TpmCourseLibrary();
-        query.setCourseCode(tpmCourseLibrary.getCourseCode());
-        List<TpmCourseLibrary> existing = tpmCourseLibraryMapper.selectTpmCourseLibraryList(query);
-        if (existing != null && !existing.isEmpty())
+        TpmCourseLibrary existing = tpmCourseLibraryMapper.selectTpmCourseLibraryByCourseCode(tpmCourseLibrary.getCourseCode());
+        if (existing != null)
         {
             throw new ServiceException("课程编码'" + tpmCourseLibrary.getCourseCode() + "'已存在");
         }
@@ -60,18 +58,10 @@ public class TpmCourseLibraryServiceImpl implements ITpmCourseLibraryService
     public int updateTpmCourseLibrary(TpmCourseLibrary tpmCourseLibrary)
     {
         // 唯一性校验：课程编码不能重复（排除自身）
-        TpmCourseLibrary query = new TpmCourseLibrary();
-        query.setCourseCode(tpmCourseLibrary.getCourseCode());
-        List<TpmCourseLibrary> existing = tpmCourseLibraryMapper.selectTpmCourseLibraryList(query);
-        if (existing != null && !existing.isEmpty())
+        TpmCourseLibrary existing = tpmCourseLibraryMapper.selectTpmCourseLibraryByCourseCode(tpmCourseLibrary.getCourseCode());
+        if (existing != null && !existing.getCourseId().equals(tpmCourseLibrary.getCourseId()))
         {
-            for (TpmCourseLibrary item : existing)
-            {
-                if (!item.getCourseId().equals(tpmCourseLibrary.getCourseId()))
-                {
-                    throw new ServiceException("课程编码'" + tpmCourseLibrary.getCourseCode() + "'已存在");
-                }
-            }
+            throw new ServiceException("课程编码'" + tpmCourseLibrary.getCourseCode() + "'已存在");
         }
         tpmCourseLibrary.setUpdateTime(DateUtils.getNowDate());
         return tpmCourseLibraryMapper.updateTpmCourseLibrary(tpmCourseLibrary);

@@ -17,4 +17,20 @@ public interface ITpmSelectionRoundService
     public int updateTpmSelectionRound(TpmSelectionRound tpmSelectionRound);
     public int deleteTpmSelectionRoundByRoundIds(Long[] roundIds);
     public int deleteTpmSelectionRoundByRoundId(Long roundId);
+
+    /**
+     * 开启选课轮次（状态由“未开始”置为“进行中”）
+     *
+     * @param roundId 轮次ID
+     * @return 结果
+     */
+    public int startRound(Long roundId);
+
+    /**
+     * 结束选课轮次（状态置为“已结束”）
+     *
+     * @param roundId 轮次ID
+     * @return 结果
+     */
+    public int finishRound(Long roundId);
 }
