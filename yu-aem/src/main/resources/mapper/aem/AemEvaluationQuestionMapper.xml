@@ -82,4 +82,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from aem_evaluation_question where question_id in
         <foreach item="questionId" collection="array" open="(" separator="," close=")">#{questionId}</foreach>
     </delete>
+
+    <delete id="deleteByQuestionnaireId" parameterType="Long">
+        delete from aem_evaluation_question where questionnaire_id = #{questionnaireId}
+    </delete>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        insert into aem_evaluation_question (questionnaire_id, question_type, question_content, sort_order, max_score, options_json, status, create_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.questionnaireId}, #{item.questionType}, #{item.questionContent}, #{item.sortOrder}, #{item.maxScore}, #{item.optionsJson}, #{item.status}, #{item.createTime})
+        </foreach>
+    </insert>
 </mapper>

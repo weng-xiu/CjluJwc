@@ -61,6 +61,16 @@ public class AemGradeRecordController extends BaseController
         return success(aemGradeRecordService.selectAemGradeRecordByGradeId(gradeId));
     }
 
+    /**
+     * 查询成绩记录明细（含复核记录子表），用于主子表联动展开
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeRecord:query')")
+    @GetMapping(value = "/detail/{gradeId}")
+    public AjaxResult getDetail(@PathVariable("gradeId") Long gradeId)
+    {
+        return success(aemGradeRecordService.selectAemGradeRecordDetail(gradeId));
+    }
+
     @PreAuthorize("@ss.hasPermi('aem:gradeRecord:add')")
     @Log(title = "成绩记录", businessType = BusinessType.INSERT)
     @PostMapping

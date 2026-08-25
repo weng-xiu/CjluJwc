@@ -61,6 +61,16 @@ public class AemExamPlanController extends BaseController
         return success(aemExamPlanService.selectAemExamPlanByExamId(examId));
     }
 
+    /**
+     * 查询考试安排明细（含座位、监考子表），用于主子表联动展开
+     */
+    @PreAuthorize("@ss.hasPermi('aem:examPlan:query')")
+    @GetMapping(value = "/detail/{examId}")
+    public AjaxResult getDetail(@PathVariable("examId") Long examId)
+    {
+        return success(aemExamPlanService.selectAemExamPlanDetail(examId));
+    }
+
     @PreAuthorize("@ss.hasPermi('aem:examPlan:add')")
     @Log(title = "考试安排", businessType = BusinessType.INSERT)
     @PostMapping

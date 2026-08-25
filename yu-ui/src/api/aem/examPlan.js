@@ -10,6 +10,11 @@ export function getExamPlan(examId) {
   return request({ url: '/aem/examPlan/' + examId, method: 'get' })
 }
 
+// 查询考试安排明细（含座位、监考子表）
+export function getExamPlanDetail(examId) {
+  return request({ url: '/aem/examPlan/detail/' + examId, method: 'get' })
+}
+
 // 新增考试安排
 export function addExamPlan(data) {
   return request({ url: '/aem/examPlan', method: 'post', data: data })

@@ -12,6 +12,10 @@ import com.yu.aem.domain.AemGradeRecord;
 public interface IAemGradeRecordService 
 {
     public AemGradeRecord selectAemGradeRecordByGradeId(Long gradeId);
+
+    /** 查询成绩记录明细（含复核记录子表） */
+    public AemGradeRecord selectAemGradeRecordDetail(Long gradeId);
+
     public List<AemGradeRecord> selectAemGradeRecordList(AemGradeRecord aemGradeRecord);
     public int insertAemGradeRecord(AemGradeRecord aemGradeRecord);
     public int updateAemGradeRecord(AemGradeRecord aemGradeRecord);

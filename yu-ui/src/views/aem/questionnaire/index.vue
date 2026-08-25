@@ -12,7 +12,24 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['aem:questionnaire:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
-    <el-table v-loading="loading" :data="questionnaireList" @selection-change="handleSelectionChange">
+    <el-table ref="questionnaireTable" v-loading="loading" :data="questionnaireList" @selection-change="handleSelectionChange" :row-key="getRowKey" @expand-change="handleExpandChange">
+      <el-table-column type="expand">
+        <template slot-scope="props">
+          <master-detail-panel
+            :master-id="props.row.questionnaireId"
+            foreign-key="questionnaireId"
+            title="评教题目"
+            row-key="questionId"
+            :loader="loadQuestions"
+            :add-api="addQuestion"
+            :update-api="updateQuestion"
+            :delete-api="delQuestion"
+            :perms="{ add: ['aem:question:add'], edit: ['aem:question:edit'], remove: ['aem:question:remove'] }"
+            :columns="questionColumns"
+            @change="handleDetailChange"
+          />
+        </template>
+      </el-table-column>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="问卷标题" align="center" prop="title" :show-overflow-tooltip="true" />
       <el-table-column label="学期" align="center" prop="semesterId">
@@ -28,6 +45,7 @@
       <el-table-column label="是否匿名" align="center" prop="isAnonymous"><template slot-scope="scope"><dict-tag :options="dict.type.aem_is_anonymous" :value="scope.row.isAnonymous"/></template></el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-view" @click="toggleExpand(scope.row)">明细</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['aem:questionnaire:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['aem:questionnaire:remove']">删除</el-button>
         </template>
@@ -61,14 +79,25 @@
 </template>
 <script>
 import { listQuestionnaire, getQuestionnaire, delQuestionnaire, addQuestionnaire, updateQuestionnaire } from "@/api/aem/questionnaire"
+import { listQuestion, addQuestion, updateQuestion, delQuestion } from "@/api/aem/evaluationQuestion"
 import { listYear } from "@/api/brm/year"
 import { listSemester, getSemester } from "@/api/brm/semester"
+import MasterDetailPanel from "../components/MasterDetailPanel"
 export default {
-  name: "Questionnaire", dicts: ['aem_eval_status', 'aem_is_anonymous'],
+  name: "Questionnaire",
+  components: { MasterDetailPanel },
+  dicts: ['aem_eval_status', 'aem_is_anonymous', 'aem_question_type'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, questionnaireList: [], title: "", open: false, semesterNameMap: {},
     queryParams: { pageNum: 1, pageSize: 10, title: null, evalStatus: null },
     form: {}, rules: { title: [{ required: true, message: "问卷标题不能为空", trigger: "blur" }] },
-    yearList: [], formYearId: null, formSemesterList: []
+    yearList: [], formYearId: null, formSemesterList: [],
+    questionColumns: [
+      { prop: 'questionType', label: '题目类型', width: 110, type: 'dict', dict: 'aem_question_type', required: true },
+      { prop: 'questionContent', label: '题目内容', required: true },
+      { prop: 'sortOrder', label: '排序', width: 80, type: 'number', min: 0 },
+      { prop: 'maxScore', label: '最高分', width: 100, type: 'number', min: 0, precision: 1 },
+      { prop: 'optionsJson', label: '选项JSON', type: 'textarea', editable: false }
+    ]
   }},
   created() { this.loadSemesterNameMap(); this.loadYears(); this.getList() },
   methods: {
@@ -93,6 +122,14 @@ export default {
       return this.semesterNameMap[semesterId] || semesterId
     },
     getList() { this.loading = true; listQuestionnaire(this.queryParams).then(response => { this.questionnaireList = response.rows; this.total = response.total; this.loading = false }) },
+    getRowKey(row) { return row.questionnaireId },
+    handleExpandChange() { /* 由 MasterDetailPanel 内部 watch masterId 自动加载 */ },
+    toggleExpand(row) { this.$refs.questionnaireTable && this.$refs.questionnaireTable.toggleRowExpansion(row) },
+    loadQuestions(questionnaireId) {
+      return listQuestion({ questionnaireId, pageNum: 1, pageSize: 1000 }).then(res => res.rows)
+    },
+    // 子表变更后刷新主表列表（题目数量回写）
+    handleDetailChange() { this.getList() },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { questionnaireId: null, semesterId: null, title: null, description: null, questionCount: null, fullScore: null, startTime: null, endTime: null, evalStatus: "0", isAnonymous: "0" }; this.formYearId = null; this.formSemesterList = []; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

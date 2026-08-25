@@ -10,6 +10,11 @@ export function getQuestionnaire(questionnaireId) {
   return request({ url: '/aem/questionnaire/' + questionnaireId, method: 'get' })
 }
 
+// 查询评教问卷明细（含题目子表）
+export function getQuestionnaireDetail(questionnaireId) {
+  return request({ url: '/aem/questionnaire/detail/' + questionnaireId, method: 'get' })
+}
+
 // 新增评教问卷
 export function addQuestionnaire(data) {
   return request({ url: '/aem/questionnaire', method: 'post', data: data })

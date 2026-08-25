@@ -10,6 +10,7 @@ import com.yu.common.annotation.Excel;
 import com.yu.common.core.domain.BaseEntity;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 考试安排对象 aem_exam_plan
@@ -68,6 +69,18 @@ public class AemExamPlan extends BaseEntity
     /** 状态 */
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
+
+    /** 子表：考场座位编排 */
+    private List<AemExamSeat> seats;
+
+    /** 子表：监考分配 */
+    private List<AemExamInvigilation> invigilations;
+
+    public List<AemExamSeat> getSeats() { return seats; }
+    public void setSeats(List<AemExamSeat> seats) { this.seats = seats; }
+
+    public List<AemExamInvigilation> getInvigilations() { return invigilations; }
+    public void setInvigilations(List<AemExamInvigilation> invigilations) { this.invigilations = invigilations; }
 
     public Long getExamId() { return examId; }
     public void setExamId(Long examId) { this.examId = examId; }

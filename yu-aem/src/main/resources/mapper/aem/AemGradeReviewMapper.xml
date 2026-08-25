@@ -104,4 +104,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from aem_grade_review where review_id in
         <foreach item="reviewId" collection="array" open="(" separator="," close=")">#{reviewId}</foreach>
     </delete>
+
+    <delete id="deleteByGradeId" parameterType="Long">
+        delete from aem_grade_review where grade_id = #{gradeId}
+    </delete>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        insert into aem_grade_review (grade_id, student_id, course_id, original_score, new_score, review_reason, review_type, approve_status, approve_by, approve_time, approve_opinion, status, create_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.gradeId}, #{item.studentId}, #{item.courseId}, #{item.originalScore}, #{item.newScore}, #{item.reviewReason}, #{item.reviewType}, #{item.approveStatus}, #{item.approveBy}, #{item.approveTime}, #{item.approveOpinion}, #{item.status}, #{item.createTime})
+        </foreach>
+    </insert>
 </mapper>

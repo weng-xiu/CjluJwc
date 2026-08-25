@@ -61,6 +61,16 @@ public class AemEvaluationQuestionnaireController extends BaseController
         return success(aemEvaluationQuestionnaireService.selectAemEvaluationQuestionnaireByQuestionnaireId(questionnaireId));
     }
 
+    /**
+     * 查询问卷明细（含题目子表），用于主子表联动展开
+     */
+    @PreAuthorize("@ss.hasPermi('aem:questionnaire:query')")
+    @GetMapping(value = "/detail/{questionnaireId}")
+    public AjaxResult getDetail(@PathVariable("questionnaireId") Long questionnaireId)
+    {
+        return success(aemEvaluationQuestionnaireService.selectAemEvaluationQuestionnaireDetail(questionnaireId));
+    }
+
     @PreAuthorize("@ss.hasPermi('aem:questionnaire:add')")
     @Log(title = "评教问卷配置", businessType = BusinessType.INSERT)
     @PostMapping

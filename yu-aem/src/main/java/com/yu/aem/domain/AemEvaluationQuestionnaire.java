@@ -9,6 +9,7 @@ import com.yu.common.annotation.Excel;
 import com.yu.common.core.domain.BaseEntity;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 评教问卷配置对象 aem_evaluation_questionnaire
@@ -64,6 +65,12 @@ public class AemEvaluationQuestionnaire extends BaseEntity
     /** 状态 */
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
+
+    /** 子表：评教题目 */
+    private List<AemEvaluationQuestion> questions;
+
+    public List<AemEvaluationQuestion> getQuestions() { return questions; }
+    public void setQuestions(List<AemEvaluationQuestion> questions) { this.questions = questions; }
 
     public Long getQuestionnaireId() { return questionnaireId; }
     public void setQuestionnaireId(Long questionnaireId) { this.questionnaireId = questionnaireId; }

@@ -10,6 +10,11 @@ export function getGradeRecord(gradeId) {
   return request({ url: '/aem/gradeRecord/' + gradeId, method: 'get' })
 }
 
+// 查询成绩记录明细（含复核记录子表）
+export function getGradeRecordDetail(gradeId) {
+  return request({ url: '/aem/gradeRecord/detail/' + gradeId, method: 'get' })
+}
+
 // 新增成绩记录
 export function addGradeRecord(data) {
   return request({ url: '/aem/gradeRecord', method: 'post', data: data })

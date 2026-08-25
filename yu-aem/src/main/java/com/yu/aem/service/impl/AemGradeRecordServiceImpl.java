@@ -10,8 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.aem.mapper.AemGradeRecordMapper;
+import com.yu.aem.mapper.AemGradeReviewMapper;
 import com.yu.aem.mapper.AemGpaAlgorithmConfigMapper;
 import com.yu.aem.domain.AemGradeRecord;
+import com.yu.aem.domain.AemGradeReview;
 import com.yu.aem.domain.AemGpaAlgorithmConfig;
 import com.yu.aem.service.IAemGradeRecordService;
 import com.yu.aem.strategy.GpaStrategyFactory;
@@ -30,6 +32,9 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     private AemGradeRecordMapper aemGradeRecordMapper;
 
     @Autowired
+    private AemGradeReviewMapper aemGradeReviewMapper;
+
+    @Autowired
     private AemGpaAlgorithmConfigMapper aemGpaAlgorithmConfigMapper;
 
     @Autowired
@@ -39,6 +44,20 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     public AemGradeRecord selectAemGradeRecordByGradeId(Long gradeId)
     {
         return aemGradeRecordMapper.selectAemGradeRecordByGradeId(gradeId);
+    }
+
+    @Override
+    public AemGradeRecord selectAemGradeRecordDetail(Long gradeId)
+    {
+        AemGradeRecord record = aemGradeRecordMapper.selectAemGradeRecordByGradeId(gradeId);
+        if (record == null)
+        {
+            return null;
+        }
+        AemGradeReview reviewQuery = new AemGradeReview();
+        reviewQuery.setGradeId(gradeId);
+        record.setReviews(aemGradeReviewMapper.selectAemGradeReviewList(reviewQuery));
+        return record;
     }
 
     @Override
@@ -100,6 +119,8 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     @Transactional
     public int deleteAemGradeRecordByGradeId(Long gradeId)
     {
+        // 级联删除复核子表，保证主子表数据一致性
+        aemGradeReviewMapper.deleteByGradeId(gradeId);
         return aemGradeRecordMapper.deleteAemGradeRecordByGradeId(gradeId);
     }
 
@@ -107,6 +128,10 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     @Transactional
     public int deleteAemGradeRecordByGradeIds(Long[] gradeIds)
     {
+        for (Long gradeId : gradeIds)
+        {
+            aemGradeReviewMapper.deleteByGradeId(gradeId);
+        }
         return aemGradeRecordMapper.deleteAemGradeRecordByGradeIds(gradeIds);
     }
 

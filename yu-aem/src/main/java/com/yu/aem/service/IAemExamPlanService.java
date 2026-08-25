@@ -5,13 +5,17 @@ import com.yu.aem.domain.AemExamPlan;
 
 /**
  * 考试安排Service接口
- * 
+ *
  * @author ruoyi
  * @date 2026-05-11
  */
-public interface IAemExamPlanService 
+public interface IAemExamPlanService
 {
     public AemExamPlan selectAemExamPlanByExamId(Long examId);
+
+    /** 查询考试安排明细（含座位、监考子表） */
+    public AemExamPlan selectAemExamPlanDetail(Long examId);
+
     public List<AemExamPlan> selectAemExamPlanList(AemExamPlan aemExamPlan);
     public int insertAemExamPlan(AemExamPlan aemExamPlan);
     public int updateAemExamPlan(AemExamPlan aemExamPlan);

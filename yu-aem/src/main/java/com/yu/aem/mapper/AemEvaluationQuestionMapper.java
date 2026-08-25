@@ -17,4 +17,10 @@ public interface AemEvaluationQuestionMapper
     public int updateAemEvaluationQuestion(AemEvaluationQuestion aemEvaluationQuestion);
     public int deleteAemEvaluationQuestionByQuestionId(Long questionId);
     public int deleteAemEvaluationQuestionByQuestionIds(Long[] questionIds);
+
+    /** 根据问卷ID删除题目 */
+    public int deleteByQuestionnaireId(Long questionnaireId);
+
+    /** 批量插入题目 */
+    public int batchInsert(List<AemEvaluationQuestion> list);
 }

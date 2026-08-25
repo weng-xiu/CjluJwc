@@ -14,7 +14,24 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['aem:gradeRecord:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
-    <el-table v-loading="loading" :data="gradeRecordList" @selection-change="handleSelectionChange">
+    <el-table ref="gradeRecordTable" v-loading="loading" :data="gradeRecordList" @selection-change="handleSelectionChange" :row-key="getRowKey" @expand-change="handleExpandChange">
+      <el-table-column type="expand">
+        <template slot-scope="props">
+          <master-detail-panel
+            :master-id="props.row.gradeId"
+            foreign-key="gradeId"
+            title="成绩复核"
+            row-key="reviewId"
+            :default-values="{ studentId: props.row.studentId, courseId: props.row.courseId }"
+            :loader="loadReviews"
+            :add-api="addGradeReview"
+            :update-api="updateGradeReview"
+            :delete-api="delGradeReview"
+            :perms="{ add: ['aem:gradeReview:add'], edit: ['aem:gradeReview:edit'], remove: ['aem:gradeReview:remove'] }"
+            :columns="reviewColumns"
+          />
+        </template>
+      </el-table-column>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学生ID" align="center" prop="studentId" />
       <el-table-column label="课程ID" align="center" prop="courseId" />
@@ -29,6 +46,7 @@
       <el-table-column label="是否已复核" align="center" prop="isReviewed"><template slot-scope="scope"><dict-tag :options="dict.type.aem_is_reviewed" :value="scope.row.isReviewed"/></template></el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-view" @click="toggleExpand(scope.row)">明细</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['aem:gradeRecord:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['aem:gradeRecord:remove']">删除</el-button>
         </template>
@@ -55,15 +73,33 @@
 </template>
 <script>
 import { listGradeRecord, getGradeRecord, delGradeRecord, addGradeRecord, updateGradeRecord } from "@/api/aem/gradeRecord"
+import { listGradeReview, addGradeReview, updateGradeReview, delGradeReview } from "@/api/aem/gradeReview"
+import MasterDetailPanel from "../components/MasterDetailPanel"
 export default {
-  name: "GradeRecord", dicts: ['aem_grade_exam_type', 'aem_grade_level', 'aem_is_pass', 'aem_is_reviewed'],
+  name: "GradeRecord",
+  components: { MasterDetailPanel },
+  dicts: ['aem_grade_exam_type', 'aem_grade_level', 'aem_is_pass', 'aem_is_reviewed', 'aem_review_type', 'aem_approve_status'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, gradeRecordList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, studentId: null, courseId: null, examType: null, isPass: null },
-    form: {}, rules: {} }
-  },
+    form: {}, rules: {},
+    reviewColumns: [
+      { prop: 'originalScore', label: '原成绩', width: 100, type: 'number', min: 0, max: 100, precision: 1, required: true },
+      { prop: 'newScore', label: '新成绩', width: 100, type: 'number', min: 0, max: 100, precision: 1, required: true },
+      { prop: 'reviewType', label: '复核类型', width: 110, type: 'dict', dict: 'aem_review_type', defaultValue: '1' },
+      { prop: 'reviewReason', label: '复核原因', required: true },
+      { prop: 'approveStatus', label: '审批状态', width: 100, type: 'dict', dict: 'aem_approve_status', defaultValue: '0' },
+      { prop: 'approveOpinion', label: '审批意见', editable: false }
+    ]
+  }},
   created() { this.getList() },
   methods: {
     getList() { this.loading = true; listGradeRecord(this.queryParams).then(response => { this.gradeRecordList = response.rows; this.total = response.total; this.loading = false }) },
+    getRowKey(row) { return row.gradeId },
+    handleExpandChange() { /* 子表自加载 */ },
+    toggleExpand(row) { this.$refs.gradeRecordTable && this.$refs.gradeRecordTable.toggleRowExpansion(row) },
+    loadReviews(gradeId) {
+      return listGradeReview({ gradeId, pageNum: 1, pageSize: 1000 }).then(res => res.rows)
+    },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { gradeId: null, studentId: null, courseId: null, semesterId: null, examType: "0", regularScore: null, examScore: null, totalScore: null, gradePoint: null, gradeLevel: null, isPass: "1", isReviewed: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

@@ -17,4 +17,10 @@ public interface AemGradeReviewMapper
     public int updateAemGradeReview(AemGradeReview aemGradeReview);
     public int deleteAemGradeReviewByReviewId(Long reviewId);
     public int deleteAemGradeReviewByReviewIds(Long[] reviewIds);
+
+    /** 根据成绩ID删除复核记录 */
+    public int deleteByGradeId(Long gradeId);
+
+    /** 批量插入复核记录 */
+    public int batchInsert(List<AemGradeReview> list);
 }

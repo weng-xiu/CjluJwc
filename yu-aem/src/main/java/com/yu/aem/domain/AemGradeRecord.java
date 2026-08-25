@@ -7,6 +7,8 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import com.yu.common.annotation.Excel;
 import com.yu.common.core.domain.BaseEntity;
 
+import java.util.List;
+
 /**
  * 成绩记录对象 aem_grade_record
  * 
@@ -67,6 +69,12 @@ public class AemGradeRecord extends BaseEntity
     /** 状态 */
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
+
+    /** 子表：成绩复核记录 */
+    private List<AemGradeReview> reviews;
+
+    public List<AemGradeReview> getReviews() { return reviews; }
+    public void setReviews(List<AemGradeReview> reviews) { this.reviews = reviews; }
 
     public Long getGradeId() { return gradeId; }
     public void setGradeId(Long gradeId) { this.gradeId = gradeId; }

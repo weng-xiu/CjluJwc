@@ -23,6 +23,9 @@ public interface AemExamInvigilationMapper
     /** 根据考试ID删除监考记录 */
     public int deleteByExamId(Long examId);
 
+    /** 批量插入监考记录 */
+    public int batchInsert(List<AemExamInvigilation> list);
+
     /**
      * 统计某教师在指定日期、时段内已有的监考任务数（用于跨考试时间冲突检测）。
      *
