@@ -10,6 +10,7 @@
       <el-col :span="1.5"><el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['aem:question:edit']">修改</el-button></el-col>
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['aem:question:remove']">删除</el-button></el-col>
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['aem:question:export']">导出</el-button></el-col>
+      <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['aem:question:import']">导入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-table v-loading="loading" :data="questionList" @selection-change="handleSelectionChange">
@@ -38,12 +39,24 @@
       </el-form>
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
     </el-dialog>
+
+    <import-excel-dialog
+      ref="importDialog"
+      title="评教题目导入"
+      tip="请按模板填写问卷ID、问题类型(0单选/1多选/2评分/3文本)、问题内容等。"
+      :import-api="importQuestion"
+      template-url="aem/question/importTemplate"
+      template-name="question_template"
+      @success="getList"/>
   </div>
 </template>
 <script>
-import { listQuestion, getQuestion, delQuestion, addQuestion, updateQuestion } from "@/api/aem/evaluationQuestion"
+import { listQuestion, getQuestion, delQuestion, addQuestion, updateQuestion, importQuestion } from "@/api/aem/evaluationQuestion"
+import ImportExcelDialog from "../components/ImportExcelDialog"
 export default {
-  name: "Question", dicts: ['aem_question_type'],
+  name: "Question",
+  components: { ImportExcelDialog },
+  dicts: ['aem_question_type'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, questionList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, questionnaireId: null, questionType: null },
     form: {}, rules: { questionContent: [{ required: true, message: "问题内容不能为空", trigger: "blur" }] } }
@@ -60,7 +73,8 @@ export default {
     handleUpdate(row) { this.reset(); const questionId = row.questionId || this.ids; getQuestion(questionId).then(response => { this.form = response.data; this.open = true; this.title = "修改评教问题" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.questionId != null) { updateQuestion(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addQuestion(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const questionIds = row.questionId || this.ids; this.$modal.confirm('是否确认删除评教问题编号为"' + questionIds + '"的数据项？').then(function() { return delQuestion(questionIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
-    handleExport() { this.download('aem/question/export', { ...this.queryParams }, `question_${new Date().getTime()}.xlsx`) }
+    handleExport() { this.download('aem/question/export', { ...this.queryParams }, `question_${new Date().getTime()}.xlsx`) },
+    handleImport() { this.$refs.importDialog.open() }
   }
 }
 </script>

@@ -66,8 +66,10 @@
     </div>
 
     <!-- 加载更多 -->
-    <div v-if="!loading && hasMore" class="load-more" @click="loadMore">
-      点击加载更多
+    <div class="list-footer">
+      <span v-if="loading && gradeList.length > 0"><i class="el-icon-loading"></i> 加载中...</span>
+      <span v-else-if="finished">没有更多了</span>
+      <span v-else-if="gradeList.length > 0" class="load-more" @click="loadMore">点击加载更多</span>
     </div>
   </div>
 </template>
@@ -90,17 +92,22 @@ export default {
       avgScore: null,
       pageNum: 1,
       pageSize: 20,
-      total: 0
-    }
-  },
-  computed: {
-    hasMore() {
-      return this.gradeList.length < this.total
+      total: 0,
+      allFiltered: [],
+      finished: false,
+      scrollEl: null
     }
   },
   mounted() {
     this.loadStatistics()
     this.loadAllGrades()
+    this.bindScroll()
+  },
+  activated() {
+    this.bindScroll()
+  },
+  beforeDestroy() {
+    this.unbindScroll()
   },
   methods: {
     loadStatistics() {
@@ -127,17 +134,26 @@ export default {
           this.currentSemester = this.semesters[0]
           this.filterBySemester()
         } else {
-          this.gradeList = this.allGrades.slice(0, this.pageSize)
+          this.applyDisplayPage()
         }
       }).finally(() => {
         this.loading = false
       })
     },
+    applyDisplayPage() {
+      // 根据当前页截取当前学期（或全部）数据用于展示
+      const source = this.allFiltered.length > 0 ? this.allFiltered : this.allGrades
+      this.gradeList = source.slice(0, this.pageNum * this.pageSize)
+      this.finished = this.gradeList.length >= source.length
+    },
     filterBySemester() {
       const filtered = this.allGrades.filter(
         g => (g.semester || g.termName) === this.currentSemester
       )
-      this.gradeList = filtered
+      this.allFiltered = filtered
+      this.pageNum = 1
+      this.finished = false
+      this.applyDisplayPage()
       // 计算当前学期统计
       let totalGpaCredit = 0
       let totalCredit = 0
@@ -155,13 +171,52 @@ export default {
       this.avgScore = filtered.length > 0 ? (totalScore / filtered.length).toFixed(1) : '--'
     },
     switchSemester(sem) {
+      if (this.currentSemester === sem) return
       this.currentSemester = sem
       this.filterBySemester()
     },
     loadMore() {
-      const start = this.gradeList.length
-      const more = this.allGrades.slice(start, start + this.pageSize)
-      this.gradeList = this.gradeList.concat(more)
+      // 防重复加载；无更多数据时设置 finished
+      if (this.loading || this.finished) return
+      this.pageNum++
+      this.applyDisplayPage()
+    },
+    getScrollContainer() {
+      let node = this.$el
+      while (node && node.tagName !== 'BODY') {
+        if (node.classList && node.classList.contains('mobile-content')) return node
+        node = node.parentNode
+      }
+      return window
+    },
+    bindScroll() {
+      this.scrollEl = this.getScrollContainer()
+      if (this.scrollEl) {
+        this.scrollEl.addEventListener('scroll', this.onScroll, { passive: true })
+      }
+    },
+    unbindScroll() {
+      if (this.scrollEl) {
+        this.scrollEl.removeEventListener('scroll', this.onScroll)
+        this.scrollEl = null
+      }
+    },
+    onScroll() {
+      if (this.loading || this.finished) return
+      const el = this.scrollEl
+      let scrollTop, clientHeight, scrollHeight
+      if (el === window) {
+        scrollTop = window.pageYOffset || document.documentElement.scrollTop
+        clientHeight = window.innerHeight
+        scrollHeight = document.documentElement.scrollHeight
+      } else {
+        scrollTop = el.scrollTop
+        clientHeight = el.clientHeight
+        scrollHeight = el.scrollHeight
+      }
+      if (scrollTop + clientHeight >= scrollHeight - 80) {
+        this.loadMore()
+      }
     },
     getScoreClass(score) {
       if (score == null) return ''
@@ -290,11 +345,15 @@ export default {
 .level-fail { background: #fef0f0; color: #f56c6c; }
 
 /* 加载更多 */
-.load-more {
+.list-footer {
   text-align: center;
   padding: 16px;
-  color: #007ab8;
+  color: #c0c4cc;
   font-size: 13px;
+}
+.list-footer i { margin-right: 4px; }
+.load-more {
+  color: #007ab8;
   cursor: pointer;
 }
 </style>

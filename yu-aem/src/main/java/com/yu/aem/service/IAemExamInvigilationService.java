@@ -26,4 +26,13 @@ public interface IAemExamInvigilationService
      * @return 派发结果统计
      */
     public java.util.Map<String, Object> autoDispatchInvigilators(Long examId);
+
+    /**
+     * 批量导入监考安排
+     *
+     * @param list      监考记录列表
+     * @param operator  操作人
+     * @return 导入条数
+     */
+    public int importInvigilation(List<AemExamInvigilation> list, String operator);
 }

@@ -114,4 +114,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
               or (start_time &gt;= #{startTime} and end_time &lt;= #{endTime})
           )
     </select>
+
+    <!-- 一次性查询指定时段所有冲突教师ID，避免自动派监考时逐教师N+1查询 -->
+    <select id="selectBusyTeacherIds" resultType="java.lang.Long">
+        select distinct teacher_id from aem_exam_invigilation
+        where exam_date = #{examDate}
+          and status = '0'
+          <if test="excludeExamId != null">and exam_id != #{excludeExamId}</if>
+          and (
+              (start_time &lt;= #{startTime} and end_time &gt; #{startTime})
+              or (start_time &lt; #{endTime} and end_time &gt;= #{endTime})
+              or (start_time &gt;= #{startTime} and end_time &lt;= #{endTime})
+          )
+    </select>
 </mapper>

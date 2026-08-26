@@ -1,6 +1,7 @@
 package com.yu.aem.service.impl;
 
 import java.util.List;
+import java.util.Map;
 import com.yu.common.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,8 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.aem.mapper.AemGradeStatisticsMapper;
-import com.yu.aem.domain.AemGradeRecord;
-import com.yu.aem.mapper.AemGradeRecordMapper;
 import com.yu.aem.domain.AemGradeStatistics;
 import com.yu.aem.service.IAemGradeStatisticsService;
 
@@ -26,9 +25,6 @@ public class AemGradeStatisticsServiceImpl implements IAemGradeStatisticsService
 
     @Autowired
     private AemGradeStatisticsMapper aemGradeStatisticsMapper;
-
-    @Autowired
-    private AemGradeRecordMapper aemGradeRecordMapper;
 
     @Override
     public AemGradeStatistics selectAemGradeStatisticsByStatId(Long statId)
@@ -65,83 +61,101 @@ public class AemGradeStatisticsServiceImpl implements IAemGradeStatisticsService
     }
 
     /**
-     * 按课程聚合成绩统计
+     * 按课程聚合成绩统计（使用SQL聚合，避免全量加载成绩到内存）
      */
     @Override
     @Transactional
     public AemGradeStatistics aggregateByCourse(Long courseId, Long semesterId)
     {
-        // 查询该课程该学期所有成绩记录
-        AemGradeRecord query = new AemGradeRecord();
-        query.setCourseId(courseId);
-        query.setSemesterId(semesterId);
-        List<AemGradeRecord> records = aemGradeRecordMapper.selectAemGradeRecordList(query);
-        if (records == null || records.isEmpty())
+        Map<String, Object> agg = aemGradeStatisticsMapper.aggregateGradeByCourse(courseId, semesterId);
+        if (agg == null || toInt(agg.get("totalStudents")) == 0)
         {
             log.warn("课程[{}]学期[{}]无成绩记录", courseId, semesterId);
             return null;
         }
-        // 过滤出有总成绩的记录
-        List<AemGradeRecord> validRecords = new java.util.ArrayList<>();
-        for (AemGradeRecord r : records)
+        AemGradeStatistics stat = upsertStat(courseId, semesterId, agg);
+        log.info("课程[{}]学期[{}]成绩统计聚合完成：{}人，平均分{}，通过率{}%",
+                courseId, semesterId, stat.getTotalStudents(), stat.getAvgScore(), stat.getPassRate());
+        return stat;
+    }
+
+    /**
+     * 按学期批量聚合所有课程的成绩统计
+     */
+    @Override
+    @Transactional
+    public int aggregateBySemester(Long semesterId)
+    {
+        List<Map<String, Object>> list = aemGradeStatisticsMapper.aggregateGradeBySemester(semesterId);
+        if (list == null || list.isEmpty())
         {
-            if (r.getTotalScore() != null)
+            return 0;
+        }
+        String batchNo = "STAT" + System.currentTimeMillis();
+        int count = 0;
+        for (Map<String, Object> agg : list)
+        {
+            Long courseId = toLong(agg.get("courseId"));
+            if (courseId == null)
             {
-                validRecords.add(r);
+                continue;
             }
+            AemGradeStatistics stat = upsertStat(courseId, semesterId, agg);
+            stat.setBatchNo(batchNo);
+            aemGradeStatisticsMapper.updateAemGradeStatistics(stat);
+            count++;
         }
-        if (validRecords.isEmpty())
-        {
-            return null;
-        }
-        // 计算统计数据
-        int totalStudents = validRecords.size();
-        double maxScore = Double.MIN_VALUE;
-        double minScore = Double.MAX_VALUE;
-        double sumScore = 0;
-        int passCount = 0;
-        int excellentCount = 0;
-        for (AemGradeRecord r : validRecords)
-        {
-            double score = r.getTotalScore();
-            if (score > maxScore) maxScore = score;
-            if (score < minScore) minScore = score;
-            sumScore += score;
-            if (score >= 60) passCount++;
-            if (score >= 90) excellentCount++;
-        }
-        double avgScore = sumScore / totalStudents;
-        int failCount = totalStudents - passCount;
-        double passRate = totalStudents > 0 ? (double) passCount / totalStudents * 100 : 0;
-        double excellentRate = totalStudents > 0 ? (double) excellentCount / totalStudents * 100 : 0;
-        // 四舍五入保留两位小数
-        avgScore = Math.round(avgScore * 100) / 100.0;
-        passRate = Math.round(passRate * 100) / 100.0;
-        excellentRate = Math.round(excellentRate * 100) / 100.0;
-        // 查询是否已有统计记录
+        log.info("学期[{}]批量成绩统计聚合完成，共{}门课程，批次{}", semesterId, count, batchNo);
+        return count;
+    }
+
+    /**
+     * 分数段分布（供前端图表）
+     */
+    @Override
+    public Map<String, Object> scoreDistribution(Long courseId, Long semesterId)
+    {
+        Map<String, Object> dist = aemGradeStatisticsMapper.scoreDistribution(courseId, semesterId);
+        return dist == null ? Map.of() : dist;
+    }
+
+    @Override
+    public Map<String, Object> semesterOverview(Long semesterId)
+    {
+        Map<String, Object> overview = aemGradeStatisticsMapper.semesterOverview(semesterId);
+        return overview == null ? Map.of() : overview;
+    }
+
+    @Override
+    public List<Map<String, Object>> courseRanking(Long courseId, Long semesterId)
+    {
+        return aemGradeStatisticsMapper.courseRanking(courseId, semesterId);
+    }
+
+    /**
+     * 新增或更新统计快照
+     */
+    private AemGradeStatistics upsertStat(Long courseId, Long semesterId, Map<String, Object> agg)
+    {
         AemGradeStatistics existing = aemGradeStatisticsMapper.selectByCourseAndSemester(courseId, semesterId);
-        AemGradeStatistics stat;
-        if (existing != null)
+        AemGradeStatistics stat = existing != null ? existing : new AemGradeStatistics();
+        if (existing == null)
         {
-            stat = existing;
-        }
-        else
-        {
-            stat = new AemGradeStatistics();
             stat.setCourseId(courseId);
             stat.setSemesterId(semesterId);
             stat.setCreateTime(DateUtils.getNowDate());
         }
-        stat.setTotalStudents(totalStudents);
-        stat.setMaxScore(maxScore);
-        stat.setMinScore(minScore);
-        stat.setAvgScore(avgScore);
-        stat.setPassCount(passCount);
-        stat.setFailCount(failCount);
-        stat.setPassRate(passRate);
-        stat.setExcellentCount(excellentCount);
-        stat.setExcellentRate(excellentRate);
+        stat.setTotalStudents(toInt(agg.get("totalStudents")));
+        stat.setMaxScore(toDouble(agg.get("maxScore")));
+        stat.setMinScore(toDouble(agg.get("minScore")));
+        stat.setAvgScore(toDouble(agg.get("avgScore")));
+        stat.setPassCount(toInt(agg.get("passCount")));
+        stat.setFailCount(toInt(agg.get("failCount")));
+        stat.setPassRate(toDouble(agg.get("passRate")));
+        stat.setExcellentCount(toInt(agg.get("excellentCount")));
+        stat.setExcellentRate(toDouble(agg.get("excellentRate")));
         stat.setStatus("0");
+        stat.setStatTime(DateUtils.getNowDate());
         stat.setUpdateTime(DateUtils.getNowDate());
         if (existing != null)
         {
@@ -151,7 +165,10 @@ public class AemGradeStatisticsServiceImpl implements IAemGradeStatisticsService
         {
             aemGradeStatisticsMapper.insertAemGradeStatistics(stat);
         }
-        log.info("课程[{}]学期[{}]成绩统计聚合完成：{}人，平均分{}，通过率{}%", courseId, semesterId, totalStudents, avgScore, passRate);
         return stat;
     }
+
+    private Integer toInt(Object o) { return o == null ? 0 : ((Number) o).intValue(); }
+    private Double toDouble(Object o) { return o == null ? 0.0 : ((Number) o).doubleValue(); }
+    private Long toLong(Object o) { return o == null ? null : ((Number) o).longValue(); }
 }

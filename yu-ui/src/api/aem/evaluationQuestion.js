@@ -24,3 +24,8 @@ export function updateQuestion(data) {
 export function delQuestion(questionId) {
   return request({ url: '/aem/question/' + questionId, method: 'delete' })
 }
+
+// 批量导入评教题目
+export function importQuestion(data) {
+  return request({ url: '/aem/question/importData', method: 'post', headers: { 'Content-Type': 'multipart/form-data' }, data: data })
+}

@@ -8,7 +8,9 @@ import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
+import com.yu.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -141,6 +143,10 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
         }
         // 4. 清除原有监考记录
         aemExamInvigilationMapper.deleteByExamId(examId);
+        // 4.1 一次性查询该时段已存在监考冲突的教师ID集合（避免逐教师N+1查询）
+        List<Long> busyIds = aemExamInvigilationMapper.selectBusyTeacherIds(
+                examPlan.getExamDate(), examPlan.getStartTime(), examPlan.getEndTime(), examId);
+        Set<Long> busyTeacherIds = busyIds == null ? new HashSet<>() : new HashSet<>(busyIds);
         // 5. 分配监考（每个考场1主1副，回避冲突：同场不重复 + 跨考试时间不冲突）
         List<AemExamInvigilation> dispatchList = new ArrayList<>();
         Set<Long> usedTeacherIds = new HashSet<>(); // 已分配的教师（避免同一场考试重复分配）
@@ -150,7 +156,7 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
         for (Long classroomId : classroomIds)
         {
             // 分配主监考：检查跨考试时间冲突
-            Long mainTeacherId = findAvailableTeacher(teachers, usedTeacherIds, examPlan, examId);
+            Long mainTeacherId = findAvailableTeacher(teachers, usedTeacherIds, busyTeacherIds);
             if (mainTeacherId == null)
             {
                 failCount++;
@@ -161,7 +167,7 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
             AemExamInvigilation mainInvigilation = buildInvigilation(examId, classroomId, mainTeacherId, examPlan, "0");
             dispatchList.add(mainInvigilation);
             // 分配副监考
-            Long assistTeacherId = findAvailableTeacher(teachers, usedTeacherIds, examPlan, examId);
+            Long assistTeacherId = findAvailableTeacher(teachers, usedTeacherIds, busyTeacherIds);
             if (assistTeacherId != null)
             {
                 usedTeacherIds.add(assistTeacherId);
@@ -170,10 +176,10 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
             }
             assignedCount++;
         }
-        // 6. 批量插入
-        for (AemExamInvigilation inv : dispatchList)
+        // 6. 批量插入（替代循环单条插入，显著减少数据库往返）
+        if (!dispatchList.isEmpty())
         {
-            aemExamInvigilationMapper.insertAemExamInvigilation(inv);
+            aemExamInvigilationMapper.batchInsert(dispatchList);
         }
         result.put("totalClassrooms", classroomIds.size());
         result.put("assignedCount", assignedCount);
@@ -186,28 +192,65 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
 
     /**
      * 从教师列表中查找可用教师。
-     * 双重校验：1) 同一场考试未分配过；2) 在考试时间段内无其他监考任务（跨考试冲突）。
+     * 双重校验：1) 同一场考试未分配过；2) 在考试时间段内无其他监考任务（跨考试冲突，使用预取的冲突集合）。
      */
     private Long findAvailableTeacher(List<BrmTeacher> teachers, Set<Long> usedTeacherIds,
-                                     AemExamPlan examPlan, Long excludeExamId)
+                                     Set<Long> busyTeacherIds)
     {
         for (BrmTeacher teacher : teachers)
         {
             Long tid = teacher.getTeacherId();
-            if (usedTeacherIds.contains(tid))
+            if (usedTeacherIds.contains(tid) || busyTeacherIds.contains(tid))
             {
                 continue;
             }
-            // 跨考试时间冲突检测
-            int conflict = aemExamInvigilationMapper.countTeacherTimeConflict(
-                    tid, examPlan.getExamDate(), examPlan.getStartTime(),
-                    examPlan.getEndTime(), excludeExamId);
-            if (conflict == 0)
-            {
-                return tid;
-            }
+            return tid;
         }
         return null;
+    }
+
+    @Override
+    @Transactional
+    public int importInvigilation(List<AemExamInvigilation> list, String operator)
+    {
+        if (list == null || list.isEmpty())
+        {
+            throw new ServiceException("导入数据不能为空");
+        }
+        for (AemExamInvigilation inv : list)
+        {
+            if (inv.getExamId() == null)
+            {
+                throw new ServiceException("考试ID不能为空");
+            }
+            if (inv.getClassroomId() == null)
+            {
+                throw new ServiceException("教室ID不能为空");
+            }
+            if (inv.getTeacherId() == null)
+            {
+                throw new ServiceException("监考教师不能为空");
+            }
+            if (inv.getExamDate() == null)
+            {
+                throw new ServiceException("考试日期不能为空");
+            }
+            if (StringUtils.isEmpty(inv.getStartTime()) || StringUtils.isEmpty(inv.getEndTime()))
+            {
+                throw new ServiceException("开始时间和结束时间不能为空");
+            }
+            if (StringUtils.isEmpty(inv.getDutyType()))
+            {
+                inv.setDutyType("0");
+            }
+            if (StringUtils.isEmpty(inv.getStatus()))
+            {
+                inv.setStatus("0");
+            }
+            inv.setCreateBy(operator);
+            inv.setCreateTime(DateUtils.getNowDate());
+        }
+        return aemExamInvigilationMapper.batchInsert(list);
     }
 
     /**

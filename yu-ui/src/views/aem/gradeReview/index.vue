@@ -26,8 +26,10 @@
       <el-table-column label="审批状态" align="center" prop="approveStatus"><template slot-scope="scope"><dict-tag :options="dict.type.aem_approve_status" :value="scope.row.approveStatus"/></template></el-table-column>
       <el-table-column label="审批人" align="center" prop="approveBy" />
       <el-table-column label="审批时间" align="center" prop="approveTime" width="160"><template slot-scope="scope"><span>{{ parseTime(scope.row.approveTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span></template></el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="220">
         <template slot-scope="scope">
+          <el-button v-if="scope.row.approveStatus === '0'" size="mini" type="text" icon="el-icon-check" style="color:#67c23a" @click="handleApprove(scope.row, true)" v-hasPermi="['aem:gradeReview:edit']">通过</el-button>
+          <el-button v-if="scope.row.approveStatus === '0'" size="mini" type="text" icon="el-icon-close" style="color:#f56c6c" @click="handleApprove(scope.row, false)" v-hasPermi="['aem:gradeReview:edit']">驳回</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['aem:gradeReview:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['aem:gradeReview:remove']">删除</el-button>
         </template>
@@ -53,7 +55,7 @@
   </div>
 </template>
 <script>
-import { listGradeReview, getGradeReview, delGradeReview, addGradeReview, updateGradeReview } from "@/api/aem/gradeReview"
+import { listGradeReview, getGradeReview, delGradeReview, addGradeReview, updateGradeReview, approveReview } from "@/api/aem/gradeReview"
 export default {
   name: "GradeReview", dicts: ['aem_review_type', 'aem_approve_status'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, gradeReviewList: [], title: "", open: false,
@@ -72,6 +74,17 @@ export default {
     handleUpdate(row) { this.reset(); const reviewId = row.reviewId || this.ids; getGradeReview(reviewId).then(response => { this.form = response.data; this.open = true; this.title = "修改成绩复核" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.reviewId != null) { updateGradeReview(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addGradeReview(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const reviewIds = row.reviewId || this.ids; this.$modal.confirm('是否确认删除成绩复核编号为"' + reviewIds + '"的数据项？').then(function() { return delGradeReview(reviewIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
+    handleApprove(row, approved) {
+      const action = approved ? '通过' : '驳回'
+      this.$prompt('请输入审批意见（' + action + '）', '成绩复核审批', {
+        confirmButtonText: '确定', cancelButtonText: '取消', inputType: 'textarea',
+        inputValidator: (v) => approved ? true : (v && v.trim() ? true : '驳回必须填写审批意见')
+      }).then(({ value }) => {
+        return approveReview(row.reviewId, approved, value || '')
+      }).then(() => {
+        this.$modal.msgSuccess(action + '成功'); this.getList()
+      }).catch(() => {})
+    },
     handleExport() { this.download('aem/gradeReview/export', { ...this.queryParams }, `gradeReview_${new Date().getTime()}.xlsx`) }
   }
 }

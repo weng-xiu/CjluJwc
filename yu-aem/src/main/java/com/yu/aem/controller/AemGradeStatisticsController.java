@@ -51,9 +51,67 @@ public class AemGradeStatisticsController extends BaseController
     }
 
     @PreAuthorize("@ss.hasPermi('aem:gradeStatistics:query')")
-    @GetMapping(value = "/{statId}")
+    @GetMapping(value = "/{statId:\\d+}")
     public AjaxResult getInfo(@PathVariable("statId") Long statId)
     {
         return success(aemGradeStatisticsService.selectAemGradeStatisticsByStatId(statId));
+    }
+
+    /**
+     * 按课程+学期触发聚合统计（SQL聚合，生成/刷新统计快照）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeStatistics:edit')")
+    @Log(title = "成绩统计分析", businessType = BusinessType.UPDATE)
+    @PostMapping("/aggregate")
+    public AjaxResult aggregate(@org.springframework.web.bind.annotation.RequestParam Long courseId,
+                                @org.springframework.web.bind.annotation.RequestParam Long semesterId)
+    {
+        return success(aemGradeStatisticsService.aggregateByCourse(courseId, semesterId));
+    }
+
+    /**
+     * 按学期批量聚合所有课程
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeStatistics:edit')")
+    @Log(title = "成绩统计分析", businessType = BusinessType.UPDATE)
+    @PostMapping("/aggregateSemester")
+    public AjaxResult aggregateSemester(@org.springframework.web.bind.annotation.RequestParam Long semesterId)
+    {
+        int count = aemGradeStatisticsService.aggregateBySemester(semesterId);
+        return success("已聚合" + count + "门课程");
+    }
+
+    /**
+     * 分数段分布（供图表）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeStatistics:query')")
+    @GetMapping("/distribution")
+    public AjaxResult distribution(@org.springframework.web.bind.annotation.RequestParam Long courseId,
+                                   @org.springframework.web.bind.annotation.RequestParam Long semesterId)
+    {
+        return success(aemGradeStatisticsService.scoreDistribution(courseId, semesterId));
+    }
+
+    /**
+     * 学期成绩总览（仪表盘/汇总卡片）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeStatistics:query')")
+    @GetMapping("/overview")
+    public AjaxResult overview(@org.springframework.web.bind.annotation.RequestParam Long semesterId)
+    {
+        return success(aemGradeStatisticsService.semesterOverview(semesterId));
+    }
+
+    /**
+     * 课程成绩排名（分页）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeStatistics:query')")
+    @GetMapping("/ranking")
+    public TableDataInfo ranking(@org.springframework.web.bind.annotation.RequestParam Long courseId,
+                                 @org.springframework.web.bind.annotation.RequestParam Long semesterId)
+    {
+        startPage();
+        List<java.util.Map<String, Object>> list = aemGradeStatisticsService.courseRanking(courseId, semesterId);
+        return getDataTable(list);
     }
 }

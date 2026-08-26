@@ -11,6 +11,7 @@
       <el-col :span="1.5"><el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['aem:examSeat:edit']">修改</el-button></el-col>
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['aem:examSeat:remove']">删除</el-button></el-col>
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['aem:examSeat:export']">导出</el-button></el-col>
+      <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['aem:examSeat:import']">导入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-table v-loading="loading" :data="examSeatList" @selection-change="handleSelectionChange">
@@ -41,12 +42,24 @@
       </el-form>
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
     </el-dialog>
+
+    <import-excel-dialog
+      ref="importDialog"
+      title="考场座位导入"
+      tip="请按模板填写考试ID、教室ID、学生ID、座位号等信息。"
+      :import-api="importExamSeat"
+      template-url="aem/examSeat/importTemplate"
+      template-name="examSeat_template"
+      @success="getList"/>
   </div>
 </template>
 <script>
-import { listExamSeat, getExamSeat, delExamSeat, addExamSeat, updateExamSeat } from "@/api/aem/examSeat"
+import { listExamSeat, getExamSeat, delExamSeat, addExamSeat, updateExamSeat, importExamSeat } from "@/api/aem/examSeat"
+import ImportExcelDialog from "../components/ImportExcelDialog"
 export default {
-  name: "ExamSeat", dicts: ['aem_seat_status'],
+  name: "ExamSeat",
+  components: { ImportExcelDialog },
+  dicts: ['aem_seat_status'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, examSeatList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, examId: null, classroomId: null, studentId: null },
     form: {}, rules: {} }
@@ -63,7 +76,8 @@ export default {
     handleUpdate(row) { this.reset(); const seatId = row.seatId || this.ids; getExamSeat(seatId).then(response => { this.form = response.data; this.open = true; this.title = "修改座位编排" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.seatId != null) { updateExamSeat(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addExamSeat(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const seatIds = row.seatId || this.ids; this.$modal.confirm('是否确认删除座位编排编号为"' + seatIds + '"的数据项？').then(function() { return delExamSeat(seatIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
-    handleExport() { this.download('aem/examSeat/export', { ...this.queryParams }, `examSeat_${new Date().getTime()}.xlsx`) }
+    handleExport() { this.download('aem/examSeat/export', { ...this.queryParams }, `examSeat_${new Date().getTime()}.xlsx`) },
+    handleImport() { this.$refs.importDialog.open() }
   }
 }
 </script>

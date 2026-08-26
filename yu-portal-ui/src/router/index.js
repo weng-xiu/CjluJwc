@@ -79,6 +79,18 @@ export const constantRoutes = [
       { path: 'selection', component: () => import('@/views/mobile/selection.vue'), name: 'MobileSelection', meta: { title: '选课', isMobile: true } },
       { path: 'warning', component: () => import('@/views/mobile/warning.vue'), name: 'MobileWarning', meta: { title: '预警', isMobile: true } }
     ]
+  },
+  // 移动端考核评价相关页面（/m/ 前缀，使用 MobileLayout）
+  {
+    path: '/m',
+    component: () => import('@/layout/MobileLayout'),
+    redirect: '/mobile',
+    meta: { isMobile: true },
+    children: [
+      { path: 'exam', component: () => import('@/views/mobile/exam.vue'), name: 'MobileExam', meta: { title: '考试安排', isMobile: true } },
+      { path: 'invigilation', component: () => import('@/views/mobile/invigilation.vue'), name: 'MobileInvigilation', meta: { title: '我的监考', isMobile: true } },
+      { path: 'evaluation', component: () => import('@/views/mobile/evaluation.vue'), name: 'MobileEvaluation', meta: { title: '教学评价', isMobile: true } }
+    ]
   }
 ]
 

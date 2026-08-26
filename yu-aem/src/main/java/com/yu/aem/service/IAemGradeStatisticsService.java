@@ -1,6 +1,7 @@
 package com.yu.aem.service;
 
 import java.util.List;
+import java.util.Map;
 import com.yu.aem.domain.AemGradeStatistics;
 
 /**
@@ -19,11 +20,27 @@ public interface IAemGradeStatisticsService
 
     /**
      * 按课程聚合成绩统计
-     * 计算最高分、最低分、平均分、通过率、优秀率
-     *
-     * @param courseId    课程ID
-     * @param semesterId  学期ID
-     * @return 统计结果
      */
     public AemGradeStatistics aggregateByCourse(Long courseId, Long semesterId);
+
+    /**
+     * 按学期批量聚合所有课程的成绩统计
+     * @return 聚合的课程数
+     */
+    public int aggregateBySemester(Long semesterId);
+
+    /**
+     * 分数段分布（供图表）
+     */
+    public Map<String, Object> scoreDistribution(Long courseId, Long semesterId);
+
+    /**
+     * 学期成绩总览（课程数、人次、平均分、平均绩点、通过率）
+     */
+    public Map<String, Object> semesterOverview(Long semesterId);
+
+    /**
+     * 课程成绩排名列表
+     */
+    public List<Map<String, Object>> courseRanking(Long courseId, Long semesterId);
 }

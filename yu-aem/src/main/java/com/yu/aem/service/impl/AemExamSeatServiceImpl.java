@@ -198,4 +198,40 @@ public class AemExamSeatServiceImpl implements IAemExamSeatService
         log.info("考试[{}]座位编排完成：教室[{}]，共{}人", examId, classroom.getClassroomName(), totalSeats);
         return result;
     }
+
+    @Override
+    @Transactional
+    public int importSeat(List<AemExamSeat> list, String operator)
+    {
+        if (list == null || list.isEmpty())
+        {
+            throw new ServiceException("导入数据不能为空");
+        }
+        for (AemExamSeat seat : list)
+        {
+            if (seat.getExamId() == null)
+            {
+                throw new ServiceException("考试ID不能为空");
+            }
+            if (seat.getClassroomId() == null)
+            {
+                throw new ServiceException("教室ID不能为空");
+            }
+            if (seat.getStudentId() == null)
+            {
+                throw new ServiceException("学生ID不能为空");
+            }
+            if (seat.getSeatNumber() != null && seat.getSeatNumber() <= 0)
+            {
+                throw new ServiceException("座位号必须为正整数");
+            }
+            if (seat.getStatus() == null || seat.getStatus().isEmpty())
+            {
+                seat.setStatus("0");
+            }
+            seat.setCreateBy(operator);
+            seat.setCreateTime(DateUtils.getNowDate());
+        }
+        return aemExamSeatMapper.batchInsert(list);
+    }
 }

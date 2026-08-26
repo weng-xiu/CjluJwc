@@ -11,6 +11,7 @@
       <el-col :span="1.5"><el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['aem:invigilation:edit']">修改</el-button></el-col>
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['aem:invigilation:remove']">删除</el-button></el-col>
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['aem:invigilation:export']">导出</el-button></el-col>
+      <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['aem:invigilation:import']">导入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-table v-loading="loading" :data="invigilationList" @selection-change="handleSelectionChange">
@@ -42,12 +43,24 @@
       </el-form>
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
     </el-dialog>
+
+    <import-excel-dialog
+      ref="importDialog"
+      title="监考安排导入"
+      tip="请按模板填写考试ID、教室ID、教师ID、考试日期、开始/结束时间。"
+      :import-api="importInvigilation"
+      template-url="aem/invigilation/importTemplate"
+      template-name="invigilation_template"
+      @success="getList"/>
   </div>
 </template>
 <script>
-import { listInvigilation, getInvigilation, delInvigilation, addInvigilation, updateInvigilation } from "@/api/aem/invigilation"
+import { listInvigilation, getInvigilation, delInvigilation, addInvigilation, updateInvigilation, importInvigilation } from "@/api/aem/invigilation"
+import ImportExcelDialog from "../components/ImportExcelDialog"
 export default {
-  name: "Invigilation", dicts: ['aem_duty_type'],
+  name: "Invigilation",
+  components: { ImportExcelDialog },
+  dicts: ['aem_duty_type'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, invigilationList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, examId: null, teacherId: null, dutyType: null },
     form: {}, rules: {} }
@@ -64,7 +77,8 @@ export default {
     handleUpdate(row) { this.reset(); const invigilationId = row.invigilationId || this.ids; getInvigilation(invigilationId).then(response => { this.form = response.data; this.open = true; this.title = "修改监考分配" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.invigilationId != null) { updateInvigilation(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addInvigilation(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const invigilationIds = row.invigilationId || this.ids; this.$modal.confirm('是否确认删除监考分配编号为"' + invigilationIds + '"的数据项？').then(function() { return delInvigilation(invigilationIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
-    handleExport() { this.download('aem/invigilation/export', { ...this.queryParams }, `invigilation_${new Date().getTime()}.xlsx`) }
+    handleExport() { this.download('aem/invigilation/export', { ...this.queryParams }, `invigilation_${new Date().getTime()}.xlsx`) },
+    handleImport() { this.$refs.importDialog.open() }
   }
 }
 </script>

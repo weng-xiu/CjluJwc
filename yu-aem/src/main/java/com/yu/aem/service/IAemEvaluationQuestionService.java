@@ -17,4 +17,13 @@ public interface IAemEvaluationQuestionService
     public int updateAemEvaluationQuestion(AemEvaluationQuestion aemEvaluationQuestion);
     public int deleteAemEvaluationQuestionByQuestionIds(Long[] questionIds);
     public int deleteAemEvaluationQuestionByQuestionId(Long questionId);
+
+    /**
+     * 批量导入评教题目
+     *
+     * @param list      题目列表
+     * @param operator  操作人
+     * @return 导入条数
+     */
+    public int importQuestion(List<AemEvaluationQuestion> list, String operator);
 }

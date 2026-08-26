@@ -84,4 +84,17 @@ public class AemGradeReviewController extends BaseController
     {
         return toAjax(aemGradeReviewService.deleteAemGradeReviewByReviewIds(reviewIds));
     }
+
+    /**
+     * 审批成绩复核（通过/驳回）。通过后回写新成绩、置已复核并触发GPA重算。
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeReview:edit')")
+    @Log(title = "成绩复核审批", businessType = BusinessType.UPDATE)
+    @PostMapping("/approve/{reviewId}")
+    public AjaxResult approve(@PathVariable Long reviewId,
+                              @org.springframework.web.bind.annotation.RequestParam boolean approved,
+                              @org.springframework.web.bind.annotation.RequestParam(required = false) String opinion)
+    {
+        return toAjax(aemGradeReviewService.approveReview(reviewId, approved, getUsername(), opinion));
+    }
 }

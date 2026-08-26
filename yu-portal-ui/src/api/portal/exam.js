@@ -7,3 +7,8 @@ export function listExam(query) {
 export function listInvigilation(query) {
   return request({ url: '/portal/exam/invigilationList', method: 'get', params: query })
 }
+
+// 考试安排列表（移动端，支持 examName/examType/arrangeStatus 等查询参数及分页）
+export function listExams(query) {
+  return request({ url: '/aem/examPlan/list', method: 'get', params: query })
+}

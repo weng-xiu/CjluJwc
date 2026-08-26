@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
@@ -93,5 +95,32 @@ public class AemGradeRecordController extends BaseController
     public AjaxResult remove(@PathVariable Long[] gradeIds)
     {
         return toAjax(aemGradeRecordService.deleteAemGradeRecordByGradeIds(gradeIds));
+    }
+
+    /**
+     * 批量导入成绩（Excel）
+     * @param file          Excel文件
+     * @param algorithmCode GPA算法代码（可选，空则使用默认算法）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeRecord:import')")
+    @Log(title = "成绩记录", businessType = BusinessType.IMPORT)
+    @PostMapping("/importData")
+    public AjaxResult importData(MultipartFile file,
+                                 @RequestParam(required = false) String algorithmCode) throws Exception
+    {
+        ExcelUtil<AemGradeRecord> util = new ExcelUtil<AemGradeRecord>(AemGradeRecord.class);
+        List<AemGradeRecord> list = util.importExcel(file.getInputStream());
+        int count = aemGradeRecordService.importGrade(list, getUsername(), algorithmCode);
+        return success("导入成功，共处理 " + count + " 条成绩");
+    }
+
+    /**
+     * 下载成绩导入模板
+     */
+    @PostMapping("/importTemplate")
+    public void importTemplate(HttpServletResponse response)
+    {
+        ExcelUtil<AemGradeRecord> util = new ExcelUtil<AemGradeRecord>(AemGradeRecord.class);
+        util.importTemplateExcel(response, "成绩数据");
     }
 }

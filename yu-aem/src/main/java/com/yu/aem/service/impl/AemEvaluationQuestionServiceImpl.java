@@ -1,7 +1,9 @@
 package com.yu.aem.service.impl;
 
 import java.util.List;
+import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
+import com.yu.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,5 +63,43 @@ public class AemEvaluationQuestionServiceImpl implements IAemEvaluationQuestionS
     public int deleteAemEvaluationQuestionByQuestionIds(Long[] questionIds)
     {
         return aemEvaluationQuestionMapper.deleteAemEvaluationQuestionByQuestionIds(questionIds);
+    }
+
+    @Override
+    @Transactional
+    public int importQuestion(List<AemEvaluationQuestion> list, String operator)
+    {
+        if (list == null || list.isEmpty())
+        {
+            throw new ServiceException("导入数据不能为空");
+        }
+        int sort = 1;
+        for (AemEvaluationQuestion q : list)
+        {
+            if (q.getQuestionnaireId() == null)
+            {
+                throw new ServiceException("问卷ID不能为空");
+            }
+            if (StringUtils.isEmpty(q.getQuestionType()))
+            {
+                throw new ServiceException("问题类型不能为空");
+            }
+            if (StringUtils.isEmpty(q.getQuestionContent()))
+            {
+                throw new ServiceException("问题内容不能为空");
+            }
+            if (q.getSortOrder() == null)
+            {
+                q.setSortOrder(sort);
+            }
+            if (StringUtils.isEmpty(q.getStatus()))
+            {
+                q.setStatus("0");
+            }
+            q.setCreateBy(operator);
+            q.setCreateTime(DateUtils.getNowDate());
+            sort++;
+        }
+        return aemEvaluationQuestionMapper.batchInsert(list);
     }
 }

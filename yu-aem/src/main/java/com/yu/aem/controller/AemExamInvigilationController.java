@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.validation.annotation.Validated;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
@@ -83,5 +85,24 @@ public class AemExamInvigilationController extends BaseController
     public AjaxResult remove(@PathVariable Long[] invigilationIds)
     {
         return toAjax(aemExamInvigilationService.deleteAemExamInvigilationByInvigilationIds(invigilationIds));
+    }
+
+    @PreAuthorize("@ss.hasPermi('aem:invigilation:import')")
+    @Log(title = "监考教师分配", businessType = BusinessType.IMPORT)
+    @PostMapping("/importData")
+    public AjaxResult importData(MultipartFile file) throws Exception
+    {
+        ExcelUtil<AemExamInvigilation> util = new ExcelUtil<AemExamInvigilation>(AemExamInvigilation.class);
+        List<AemExamInvigilation> list = util.importExcel(file.getInputStream());
+        String operator = getUsername();
+        int rows = aemExamInvigilationService.importInvigilation(list, operator);
+        return success("导入成功，共 " + rows + " 条监考记录");
+    }
+
+    @PostMapping("/importTemplate")
+    public void importTemplate(HttpServletResponse response)
+    {
+        ExcelUtil<AemExamInvigilation> util = new ExcelUtil<AemExamInvigilation>(AemExamInvigilation.class);
+        util.importTemplateExcel(response, "监考安排数据");
     }
 }

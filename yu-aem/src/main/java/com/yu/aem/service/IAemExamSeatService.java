@@ -27,4 +27,13 @@ public interface IAemExamSeatService
      * @return 编排结果统计
      */
     public java.util.Map<String, Object> autoArrangeSeats(Long examId, Long classroomId);
+
+    /**
+     * 批量导入座位安排
+     *
+     * @param list      座位记录列表
+     * @param operator  操作人
+     * @return 导入条数
+     */
+    public int importSeat(List<AemExamSeat> list, String operator);
 }

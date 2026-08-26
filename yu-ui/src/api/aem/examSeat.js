@@ -24,3 +24,8 @@ export function updateExamSeat(data) {
 export function delExamSeat(seatId) {
   return request({ url: '/aem/examSeat/' + seatId, method: 'delete' })
 }
+
+// 批量导入座位
+export function importExamSeat(data) {
+  return request({ url: '/aem/examSeat/importData', method: 'post', headers: { 'Content-Type': 'multipart/form-data' }, data: data })
+}

@@ -24,3 +24,8 @@ export function updateInvigilation(data) {
 export function delInvigilation(invigilationId) {
   return request({ url: '/aem/invigilation/' + invigilationId, method: 'delete' })
 }
+
+// 批量导入监考安排
+export function importInvigilation(data) {
+  return request({ url: '/aem/invigilation/importData', method: 'post', headers: { 'Content-Type': 'multipart/form-data' }, data: data })
+}

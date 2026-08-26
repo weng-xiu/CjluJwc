@@ -1,6 +1,8 @@
 package com.yu.aem.domain;
 
 import jakarta.validation.constraints.NotNull;
+import java.util.Date;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.yu.common.annotation.Excel;
@@ -70,6 +72,19 @@ public class AemGradeStatistics extends BaseEntity
     /** 状态 */
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
+
+    /** 统计生成时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date statTime;
+
+    /** 统计批次号 */
+    private String batchNo;
+
+    public Date getStatTime() { return statTime; }
+    public void setStatTime(Date statTime) { this.statTime = statTime; }
+
+    public String getBatchNo() { return batchNo; }
+    public void setBatchNo(String batchNo) { this.batchNo = batchNo; }
 
     public Long getStatId() { return statId; }
     public void setStatId(Long statId) { this.statId = statId; }

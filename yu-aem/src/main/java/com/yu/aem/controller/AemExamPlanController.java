@@ -19,6 +19,8 @@ import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.enums.BusinessType;
 import com.yu.aem.domain.AemExamPlan;
 import com.yu.aem.service.IAemExamPlanService;
+import com.yu.aem.service.IAemExamSeatService;
+import com.yu.aem.service.IAemExamInvigilationService;
 import com.yu.common.utils.poi.ExcelUtil;
 import com.yu.common.core.page.TableDataInfo;
 
@@ -34,6 +36,12 @@ public class AemExamPlanController extends BaseController
 {
     @Autowired
     private IAemExamPlanService aemExamPlanService;
+
+    @Autowired
+    private IAemExamSeatService aemExamSeatService;
+
+    @Autowired
+    private IAemExamInvigilationService aemExamInvigilationService;
 
     @PreAuthorize("@ss.hasPermi('aem:examPlan:list')")
     @GetMapping("/list")
@@ -93,5 +101,28 @@ public class AemExamPlanController extends BaseController
     public AjaxResult remove(@PathVariable Long[] examIds)
     {
         return toAjax(aemExamPlanService.deleteAemExamPlanByExamIds(examIds));
+    }
+
+    /**
+     * 自动编排座位
+     */
+    @PreAuthorize("@ss.hasPermi('aem:examSeat:edit')")
+    @Log(title = "考试安排-自动排座", businessType = BusinessType.OTHER)
+    @PostMapping("/autoArrangeSeat/{examId}")
+    public AjaxResult autoArrangeSeat(@PathVariable Long examId,
+                                      @org.springframework.web.bind.annotation.RequestParam(required = false) Long classroomId)
+    {
+        return success(aemExamSeatService.autoArrangeSeats(examId, classroomId));
+    }
+
+    /**
+     * 自动派发监考
+     */
+    @PreAuthorize("@ss.hasPermi('aem:invigilation:edit')")
+    @Log(title = "考试安排-自动派监考", businessType = BusinessType.OTHER)
+    @PostMapping("/autoDispatch/{examId}")
+    public AjaxResult autoDispatch(@PathVariable Long examId)
+    {
+        return success(aemExamInvigilationService.autoDispatchInvigilators(examId));
     }
 }

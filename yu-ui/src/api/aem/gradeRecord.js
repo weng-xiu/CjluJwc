@@ -29,3 +29,8 @@ export function updateGradeRecord(data) {
 export function delGradeRecord(gradeId) {
   return request({ url: '/aem/gradeRecord/' + gradeId, method: 'delete' })
 }
+
+// 批量导入成绩
+export function importGrade(data) {
+  return request({ url: '/aem/gradeRecord/importData', method: 'post', headers: { 'Content-Type': 'multipart/form-data' }, data: data })
+}

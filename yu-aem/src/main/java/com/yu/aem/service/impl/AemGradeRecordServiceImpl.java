@@ -2,6 +2,7 @@ package com.yu.aem.service.impl;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Date;
 import java.util.List;
 import com.yu.common.annotation.DataScope;
 import com.yu.common.exception.ServiceException;
@@ -139,6 +140,7 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     public Double calculateStudentGpa(Long studentId, Long semesterId, String algorithmCode)
     {
         IGpaCalculationStrategy strategy = getStrategy(algorithmCode);
+        // 一次查询取出成绩及课程学分（JOIN tpm_course_library），避免N+1
         List<AemGradeRecord> records = aemGradeRecordMapper.selectByStudentAndSemester(studentId, semesterId);
         BigDecimal totalWeightedGpa = BigDecimal.ZERO;
         BigDecimal totalCredits = BigDecimal.ZERO;
@@ -148,7 +150,7 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
             {
                 continue;
             }
-            Double credit = getCourseCredit(record.getCourseId());
+            Double credit = record.getCredit();
             if (credit == null || credit <= 0)
             {
                 continue;
@@ -187,6 +189,67 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
         aemGradeRecordMapper.updateGradePointBatch(records);
     }
 
+    @Override
+    @Transactional
+    public int importGrade(List<AemGradeRecord> list, String operator, String algorithmCode)
+    {
+        if (list == null || list.isEmpty())
+        {
+            throw new ServiceException("导入数据不能为空");
+        }
+        IGpaCalculationStrategy strategy = getStrategy(algorithmCode);
+        Date now = DateUtils.getNowDate();
+        for (AemGradeRecord record : list)
+        {
+            // 必填校验
+            if (record.getStudentId() == null || record.getCourseId() == null || record.getSemesterId() == null)
+            {
+                throw new ServiceException("存在学生ID/课程ID/学期ID为空的记录");
+            }
+            validateScore(record.getRegularScore(), "平时成绩");
+            validateScore(record.getExamScore(), "考试成绩");
+            // 总成绩为空时按 平时30% + 考试70% 计算
+            if (record.getTotalScore() == null)
+            {
+                double regular = record.getRegularScore() == null ? 0 : record.getRegularScore();
+                double exam = record.getExamScore() == null ? 0 : record.getExamScore();
+                double total = Math.round((regular * 0.3 + exam * 0.7) * 100.0) / 100.0;
+                record.setTotalScore(total);
+            }
+            validateScore(record.getTotalScore(), "总成绩");
+            // 绩点/等级
+            record.setGradePoint(strategy.calculate(record.getTotalScore()));
+            record.setGradeLevel(strategy.getGradeLevel(record.getTotalScore()));
+            record.setIsPass(record.getTotalScore() >= 60 ? "1" : "0");
+            if (record.getExamType() == null || record.getExamType().isEmpty())
+            {
+                record.setExamType("0");
+            }
+            if (record.getIsReviewed() == null)
+            {
+                record.setIsReviewed("0");
+            }
+            if (record.getStatus() == null)
+            {
+                record.setStatus("0");
+            }
+            record.setCreateBy(operator);
+            record.setCreateTime(now);
+        }
+        return aemGradeRecordMapper.batchInsert(list);
+    }
+
+    /**
+     * 分数范围校验
+     */
+    private void validateScore(Double score, String fieldName)
+    {
+        if (score != null && (score < 0 || score > 100))
+        {
+            throw new ServiceException(fieldName + "必须在0-100范围内，当前值：" + score);
+        }
+    }
+
     /**
      * 获取算法策略，空值时使用默认算法
      */
@@ -215,17 +278,5 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
             return config.getAlgorithmCode();
         }
         return "CN_STANDARD";
-    }
-
-    /**
-     * 获取课程学分
-     */
-    private Double getCourseCredit(Long courseId)
-    {
-        if (courseId == null)
-        {
-            return null;
-        }
-        return aemGradeRecordMapper.selectCourseCreditByCourseId(courseId);
     }
 }

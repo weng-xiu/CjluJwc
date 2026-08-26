@@ -29,3 +29,13 @@ export function updateExamPlan(data) {
 export function delExamPlan(examId) {
   return request({ url: '/aem/examPlan/' + examId, method: 'delete' })
 }
+
+// 自动编排座位
+export function autoArrangeSeat(examId, classroomId) {
+  return request({ url: '/aem/examPlan/autoArrangeSeat/' + examId, method: 'post', params: { classroomId } })
+}
+
+// 自动派监考
+export function autoDispatch(examId) {
+  return request({ url: '/aem/examPlan/autoDispatch/' + examId, method: 'post' })
+}

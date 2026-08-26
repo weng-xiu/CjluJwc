@@ -60,9 +60,11 @@
       <el-table-column label="考试时长(分)" align="center" prop="duration" width="100" />
       <el-table-column label="考生人数" align="center" prop="totalStudents" width="80" />
       <el-table-column label="安排状态" align="center" prop="planStatus" width="90"><template slot-scope="scope"><dict-tag :options="dict.type.aem_plan_status" :value="scope.row.planStatus"/></template></el-table-column>
-      <el-table-column label="操作" align="center" width="160" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="280" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-view" @click="toggleExpand(scope.row)">明细</el-button>
+          <el-button size="mini" type="text" icon="el-icon-s-grid" @click="handleAutoSeat(scope.row)" v-hasPermi="['aem:examSeat:add']">排座</el-button>
+          <el-button size="mini" type="text" icon="el-icon-user" @click="handleAutoDispatch(scope.row)" v-hasPermi="['aem:invigilation:add']">派监考</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['aem:examPlan:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['aem:examPlan:remove']">删除</el-button>
         </template>
@@ -87,7 +89,7 @@
   </div>
 </template>
 <script>
-import { listExamPlan, getExamPlan, delExamPlan, addExamPlan, updateExamPlan, getExamPlanDetail } from "@/api/aem/examPlan"
+import { listExamPlan, getExamPlan, delExamPlan, addExamPlan, updateExamPlan, getExamPlanDetail, autoArrangeSeat, autoDispatch } from "@/api/aem/examPlan"
 import { listExamSeat, addExamSeat, updateExamSeat, delExamSeat } from "@/api/aem/examSeat"
 import { listInvigilation, addInvigilation, updateInvigilation, delInvigilation } from "@/api/aem/invigilation"
 import MasterDetailPanel from "../components/MasterDetailPanel"
@@ -173,6 +175,23 @@ export default {
       }
     },
     handleDelete(row) { const examIds = row.examId || this.ids; this.$modal.confirm('是否确认删除考试安排编号为"' + examIds + '"的数据项？其下座位与监考安排将一并删除。').then(function() { return delExamPlan(examIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
+    handleAutoSeat(row) {
+      this.$prompt('请输入教室ID以自动编排座位', '自动排座', { confirmButtonText: '确定', cancelButtonText: '取消', inputPattern: /^\d+$/, inputErrorMessage: '教室ID必须为数字' })
+        .then(({ value }) => {
+          return autoArrangeSeat(row.examId, value)
+        }).then(res => {
+          this.$modal.msgSuccess((res.data && res.data.message) || res.msg || '排座完成')
+          this.getList()
+        }).catch(() => {})
+    },
+    handleAutoDispatch(row) {
+      this.$modal.confirm('确认为考试「' + row.examName + '」自动派发监考教师？将清除原监考记录。').then(() => {
+        return autoDispatch(row.examId)
+      }).then(res => {
+        this.$modal.msgSuccess((res.data && res.data.message) || res.msg || '派监考完成')
+        this.getList()
+      }).catch(() => {})
+    },
     handleExport() { this.download('aem/examPlan/export', { ...this.queryParams }, `examPlan_${new Date().getTime()}.xlsx`) }
   }
 }

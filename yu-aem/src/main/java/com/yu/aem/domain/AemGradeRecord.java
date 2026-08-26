@@ -70,11 +70,17 @@ public class AemGradeRecord extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 课程学分（非持久化，JOIN tpm_course_library 取得，用于GPA加权计算） */
+    private transient Double credit;
+
     /** 子表：成绩复核记录 */
     private List<AemGradeReview> reviews;
 
     public List<AemGradeReview> getReviews() { return reviews; }
     public void setReviews(List<AemGradeReview> reviews) { this.reviews = reviews; }
+
+    public Double getCredit() { return credit; }
+    public void setCredit(Double credit) { this.credit = credit; }
 
     public Long getGradeId() { return gradeId; }
     public void setGradeId(Long gradeId) { this.gradeId = gradeId; }

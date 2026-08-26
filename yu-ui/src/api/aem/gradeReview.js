@@ -24,3 +24,8 @@ export function updateGradeReview(data) {
 export function delGradeReview(reviewId) {
   return request({ url: '/aem/gradeReview/' + reviewId, method: 'delete' })
 }
+
+// 审批成绩复核
+export function approveReview(reviewId, approved, opinion) {
+  return request({ url: '/aem/gradeReview/approve/' + reviewId, method: 'post', params: { approved, opinion } })
+}

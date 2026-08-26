@@ -27,4 +27,16 @@ public interface IAemGradeRecordService
 
     /** 批量重算某学期所有学生GPA */
     public void batchRecalculateGpa(Long semesterId, String algorithmCode);
+
+    /**
+     * 批量导入成绩（Excel）。
+     * 自动校验：必填字段、分数范围0-100；按平时30%+考试70%计算总成绩（若总成绩为空）；
+     * 按默认GPA算法计算绩点与等级；重复(学生+课程+学期+类型)执行更新。
+     *
+     * @param list           Excel解析后的成绩列表
+     * @param operator       操作人
+     * @param algorithmCode  GPA算法代码（空则用默认）
+     * @return 成功导入条数
+     */
+    public int importGrade(List<AemGradeRecord> list, String operator, String algorithmCode);
 }

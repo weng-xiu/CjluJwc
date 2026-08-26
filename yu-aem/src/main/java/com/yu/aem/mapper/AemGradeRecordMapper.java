@@ -21,5 +21,9 @@ public interface AemGradeRecordMapper
     public List<AemGradeRecord> selectByStudentAndSemester(@Param("studentId") Long studentId, @Param("semesterId") Long semesterId);
     public List<AemGradeRecord> selectBySemester(@Param("semesterId") Long semesterId);
     public int updateGradePointBatch(List<AemGradeRecord> records);
+
+    /** 批量新增成绩记录（Excel导入使用） */
+    public int batchInsert(List<AemGradeRecord> list);
+
     public Double selectCourseCreditByCourseId(Long courseId);
 }

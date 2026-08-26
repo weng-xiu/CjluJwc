@@ -35,6 +35,24 @@
         </div>
         <span class="grid-label">成绩查询</span>
       </div>
+      <div class="grid-item" @click="$router.push('/m/exam')">
+        <div class="grid-icon icon-exam">
+          <i class="el-icon-tickets"></i>
+        </div>
+        <span class="grid-label">考试安排</span>
+      </div>
+      <div class="grid-item" @click="$router.push('/m/invigilation')">
+        <div class="grid-icon icon-invigilation">
+          <i class="el-icon-view"></i>
+        </div>
+        <span class="grid-label">我的监考</span>
+      </div>
+      <div class="grid-item" @click="$router.push('/m/evaluation')">
+        <div class="grid-icon icon-evaluation">
+          <i class="el-icon-star-on"></i>
+        </div>
+        <span class="grid-label">教学评价</span>
+      </div>
       <div class="grid-item" @click="$router.push('/mobile/selection')">
         <div class="grid-icon icon-selection">
           <i class="el-icon-edit-outline"></i>
@@ -199,6 +217,9 @@ export default {
 }
 .icon-schedule { background: linear-gradient(135deg, #409eff, #66b1ff); }
 .icon-grades { background: linear-gradient(135deg, #67c23a, #85ce61); }
+.icon-exam { background: linear-gradient(135deg, #1a5276, #2e86c1); }
+.icon-invigilation { background: linear-gradient(135deg, #8e44ad, #bb8fce); }
+.icon-evaluation { background: linear-gradient(135deg, #e67e22, #f0b27a); }
 .icon-selection { background: linear-gradient(135deg, #e6a23c, #f0c78a); }
 .icon-warning { background: linear-gradient(135deg, #f56c6c, #f89898); }
 .grid-badge {

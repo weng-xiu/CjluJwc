@@ -22,6 +22,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateBy"       column="update_by"        />
         <result property="updateTime"     column="update_time"      />
         <result property="remark"         column="remark"           />
+        <result property="credit"         column="credit"           />
     </resultMap>
     <sql id="selectAemGradeRecordVo">
         select grade_id, student_id, course_id, semester_id, exam_type, regular_score, exam_score, total_score, grade_point, grade_level, is_pass, is_reviewed, status, create_by, create_time, update_by, update_time, remark from aem_grade_record
@@ -113,12 +114,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <foreach item="gradeId" collection="array" open="(" separator="," close=")">#{gradeId}</foreach>
     </delete>
     <select id="selectByStudentAndSemester" resultMap="AemGradeRecordResult">
-        <include refid="selectAemGradeRecordVo"/>
-        where student_id = #{studentId}
-        <if test="semesterId != null"> and semester_id = #{semesterId}</if>
+        select gr.grade_id, gr.student_id, gr.course_id, gr.semester_id, gr.exam_type,
+               gr.regular_score, gr.exam_score, gr.total_score, gr.grade_point, gr.grade_level,
+               gr.is_pass, gr.is_reviewed, gr.status, gr.create_by, gr.create_time,
+               gr.update_by, gr.update_time, gr.remark, cl.credit as credit
+        from aem_grade_record gr
+        left join tpm_course_library cl on gr.course_id = cl.course_id
+        where gr.student_id = #{studentId}
+        <if test="semesterId != null"> and gr.semester_id = #{semesterId}</if>
     </select>
     <select id="selectBySemester" parameterType="Long" resultMap="AemGradeRecordResult">
-        <include refid="selectAemGradeRecordVo"/> where semester_id = #{semesterId}
+        select gr.grade_id, gr.student_id, gr.course_id, gr.semester_id, gr.exam_type,
+               gr.regular_score, gr.exam_score, gr.total_score, gr.grade_point, gr.grade_level,
+               gr.is_pass, gr.is_reviewed, gr.status, gr.create_by, gr.create_time,
+               gr.update_by, gr.update_time, gr.remark, cl.credit as credit
+        from aem_grade_record gr
+        left join tpm_course_library cl on gr.course_id = cl.course_id
+        where gr.semester_id = #{semesterId}
     </select>
     <update id="updateGradePointBatch">
         update aem_grade_record
@@ -138,4 +150,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectCourseCreditByCourseId" parameterType="Long" resultType="java.lang.Double">
         select credit from tpm_course_library where course_id = #{courseId}
     </select>
+
+    <!-- 批量新增成绩（Excel导入），重复键(uk_grade_scset)时更新分数字段 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        insert into aem_grade_record
+        (student_id, course_id, semester_id, exam_type, regular_score, exam_score,
+         total_score, grade_point, grade_level, is_pass, is_reviewed, status, create_by, create_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.studentId}, #{item.courseId}, #{item.semesterId}, #{item.examType},
+             #{item.regularScore}, #{item.examScore}, #{item.totalScore}, #{item.gradePoint},
+             #{item.gradeLevel}, #{item.isPass}, #{item.isReviewed}, #{item.status},
+             #{item.createBy}, #{item.createTime})
+        </foreach>
+        on duplicate key update
+            regular_score = values(regular_score),
+            exam_score = values(exam_score),
+            total_score = values(total_score),
+            grade_point = values(grade_point),
+            grade_level = values(grade_level),
+            is_pass = values(is_pass),
+            update_by = values(create_by),
+            update_time = now()
+    </insert>
 </mapper>

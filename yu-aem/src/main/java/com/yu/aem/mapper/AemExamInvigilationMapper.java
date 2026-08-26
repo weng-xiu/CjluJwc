@@ -41,4 +41,13 @@ public interface AemExamInvigilationMapper
                                  @Param("startTime") String startTime,
                                  @Param("endTime") String endTime,
                                  @Param("excludeExamId") Long excludeExamId);
+
+    /**
+     * 批量查询指定日期、时段内已有监考任务（冲突）的教师ID集合，
+     * 用于自动派监考时一次性过滤，避免逐教师查询的N+1。
+     */
+    List<Long> selectBusyTeacherIds(@Param("examDate") Date examDate,
+                                    @Param("startTime") String startTime,
+                                    @Param("endTime") String endTime,
+                                    @Param("excludeExamId") Long excludeExamId);
 }

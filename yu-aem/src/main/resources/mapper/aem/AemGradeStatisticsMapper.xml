@@ -18,6 +18,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="excellentCount"  column="excellent_count"   />
         <result property="excellentRate"   column="excellent_rate"    />
         <result property="status"          column="status"            />
+        <result property="statTime"        column="stat_time"         />
+        <result property="batchNo"         column="batch_no"          />
         <result property="createBy"        column="create_by"         />
         <result property="createTime"      column="create_time"       />
         <result property="updateBy"        column="update_by"         />
@@ -25,7 +27,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"          column="remark"            />
     </resultMap>
     <sql id="selectAemGradeStatisticsVo">
-        select stat_id, course_id, semester_id, class_id, total_students, max_score, min_score, avg_score, pass_count, fail_count, pass_rate, excellent_count, excellent_rate, status, create_by, create_time, update_by, update_time, remark from aem_grade_statistics
+        select stat_id, course_id, semester_id, class_id, total_students, max_score, min_score, avg_score, pass_count, fail_count, pass_rate, excellent_count, excellent_rate, status, stat_time, batch_no, create_by, create_time, update_by, update_time, remark from aem_grade_statistics
     </sql>
     <select id="selectAemGradeStatisticsList" parameterType="AemGradeStatistics" resultMap="AemGradeStatisticsResult">
         <include refid="selectAemGradeStatisticsVo"/>
@@ -54,6 +56,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="excellentCount != null">excellent_count,</if>
             <if test="excellentRate != null">excellent_rate,</if>
             <if test="status != null">status,</if>
+            <if test="statTime != null">stat_time,</if>
+            <if test="batchNo != null">batch_no,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="remark != null">remark,</if>
@@ -72,6 +76,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="excellentCount != null">#{excellentCount},</if>
             <if test="excellentRate != null">#{excellentRate},</if>
             <if test="status != null">#{status},</if>
+            <if test="statTime != null">#{statTime},</if>
+            <if test="batchNo != null">#{batchNo},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="remark != null">#{remark},</if>
@@ -93,6 +99,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="excellentCount != null">excellent_count = #{excellentCount},</if>
             <if test="excellentRate != null">excellent_rate = #{excellentRate},</if>
             <if test="status != null">status = #{status},</if>
+            <if test="statTime != null">stat_time = #{statTime},</if>
+            <if test="batchNo != null">batch_no = #{batchNo},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="remark != null">remark = #{remark},</if>
@@ -110,5 +118,82 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <include refid="selectAemGradeStatisticsVo"/>
         where course_id = #{courseId} and semester_id = #{semesterId} and (class_id is null or class_id = 0)
         limit 1
+    </select>
+
+    <!-- SQL聚合：单门课程某学期成绩统计，替代全量加载到内存 -->
+    <select id="aggregateGradeByCourse" resultType="java.util.Map">
+        select count(1) as totalStudents,
+               coalesce(max(total_score),0) as maxScore,
+               coalesce(min(total_score),0) as minScore,
+               coalesce(round(avg(total_score),2),0) as avgScore,
+               sum(case when total_score &gt;= 60 then 1 else 0 end) as passCount,
+               sum(case when total_score &lt; 60 then 1 else 0 end) as failCount,
+               sum(case when total_score &gt;= 90 then 1 else 0 end) as excellentCount,
+               coalesce(round(sum(case when total_score &gt;= 60 then 1 else 0 end) / count(1) * 100, 2),0) as passRate,
+               coalesce(round(sum(case when total_score &gt;= 90 then 1 else 0 end) / count(1) * 100, 2),0) as excellentRate
+        from aem_grade_record
+        where course_id = #{courseId} and semester_id = #{semesterId}
+          and total_score is not null and status = '0'
+    </select>
+
+    <!-- SQL聚合：整学期按课程分组统计，用于批量生成/刷新统计快照 -->
+    <select id="aggregateGradeBySemester" resultType="java.util.Map">
+        select course_id as courseId,
+               count(1) as totalStudents,
+               coalesce(max(total_score),0) as maxScore,
+               coalesce(min(total_score),0) as minScore,
+               coalesce(round(avg(total_score),2),0) as avgScore,
+               sum(case when total_score &gt;= 60 then 1 else 0 end) as passCount,
+               sum(case when total_score &lt; 60 then 1 else 0 end) as failCount,
+               sum(case when total_score &gt;= 90 then 1 else 0 end) as excellentCount,
+               coalesce(round(sum(case when total_score &gt;= 60 then 1 else 0 end) / count(1) * 100, 2),0) as passRate,
+               coalesce(round(sum(case when total_score &gt;= 90 then 1 else 0 end) / count(1) * 100, 2),0) as excellentRate
+        from aem_grade_record
+        where semester_id = #{semesterId} and total_score is not null and status = '0'
+        group by course_id
+    </select>
+
+    <!-- 分数段分布，供前端柱状图展示 -->
+    <select id="scoreDistribution" resultType="java.util.Map">
+        select
+          sum(case when total_score &lt; 60 then 1 else 0 end) as failCount,
+          sum(case when total_score &gt;= 60 and total_score &lt; 70 then 1 else 0 end) as passCount,
+          sum(case when total_score &gt;= 70 and total_score &lt; 80 then 1 else 0 end) as mediumCount,
+          sum(case when total_score &gt;= 80 and total_score &lt; 90 then 1 else 0 end) as goodCount,
+          sum(case when total_score &gt;= 90 then 1 else 0 end) as excellentCount
+        from aem_grade_record
+        where course_id = #{courseId} and semester_id = #{semesterId}
+          and total_score is not null and status = '0'
+    </select>
+
+    <!-- 学期总览：课程数、选课人次、平均成绩、平均绩点、通过率 -->
+    <select id="semesterOverview" resultType="java.util.Map">
+        select count(distinct course_id) as courseCount,
+               count(1) as totalRecords,
+               count(distinct student_id) as studentCount,
+               coalesce(round(avg(total_score),2),0) as avgScore,
+               coalesce(round(avg(grade_point),2),0) as avgGpa,
+               coalesce(round(sum(case when total_score &gt;= 60 then 1 else 0 end)/count(1)*100,2),0) as passRate,
+               coalesce(round(sum(case when total_score &gt;= 90 then 1 else 0 end)/count(1)*100,2),0) as excellentRate
+        from aem_grade_record
+        where semester_id = #{semesterId} and total_score is not null and status = '0'
+    </select>
+
+    <!-- 课程成绩排名（按总分降序），JOIN 学生信息 -->
+    <select id="courseRanking" resultType="java.util.Map">
+        select r.student_id as studentId,
+               s.student_no as studentNo,
+               s.student_name as studentName,
+               cl.class_name as className,
+               r.total_score as totalScore,
+               r.grade_point as gradePoint,
+               r.grade_level as gradeLevel,
+               r.is_pass as isPass
+        from aem_grade_record r
+        left join sam_student s on s.student_id = r.student_id
+        left join brm_class cl on cl.class_id = s.class_id
+        where r.course_id = #{courseId} and r.semester_id = #{semesterId}
+          and r.total_score is not null and r.status = '0'
+        order by r.total_score desc, r.student_id asc
     </select>
 </mapper>
