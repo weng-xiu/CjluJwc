@@ -153,7 +153,7 @@ export default {
   display: flex;
   align-items: center;
   padding: 20px 16px;
-  background: linear-gradient(135deg, #1a5276, #2e86c1);
+  background: linear-gradient(135deg, #003366, #007ab8);
   color: #fff;
 }
 .user-avatar {
@@ -217,7 +217,7 @@ export default {
 }
 .icon-schedule { background: linear-gradient(135deg, #409eff, #66b1ff); }
 .icon-grades { background: linear-gradient(135deg, #67c23a, #85ce61); }
-.icon-exam { background: linear-gradient(135deg, #1a5276, #2e86c1); }
+.icon-exam { background: linear-gradient(135deg, #003366, #007ab8); }
 .icon-invigilation { background: linear-gradient(135deg, #8e44ad, #bb8fce); }
 .icon-evaluation { background: linear-gradient(135deg, #e67e22, #f0b27a); }
 .icon-selection { background: linear-gradient(135deg, #e6a23c, #f0c78a); }
@@ -253,7 +253,7 @@ export default {
   border-bottom: 1px solid #f0f2f5;
 }
 .today-item:last-child { border-bottom: none; }
-.course-time { color: #2e86c1; font-weight: 500; margin-right: 10px; white-space: nowrap; }
+.course-time { color: #007ab8; font-weight: 500; margin-right: 10px; white-space: nowrap; }
 .course-name { flex: 1; color: #303133; }
 .course-room { color: #909399; margin-left: 8px; }
 

@@ -65,6 +65,14 @@ public class AemExamPlanServiceImpl implements IAemExamPlanService
     }
 
     @Override
+    public List<AemExamPlan> selectAemExamPlanListForPortal(AemExamPlan aemExamPlan)
+    {
+        // 门户端无部门视角，显式置空 dataScope，避免“仅本人”数据范围把考试列表过滤为空
+        aemExamPlan.getParams().put("dataScope", "");
+        return aemExamPlanMapper.selectAemExamPlanList(aemExamPlan);
+    }
+
+    @Override
     @Transactional
     public int insertAemExamPlan(AemExamPlan aemExamPlan)
     {

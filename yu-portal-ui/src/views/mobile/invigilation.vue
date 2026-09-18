@@ -1,5 +1,29 @@
 <template>
-  <div class="mobile-invigilation">
+  <div
+    class="mobile-invigilation"
+    @touchstart="onTouchStart"
+    @touchmove="onTouchMove"
+    @touchend="onTouchEnd"
+  >
+    <!-- 下拉刷新提示 -->
+    <div class="pull-refresh" :style="{ height: pullDistance + 'px' }">
+      <i v-if="refreshing" class="el-icon-loading"></i>
+      <i v-else-if="pullDistance >= triggerDistance" class="el-icon-arrow-down"></i>
+      <i v-else class="el-icon-arrow-down rotate"></i>
+      <span>{{ refreshText }}</span>
+    </div>
+
+    <!-- 职责筛选 -->
+    <div class="filter-bar">
+      <div
+        v-for="opt in dutyOptions"
+        :key="String(opt.value)"
+        class="filter-item"
+        :class="{ active: queryParams.dutyType === opt.value }"
+        @click="switchDuty(opt.value)"
+      >{{ opt.label }}</div>
+    </div>
+
     <!-- 监考卡片列表 -->
     <div class="invigilation-list">
       <div v-if="loading && list.length === 0" class="loading-state">
@@ -10,16 +34,16 @@
         <p>暂无监考安排</p>
       </div>
 
-      <div v-for="item in list" :key="item.id" class="invigilation-card">
+      <div v-for="item in list" :key="item.invigilationId" class="invigilation-card">
         <div class="card-date-col">
           <div class="date-day">{{ getDay(item.examDate) }}</div>
           <div class="date-month">{{ getMonth(item.examDate) }}</div>
         </div>
         <div class="card-body">
           <div class="card-top">
-            <span class="course-name">{{ item.courseName || item.examName || '考试科目' }}</span>
-            <span class="duty-tag" :class="getDutyClass(item.invigilationType)">
-              {{ getDutyText(item.invigilationType) }}
+            <span class="course-name">{{ item.examName || '监考任务' }}</span>
+            <span class="duty-tag" :class="getDutyClass(item.dutyType)">
+              {{ getDutyText(item.dutyType) }}
             </span>
           </div>
           <div class="card-info">
@@ -31,7 +55,7 @@
             <div class="info-row">
               <i class="el-icon-location-outline"></i>
               <span class="info-label">教室</span>
-              <span class="info-value">{{ item.classroom || item.examLocation || item.roomName || '--' }}</span>
+              <span class="info-value">{{ item.classroomName || '--' }}</span>
             </div>
             <div class="info-row" v-if="item.remark">
               <i class="el-icon-document"></i>
@@ -40,9 +64,6 @@
             </div>
           </div>
           <div class="card-footer">
-            <span class="status-tag" :class="getStatusClass(item.status)">
-              {{ getStatusText(item.status) }}
-            </span>
             <span class="exam-date-full">{{ item.examDate || '--' }}</span>
           </div>
         </div>
@@ -60,85 +81,46 @@
 
 <script>
 import { listInvigilations } from '@/api/portal/invigilation'
+import mobileList from '@/mixins/mobileList'
 
 export default {
   name: 'MobileInvigilation',
+  mixins: [mobileList],
   data() {
     return {
-      loading: false,
-      list: [],
-      total: 0,
-      queryParams: { pageNum: 1, pageSize: 10 },
-      scrollEl: null
+      queryParams: { pageNum: 1, pageSize: 10, dutyType: null },
+      // dutyType 字典：0主监考 1副监考 2巡考
+      dutyOptions: [
+        { label: '全部', value: null },
+        { label: '主监考', value: '0' },
+        { label: '副监考', value: '1' },
+        { label: '巡考', value: '2' }
+      ]
     }
-  },
-  computed: {
-    finished() {
-      return this.list.length >= this.total && this.list.length > 0
-    }
-  },
-  mounted() {
-    this.getList()
-    this.bindScroll()
-  },
-  activated() {
-    this.bindScroll()
-  },
-  beforeDestroy() {
-    this.unbindScroll()
   },
   methods: {
-    getList() {
-      this.loading = true
-      listInvigilations(this.queryParams).then(r => {
-        const rows = r.rows || r.data || []
-        if (this.queryParams.pageNum === 1) {
-          this.list = rows
-        } else {
-          this.list = this.list.concat(rows)
-        }
-        this.total = r.total || 0
-        if (!r.total && rows.length < this.queryParams.pageSize) {
-          this.total = this.list.length
-        }
-      }).finally(() => {
-        this.loading = false
-      })
+    fetchList() {
+      return listInvigilations(this.queryParams)
     },
-    loadMore() {
-      if (this.loading || this.finished) return
-      this.queryParams.pageNum++
-      this.getList()
+    switchDuty(value) {
+      if (this.queryParams.dutyType === value) return
+      this.queryParams.dutyType = value
+      this.resetQuery()
     },
     formatTime(item) {
-      if (item.examTime) return item.examTime
-      if (item.timeSlot) return item.timeSlot
       if (item.startTime || item.endTime) {
         return (item.startTime || '') + (item.endTime ? ' ~ ' + item.endTime : '')
       }
       return '--'
     },
     getDutyText(type) {
-      const map = { main: '主监考', deputy: '副监考', assistant: '监考助理', vice: '副监考' }
-      return map[type] || type || '监考'
+      const map = { 0: '主监考', 1: '副监考', 2: '巡考' }
+      return map[type] || '监考'
     },
     getDutyClass(type) {
-      if (type === 'main') return 'duty-main'
-      if (type === 'deputy' || type === 'vice') return 'duty-deputy'
+      if (type === '0') return 'duty-main'
+      if (type === '1') return 'duty-deputy'
       return 'duty-other'
-    },
-    getStatusText(status) {
-      const map = {
-        0: '待监考', 1: '已确认', 2: '已完成', 3: '已缺勤',
-        pending: '待监考', confirmed: '已确认', finished: '已完成', absent: '已缺勤'
-      }
-      return map[status] || (typeof status === 'string' ? status : '待监考')
-    },
-    getStatusClass(status) {
-      if (status === 2 || status === 'finished') return 'status-finished'
-      if (status === 3 || status === 'absent') return 'status-absent'
-      if (status === 1 || status === 'confirmed') return 'status-confirmed'
-      return 'status-pending'
     },
     getDay(dateStr) {
       if (!dateStr) return '--'
@@ -149,43 +131,6 @@ export default {
       if (!dateStr) return ''
       const parts = String(dateStr).split('-')
       return parts.length === 3 ? parts[1] + '月' : ''
-    },
-    getScrollContainer() {
-      let node = this.$el
-      while (node && node.tagName !== 'BODY') {
-        if (node.classList && node.classList.contains('mobile-content')) return node
-        node = node.parentNode
-      }
-      return window
-    },
-    bindScroll() {
-      this.scrollEl = this.getScrollContainer()
-      if (this.scrollEl) {
-        this.scrollEl.addEventListener('scroll', this.onScroll, { passive: true })
-      }
-    },
-    unbindScroll() {
-      if (this.scrollEl) {
-        this.scrollEl.removeEventListener('scroll', this.onScroll)
-        this.scrollEl = null
-      }
-    },
-    onScroll() {
-      if (this.loading || this.finished) return
-      const el = this.scrollEl
-      let scrollTop, clientHeight, scrollHeight
-      if (el === window) {
-        scrollTop = window.pageYOffset || document.documentElement.scrollTop
-        clientHeight = window.innerHeight
-        scrollHeight = document.documentElement.scrollHeight
-      } else {
-        scrollTop = el.scrollTop
-        clientHeight = el.clientHeight
-        scrollHeight = el.scrollHeight
-      }
-      if (scrollTop + clientHeight >= scrollHeight - 80) {
-        this.loadMore()
-      }
     }
   }
 }
@@ -195,6 +140,48 @@ export default {
 .mobile-invigilation {
   background: #f5f7fa;
   min-height: 100%;
+}
+
+/* 下拉刷新 */
+.pull-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #909399;
+  font-size: 12px;
+  overflow: hidden;
+  background: #f5f7fa;
+}
+.pull-refresh i {
+  margin-right: 6px;
+  font-size: 14px;
+}
+.pull-refresh .rotate {
+  transform: rotate(180deg);
+}
+
+/* 筛选栏 */
+.filter-bar {
+  display: flex;
+  background: #fff;
+  padding: 8px 12px;
+  border-bottom: 1px solid #ebeef5;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.filter-item {
+  flex-shrink: 0;
+  padding: 6px 16px;
+  margin-right: 8px;
+  font-size: 13px;
+  color: #606266;
+  background: #f4f4f5;
+  border-radius: 16px;
+  cursor: pointer;
+}
+.filter-item.active {
+  color: #fff;
+  background: linear-gradient(135deg, #003366, #007ab8);
 }
 
 .invigilation-list { padding: 12px; }
@@ -221,7 +208,7 @@ export default {
 .card-date-col {
   width: 58px;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #1a5276, #2e86c1);
+  background: linear-gradient(135deg, #003366, #007ab8);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -258,7 +245,7 @@ export default {
   white-space: nowrap;
   flex-shrink: 0;
 }
-.duty-main { background: #ecf5ff; color: #2e86c1; }
+.duty-main { background: #e8f4fa; color: #007ab8; }
 .duty-deputy { background: #f0f9eb; color: #67c23a; }
 .duty-other { background: #f4f4f5; color: #909399; }
 
@@ -275,7 +262,7 @@ export default {
   color: #606266;
 }
 .info-row i {
-  color: #2e86c1;
+  color: #007ab8;
   margin-right: 8px;
   width: 16px;
   text-align: center;
@@ -294,19 +281,10 @@ export default {
 
 .card-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-top: 10px;
 }
-.status-tag {
-  font-size: 11px;
-  padding: 2px 10px;
-  border-radius: 10px;
-}
-.status-pending { background: #fdf6ec; color: #e6a23c; }
-.status-confirmed { background: #ecf5ff; color: #2e86c1; }
-.status-finished { background: #f0f9eb; color: #67c23a; }
-.status-absent { background: #fef0f0; color: #f56c6c; }
 .exam-date-full { font-size: 11px; color: #c0c4cc; }
 
 .list-footer {
@@ -317,7 +295,7 @@ export default {
 }
 .list-footer i { margin-right: 4px; }
 .load-more {
-  color: #2e86c1;
+  color: #007ab8;
   cursor: pointer;
 }
 </style>

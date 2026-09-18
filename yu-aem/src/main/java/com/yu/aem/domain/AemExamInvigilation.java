@@ -55,6 +55,18 @@ public class AemExamInvigilation extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 考试名称（关联查询，门户移动端展示用） */
+    private String examName;
+
+    /** 教室名称（关联查询，门户移动端展示用） */
+    private String classroomName;
+
+    public String getExamName() { return examName; }
+    public void setExamName(String examName) { this.examName = examName; }
+
+    public String getClassroomName() { return classroomName; }
+    public void setClassroomName(String classroomName) { this.classroomName = classroomName; }
+
     public Long getInvigilationId() { return invigilationId; }
     public void setInvigilationId(Long invigilationId) { this.invigilationId = invigilationId; }
 

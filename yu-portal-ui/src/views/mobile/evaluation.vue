@@ -1,74 +1,106 @@
 <template>
-  <div class="mobile-evaluation">
+  <div
+    class="mobile-evaluation"
+    @touchstart="onTouchStart"
+    @touchmove="onTouchMove"
+    @touchend="onTouchEnd"
+  >
     <!-- 问卷列表 -->
     <div v-if="!answering" class="questionnaire-list">
-      <div v-if="loading" class="loading-state">
+      <!-- 下拉刷新提示 -->
+      <div class="pull-refresh" :style="{ height: pullDistance + 'px' }">
+        <i v-if="refreshing" class="el-icon-loading"></i>
+        <i v-else-if="pullDistance >= triggerDistance" class="el-icon-arrow-down"></i>
+        <i v-else class="el-icon-arrow-down rotate"></i>
+        <span>{{ refreshText }}</span>
+      </div>
+
+      <div v-if="loading && list.length === 0" class="loading-state">
         <i class="el-icon-loading"></i> 加载中...
       </div>
-      <div v-else-if="questionnaireList.length === 0" class="empty-state">
+      <div v-else-if="list.length === 0" class="empty-state">
         <i class="el-icon-star-on"></i>
         <p>暂无可评价的问卷</p>
       </div>
 
       <div
-        v-for="item in questionnaireList"
-        :key="item.questionnaireId || item.id"
+        v-for="item in list"
+        :key="item.questionnaireId"
         class="eval-card"
         :class="{ completed: item.completed }"
       >
         <div class="card-top">
-          <span class="q-title">{{ item.title || item.questionnaireName || '教学评价问卷' }}</span>
-          <span class="q-status" :class="item.completed ? 'status-done' : 'status-todo'">
-            {{ item.completed ? '已完成' : '待评价' }}
-          </span>
+          <span class="q-title">{{ item.title || '教学评价问卷' }}</span>
+          <span class="q-status" :class="statusTagClass(item)">{{ statusText(item) }}</span>
         </div>
         <div class="card-info">
-          <div class="info-row">
-            <i class="el-icon-user"></i>
-            <span class="info-label">被评教师</span>
-            <span class="info-value">{{ item.teacherName || '--' }}</span>
+          <div class="info-row" v-if="item.description">
+            <i class="el-icon-document"></i>
+            <span class="info-label">说明</span>
+            <span class="info-value">{{ item.description }}</span>
           </div>
           <div class="info-row">
-            <i class="el-icon-notebook-2"></i>
-            <span class="info-label">课程</span>
-            <span class="info-value">{{ item.courseName || '--' }}</span>
-          </div>
-          <div class="info-row" v-if="item.startDate || item.endDate">
             <i class="el-icon-date"></i>
             <span class="info-label">评价时间</span>
-            <span class="info-value">{{ item.startDate || '--' }} 至 {{ item.endDate || '--' }}</span>
+            <span class="info-value">{{ formatDate(item.startTime) }} 至 {{ formatDate(item.endTime) }}</span>
+          </div>
+          <div class="info-row">
+            <i class="el-icon-edit-outline"></i>
+            <span class="info-label">题目数</span>
+            <span class="info-value">{{ item.questionCount != null ? item.questionCount + ' 题' : '--' }}</span>
+            <span class="info-value" v-if="item.fullScore != null">满分 {{ item.fullScore }} 分</span>
           </div>
         </div>
         <el-button
           class="eval-btn"
-          :type="item.completed ? 'success' : 'primary'"
+          :type="evalBtnType(item)"
           :plain="item.completed"
+          :disabled="!canEvaluate(item)"
+          :loading="questionLoading && current.questionnaireId === item.questionnaireId"
           @click="handleEvaluate(item)"
         >
-          {{ item.completed ? '查看评价' : '开始评价' }}
+          {{ evalBtnText(item) }}
         </el-button>
+      </div>
+
+      <!-- 底部状态 -->
+      <div class="list-footer">
+        <span v-if="loading && list.length > 0"><i class="el-icon-loading"></i> 加载中...</span>
+        <span v-else-if="finished">没有更多了</span>
+        <span v-else-if="list.length > 0" class="load-more" @click="loadMore">点击加载更多</span>
       </div>
     </div>
 
     <!-- 答题视图 -->
     <div v-else class="answer-view">
       <div class="answer-header">
-        <div class="answer-title">{{ current.title || current.questionnaireName || '教学评价' }}</div>
-        <div class="answer-sub" v-if="current.courseName">{{ current.courseName }} · {{ current.teacherName || '' }}</div>
+        <div class="answer-back" @click="cancelAnswer"><i class="el-icon-arrow-left"></i> 返回</div>
+        <div class="answer-title">{{ current.title || '教学评价' }}</div>
+        <div class="answer-sub" v-if="current.description">{{ current.description }}</div>
       </div>
 
       <div class="question-list">
         <div v-for="(q, idx) in evalForm.questions" :key="q.questionId || idx" class="question-item">
           <div class="question-title">
             <span class="q-index">{{ idx + 1 }}</span>
-            <span>{{ q.questionTitle || q.title || q.content }}</span>
+            <span>{{ q.questionTitle || q.questionContent || q.title }}</span>
           </div>
           <el-rate
+            v-if="q.questionType !== '3'"
             v-model="q.score"
             :max="5"
             show-text
             :texts="['很差', '较差', '一般', '良好', '优秀']"
           ></el-rate>
+          <el-input
+            v-else
+            v-model="q.textAnswer"
+            type="textarea"
+            :rows="2"
+            placeholder="请输入您的看法"
+            maxlength="200"
+            show-word-limit
+          ></el-input>
         </div>
 
         <div class="suggestion-item">
@@ -100,14 +132,15 @@ import {
   listQuestions,
   submitEvaluationResult
 } from '@/api/portal/evaluation'
+import mobileList from '@/mixins/mobileList'
 
 export default {
   name: 'MobileEvaluation',
+  mixins: [mobileList],
   data() {
     return {
-      loading: false,
       submitting: false,
-      questionnaireList: [],
+      questionLoading: false,
       answering: false,
       current: {},
       evalForm: {
@@ -117,22 +150,73 @@ export default {
       }
     }
   },
-  mounted() {
-    this.getList()
-  },
   methods: {
-    getList() {
-      this.loading = true
-      listQuestionnaireForMobile({ pageNum: 1, pageSize: 100 }).then(r => {
-        this.questionnaireList = r.rows || r.data || []
-      }).finally(() => {
-        this.loading = false
-      })
+    fetchList() {
+      return listQuestionnaireForMobile(this.queryParams)
+    },
+    // 答题视图内禁用下拉刷新，避免误触丢失作答
+    onTouchStart(e) {
+      if (this.answering) return
+      mobileList.methods.onTouchStart.call(this, e)
+    },
+    onTouchMove(e) {
+      if (this.answering) return
+      mobileList.methods.onTouchMove.call(this, e)
+    },
+    onTouchEnd() {
+      if (this.answering) return
+      mobileList.methods.onTouchEnd.call(this)
+    },
+    // evalStatus 字典：0未开始 1进行中 2已结束
+    statusText(item) {
+      if (item.completed) return '已完成'
+      const map = { 0: '未开始', 1: '进行中', 2: '已结束' }
+      return map[item.evalStatus] || '进行中'
+    },
+    statusTagClass(item) {
+      if (item.completed) return 'status-done'
+      if (item.evalStatus === '0') return 'status-notstart'
+      if (item.evalStatus === '2') return 'status-closed'
+      return 'status-todo'
+    },
+    canEvaluate(item) {
+      return !item.completed && item.evalStatus === '1'
+    },
+    evalBtnType(item) {
+      if (item.completed) return 'success'
+      return this.canEvaluate(item) ? 'primary' : 'info'
+    },
+    evalBtnText(item) {
+      if (item.completed) return '已评价'
+      if (item.evalStatus === '0') return '评教未开始'
+      if (item.evalStatus === '2') return '评教已结束'
+      return '开始评价'
+    },
+    formatDate(datetime) {
+      if (!datetime) return '--'
+      return String(datetime).slice(0, 10)
     },
     handleEvaluate(row) {
-      const id = row.questionnaireId || row.id
+      if (row.completed) {
+        this.$message.info('您已完成该问卷评教')
+        return
+      }
+      if (!this.canEvaluate(row)) {
+        this.$message.warning(row.evalStatus === '0' ? '评教尚未开始' : '评教已结束')
+        return
+      }
+      const id = row.questionnaireId
+      this.questionLoading = true
       listQuestions(id).then(r => {
-        const questions = (r.rows || r.data || []).map(q => ({ ...q, score: 0 }))
+        const questions = (r.rows || r.data || []).map(q => ({
+          ...q,
+          score: 0,
+          textAnswer: ''
+        }))
+        if (questions.length === 0) {
+          this.$message.warning('该问卷暂无题目')
+          return
+        }
         this.current = row
         this.evalForm = {
           questionnaireId: id,
@@ -140,26 +224,57 @@ export default {
           suggestion: ''
         }
         this.answering = true
+      }).finally(() => {
+        this.questionLoading = false
       })
     },
     cancelAnswer() {
+      const answered = this.evalForm.questions.some(q => q.score > 0 || (q.textAnswer && q.textAnswer.trim()))
+      if (answered) {
+        this.$confirm('当前作答尚未提交，确定退出吗？', '提示', {
+          confirmButtonText: '确定退出',
+          cancelButtonText: '继续作答',
+          type: 'warning'
+        }).then(() => {
+          this.doCancel()
+        }).catch(() => {})
+      } else {
+        this.doCancel()
+      }
+    },
+    doCancel() {
       this.answering = false
       this.current = {}
+      this.evalForm = { questionnaireId: null, questions: [], suggestion: '' }
+    },
+    /** 将各题星级得分折算为百分制总评分 */
+    calcTotalScore() {
+      const rateQuestions = this.evalForm.questions.filter(q => q.questionType !== '3')
+      if (rateQuestions.length === 0) return 0
+      const sum = rateQuestions.reduce((acc, q) => acc + (q.score / 5) * 100, 0)
+      return Math.round((sum / rateQuestions.length) * 10) / 10
     },
     submitEval() {
-      const unanswered = this.evalForm.questions.some(q => !q.score)
+      const unanswered = this.evalForm.questions
+        .filter(q => q.questionType !== '3')
+        .some(q => !q.score)
       if (unanswered) {
         this.$message.warning('请完成所有评分题目')
         return
       }
       this.submitting = true
+      // 文本题答案并入评语
+      const textAnswers = this.evalForm.questions
+        .filter(q => q.questionType === '3' && q.textAnswer && q.textAnswer.trim())
+        .map(q => `${q.questionTitle || q.questionContent || ''}：${q.textAnswer.trim()}`)
+      const comment = [this.evalForm.suggestion, ...textAnswers]
+        .filter(Boolean)
+        .join('\n')
+        .slice(0, 500)
       const payload = {
         questionnaireId: this.evalForm.questionnaireId,
-        answers: this.evalForm.questions.map(q => ({
-          questionId: q.questionId || q.id,
-          score: q.score
-        })),
-        suggestion: this.evalForm.suggestion
+        totalScore: this.calcTotalScore(),
+        comment
       }
       submitEvaluationResult(payload).then(() => {
         this.$message.success('评教提交成功')
@@ -167,7 +282,7 @@ export default {
         this.current = {}
         // 更新当前问卷状态
         const id = payload.questionnaireId
-        const target = this.questionnaireList.find(q => (q.questionnaireId || q.id) === id)
+        const target = this.list.find(q => q.questionnaireId === id)
         if (target) this.$set(target, 'completed', true)
       }).finally(() => {
         this.submitting = false
@@ -182,6 +297,23 @@ export default {
   background: #f5f7fa;
   min-height: 100%;
   padding-bottom: 20px;
+}
+
+/* 下拉刷新 */
+.pull-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #909399;
+  font-size: 12px;
+  overflow: hidden;
+}
+.pull-refresh i {
+  margin-right: 6px;
+  font-size: 14px;
+}
+.pull-refresh .rotate {
+  transform: rotate(180deg);
 }
 
 .loading-state, .empty-state {
@@ -231,6 +363,8 @@ export default {
 }
 .status-todo { background: #fdf6ec; color: #e6a23c; }
 .status-done { background: #f0f9eb; color: #67c23a; }
+.status-notstart { background: #f4f4f5; color: #909399; }
+.status-closed { background: #fef0f0; color: #f56c6c; }
 
 .card-info {
   background: #fafbfc;
@@ -246,7 +380,7 @@ export default {
   color: #606266;
 }
 .info-row i {
-  color: #2e86c1;
+  color: #007ab8;
   margin-right: 8px;
   width: 16px;
   text-align: center;
@@ -269,9 +403,16 @@ export default {
 
 /* 答题视图 */
 .answer-header {
-  background: linear-gradient(135deg, #1a5276, #2e86c1);
+  background: linear-gradient(135deg, #003366, #007ab8);
   color: #fff;
-  padding: 18px 16px;
+  padding: 14px 16px 18px;
+}
+.answer-back {
+  font-size: 13px;
+  opacity: 0.9;
+  margin-bottom: 8px;
+  cursor: pointer;
+  display: inline-block;
 }
 .answer-title {
   font-size: 16px;
@@ -306,8 +447,8 @@ export default {
   justify-content: center;
   min-width: 20px;
   height: 20px;
-  background: #ecf5ff;
-  color: #2e86c1;
+  background: #edf3f9;
+  color: #007ab8;
   border-radius: 4px;
   font-size: 12px;
   margin-right: 8px;
@@ -324,5 +465,18 @@ export default {
   margin: 0;
   height: 44px;
   font-size: 15px;
+}
+
+/* 底部 */
+.list-footer {
+  text-align: center;
+  padding: 16px;
+  color: #c0c4cc;
+  font-size: 13px;
+}
+.list-footer i { margin-right: 4px; }
+.load-more {
+  color: #007ab8;
+  cursor: pointer;
 }
 </style>

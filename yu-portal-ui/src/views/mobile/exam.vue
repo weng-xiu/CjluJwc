@@ -17,7 +17,7 @@
     <div class="filter-bar">
       <div
         v-for="opt in typeOptions"
-        :key="opt.value"
+        :key="String(opt.value)"
         class="filter-item"
         :class="{ active: queryParams.examType === opt.value }"
         @click="switchType(opt.value)"
@@ -34,15 +34,12 @@
         <p>暂无考试安排</p>
       </div>
 
-      <div v-for="item in list" :key="item.id" class="exam-card">
+      <div v-for="item in list" :key="item.examId" class="exam-card">
         <div class="card-top">
-          <span class="exam-name">{{ item.examName || item.courseName || '考试安排' }}</span>
+          <span class="exam-name">{{ item.examName || '考试安排' }}</span>
           <span class="exam-type-tag" :class="getTypeClass(item.examType)">
             {{ getTypeText(item.examType) }}
           </span>
-        </div>
-        <div class="card-course" v-if="item.examName && item.courseName">
-          <i class="el-icon-notebook-2"></i> {{ item.courseName }}
         </div>
         <div class="card-info">
           <div class="info-row">
@@ -55,20 +52,20 @@
             <span class="info-label">考试时间</span>
             <span class="info-value">{{ formatTime(item) }}</span>
           </div>
-          <div class="info-row">
-            <i class="el-icon-location-outline"></i>
-            <span class="info-label">考试地点</span>
-            <span class="info-value">{{ item.classroom || item.examLocation || item.roomName || item.place || '--' }}</span>
+          <div class="info-row" v-if="item.duration != null">
+            <i class="el-icon-hourglasses"></i>
+            <span class="info-label">考试时长</span>
+            <span class="info-value">{{ item.duration }} 分钟</span>
           </div>
-          <div class="info-row" v-if="item.seatNo">
-            <i class="el-icon-postcard"></i>
-            <span class="info-label">座位号</span>
-            <span class="info-value">{{ item.seatNo }}</span>
+          <div class="info-row" v-if="item.totalStudents != null">
+            <i class="el-icon-user"></i>
+            <span class="info-label">考生人数</span>
+            <span class="info-value">{{ item.totalStudents }} 人</span>
           </div>
         </div>
-        <div class="card-status" v-if="item.arrangeStatus != null && item.arrangeStatus !== ''">
-          <span class="status-dot" :class="getStatusClass(item.arrangeStatus)"></span>
-          {{ getStatusText(item.arrangeStatus) }}
+        <div class="card-status" v-if="item.planStatus != null && item.planStatus !== ''">
+          <span class="status-dot" :class="getStatusClass(item.planStatus)"></span>
+          {{ getStatusText(item.planStatus) }}
         </div>
       </div>
     </div>
@@ -84,184 +81,61 @@
 
 <script>
 import { listExams } from '@/api/portal/exam'
+import mobileList from '@/mixins/mobileList'
 
 export default {
   name: 'MobileExam',
+  mixins: [mobileList],
   data() {
     return {
-      loading: false,
-      refreshing: false,
-      list: [],
-      total: 0,
       queryParams: {
         pageNum: 1,
         pageSize: 10,
-        examType: null,
-        examName: null,
-        arrangeStatus: null
+        examType: null
       },
+      // examType 字典：0期末考试 1补考 2重修考试
       typeOptions: [
         { label: '全部', value: null },
-        { label: '期末考试', value: 'final' },
-        { label: '补考', value: 'makeup' },
-        { label: '期中考试', value: 'midterm' }
-      ],
-      // 下拉刷新
-      pullDistance: 0,
-      triggerDistance: 50,
-      startY: 0,
-      pulling: false,
-      scrollEl: null
+        { label: '期末考试', value: '0' },
+        { label: '补考', value: '1' },
+        { label: '重修考试', value: '2' }
+      ]
     }
-  },
-  computed: {
-    finished() {
-      return this.list.length >= this.total && this.list.length > 0
-    },
-    refreshText() {
-      if (this.refreshing) return '正在刷新...'
-      if (this.pullDistance >= this.triggerDistance) return '松开立即刷新'
-      return '下拉刷新'
-    }
-  },
-  mounted() {
-    this.getList()
-    this.bindScroll()
-  },
-  activated() {
-    this.bindScroll()
-  },
-  beforeDestroy() {
-    this.unbindScroll()
   },
   methods: {
-    getList() {
-      this.loading = true
-      listExams(this.queryParams).then(r => {
-        const rows = r.rows || r.data || []
-        if (this.queryParams.pageNum === 1) {
-          this.list = rows
-        } else {
-          this.list = this.list.concat(rows)
-        }
-        this.total = r.total || 0
-        // 后端未返回 total 时，按本页条数判断是否结束
-        if (!r.total && rows.length < this.queryParams.pageSize) {
-          this.total = this.list.length
-        }
-      }).finally(() => {
-        this.loading = false
-        this.refreshing = false
-        this.pullDistance = 0
-      })
-    },
-    loadMore() {
-      if (this.loading || this.finished) return
-      this.queryParams.pageNum++
-      this.getList()
-    },
-    refresh() {
-      this.queryParams.pageNum = 1
-      this.getList()
+    fetchList() {
+      return listExams(this.queryParams)
     },
     switchType(value) {
       if (this.queryParams.examType === value) return
       this.queryParams.examType = value
-      this.queryParams.pageNum = 1
-      this.getList()
+      this.resetQuery()
     },
     formatTime(item) {
-      if (item.examTime) return item.examTime
       if (item.startTime || item.endTime) {
         return (item.startTime || '') + (item.endTime ? ' ~ ' + item.endTime : '')
       }
       return '--'
     },
     getTypeText(type) {
-      const map = { final: '期末考试', makeup: '补考', midterm: '期中考试', normal: '常规考试' }
+      const map = { 0: '期末考试', 1: '补考', 2: '重修考试' }
       return map[type] || type || '考试'
     },
     getTypeClass(type) {
-      if (type === 'final') return 'type-final'
-      if (type === 'makeup') return 'type-makeup'
-      if (type === 'midterm') return 'type-midterm'
+      if (type === '0') return 'type-final'
+      if (type === '1') return 'type-makeup'
+      if (type === '2') return 'type-retake'
       return 'type-default'
     },
+    // planStatus 字典：0未安排 1已安排 2已发布
     getStatusText(status) {
-      const map = { 0: '待安排', 1: '已安排', 2: '已结束', arranged: '已安排', pending: '待安排' }
-      return map[status] || (typeof status === 'string' ? status : '已安排')
+      const map = { 0: '待安排', 1: '已安排', 2: '已发布' }
+      return map[status] || ''
     },
     getStatusClass(status) {
-      if (status === 2 || status === 'finished') return 'status-done'
-      if (status === 0 || status === 'pending') return 'status-pending'
+      if (status === '2') return 'status-done'
+      if (status === '0') return 'status-pending'
       return 'status-arranged'
-    },
-    // 滚动容器查找（MobileLayout 的 .mobile-content）
-    getScrollContainer() {
-      let node = this.$el
-      while (node && node.tagName !== 'BODY') {
-        if (node.classList && node.classList.contains('mobile-content')) return node
-        node = node.parentNode
-      }
-      return window
-    },
-    bindScroll() {
-      this.scrollEl = this.getScrollContainer()
-      if (this.scrollEl) {
-        this.scrollEl.addEventListener('scroll', this.onScroll, { passive: true })
-      }
-    },
-    unbindScroll() {
-      if (this.scrollEl) {
-        this.scrollEl.removeEventListener('scroll', this.onScroll)
-        this.scrollEl = null
-      }
-    },
-    onScroll() {
-      if (this.loading || this.finished) return
-      const el = this.scrollEl
-      let scrollTop, clientHeight, scrollHeight
-      if (el === window) {
-        scrollTop = window.pageYOffset || document.documentElement.scrollTop
-        clientHeight = window.innerHeight
-        scrollHeight = document.documentElement.scrollHeight
-      } else {
-        scrollTop = el.scrollTop
-        clientHeight = el.clientHeight
-        scrollHeight = el.scrollHeight
-      }
-      // 距底部 80px 触发加载
-      if (scrollTop + clientHeight >= scrollHeight - 80) {
-        this.loadMore()
-      }
-    },
-    // 下拉刷新
-    onTouchStart(e) {
-      const el = this.scrollEl
-      const top = el === window ? (window.pageYOffset || document.documentElement.scrollTop) : el.scrollTop
-      if (top <= 0 && !this.refreshing) {
-        this.startY = e.touches[0].clientY
-        this.pulling = true
-      }
-    },
-    onTouchMove(e) {
-      if (!this.pulling || this.refreshing) return
-      const delta = e.touches[0].clientY - this.startY
-      if (delta > 0) {
-        // 阻尼效果
-        this.pullDistance = Math.min(delta * 0.5, 80)
-      }
-    },
-    onTouchEnd() {
-      if (!this.pulling) return
-      this.pulling = false
-      if (this.pullDistance >= this.triggerDistance) {
-        this.refreshing = true
-        this.pullDistance = 40
-        this.refresh()
-      } else {
-        this.pullDistance = 0
-      }
     }
   }
 }
@@ -312,7 +186,7 @@ export default {
 }
 .filter-item.active {
   color: #fff;
-  background: linear-gradient(135deg, #1a5276, #2e86c1);
+  background: linear-gradient(135deg, #003366, #007ab8);
 }
 
 /* 列表 */
@@ -357,17 +231,10 @@ export default {
   white-space: nowrap;
   flex-shrink: 0;
 }
-.type-final { background: #ecf5ff; color: #2e86c1; }
+.type-final { background: #e8f4fa; color: #007ab8; }
 .type-makeup { background: #fdf6ec; color: #e6a23c; }
-.type-midterm { background: #f0f9eb; color: #67c23a; }
+.type-retake { background: #f0f9eb; color: #67c23a; }
 .type-default { background: #f4f4f5; color: #909399; }
-
-.card-course {
-  font-size: 13px;
-  color: #606266;
-  margin-bottom: 10px;
-}
-.card-course i { margin-right: 4px; color: #2e86c1; }
 
 .card-info {
   background: #fafbfc;
@@ -382,7 +249,7 @@ export default {
   color: #606266;
 }
 .info-row i {
-  color: #2e86c1;
+  color: #007ab8;
   margin-right: 8px;
   width: 16px;
   text-align: center;
@@ -414,7 +281,7 @@ export default {
   border-radius: 50%;
   margin-right: 6px;
 }
-.status-arranged { background: #2e86c1; }
+.status-arranged { background: #007ab8; }
 .status-pending { background: #e6a23c; }
 .status-done { background: #67c23a; }
 
@@ -427,7 +294,7 @@ export default {
 }
 .list-footer i { margin-right: 4px; }
 .load-more {
-  color: #2e86c1;
+  color: #007ab8;
   cursor: pointer;
 }
 </style>

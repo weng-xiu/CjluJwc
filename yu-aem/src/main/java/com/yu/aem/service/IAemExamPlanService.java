@@ -17,6 +17,8 @@ public interface IAemExamPlanService
     public AemExamPlan selectAemExamPlanDetail(Long examId);
 
     public List<AemExamPlan> selectAemExamPlanList(AemExamPlan aemExamPlan);
+    /** 门户端查询：不套用部门数据范围（访问已由 portal:exam:list 权限控制） */
+    public List<AemExamPlan> selectAemExamPlanListForPortal(AemExamPlan aemExamPlan);
     public int insertAemExamPlan(AemExamPlan aemExamPlan);
     public int updateAemExamPlan(AemExamPlan aemExamPlan);
     public int deleteAemExamPlanByExamIds(Long[] examIds);

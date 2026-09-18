@@ -8,7 +8,7 @@ ruoyi:
   copyrightYear: 2026
   # 文件路径 示例（ Windows配置项目内ruoyi/uploadPath，Linux配置 /home/ruoyi/uploadPath）
   # 上传路径通过环境变量注入，未设置时沿用默认（Windows）。Linux 部署时设 RUIYI_PROFILE=/home/ruoyi/uploadPath
-  profile: ${RUIYI_PROFILE:H:/project_open/CjluJwc/ruoyi/uploadPath}
+  profile: ${RUIYI_PROFILE:ruoyi/uploadPath}
   # 获取ip地址开关
   addressEnabled: false
   # 验证码类型 math 数字计算 char 字符验证

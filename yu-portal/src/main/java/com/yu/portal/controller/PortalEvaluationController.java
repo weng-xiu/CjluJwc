@@ -1,8 +1,10 @@
 package com.yu.portal.controller;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,22 +45,49 @@ public class PortalEvaluationController extends BaseController
     @Autowired
     private IAemEvaluationResultService aemEvaluationResultService;
 
-    /** 学生端：待评教问卷列表 */
+    /** 学生端：待评教问卷列表（附带当前用户 completed 标记） */
     @PreAuthorize("@ss.hasPermi('portal:evaluation:list')")
     @GetMapping("/questionnaireList")
     public TableDataInfo questionnaireList(AemEvaluationQuestionnaire aemEvaluationQuestionnaire)
     {
         startPage();
         List<AemEvaluationQuestionnaire> list = aemEvaluationQuestionnaireService.selectAemEvaluationQuestionnaireList(aemEvaluationQuestionnaire);
+        // 标记当前用户已完成的问卷
+        if (list != null && !list.isEmpty())
+        {
+            AemEvaluationResult resultQuery = new AemEvaluationResult();
+            resultQuery.setStudentId(getUserId());
+            List<AemEvaluationResult> myResults = aemEvaluationResultService.selectAemEvaluationResultList(resultQuery);
+            Set<Long> completedIds = myResults == null ? new HashSet<>() :
+                myResults.stream().map(AemEvaluationResult::getQuestionnaireId)
+                    .filter(java.util.Objects::nonNull).collect(Collectors.toSet());
+            list.forEach(q -> q.setCompleted(completedIds.contains(q.getQuestionnaireId())));
+        }
         return getDataTable(list);
     }
 
-    /** 学生端：提交评教 */
+    /** 学生端：提交评教（自动回填学生ID/评教时间，防重复提交） */
     @PreAuthorize("@ss.hasPermi('portal:evaluation:submit')")
     @Log(title = "评教提交", businessType = BusinessType.INSERT)
     @PostMapping("/submit")
     public AjaxResult submit(@RequestBody AemEvaluationResult aemEvaluationResult)
     {
+        if (aemEvaluationResult.getQuestionnaireId() == null)
+        {
+            return error("问卷ID不能为空");
+        }
+        Long studentId = getUserId();
+        // 防重复：同一学生对同一问卷只允许评教一次
+        AemEvaluationResult dupQuery = new AemEvaluationResult();
+        dupQuery.setQuestionnaireId(aemEvaluationResult.getQuestionnaireId());
+        dupQuery.setStudentId(studentId);
+        List<AemEvaluationResult> existing = aemEvaluationResultService.selectAemEvaluationResultList(dupQuery);
+        if (existing != null && !existing.isEmpty())
+        {
+            return error("您已完成该问卷评教，无需重复提交");
+        }
+        aemEvaluationResult.setStudentId(studentId);
+        aemEvaluationResult.setEvalDate(new java.util.Date());
         return toAjax(aemEvaluationResultService.insertAemEvaluationResult(aemEvaluationResult));
     }
 

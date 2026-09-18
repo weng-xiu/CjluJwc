@@ -69,6 +69,12 @@ public class AemEvaluationQuestionnaire extends BaseEntity
     /** 子表：评教题目 */
     private List<AemEvaluationQuestion> questions;
 
+    /** 当前用户是否已完成评教（门户移动端展示用，非数据库字段） */
+    private Boolean completed;
+
+    public Boolean getCompleted() { return completed; }
+    public void setCompleted(Boolean completed) { this.completed = completed; }
+
     public List<AemEvaluationQuestion> getQuestions() { return questions; }
     public void setQuestions(List<AemEvaluationQuestion> questions) { this.questions = questions; }
 

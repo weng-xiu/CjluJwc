@@ -120,7 +120,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   height: 48px;
-  background: linear-gradient(90deg, #1a5276, #2e86c1);
+  background: linear-gradient(90deg, #003366, #007ab8);
   color: #fff;
   padding: 0 16px;
   flex-shrink: 0;
@@ -188,7 +188,7 @@ export default {
   padding-top: 4px;
 }
 .tab-item.active {
-  color: #2e86c1;
+  color: #007ab8;
 }
 .tab-icon {
   font-size: 20px;
