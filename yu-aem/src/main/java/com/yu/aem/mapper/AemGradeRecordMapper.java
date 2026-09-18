@@ -14,6 +14,9 @@ public interface AemGradeRecordMapper
 {
     public AemGradeRecord selectAemGradeRecordByGradeId(Long gradeId);
     public List<AemGradeRecord> selectAemGradeRecordList(AemGradeRecord aemGradeRecord);
+
+    /** 门户端：学生个人成绩列表（附带课程名/学分/学期名，无数据范围过滤） */
+    public List<AemGradeRecord> selectAemGradeRecordListForPortal(AemGradeRecord aemGradeRecord);
     public int insertAemGradeRecord(AemGradeRecord aemGradeRecord);
     public int updateAemGradeRecord(AemGradeRecord aemGradeRecord);
     public int deleteAemGradeRecordByGradeId(Long gradeId);

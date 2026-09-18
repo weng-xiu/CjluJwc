@@ -44,6 +44,12 @@ public class TpmScheduleServiceImpl implements ITpmScheduleService
         return tpmScheduleMapper.selectTpmScheduleList(tpmSchedule);
     }
 
+    @Override
+    public List<TpmSchedule> selectStudentScheduleList(Long studentId, Long semesterId)
+    {
+        return tpmScheduleMapper.selectStudentScheduleList(studentId, semesterId);
+    }
+
     /**
      * 保存前校验：教室冲突 + 教师冲突
      *

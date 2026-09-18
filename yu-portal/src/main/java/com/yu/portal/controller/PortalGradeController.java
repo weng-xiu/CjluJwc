@@ -39,13 +39,14 @@ public class PortalGradeController extends BaseController
     @Autowired
     private IAemGradeStatisticsService aemGradeStatisticsService;
 
-    /** 学生端：成绩查询 */
+    /** 学生端：成绩查询（强制只查本人，避开部门数据范围 SQL 报错） */
     @PreAuthorize("@ss.hasPermi('portal:grade:list')")
     @GetMapping("/list")
     public TableDataInfo list(AemGradeRecord aemGradeRecord)
     {
+        aemGradeRecord.setStudentId(getUserId());
         startPage();
-        List<AemGradeRecord> list = aemGradeRecordService.selectAemGradeRecordList(aemGradeRecord);
+        List<AemGradeRecord> list = aemGradeRecordService.selectAemGradeRecordListForPortal(aemGradeRecord);
         return getDataTable(list);
     }
 
@@ -111,12 +112,37 @@ public class PortalGradeController extends BaseController
     }
 
     /** 学生端：成绩统计分析 */
-    @PreAuthorize("@ss.hasPermi('portal:grade:statistics')")
+    /** 学生端：成绩统计（按本人成绩实时汇总 GPA/学分/均分） */
+    @PreAuthorize("@ss.hasPermi('portal:grade:list')")
     @GetMapping("/statistics")
-    public TableDataInfo statistics()
+    public AjaxResult statistics()
     {
-        startPage();
-        List<AemGradeStatistics> list = aemGradeStatisticsService.selectAemGradeStatisticsList(new AemGradeStatistics());
-        return getDataTable(list);
+        AemGradeRecord query = new AemGradeRecord();
+        query.setStudentId(getUserId());
+        List<AemGradeRecord> list = aemGradeRecordService.selectAemGradeRecordListForPortal(query);
+        double totalCredit = 0;
+        double gpaWeightSum = 0;
+        double scoreSum = 0;
+        int scoreCount = 0;
+        for (AemGradeRecord r : list)
+        {
+            Double credit = r.getCredit() != null ? r.getCredit() : 0;
+            if (r.getGradePoint() != null && credit > 0)
+            {
+                gpaWeightSum += r.getGradePoint() * credit;
+                totalCredit += credit;
+            }
+            if (r.getTotalScore() != null)
+            {
+                scoreSum += r.getTotalScore();
+                scoreCount++;
+            }
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("avgGpa", totalCredit > 0 ? Math.round(gpaWeightSum / totalCredit * 100) / 100.0 : null);
+        result.put("totalCredit", totalCredit);
+        result.put("courseCount", list.size());
+        result.put("avgScore", scoreCount > 0 ? Math.round(scoreSum / scoreCount * 10) / 10.0 : null);
+        return success(result);
     }
 }

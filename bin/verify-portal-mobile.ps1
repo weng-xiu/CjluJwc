@@ -81,4 +81,37 @@ $qns2 = Invoke-ApiJson $sToken Get '/portal/evaluation/questionnaireList?pageNum
 Write-Host "提交后问卷状态:"
 $qns2.rows | ForEach-Object { "  #{0} [{1}] completed={2}" -f $_.questionnaireId, $_.evalStatus, $_.completed }
 
+Write-Host '===== 4. 选课 / 成绩 / 课表 / 预警 四页 ====='
+# 4.1 选课轮次 + 可选课程
+$rounds = Invoke-ApiJson $sToken Get '/portal/selection/roundList?pageNum=1&pageSize=10&roundStatus=1'
+Write-Host "进行中轮次 total=$($rounds.total)"
+$rounds.rows | ForEach-Object { "  #{0} {1} {2}~{3} 上限={4}" -f $_.roundId, $_.roundName, $_.startTime, $_.endTime, $_.maxCoursesPerStudent }
+$roundId = if ($rounds.total -ge 1) { $rounds.rows[0].roundId } else { 9311 }
+$courseList = Invoke-ApiJson $sToken Get '/portal/selection/courseList?pageNum=1&pageSize=20'
+Write-Host "可选课程 total=$($courseList.total)"
+$courseList.rows | ForEach-Object { "  offering#{0} {1} 学分={2} 教师={3} 容量={4}/{5}" -f $_.offeringId, $_.courseName, $_.credit, $_.teacherName, $_.enrolledCount, $_.maxStudents }
+# 4.2 冲突检测（只读，选一个未选课程 9325）
+$val = Invoke-ApiJson $sToken Post '/portal/selection/validate' @{ courseOfferingId = 9325; roundId = $roundId }
+Write-Host "validate(9325): code=$($val.code) 冲突数=$($val.data.Count)"
+$val.data | ForEach-Object { "    冲突: $($_.conflictType) - $($_.message)" }
+# 4.3 选课写入（带校验）
+$enroll = Invoke-ApiJson $sToken Post '/portal/selection/enrollWithValidation' @{ courseOfferingId = 9325; roundId = $roundId }
+Write-Host "enroll(9325): code=$($enroll.code) msg=$($enroll.msg)"
+# 4.4 本人成绩 + 统计
+$grades = Invoke-ApiJson $sToken Get '/portal/grade/list?pageNum=1&pageSize=20'
+Write-Host "成绩列表 total=$($grades.total)"
+$grades.rows | ForEach-Object { "  #{0} {1} 总分={2} 绩点={3} 学分={4} 等级={5} 学期={6}" -f $_.gradeId, $_.courseName, $_.totalScore, $_.gradePoint, $_.credit, $_.gradeLevel, $_.semesterName }
+$gstat = Invoke-ApiJson $sToken Get '/portal/grade/statistics'
+Write-Host "成绩统计: avgGpa=$($gstat.data.avgGpa) totalCredit=$($gstat.data.totalCredit) courseCount=$($gstat.data.courseCount) avgScore=$($gstat.data.avgScore)"
+# 4.5 本人课表
+$sched = Invoke-ApiJson $sToken Get '/portal/schedule/myList?pageNum=1&pageSize=30'
+Write-Host "我的课表 total=$($sched.total)"
+$sched.rows | ForEach-Object { "  #{0} {1} 周{2} 第{3}-{4}节 @{5}" -f $_.scheduleId, $_.courseName, $_.weekDay, $_.startPeriod, $_.endPeriod, $_.classroomName }
+# 4.6 本人预警 + 统计
+$warns = Invoke-ApiJson $sToken Get '/portal/warning/list?pageNum=1&pageSize=20'
+Write-Host "预警列表 total=$($warns.total)"
+$warns.rows | ForEach-Object { "  #{0} type={1} level={2} resolved={3} : {4}" -f $_.warningId, $_.warningType, $_.warningLevel, $_.isResolved, $_.warningReason }
+$wstat = Invoke-ApiJson $sToken Get '/portal/warning/statistics'
+Write-Host "预警统计: total=$($wstat.data.totalCount) 高危=$($wstat.data.highRiskCount) 严重=$($wstat.data.seriousCount) 一般=$($wstat.data.normalCount) 未解除=$($wstat.data.unresolvedCount)"
+
 Write-Host '===== ALL DONE ====='

@@ -13,6 +13,9 @@ public interface TpmCourseOfferingMapper
 {
     public TpmCourseOffering selectTpmCourseOfferingByOfferingId(Long offeringId);
     public List<TpmCourseOffering> selectTpmCourseOfferingList(TpmCourseOffering tpmCourseOffering);
+
+    /** 门户端：可选课程列表（附带学分/已选人数，无数据范围过滤） */
+    public List<TpmCourseOffering> selectTpmCourseOfferingListForPortal(TpmCourseOffering tpmCourseOffering);
     public int insertTpmCourseOffering(TpmCourseOffering tpmCourseOffering);
     public int updateTpmCourseOffering(TpmCourseOffering tpmCourseOffering);
     public int deleteTpmCourseOfferingByOfferingId(Long offeringId);

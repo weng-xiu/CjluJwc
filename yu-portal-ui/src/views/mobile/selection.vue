@@ -3,7 +3,7 @@
     <!-- 选课轮次提示 -->
     <div v-if="currentRound" class="round-banner">
       <i class="el-icon-time"></i>
-      <span>{{ currentRound.roundName }} | {{ currentRound.startDate }} 至 {{ currentRound.endDate }}</span>
+      <span>{{ currentRound.roundName }} | {{ fmtDate(currentRound.startTime) }} 至 {{ fmtDate(currentRound.endTime) }}</span>
     </div>
     <div v-else class="round-banner round-closed">
       <i class="el-icon-warning-outline"></i>
@@ -35,7 +35,7 @@
 
       <div
         v-for="course in filteredCourses"
-        :key="course.id || course.courseId"
+        :key="course.offeringId"
         class="course-card"
       >
         <div class="card-header-row">
@@ -44,11 +44,11 @@
         </div>
         <div class="card-info-row">
           <span class="info-item"><i class="el-icon-user"></i> {{ course.teacherName || '待定' }}</span>
-          <span class="info-item"><i class="el-icon-time"></i> {{ course.classTime || '待定' }}</span>
+          <span class="info-item"><i class="el-icon-collection"></i> {{ course.courseCode || '' }}</span>
         </div>
         <div class="card-footer-row">
           <div class="capacity-info">
-            <span class="capacity-text">容量 {{ course.enrolled || 0 }}/{{ course.capacity || 0 }}</span>
+            <span class="capacity-text">容量 {{ course.enrolledCount || 0 }}/{{ course.maxStudents || 0 }}</span>
             <div class="capacity-bar">
               <div
                 class="capacity-fill"
@@ -58,10 +58,10 @@
             </div>
           </div>
           <el-button
-            v-if="(course.enrolled || 0) < (course.capacity || 0)"
+            v-if="(course.enrolledCount || 0) < (course.maxStudents || 0)"
             type="primary"
             size="mini"
-            :loading="enrollingId === (course.courseId || course.id)"
+            :loading="enrollingId === course.offeringId"
             @click="handleEnroll(course)"
           >选课</el-button>
           <el-button v-else type="info" size="mini" disabled>已满</el-button>
@@ -124,7 +124,8 @@ export default {
   },
   methods: {
     loadRound() {
-      listSelectionRound().then(r => {
+      // 只取进行中的轮次（round_status=1）
+      listSelectionRound({ roundStatus: '1', pageNum: 1, pageSize: 10 }).then(r => {
         const rows = r.rows || r.data || []
         this.currentRound = rows.length > 0 ? rows[0] : null
       }).catch(() => {})
@@ -156,18 +157,27 @@ export default {
       this.loadCourses()
     },
     getCapacityPercent(course) {
-      const cap = course.capacity || 1
-      return Math.min(Math.round(((course.enrolled || 0) / cap) * 100), 100)
+      const cap = course.maxStudents || 1
+      return Math.min(Math.round(((course.enrolledCount || 0) / cap) * 100), 100)
+    },
+    fmtDate(v) {
+      if (!v) return '--'
+      return String(v).substring(0, 10)
     },
     async handleEnroll(course) {
-      const courseId = course.courseId || course.id
-      // 先进行冲突验证
+      const offeringId = course.offeringId
+      const roundId = this.currentRound ? this.currentRound.roundId : null
+      if (!roundId) {
+        this.$message.warning('当前没有进行中的选课轮次')
+        return
+      }
+      // 先进行冲突验证（后端返回 List<ConflictWarning>，空数组表示无冲突）
       try {
-        this.enrollingId = courseId
-        const validResult = await validateSelection({ courseId })
-        if (validResult.data && validResult.data.hasConflict) {
-          // 有冲突，显示底部弹窗
-          this.conflictMessages = validResult.data.conflictMessages || ['该课程与已选课程存在时间冲突']
+        this.enrollingId = offeringId
+        const validResult = await validateSelection({ courseOfferingId: offeringId, roundId })
+        const conflicts = validResult.data || []
+        if (Array.isArray(conflicts) && conflicts.length > 0) {
+          this.conflictMessages = conflicts.map(c => c.message || '该课程与已选课程存在时间冲突')
           this.conflictVisible = true
           this.enrollingId = null
           return
@@ -188,16 +198,17 @@ export default {
         return
       }
 
-      // 执行选课
+      // 执行选课（后端已做轮次/门数/冲突/容量校验）
       try {
-        await enrollCourse({ courseId })
+        await enrollCourse({ courseOfferingId: offeringId, roundId })
         this.$message.success('选课成功！')
-        // 刷新列表
         this.courseList = []
+        this.filteredCourses = []
         this.pageNum = 1
+        this.total = 0
         this.loadCourses()
       } catch (e) {
-        this.$message.error('选课失败，请重试')
+        // 失败提示已由请求拦截器统一弹出
       } finally {
         this.enrollingId = null
       }

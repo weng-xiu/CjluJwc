@@ -58,15 +58,15 @@ temp_*
 !*/build/*.html
 !*/build/*.xml
 
-/软件设计文档/*.pdf
-/软件设计文档/*.docx
-/软件设计文档/*.doc
 
 /build-temp/
 /node_modules/
 /test-screenshots/
 /aqua-melody/
 /.m2-local/
+/.mybatis/*.json
+/output/
+/logs/
 
 ######################################################################
 # Database migration artifacts (contain data, do NOT commit)

@@ -24,6 +24,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="courseCode"     column="course_code"      />
         <result property="teacherName"    column="teacher_name"     />
         <result property="campusName"     column="campus_name"      />
+        <result property="credit"         column="credit"           />
+        <result property="enrolledCount"  column="enrolled_count"   />
     </resultMap>
     <sql id="selectTpmCourseOfferingVo">
         select offering_id, semester_id, course_id, teacher_id, campus_id, class_count, max_students, offering_status, status, del_flag, create_by, create_time, update_by, update_time, remark from tpm_course_offering
@@ -53,6 +55,30 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <!-- 数据范围过滤 -->
             ${params.dataScope}
         </where>
+    </select>
+    <!-- 门户端：可选课程列表（附带学分与已选人数，不套用部门数据范围） -->
+    <select id="selectTpmCourseOfferingListForPortal" parameterType="TpmCourseOffering" resultMap="TpmCourseOfferingResult">
+        select co.offering_id, co.semester_id, co.course_id, co.teacher_id, co.campus_id, co.class_count, co.max_students,
+               co.offering_status, co.status, co.create_time, co.remark,
+               se.semester_name as semester_name,
+               cl.course_name as course_name,
+               cl.course_code as course_code,
+               cl.credit as credit,
+               t.teacher_name as teacher_name,
+               (select count(1) from tpm_selection_enrollment e where e.course_offering_id = co.offering_id and e.result_status = '1' and e.del_flag = '0') as enrolled_count
+        from tpm_course_offering co
+        left join brm_semester se on co.semester_id = se.semester_id
+        left join tpm_course_library cl on co.course_id = cl.course_id
+        left join brm_teacher t on co.teacher_id = t.teacher_id
+        <where>
+            co.del_flag = '0'
+            <if test="semesterId != null"> and co.semester_id = #{semesterId}</if>
+            <if test="courseId != null"> and co.course_id = #{courseId}</if>
+            <if test="offeringStatus != null and offeringStatus.trim() != ''"> and co.offering_status = #{offeringStatus}</if>
+            <if test="status != null and status.trim() != ''"> and co.status = #{status}</if>
+            <if test="courseName != null and courseName.trim() != ''"> and cl.course_name like concat('%', #{courseName}, '%')</if>
+        </where>
+        order by co.offering_id asc
     </select>
     <select id="selectTpmCourseOfferingByOfferingId" parameterType="Long" resultMap="TpmCourseOfferingResult">
         <include refid="selectTpmCourseOfferingVo"/> where offering_id = #{offeringId} and del_flag = '0'

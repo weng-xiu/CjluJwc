@@ -61,6 +61,32 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </where>
         order by s.week_day, s.start_period
     </select>
+    <!-- 门户端：按学生查询本人课表（选课记录→开课→排课） -->
+    <select id="selectStudentScheduleList" resultMap="TpmScheduleWithInfoResult">
+        select s.schedule_id, s.offering_id, s.classroom_id, s.week_day, s.start_period, s.end_period,
+               s.start_week, s.end_week, s.schedule_type, s.status, s.create_time, s.remark,
+               cl.course_name as course_name,
+               t.teacher_name as teacher_name,
+               cr.classroom_name as classroom_name,
+               b.building_name as building_name,
+               o.max_students as max_students,
+               o.teacher_id as teacher_id,
+               o.semester_id as semester_id
+        from tpm_selection_enrollment e
+        inner join tpm_course_offering o on e.course_offering_id = o.offering_id
+        inner join tpm_schedule s on s.offering_id = o.offering_id
+        left join tpm_course_library cl on o.course_id = cl.course_id
+        left join brm_teacher t on o.teacher_id = t.teacher_id
+        left join brm_classroom cr on s.classroom_id = cr.classroom_id
+        left join brm_building b on cr.building_id = b.building_id
+        <where>
+            e.del_flag = '0' and o.del_flag = '0' and s.del_flag = '0'
+            and e.result_status = '1' and s.status = '0'
+            and e.student_id = #{studentId}
+            <if test="semesterId != null"> and o.semester_id = #{semesterId}</if>
+        </where>
+        order by s.week_day, s.start_period
+    </select>
     <select id="selectTpmScheduleByScheduleId" parameterType="Long" resultMap="TpmScheduleResult">
         <include refid="selectTpmScheduleVo"/> where schedule_id = #{scheduleId} and del_flag = '0'
     </select>

@@ -14,6 +14,10 @@ public interface TpmScheduleMapper
 {
     public TpmSchedule selectTpmScheduleByScheduleId(Long scheduleId);
     public List<TpmSchedule> selectTpmScheduleList(TpmSchedule tpmSchedule);
+
+    /** 门户端：按学生查询本人课表（选课记录→开课→排课，可选学期过滤） */
+    public List<TpmSchedule> selectStudentScheduleList(@Param("studentId") Long studentId,
+                                                        @Param("semesterId") Long semesterId);
     public int insertTpmSchedule(TpmSchedule tpmSchedule);
     public int updateTpmSchedule(TpmSchedule tpmSchedule);
     public int deleteTpmScheduleByScheduleId(Long scheduleId);

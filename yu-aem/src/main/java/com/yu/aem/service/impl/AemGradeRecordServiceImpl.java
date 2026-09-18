@@ -69,6 +69,13 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     }
 
     @Override
+    public List<AemGradeRecord> selectAemGradeRecordListForPortal(AemGradeRecord aemGradeRecord)
+    {
+        // 门户端专供：sam_student 无 user_id 列，不能走 @DataScope(userAlias="ss")，否则学生查询直接 SQL 报错
+        return aemGradeRecordMapper.selectAemGradeRecordListForPortal(aemGradeRecord);
+    }
+
+    @Override
     @Transactional
     public int insertAemGradeRecord(AemGradeRecord aemGradeRecord)
     {

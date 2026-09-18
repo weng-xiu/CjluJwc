@@ -145,8 +145,9 @@ export default {
       return days
     },
     dayCourses() {
-      const dateStr = this.formatDateStr(this.currentDate)
-      const filtered = this.scheduleList.filter(c => c.date === dateStr || c.dayOfWeek === this.currentDate.getDay())
+      const dow = this.currentDate.getDay() // 0=周日..6=周六
+      const targetDow = dow === 0 ? 7 : dow   // 转为 1=周一..7=周日
+      const filtered = this.scheduleList.filter(c => c.dayOfWeek === targetDow)
       // 按节次排序
       return filtered.sort((a, b) => (a.periodIndex || 0) - (b.periodIndex || 0))
     }
@@ -157,7 +158,21 @@ export default {
   methods: {
     loadData() {
       getMySchedule({ weekNum: this.currentWeek }).then(r => {
-        this.scheduleList = r.rows || r.data || []
+        const rows = r.rows || r.data || []
+        // 后端 TpmSchedule 字段 → 视图所需形状
+        this.scheduleList = rows.map(item => {
+          const sp = item.startPeriod || 1
+          const ep = item.endPeriod || sp
+          return Object.assign({}, item, {
+            id: item.scheduleId,
+            dayOfWeek: item.weekDay,
+            periodIndex: Math.ceil(sp / 2),
+            startTime: '第' + sp + '节',
+            endTime: '第' + ep + '节',
+            classroom: item.classroomName,
+            weekNum: item.startWeek ? (item.startWeek + '-' + item.endWeek) : '-'
+          })
+        })
       }).catch(() => {
         this.scheduleList = []
       })

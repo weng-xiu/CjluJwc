@@ -45,6 +45,13 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
         return tpmCourseOfferingMapper.selectTpmCourseOfferingList(tpmCourseOffering);
     }
 
+    @Override
+    public List<TpmCourseOffering> selectTpmCourseOfferingListForPortal(TpmCourseOffering tpmCourseOffering)
+    {
+        // 门户端学生选课不受部门限制，且教师 userAlias 数据范围会让学生（仅本人）永远查空
+        return tpmCourseOfferingMapper.selectTpmCourseOfferingListForPortal(tpmCourseOffering);
+    }
+
     @Transactional
     @Override
     public int insertTpmCourseOffering(TpmCourseOffering tpmCourseOffering)

@@ -73,6 +73,12 @@ public class AemGradeRecord extends BaseEntity
     /** 课程学分（非持久化，JOIN tpm_course_library 取得，用于GPA加权计算） */
     private transient Double credit;
 
+    /** 课程名称（非持久化，JOIN tpm_course_library 取得，供门户移动端展示） */
+    private transient String courseName;
+
+    /** 学期名称（非持久化，JOIN brm_semester 取得，供门户移动端分组展示） */
+    private transient String semesterName;
+
     /** 子表：成绩复核记录 */
     private List<AemGradeReview> reviews;
 
@@ -81,6 +87,12 @@ public class AemGradeRecord extends BaseEntity
 
     public Double getCredit() { return credit; }
     public void setCredit(Double credit) { this.credit = credit; }
+
+    public String getCourseName() { return courseName; }
+    public void setCourseName(String courseName) { this.courseName = courseName; }
+
+    public String getSemesterName() { return semesterName; }
+    public void setSemesterName(String semesterName) { this.semesterName = semesterName; }
 
     public Long getGradeId() { return gradeId; }
     public void setGradeId(Long gradeId) { this.gradeId = gradeId; }

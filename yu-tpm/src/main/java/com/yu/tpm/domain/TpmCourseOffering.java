@@ -71,6 +71,12 @@ public class TpmCourseOffering extends BaseEntity
     /** 校区名称（关联查询） */
     private String campusName;
 
+    /** 课程学分（关联查询 tpm_course_library，供门户选课卡片展示） */
+    private Double credit;
+
+    /** 已选人数（子查询统计有效选课记录，供门户选课卡片展示） */
+    private Integer enrolledCount;
+
     public Long getOfferingId() { return offeringId; }
     public void setOfferingId(Long offeringId) { this.offeringId = offeringId; }
 
@@ -117,6 +123,12 @@ public class TpmCourseOffering extends BaseEntity
 
     public String getCampusName() { return campusName; }
     public void setCampusName(String campusName) { this.campusName = campusName; }
+
+    public Double getCredit() { return credit; }
+    public void setCredit(Double credit) { this.credit = credit; }
+
+    public Integer getEnrolledCount() { return enrolledCount; }
+    public void setEnrolledCount(Integer enrolledCount) { this.enrolledCount = enrolledCount; }
 
     @Override
     public String toString() {

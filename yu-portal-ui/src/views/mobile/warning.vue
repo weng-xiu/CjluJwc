@@ -28,23 +28,23 @@
 
       <div
         v-for="item in warningList"
-        :key="item.id"
+        :key="item.warningId"
         class="warning-card"
         :class="getLevelClass(item)"
       >
         <div class="card-level-bar"></div>
         <div class="card-content">
           <div class="card-top">
-            <span class="card-type">{{ item.warningType || item.typeName || '学业预警' }}</span>
+            <span class="card-type">{{ getTypeText(item) }}</span>
             <span class="card-level-tag" :class="getLevelTagClass(item)">
               {{ getLevelText(item) }}
             </span>
           </div>
-          <div class="card-reason">{{ item.reason || item.description || '系统检测到学业异常' }}</div>
+          <div class="card-reason">{{ item.warningReason || '系统检测到学业异常' }}</div>
           <div class="card-footer">
-            <span class="card-date"><i class="el-icon-date"></i> {{ item.warningDate || item.createTime || '--' }}</span>
-            <span class="card-status" :class="{ read: item.readStatus === 1 }">
-              {{ item.readStatus === 1 ? '已读' : '未读' }}
+            <span class="card-date"><i class="el-icon-date"></i> {{ fmtDate(item.warningDate || item.createTime) }}</span>
+            <span class="card-status" :class="{ read: item.isResolved === '1' }">
+              {{ item.isResolved === '1' ? '已解除' : '未解除' }}
             </span>
           </div>
         </div>
@@ -109,24 +109,33 @@ export default {
       this.loadWarnings()
     },
     getLevel(item) {
-      return item.warningLevel || item.level || item.riskLevel || 'low'
+      // warning_level: 0一般 1严重 2高危
+      return item.warningLevel
+    },
+    getTypeText(item) {
+      const map = { '0': 'GPA预警', '1': '学分预警', '2': '出勤预警', '3': '综合预警' }
+      return map[item.warningType] || '学业预警'
+    },
+    fmtDate(v) {
+      if (!v) return '--'
+      return String(v).substring(0, 10)
     },
     getLevelClass(item) {
       const level = this.getLevel(item)
-      if (level === 'high' || level === 'danger') return 'card-high'
-      if (level === 'medium' || level === 'warning') return 'card-medium'
+      if (level === '2') return 'card-high'
+      if (level === '1') return 'card-medium'
       return 'card-low'
     },
     getLevelTagClass(item) {
       const level = this.getLevel(item)
-      if (level === 'high' || level === 'danger') return 'tag-high'
-      if (level === 'medium' || level === 'warning') return 'tag-medium'
+      if (level === '2') return 'tag-high'
+      if (level === '1') return 'tag-medium'
       return 'tag-low'
     },
     getLevelText(item) {
       const level = this.getLevel(item)
-      if (level === 'high' || level === 'danger') return '高危'
-      if (level === 'medium' || level === 'warning') return '严重'
+      if (level === '2') return '高危'
+      if (level === '1') return '严重'
       return '一般'
     }
   }

@@ -13,6 +13,9 @@ public interface ITpmScheduleService
 {
     public TpmSchedule selectTpmScheduleByScheduleId(Long scheduleId);
     public List<TpmSchedule> selectTpmScheduleList(TpmSchedule tpmSchedule);
+
+    /** 门户端：按学生查询本人课表 */
+    public List<TpmSchedule> selectStudentScheduleList(Long studentId, Long semesterId);
     public int insertTpmSchedule(TpmSchedule tpmSchedule);
     public int updateTpmSchedule(TpmSchedule tpmSchedule);
     public int deleteTpmScheduleByScheduleIds(Long[] scheduleIds);

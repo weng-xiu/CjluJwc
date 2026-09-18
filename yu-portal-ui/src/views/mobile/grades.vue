@@ -44,19 +44,19 @@
       </div>
       <div
         v-for="item in gradeList"
-        :key="item.id"
+        :key="item.gradeId"
         class="grade-card"
       >
         <div class="grade-top">
           <span class="grade-course">{{ item.courseName }}</span>
-          <span class="grade-score" :class="getScoreClass(item.score)">{{ item.score || '--' }}</span>
+          <span class="grade-score" :class="getScoreClass(item.totalScore)">{{ item.totalScore != null ? item.totalScore : '--' }}</span>
         </div>
         <div class="grade-bottom">
           <span class="grade-info">
             <i class="el-icon-notebook-2"></i> {{ item.credit || 0 }} 学分
           </span>
           <span class="grade-info">
-            <i class="el-icon-data-line"></i> 绩点 {{ item.gpa != null ? item.gpa : '--' }}
+            <i class="el-icon-data-line"></i> 绩点 {{ item.gradePoint != null ? item.gradePoint : '--' }}
           </span>
           <span class="grade-level" :class="getLevelClass(item.gradeLevel)">
             {{ item.gradeLevel || '--' }}
@@ -127,7 +127,7 @@ export default {
         // 按学期分组
         const semSet = new Set()
         this.allGrades.forEach(g => {
-          if (g.semester || g.termName) semSet.add(g.semester || g.termName)
+          if (g.semesterName) semSet.add(g.semesterName)
         })
         this.semesters = [...semSet].sort().reverse()
         if (this.semesters.length > 0) {
@@ -148,7 +148,7 @@ export default {
     },
     filterBySemester() {
       const filtered = this.allGrades.filter(
-        g => (g.semester || g.termName) === this.currentSemester
+        g => g.semesterName === this.currentSemester
       )
       this.allFiltered = filtered
       this.pageNum = 1
@@ -159,11 +159,11 @@ export default {
       let totalCredit = 0
       let totalScore = 0
       filtered.forEach(g => {
-        if (g.gpa != null && g.credit) {
-          totalGpaCredit += g.gpa * g.credit
+        if (g.gradePoint != null && g.credit) {
+          totalGpaCredit += g.gradePoint * g.credit
           totalCredit += g.credit
         }
-        if (g.score != null) totalScore += g.score
+        if (g.totalScore != null) totalScore += g.totalScore
       })
       this.semesterGpa = totalCredit > 0 ? (totalGpaCredit / totalCredit).toFixed(2) : '--'
       this.totalCredit = totalCredit

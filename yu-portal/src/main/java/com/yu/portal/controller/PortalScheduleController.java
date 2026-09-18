@@ -5,6 +5,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -24,6 +25,16 @@ public class PortalScheduleController extends BaseController
 {
     @Autowired
     private ITpmScheduleService tpmScheduleService;
+
+    /** 学生端：查询本人课表（选课记录→开课→排课，强制绑定当前学生） */
+    @PreAuthorize("@ss.hasPermi('portal:schedule:list') and @ss.hasAnyRoles('admin,student')")
+    @GetMapping("/myList")
+    public TableDataInfo myList(@RequestParam(required = false) Long semesterId)
+    {
+        startPage();
+        List<TpmSchedule> list = tpmScheduleService.selectStudentScheduleList(getUserId(), semesterId);
+        return getDataTable(list);
+    }
 
     /** 学生端：查询个人课表 */
     @PreAuthorize("@ss.hasPermi('portal:schedule:list')")
