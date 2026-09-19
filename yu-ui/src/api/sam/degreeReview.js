@@ -15,3 +15,11 @@ export function updateDegreeReview(data) {
 export function delDegreeReview(reviewId) {
   return request({ url: '/sam/degreeReview/' + reviewId, method: 'delete' })
 }
+// S1：单人自动审核
+export function autoReviewDegree(studentId) {
+  return request({ url: '/sam/degreeReview/autoReview/' + studentId, method: 'post' })
+}
+// S1：批量自动审核
+export function batchReviewDegree(studentIds) {
+  return request({ url: '/sam/degreeReview/batchReview', method: 'post', data: studentIds })
+}

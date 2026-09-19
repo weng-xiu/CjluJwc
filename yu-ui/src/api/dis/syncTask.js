@@ -29,3 +29,8 @@ export function delSyncTask(taskId) {
 export function exportSyncTask(query) {
   return request({ url: '/dis/task/export', method: 'post', params: query })
 }
+
+// D1：手动执行同步任务（调用—解析—落库—留痕）
+export function executeSyncTask(taskId) {
+  return request({ url: '/dis/task/execute/' + taskId, method: 'post' })
+}

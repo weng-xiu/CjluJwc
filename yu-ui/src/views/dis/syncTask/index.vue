@@ -25,6 +25,7 @@
       <el-table-column label="状态" align="center" prop="status" width="80"><template slot-scope="scope"><dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/></template></el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-video-play" @click="handleExecute(scope.row)" v-hasPermi="['dis:syncTask:execute']">执行</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['dis:syncTask:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['dis:syncTask:remove']">删除</el-button>
         </template>
@@ -42,13 +43,33 @@
       </el-form>
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
     </el-dialog>
+    <!-- D1：同步执行结果 -->
+    <el-dialog title="同步执行结果" :visible.sync="execOpen" width="520px" append-to-body>
+      <el-result v-if="execResult" :icon="execResult.success ? 'success' : 'warning'" :title="execResult.success ? '执行成功' : '执行未完全成功'" :sub-title="execResult.message">
+        <template slot="extra">
+          <el-descriptions :column="2" size="mini" border>
+            <el-descriptions-item label="调用成功">{{ execResult.callSuccess ? '是' : '否' }}</el-descriptions-item>
+            <el-descriptions-item label="HTTP状态码">{{ execResult.statusCode }}</el-descriptions-item>
+            <el-descriptions-item label="尝试次数">{{ execResult.attempts }}</el-descriptions-item>
+            <el-descriptions-item label="耗时(ms)">{{ execResult.elapsedMs }}</el-descriptions-item>
+            <el-descriptions-item label="落库行数">{{ execResult.persistedRows }}</el-descriptions-item>
+            <el-descriptions-item label="落库表">{{ (execResult.tables || []).join(', ') || '—' }}</el-descriptions-item>
+          </el-descriptions>
+          <div v-if="execResult.persistError" style="color:#E6A23C;margin-top:8px">落库异常：{{ execResult.persistError }}</div>
+        </template>
+      </el-result>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="execOpen = false">确 定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 <script>
-import { listSyncTask, getSyncTask, delSyncTask, addSyncTask, updateSyncTask } from "@/api/dis/syncTask"
+import { listSyncTask, getSyncTask, delSyncTask, addSyncTask, updateSyncTask, executeSyncTask } from "@/api/dis/syncTask"
 export default {
   name: "DisSyncTask", dicts: ['sys_normal_disable'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, taskList: [], title: "", open: false,
+    execOpen: false, execResult: null,
     queryParams: { pageNum: 1, pageSize: 10, taskName: null, status: null },
     form: {}, rules: { taskName: [{ required: true, message: "任务名称不能为空", trigger: "blur" }], systemId: [{ required: true, message: "外部系统不能为空", trigger: "blur" }] } }
   },
@@ -64,7 +85,17 @@ export default {
     handleUpdate(row) { this.reset(); const taskId = row.taskId || this.ids; getSyncTask(taskId).then(response => { this.form = response.data; this.open = true; this.title = "修改同步任务" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.taskId != null) { updateSyncTask(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addSyncTask(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const taskIds = row.taskId || this.ids; this.$modal.confirm('是否确认删除同步任务编号为"' + taskIds + '"的数据项？').then(function() { return delSyncTask(taskIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
-    handleExport() { this.download('dis/task/export', { ...this.queryParams }, `syncTask_${new Date().getTime()}.xlsx`) }
+    handleExport() { this.download('dis/task/export', { ...this.queryParams }, `syncTask_${new Date().getTime()}.xlsx`) },
+    /** D1：执行同步任务 */
+    handleExecute(row) {
+      this.$modal.confirm('是否立即执行同步任务「' + row.taskName + '」（调用—解析—落库—留痕）？').then(() => {
+        return executeSyncTask(row.taskId);
+      }).then(response => {
+        this.execResult = response.data;
+        this.execOpen = true;
+        this.getList();
+      }).catch(() => {});
+    }
   }
 }
 </script>

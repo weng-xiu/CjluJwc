@@ -20,6 +20,14 @@ import com.yu.sam.mapper.SamStatusChangeMapper;
 import com.yu.sam.mapper.SamStudentMapper;
 import com.yu.sam.service.ISamStatusChangeService;
 import com.yu.sam.workflow.StatusChangeApprovalHandler;
+import com.yu.common.core.domain.entity.SysUser;
+import com.yu.system.domain.SysMessage;
+import com.yu.system.domain.SysTodo;
+import com.yu.system.service.ISysMessageService;
+import com.yu.system.service.ISysTodoService;
+import com.yu.system.service.ISysUserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 学籍异动Service实现（接入Flowable多级审批+回写联动）
@@ -27,6 +35,8 @@ import com.yu.sam.workflow.StatusChangeApprovalHandler;
 @Service
 public class SamStatusChangeServiceImpl implements ISamStatusChangeService
 {
+    private static final Logger log = LoggerFactory.getLogger(SamStatusChangeServiceImpl.class);
+
     @Autowired
     private SamStatusChangeMapper samStatusChangeMapper;
 
@@ -47,6 +57,15 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
 
     @Autowired
     private com.yu.system.service.ISysDeptService sysDeptService;
+
+    @Autowired
+    private ISysUserService sysUserService;
+
+    @Autowired
+    private ISysMessageService sysMessageService;
+
+    @Autowired
+    private ISysTodoService sysTodoService;
 
     @Override
     public SamStatusChange selectSamStatusChangeByChangeId(Long changeId)
@@ -159,7 +178,10 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
         update.setProcInstId(processInstance.getId());
         update.setApproveStatus("0"); // 仍在待审（但已进入流程）
         update.setUpdateTime(DateUtils.getNowDate());
-        return samStatusChangeMapper.updateSamStatusChange(update);
+        int rows = samStatusChangeMapper.updateSamStatusChange(update);
+        // P1：审批自动产生待办——向院系审批人推送待办与消息
+        notifyApprovalTodo(change, deptApprover);
+        return rows;
     }
 
     @Override
@@ -211,6 +233,9 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
 
             // 更新流程实例状态
             updateProcessInstanceStatus(change.getProcInstId(), "1");
+            // P1：审批完成通知申请并办结相关待办
+            notifyApplicant(change, "学籍异动申请已通过", "您的学籍异动申请（编号" + changeId + "）已审批通过，学籍状态已联动更新。");
+            completeStatusChangeTodos(changeId);
         }
         return 1;
     }
@@ -239,10 +264,121 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
 
         // 更新流程实例状态
         updateProcessInstanceStatus(change.getProcInstId(), "2");
+        // P1：驳回通知申请并办结相关待办
+        notifyApplicant(change, "学籍异动申请被驳回", "您的学籍异动申请（编号" + changeId + "）已被驳回。意见：" + (comment != null ? comment : "无"));
+        completeStatusChangeTodos(changeId);
         return 1;
     }
 
     // ========== 私有方法 ==========
+
+    /** 根据用户名解析用户ID（失败返回 null，不阻断业务） */
+    private Long resolveUserId(String userName)
+    {
+        if (userName == null || userName.trim().isEmpty())
+        {
+            return null;
+        }
+        try
+        {
+            SysUser user = sysUserService.selectUserByUserName(userName);
+            return user != null ? user.getUserId() : null;
+        }
+        catch (Exception e)
+        {
+            log.warn("解析用户[{}]失败：{}", userName, e.getMessage());
+            return null;
+        }
+    }
+
+    /** P1：向院系审批人推送待办+消息（异常不影响主流程） */
+    private void notifyApprovalTodo(SamStatusChange change, String approver)
+    {
+        try
+        {
+            Long receiverId = resolveUserId(approver);
+            if (receiverId == null)
+            {
+                return;
+            }
+            String title = "学籍异动待审批（编号" + change.getChangeId() + "）";
+            SysTodo todo = new SysTodo();
+            todo.setReceiverId(receiverId);
+            todo.setTodoType("1");
+            todo.setTitle(title);
+            todo.setBusinessType("statusChange");
+            todo.setBusinessId(change.getChangeId());
+            todo.setCreateBy(SecurityUtils.getUsername());
+            sysTodoService.createTodo(todo);
+
+            SysMessage msg = new SysMessage();
+            msg.setReceiverId(receiverId);
+            msg.setMsgType("1");
+            msg.setTitle(title);
+            msg.setContent("您有一条学籍异动申请待审批，学生ID=" + change.getStudentId() + "，异动类型=" + change.getChangeType());
+            msg.setBusinessType("statusChange");
+            msg.setBusinessId(change.getChangeId());
+            msg.setCreateBy(SecurityUtils.getUsername());
+            sysMessageService.sendMessage(msg);
+        }
+        catch (Exception e)
+        {
+            log.error("异动待办推送失败（changeId={}）", change.getChangeId(), e);
+        }
+    }
+
+    /** P1：向申请发起人推送审批结果消息 */
+    private void notifyApplicant(SamStatusChange change, String title, String content)
+    {
+        try
+        {
+            String applicant = change.getCreateBy();
+            Long receiverId = resolveUserId(applicant);
+            if (receiverId == null)
+            {
+                return;
+            }
+            SysMessage msg = new SysMessage();
+            msg.setReceiverId(receiverId);
+            msg.setMsgType("1");
+            msg.setTitle(title);
+            msg.setContent(content);
+            msg.setBusinessType("statusChange");
+            msg.setBusinessId(change.getChangeId());
+            msg.setCreateBy(SecurityUtils.getUsername());
+            sysMessageService.sendMessage(msg);
+        }
+        catch (Exception e)
+        {
+            log.error("异动结果消息推送失败（changeId={}）", change.getChangeId(), e);
+        }
+    }
+
+    /** P1：办结该异动相关的未办待办 */
+    private void completeStatusChangeTodos(Long changeId)
+    {
+        try
+        {
+            SysTodo query = new SysTodo();
+            query.setBusinessType("statusChange");
+            query.setStatus("0");
+            List<SysTodo> todos = sysTodoService.selectTodoList(query);
+            if (todos != null)
+            {
+                for (SysTodo t : todos)
+                {
+                    if (changeId.equals(t.getBusinessId()))
+                    {
+                        sysTodoService.completeTodo(t.getTodoId(), t.getReceiverId());
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            log.error("办结异动待办失败（changeId={}）", changeId, e);
+        }
+    }
 
     private String resolveDeptApprover(SamStudent student, String starter)
     {

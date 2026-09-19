@@ -34,3 +34,8 @@ export function confirmOffering(offeringId) {
 export function cancelOffering(offeringId) {
   return request({ url: '/tpm/offering/cancel/' + offeringId, method: 'put' })
 }
+
+// T4：按培养方案批量生成开课计划
+export function batchGenerateOffering(data) {
+  return request({ url: '/tpm/offering/batchGenerate', method: 'post', data: data })
+}
