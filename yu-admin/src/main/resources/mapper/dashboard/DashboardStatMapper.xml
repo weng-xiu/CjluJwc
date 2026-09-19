@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.web.mapper.DashboardStatMapper">
+
+    <!-- P2：教务数据驾驶舱只读聚合查询（跨 brm/tpm/aem/sam 模块表） -->
+
+    <!-- 当前学期：优先取覆盖今天的学期，无则取最新启用学期 -->
+    <select id="selectCurrentSemester" resultType="java.util.HashMap">
+        select semester_id as semesterId, semester_name as semesterName, start_date as startDate, end_date as endDate
+        from brm_semester
+        where status = '0'
+        order by (start_date &lt;= curdate() and end_date &gt;= curdate()) desc, semester_id desc
+        limit 1
+    </select>
+
+    <!-- 核心计数指标 -->
+    <select id="selectCoreCounts" resultType="java.util.HashMap">
+        select
+            (select count(1) from sam_student where status = '0' and student_status = '0')                      as studentCount,
+            (select count(1) from brm_teacher where status = '0')                                               as teacherCount,
+            (select count(1) from tpm_course_library where del_flag = '0')                                      as courseCount,
+            (select count(1) from brm_classroom where status = '0')                                             as classroomCount,
+            (select count(1) from tpm_course_offering where del_flag = '0' and offering_status != '2'
+             <if test="semesterId != null"> and semester_id = #{semesterId}</if>)                               as offeringCount,
+            (select count(1) from tpm_schedule sc
+             join tpm_course_offering off on off.offering_id = sc.offering_id
+             where sc.del_flag = '0'
+             <if test="semesterId != null"> and off.semester_id = #{semesterId}</if>)                              as scheduleCount,
+            (select count(1) from sam_warning where is_resolved = '0' and status = '0')                         as activeWarningCount,
+            (select count(1) from sys_todo where status = '0')                                                  as pendingTodoCount,
+            (select round(avg(pass_rate), 1) from aem_grade_statistics where status = '0'
+             <if test="semesterId != null"> and semester_id = #{semesterId}</if>)                               as avgPassRate,
+            (select round(avg(excellent_rate), 1) from aem_grade_statistics where status = '0'
+             <if test="semesterId != null"> and semester_id = #{semesterId}</if>)                               as avgExcellentRate
+    </select>
+
+    <!-- 未解除预警按级别分布 -->
+    <select id="selectWarningLevelDistribution" resultType="java.util.HashMap">
+        select warning_level as level, count(1) as total
+        from sam_warning
+        where is_resolved = '0' and status = '0'
+        group by warning_level
+        order by warning_level
+    </select>
+
+    <!-- 学期课程通过率最低 TOP N -->
+    <select id="selectCoursePassTop" resultType="java.util.HashMap">
+        select ifnull(cl.course_name, concat('课程', s.course_id)) as courseName,
+               s.pass_rate as passRate, s.avg_score as avgScore, s.fail_count as failCount
+        from aem_grade_statistics s
+        left join tpm_course_library cl on cl.course_id = s.course_id
+        where s.status = '0'
+        <if test="semesterId != null"> and s.semester_id = #{semesterId}</if>
+        order by s.pass_rate asc, s.stat_id desc
+        limit #{limit}
+    </select>
+
+    <!-- 学期选课结果分布（1已选 2落选 3退选） -->
+    <select id="selectEnrollResultDistribution" resultType="java.util.HashMap">
+        select e.result_status as resultStatus, count(1) as total
+        from tpm_selection_enrollment e
+        join tpm_selection_round r on r.round_id = e.round_id
+        where e.del_flag = '0'
+        <if test="semesterId != null"> and r.semester_id = #{semesterId}</if>
+        group by e.result_status
+        order by e.result_status
+    </select>
+</mapper>

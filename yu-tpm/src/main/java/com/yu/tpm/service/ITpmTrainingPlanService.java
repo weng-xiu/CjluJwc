@@ -21,7 +21,7 @@ public interface ITpmTrainingPlanService
     public int deleteTpmTrainingPlanByPlanId(Long planId);
 
     /**
-     * 发布培养方案
+     * 发布培养方案（T3：含发布冲突校验与版本号补齐）
      */
     public int publishTrainingPlan(Long planId);
 
@@ -29,6 +29,14 @@ public interface ITpmTrainingPlanService
      * 废止培养方案
      */
     public int deprecateTrainingPlan(Long planId);
+
+    /**
+     * T3：复制培养方案（含课程与学分结构子表）为新的草稿版本，版本号自动递增
+     *
+     * @param planId 源方案ID
+     * @return 新方案ID
+     */
+    public Long copyTrainingPlan(Long planId);
 
     /**
      * 保存培养方案主表及其子表（课程库、学分结构），仅做新增/修改，不删除子表

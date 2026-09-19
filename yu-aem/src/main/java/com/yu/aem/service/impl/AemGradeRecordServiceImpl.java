@@ -17,6 +17,7 @@ import com.yu.aem.domain.AemGradeRecord;
 import com.yu.aem.domain.AemGradeReview;
 import com.yu.aem.domain.AemGpaAlgorithmConfig;
 import com.yu.aem.service.IAemGradeRecordService;
+import com.yu.aem.service.IAemGradeWeightService;
 import com.yu.aem.strategy.GpaStrategyFactory;
 import com.yu.aem.strategy.IGpaCalculationStrategy;
 
@@ -40,6 +41,10 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
 
     @Autowired
     private GpaStrategyFactory gpaStrategyFactory;
+
+    /** A4：成绩权重配置（无配置时回退默认 30/70） */
+    @Autowired
+    private IAemGradeWeightService aemGradeWeightService;
 
     @Override
     public AemGradeRecord selectAemGradeRecordByGradeId(Long gradeId)
@@ -215,12 +220,13 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
             }
             validateScore(record.getRegularScore(), "平时成绩");
             validateScore(record.getExamScore(), "考试成绩");
-            // 总成绩为空时按 平时30% + 考试70% 计算
+            // A4：总成绩为空时按配置权重计算（课程级 > 类别级 > 全局 > 默认 30/70）
             if (record.getTotalScore() == null)
             {
                 double regular = record.getRegularScore() == null ? 0 : record.getRegularScore();
                 double exam = record.getExamScore() == null ? 0 : record.getExamScore();
-                double total = Math.round((regular * 0.3 + exam * 0.7) * 100.0) / 100.0;
+                double[] ratios = aemGradeWeightService.resolveRatios(record.getCourseId());
+                double total = Math.round((regular * ratios[0] + exam * ratios[1]) * 100.0) / 100.0;
                 record.setTotalScore(total);
             }
             validateScore(record.getTotalScore(), "总成绩");

@@ -39,3 +39,8 @@ export function deprecatePlan(planId) {
 export function savePlanWithChildren(data) {
   return request({ url: '/tpm/plan/saveWithChildren', method: 'post', data: data })
 }
+
+// T3：复制培养方案为新草稿版本
+export function copyPlan(planId) {
+  return request({ url: '/tpm/plan/copy/' + planId, method: 'post' })
+}

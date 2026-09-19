@@ -110,6 +110,18 @@ public class TpmTrainingPlanController extends BaseController
         return toAjax(tpmTrainingPlanService.deprecateTrainingPlan(planId));
     }
 
+    /** T3：复制培养方案为新草稿版本（含课程与学分结构子表） */
+    @PreAuthorize("@ss.hasPermi('tpm:plan:add')")
+    @Log(title = "培养方案", businessType = BusinessType.INSERT)
+    @PostMapping("/copy/{planId}")
+    public AjaxResult copy(@PathVariable Long planId)
+    {
+        Long newPlanId = tpmTrainingPlanService.copyTrainingPlan(planId);
+        AjaxResult result = success("复制成功，已生成新草稿版本");
+        result.put("planId", newPlanId);
+        return result;
+    }
+
     @PreAuthorize("@ss.hasAnyPermi('tpm:plan:add,tpm:plan:edit')")
     @Log(title = "培养方案", businessType = BusinessType.UPDATE)
     @PostMapping("/saveWithChildren")

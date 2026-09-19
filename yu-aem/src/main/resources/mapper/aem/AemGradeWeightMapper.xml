@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.aem.mapper.AemGradeWeightMapper">
+
+    <resultMap type="AemGradeWeight" id="AemGradeWeightResult">
+        <result property="weightId"       column="weight_id"       />
+        <result property="courseId"       column="course_id"       />
+        <result property="courseCategory" column="course_category" />
+        <result property="regularRatio"   column="regular_ratio"   />
+        <result property="examRatio"      column="exam_ratio"      />
+        <result property="status"         column="status"          />
+        <result property="courseName"     column="course_name"     />
+        <result property="createBy"       column="create_by"       />
+        <result property="createTime"     column="create_time"     />
+        <result property="updateBy"       column="update_by"       />
+        <result property="updateTime"     column="update_time"     />
+        <result property="remark"         column="remark"          />
+    </resultMap>
+
+    <sql id="selectAemGradeWeightVo">
+        select w.weight_id, w.course_id, w.course_category, w.regular_ratio, w.exam_ratio, w.status,
+               cl.course_name,
+               w.create_by, w.create_time, w.update_by, w.update_time, w.remark
+        from aem_grade_weight w
+        left join tpm_course_library cl on cl.course_id = w.course_id
+    </sql>
+
+    <select id="selectAemGradeWeightList" parameterType="AemGradeWeight" resultMap="AemGradeWeightResult">
+        <include refid="selectAemGradeWeightVo"/>
+        <where>
+            <if test="courseId != null"> and w.course_id = #{courseId}</if>
+            <if test="courseCategory != null and courseCategory != ''"> and w.course_category = #{courseCategory}</if>
+            <if test="status != null and status != ''"> and w.status = #{status}</if>
+        </where>
+        order by w.course_id is null, w.course_category is null, w.weight_id
+    </select>
+
+    <select id="selectAemGradeWeightByWeightId" parameterType="Long" resultMap="AemGradeWeightResult">
+        <include refid="selectAemGradeWeightVo"/>
+        where w.weight_id = #{weightId}
+    </select>
+
+    <!-- A4：按课程解析生效权重：课程级(0) > 类别级(1) > 全局默认(2)，取最优一条 -->
+    <select id="selectEffectiveWeightByCourseId" resultType="java.util.HashMap">
+        select w.regular_ratio as regularRatio, w.exam_ratio as examRatio
+        from aem_grade_weight w
+        left join tpm_course_library cl on cl.course_id = #{courseId}
+        where w.status = '0'
+          and ( w.course_id = #{courseId}
+                or (w.course_id is null and w.course_category is not null and w.course_category = cl.course_category)
+                or (w.course_id is null and w.course_category is null) )
+        order by case when w.course_id = #{courseId} then 0
+                      when w.course_category is not null then 1
+                      else 2 end,
+                 w.weight_id desc
+        limit 1
+    </select>
+
+    <insert id="insertAemGradeWeight" parameterType="AemGradeWeight" useGeneratedKeys="true" keyProperty="weightId">
+        insert into aem_grade_weight
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">course_id,</if>
+            <if test="courseCategory != null and courseCategory != ''">course_category,</if>
+            <if test="regularRatio != null">regular_ratio,</if>
+            <if test="examRatio != null">exam_ratio,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">#{courseId},</if>
+            <if test="courseCategory != null and courseCategory != ''">#{courseCategory},</if>
+            <if test="regularRatio != null">#{regularRatio},</if>
+            <if test="examRatio != null">#{examRatio},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updateAemGradeWeight" parameterType="AemGradeWeight">
+        update aem_grade_weight
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="courseId != null">course_id = #{courseId},</if>
+            <if test="courseCategory != null">course_category = #{courseCategory},</if>
+            <if test="regularRatio != null">regular_ratio = #{regularRatio},</if>
+            <if test="examRatio != null">exam_ratio = #{examRatio},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where weight_id = #{weightId}
+    </update>
+
+    <delete id="deleteAemGradeWeightByWeightId" parameterType="Long">
+        delete from aem_grade_weight where weight_id = #{weightId}
+    </delete>
+
+    <delete id="deleteAemGradeWeightByWeightIds" parameterType="String">
+        delete from aem_grade_weight where weight_id in
+        <foreach item="weightId" collection="array" open="(" separator="," close=")">#{weightId}</foreach>
+    </delete>
+</mapper>

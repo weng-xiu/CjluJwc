@@ -39,12 +39,13 @@
       <el-table-column label="发布日期" align="center" prop="publishDate" width="110"><template slot-scope="scope"><span>{{ parseTime(scope.row.publishDate, '{y}-{m}-{d}') }}</span></template></el-table-column>
       <el-table-column label="版本号" align="center" prop="version" width="80" />
       <el-table-column label="状态" align="center" prop="status" width="80"><template slot-scope="scope"><dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/></template></el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="230">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="260">
         <template slot-scope="scope">
-          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['tpm:plan:edit']">修改</el-button>
+          <el-button v-if="scope.row.publishStatus !== '1'" size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['tpm:plan:edit']">修改</el-button>
           <el-button v-if="scope.row.publishStatus !== '1'" size="mini" type="text" icon="el-icon-upload2" @click="handlePublish(scope.row)" v-hasPermi="['tpm:plan:edit']">发布</el-button>
           <el-button v-if="scope.row.publishStatus === '1'" size="mini" type="text" icon="el-icon-turn-off" @click="handleDeprecate(scope.row)" v-hasPermi="['tpm:plan:edit']">废止</el-button>
-          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['tpm:plan:remove']">删除</el-button>
+          <el-button size="mini" type="text" icon="el-icon-copy-document" @click="handleCopy(scope.row)" v-hasPermi="['tpm:plan:add']">复制版本</el-button>
+          <el-button v-if="scope.row.publishStatus !== '1'" size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['tpm:plan:remove']">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -193,7 +194,7 @@
   </div>
 </template>
 <script>
-import { listPlan, getPlan, delPlan, savePlanWithChildren, publishPlan, deprecatePlan } from "@/api/tpm/plan"
+import { listPlan, getPlan, delPlan, savePlanWithChildren, publishPlan, deprecatePlan, copyPlan } from "@/api/tpm/plan"
 import { listCourseLib, delCourseLib } from "@/api/tpm/courseLib"
 import { listCreditStruct, delCreditStruct } from "@/api/tpm/creditStruct"
 import { listMajor } from "@/api/brm/major"
@@ -284,6 +285,10 @@ export default {
     },
     handleDeprecate(row) {
       this.$modal.confirm('是否确认废止培养方案"' + row.planName + '"？').then(function() { return deprecatePlan(row.planId) }).then(() => { this.getList(); this.$modal.msgSuccess("废止成功") }).catch(() => {})
+    },
+    /** T3：复制为新草稿版本（版本号自动递增，含课程与学分结构） */
+    handleCopy(row) {
+      this.$modal.confirm('将基于"' + row.planName + '（' + (row.version || 'V1') + '）"复制新的草稿版本，是否继续？').then(function() { return copyPlan(row.planId) }).then(() => { this.getList(); this.$modal.msgSuccess("复制成功，已生成新草稿版本") }).catch(() => {})
     },
     handleExport() { this.download('tpm/plan/export', { ...this.queryParams }, `plan_${new Date().getTime()}.xlsx`) },
     handleAddCourse() {

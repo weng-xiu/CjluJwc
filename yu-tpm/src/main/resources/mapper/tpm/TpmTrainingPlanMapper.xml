@@ -108,4 +108,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         update tpm_training_plan set del_flag = '2' where plan_id in
         <foreach item="planId" collection="array" open="(" separator="," close=")">#{planId}</foreach>
     </delete>
+    <!-- T3：同专业同学年已发布方案数（排除自身，发布冲突校验） -->
+    <select id="countPublishedConflict" resultType="int">
+        select count(1) from tpm_training_plan
+        where del_flag = '0' and publish_status = '1'
+          and major_id = #{majorId}
+        <if test="planYear != null and planYear != ''"> and plan_year = #{planYear}</if>
+        <if test="excludePlanId != null"> and plan_id != #{excludePlanId}</if>
+    </select>
 </mapper>

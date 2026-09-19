@@ -1,6 +1,7 @@
 package com.yu.sam.mapper;
 
 import java.util.List;
+import java.util.Map;
 import org.apache.ibatis.annotations.Param;
 
 /**
@@ -54,6 +55,14 @@ public interface SamWarningDataMapper
      * @return 学生总数
      */
     int selectStudentCount();
+
+    /**
+     * S6：查询学生消息推送目标（关联的系统用户ID与姓名）
+     *
+     * @param studentId 学生ID
+     * @return userId/studentName，未关联账号时 userId 为 null
+     */
+    Map<String, Object> selectStudentContact(@Param("studentId") Long studentId);
 
     /**
      * 查询学生不及格课程数（作为出勤预警的参考指标）

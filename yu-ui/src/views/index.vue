@@ -18,49 +18,16 @@
       </div>
     </div>
 
-    <!-- 数据统计卡片 -->
-    <el-row :gutter="16" class="stat-row">
-      <el-col :xs="12" :sm="12" :md="6">
+    <!-- 教务核心指标卡（P2：真实业务数据聚合） -->
+    <el-row :gutter="16" class="stat-row" v-loading="loading.dashboard">
+      <el-col :xs="12" :sm="8" :md="4" v-for="item in dashStatCards" :key="item.label">
         <div class="stat-card">
-          <div class="stat-icon" style="background: #edf3f9; color: #007ab8">
-            <i class="el-icon-document"></i>
+          <div class="stat-icon" :style="{ background: item.bg, color: item.color }">
+            <i :class="item.icon"></i>
           </div>
           <div class="stat-info">
-            <div class="stat-value">{{ stats.articleTotal }}</div>
-            <div class="stat-label">门户文章</div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :xs="12" :sm="12" :md="6">
-        <div class="stat-card">
-          <div class="stat-icon" style="background: #fdf3e7; color: #e6a23c">
-            <i class="el-icon-bell"></i>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ stats.noticeTotal }}</div>
-            <div class="stat-label">教务通知</div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :xs="12" :sm="12" :md="6">
-        <div class="stat-card">
-          <div class="stat-icon" style="background: #eaf7ef; color: #67c23a">
-            <i class="el-icon-picture-outline"></i>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ stats.bannerTotal }}</div>
-            <div class="stat-label">门户轮播</div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :xs="12" :sm="12" :md="6">
-        <div class="stat-card">
-          <div class="stat-icon" style="background: #f0edf9; color: #7367f0">
-            <i class="el-icon-alarm-clock"></i>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">第 {{ teachingWeek }} 周</div>
-            <div class="stat-label">当前教学周</div>
+            <div class="stat-value">{{ item.value }}</div>
+            <div class="stat-label">{{ item.label }}</div>
           </div>
         </div>
       </el-col>
@@ -81,6 +48,28 @@
               </div>
               <span class="quick-name">{{ item.name }}</span>
             </div>
+          </div>
+        </el-card>
+
+        <!-- 教务数据驾驶舱（P2） -->
+        <el-card class="panel-card" shadow="never">
+          <div slot="header" class="panel-header">
+            <span class="panel-title"><i class="el-icon-data-line"></i> 教务数据驾驶舱</span>
+            <span class="panel-sub" v-if="dashSemester.semesterName">{{ dashSemester.semesterName }}</span>
+          </div>
+          <div v-loading="loading.dashboard">
+            <el-row :gutter="16">
+              <el-col :xs="24" :sm="12">
+                <div class="chart-title">学业预警级别分布（未解除）</div>
+                <div ref="warningChart" class="chart-box"></div>
+              </el-col>
+              <el-col :xs="24" :sm="12">
+                <div class="chart-title">选课结果分布</div>
+                <div ref="enrollChart" class="chart-box"></div>
+              </el-col>
+            </el-row>
+            <div class="chart-title">课程通过率最低 TOP10</div>
+            <div ref="passChart" class="chart-box pass-chart"></div>
           </div>
         </el-card>
 
@@ -159,9 +148,10 @@
 <script>
 import { listArticle } from "@/api/portal/article"
 import { listNoticeManage } from "@/api/portal/notice"
-import { listBanner } from "@/api/portal/banner"
+import { getDashboardOverview } from "@/api/dashboard"
+import * as echarts from "echarts"
 
-// 学期起始日（用于计算教学周），可根据校历调整
+// 学期起始日兜底（后端 brm_semester 无数据时使用），可根据校历调整
 const SEMESTER_START = new Date(2026, 1, 23) // 2026-02-23 春季学期第一周周一
 const SEMESTER_NAME = "2025-2026学年 春季学期"
 
@@ -171,16 +161,16 @@ export default {
     return {
       version: "3.9.2",
       portalUrl: "http://localhost:81",
-      stats: {
-        articleTotal: 0,
-        noticeTotal: 0,
-        bannerTotal: 0
-      },
+      // P2 驾驶舱数据
+      dashSemester: {},
+      dashCounts: {},
+      coursePassTop: [],
       articleList: [],
       noticeList: [],
       loading: {
         article: false,
-        notice: false
+        notice: false,
+        dashboard: false
       },
       quickEntries: [
         { name: "文章管理", icon: "el-icon-edit-outline", path: "/portal-cms/articleManage", bg: "#edf3f9", color: "#007ab8" },
@@ -213,36 +203,135 @@ export default {
       return `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 星期${weeks[now.getDay()]}`
     },
     semesterText() {
-      return SEMESTER_NAME
+      return this.dashSemester.semesterName || SEMESTER_NAME
     },
     teachingWeek() {
-      const diff = Date.now() - SEMESTER_START.getTime()
+      const start = this.parseSemesterDate(this.dashSemester.startDate) || SEMESTER_START
+      const diff = Date.now() - start.getTime()
       const week = Math.floor(diff / (7 * 24 * 3600 * 1000)) + 1
       return week > 0 ? week : 1
+    },
+    dashStatCards() {
+      const c = this.dashCounts
+      return [
+        { label: "在校学生", value: this.fmtNum(c.studentCount), icon: "el-icon-user", bg: "#edf3f9", color: "#007ab8" },
+        { label: "任课教师", value: this.fmtNum(c.teacherCount), icon: "el-icon-s-custom", bg: "#eaf7ef", color: "#67c23a" },
+        { label: "本学期开课", value: this.fmtNum(c.offeringCount), icon: "el-icon-notebook-2", bg: "#fdf3e7", color: "#e6a23c" },
+        { label: "平均通过率", value: c.avgPassRate != null ? c.avgPassRate + "%" : "--", icon: "el-icon-data-line", bg: "#e8f7f9", color: "#17a2b8" },
+        { label: "未解除预警", value: this.fmtNum(c.activeWarningCount), icon: "el-icon-warning-outline", bg: "#fdeeee", color: "#f56c6c" },
+        { label: "当前教学周", value: "第" + this.teachingWeek + "周", icon: "el-icon-alarm-clock", bg: "#f0edf9", color: "#7367f0" }
+      ]
     }
   },
   created() {
     this.loadStats()
+    this.loadDashboard()
+  },
+  beforeDestroy() {
+    Object.values(this.charts || {}).forEach(chart => chart && chart.dispose())
+    window.removeEventListener("resize", this.resizeCharts)
   },
   methods: {
     loadStats() {
       this.loading.article = true
       listArticle({ pageNum: 1, pageSize: 6 }).then(res => {
-        this.stats.articleTotal = res.total || 0
         this.articleList = res.rows || []
       }).finally(() => {
         this.loading.article = false
       })
       this.loading.notice = true
       listNoticeManage({ pageNum: 1, pageSize: 6 }).then(res => {
-        this.stats.noticeTotal = res.total || 0
         this.noticeList = res.rows || []
       }).finally(() => {
         this.loading.notice = false
       })
-      listBanner({ pageNum: 1, pageSize: 1 }).then(res => {
-        this.stats.bannerTotal = res.total || 0
+    },
+    loadDashboard() {
+      this.loading.dashboard = true
+      getDashboardOverview().then(res => {
+        const data = res.data || {}
+        this.dashSemester = data.semester || {}
+        this.dashCounts = data.counts || {}
+        this.coursePassTop = data.coursePassTop || []
+        this.$nextTick(() => this.renderCharts(data))
+      }).catch(() => {}).finally(() => {
+        this.loading.dashboard = false
       })
+    },
+    renderCharts(data) {
+      this.charts = this.charts || {}
+      this.renderPie("warningChart", data.warningDistribution, ["#e6a23c", "#f56c6c", "#b02834"])
+      this.renderPie("enrollChart", data.enrollDistribution, ["#67c23a", "#909399", "#f56c6c", "#e6a23c"])
+      this.renderPassBar(data.coursePassTop || [])
+      if (!this._resizeBound) {
+        window.addEventListener("resize", this.resizeCharts)
+        this._resizeBound = true
+      }
+    },
+    ensureChart(refName) {
+      this.charts = this.charts || {}
+      if (!this.$refs[refName]) return null
+      if (!this.charts[refName]) {
+        this.charts[refName] = echarts.init(this.$refs[refName])
+      }
+      return this.charts[refName]
+    },
+    renderPie(refName, list, colors) {
+      const chart = this.ensureChart(refName)
+      if (!chart) return
+      const rows = list || []
+      if (rows.length === 0) {
+        chart.setOption({ title: { text: "暂无数据", left: "center", top: "middle", textStyle: { color: "#c0c4cc", fontSize: 13, fontWeight: "normal" } }, series: [] }, true)
+        return
+      }
+      chart.setOption({
+        color: colors,
+        tooltip: { trigger: "item", formatter: "{b}: {c} ({d}%)" },
+        legend: { bottom: 0, itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 12 } },
+        series: [{
+          type: "pie",
+          radius: ["38%", "60%"],
+          center: ["50%", "44%"],
+          avoidLabelOverlap: true,
+          label: { show: true, formatter: "{b} {c}", fontSize: 12 },
+          data: rows
+        }]
+      }, true)
+    },
+    renderPassBar(rows) {
+      const chart = this.ensureChart("passChart")
+      if (!chart) return
+      if (!rows || rows.length === 0) {
+        chart.setOption({ title: { text: "暂无成绩统计数据", left: "center", top: "middle", textStyle: { color: "#c0c4cc", fontSize: 13, fontWeight: "normal" } }, series: [] }, true)
+        return
+      }
+      const reversed = rows.slice().reverse()
+      chart.setOption({
+        grid: { left: 10, right: 50, top: 8, bottom: 8, containLabel: true },
+        tooltip: { trigger: "axis", axisTooltip: true, formatter: p => `${p[0].name}<br/>通过率：${p[0].value}%` },
+        xAxis: { type: "value", max: 100, axisLabel: { formatter: "{value}%" }, splitLine: { lineStyle: { type: "dashed" } } },
+        yAxis: { type: "category", data: reversed.map(r => r.courseName), axisLabel: { fontSize: 11, width: 110, overflow: "truncate" } },
+        series: [{
+          type: "bar",
+          barMaxWidth: 16,
+          data: reversed.map(r => r.passRate != null ? Number(r.passRate) : 0),
+          itemStyle: { color: "#007ab8", borderRadius: [0, 4, 4, 0] },
+          label: { show: true, position: "right", formatter: "{c}%", fontSize: 11, color: "#606266" }
+        }]
+      }, true)
+    },
+    resizeCharts() {
+      Object.values(this.charts || {}).forEach(chart => chart && chart.resize())
+    },
+    parseSemesterDate(v) {
+      if (!v) return null
+      if (typeof v === "number") return new Date(v)
+      const parts = String(v).substring(0, 10).split("-").map(Number)
+      if (parts.length === 3 && parts[0]) return new Date(parts[0], parts[1] - 1, parts[2])
+      return null
+    },
+    fmtNum(v) {
+      return v == null ? "--" : v
     },
     goQuick(item) {
       if (item.external) {
@@ -380,6 +469,26 @@ export default {
       margin-right: 6px;
     }
   }
+
+  .panel-sub {
+    font-size: 12px;
+    color: #909399;
+  }
+}
+
+/* ========== 驾驶舱图表 ========== */
+.chart-title {
+  font-size: 13px;
+  color: #606266;
+  margin: 6px 0 4px;
+}
+
+.chart-box {
+  height: 220px;
+}
+
+.pass-chart {
+  height: 280px;
 }
 
 /* ========== 快捷入口 ========== */

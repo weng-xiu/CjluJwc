@@ -16,6 +16,8 @@ import com.yu.sam.domain.SamWarningRuleConfig;
 import com.yu.sam.mapper.SamWarningDataMapper;
 import com.yu.sam.service.ISamWarningRuleConfigService;
 import com.yu.sam.service.ISamWarningService;
+import com.yu.system.domain.SysMessage;
+import com.yu.system.service.ISysMessageService;
 
 /**
  * 学业预警生成引擎
@@ -43,6 +45,10 @@ public class AcademicWarningEngine
 
     @Autowired
     private com.yu.sam.mapper.SamWarningMapper samWarningMapper;
+
+    /** S6：预警生成后站内消息推送（复用 P1 消息中心） */
+    @Autowired
+    private ISysMessageService sysMessageService;
 
     /**
      * 为指定学生生成预警。
@@ -90,7 +96,61 @@ public class AcademicWarningEngine
             samWarningService.insertSamWarning(w);
         }
 
+        // S6：生成后自动向学生推送站内预警消息（异常不影响主流程）
+        notifyStudentWarnings(studentId, warnings);
+
         return warnings;
+    }
+
+    /**
+     * S6：预警生成后推送站内消息。
+     * 同一学生同一次生成合并为一条消息，取最高预警级别标注；
+     * 未关联系统账号的学生跳过（仅记日志）。
+     */
+    private void notifyStudentWarnings(Long studentId, List<SamWarning> warnings)
+    {
+        if (warnings == null || warnings.isEmpty())
+        {
+            return;
+        }
+        try
+        {
+            Map<String, Object> contact = samWarningDataMapper.selectStudentContact(studentId);
+            Object userIdObj = contact == null ? null : contact.get("userId");
+            if (userIdObj == null)
+            {
+                log.info("学生[{}]未关联系统账号，跳过预警消息推送", studentId);
+                return;
+            }
+            String[] levelNames = {"一般", "严重", "高危"};
+            int maxLevel = 0;
+            StringBuilder reasons = new StringBuilder();
+            for (SamWarning w : warnings)
+            {
+                int lv = 0;
+                try { lv = w.getWarningLevel() == null ? 0 : Integer.parseInt(w.getWarningLevel()); } catch (Exception ignore) { }
+                if (lv > maxLevel) { maxLevel = lv; }
+                if (reasons.length() > 0) { reasons.append("\n"); }
+                reasons.append(w.getWarningReason());
+            }
+            String levelName = levelNames[Math.min(maxLevel, levelNames.length - 1)];
+            String studentName = contact.get("studentName") == null ? "" : String.valueOf(contact.get("studentName"));
+
+            SysMessage msg = new SysMessage();
+            msg.setReceiverId(((Number) userIdObj).longValue());
+            msg.setMsgType("0"); // 0预警
+            msg.setTitle("【学业预警-" + levelName + "】请及时关注自身学业情况");
+            msg.setContent(studentName + " 同学，本学期学业预警（" + levelName + "）：\n" + reasons
+                    + "\n如有疑问请联系辅导员或教务科。");
+            msg.setBusinessType("warning");
+            msg.setBusinessId(warnings.get(0).getWarningId());
+            msg.setCreateBy("system");
+            sysMessageService.sendMessage(msg);
+        }
+        catch (Exception e)
+        {
+            log.error("预警消息推送失败（studentId={}）", studentId, e);
+        }
     }
 
     /**

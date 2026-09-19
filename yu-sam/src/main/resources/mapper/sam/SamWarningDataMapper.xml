@@ -49,6 +49,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select student_id from sam_student where status = '0' order by student_id limit #{offset}, #{limit}
     </select>
 
+    <!-- S6：查询学生消息推送目标（系统用户ID与姓名） -->
+    <select id="selectStudentContact" resultType="java.util.HashMap">
+        select user_id as userId, student_name as studentName
+        from sam_student
+        where student_id = #{studentId}
+        limit 1
+    </select>
+
     <!-- 查询学生总数 -->
     <select id="selectStudentCount" resultType="int">
         select count(1) from sam_student where status = '0'
