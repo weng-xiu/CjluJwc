@@ -21,6 +21,7 @@
       <el-col :span="1.5"><el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['tpm:course:edit']">修改</el-button></el-col>
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['tpm:course:remove']">删除</el-button></el-col>
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['tpm:course:export']">导出</el-button></el-col>
+      <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['tpm:course:import']">导入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-table v-loading="loading" :data="courseLibList" @selection-change="handleSelectionChange">
@@ -93,14 +94,26 @@
       </el-form>
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
     </el-dialog>
+
+    <!-- P7：课程导入对话框 -->
+    <excel-import-dialog
+      ref="importCourseRef"
+      title="课程库导入"
+      action="/tpm/courseLib/importData"
+      template-action="/tpm/courseLib/importTemplate"
+      template-file-name="courseLib_template"
+      update-support-label="是否更新已存在的课程（按课程编码匹配）"
+      @success="getList" />
   </div>
 </template>
 <script>
 import { listCourseLib, getCourseLib, delCourseLib, addCourseLib, updateCourseLib } from "@/api/tpm/courseLib"
 import { listPlan } from "@/api/tpm/plan"
+import ExcelImportDialog from "@/components/ExcelImportDialog"
 
 export default {
   name: "CourseLib",
+  components: { ExcelImportDialog },
   dicts: ['sys_normal_disable', 'tpm_course_type', 'tpm_course_category', 'tpm_assessment'],
   data() {
     return {
@@ -156,7 +169,9 @@ export default {
       const courseIds = row.courseId || this.ids
       this.$modal.confirm('是否确认删除课程编号为"' + courseIds + '"的数据项？').then(function() { return delCourseLib(courseIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {})
     },
-    handleExport() { this.download('tpm/courseLib/export', { ...this.queryParams }, `courseLib_${new Date().getTime()}.xlsx`) }
+    handleExport() { this.download('tpm/courseLib/export', { ...this.queryParams }, `courseLib_${new Date().getTime()}.xlsx`) },
+    /** P7：打开导入对话框 */
+    handleImport() { this.$refs.importCourseRef.open() }
   }
 }
 </script>

@@ -211,7 +211,8 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
         copy.setPlanYear(src.getPlanYear());
         copy.setTotalCredits(src.getTotalCredits());
         copy.setPublishStatus("0");
-        copy.setVersion(nextVersion(src.getVersion()));
+        String newVersion = nextVersion(maxVersionOfSiblings(src));
+        copy.setVersion(newVersion);
         copy.setStatus("0");
         copy.setRemark(src.getRemark());
         copy.setCreateBy(operator);
@@ -228,6 +229,11 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
             {
                 course.setCourseId(null);
                 course.setPlanId(newPlanId);
+                // 复制课程编码加版本后缀（MATH101 -> MATH101-V2），避免撞课程库编码唯一校验
+                if (StringUtils.isNotBlank(course.getCourseCode()))
+                {
+                    course.setCourseCode(course.getCourseCode().replaceAll("-V\\d+$", "") + "-" + newVersion);
+                }
                 course.setCreateBy(operator);
                 tpmCourseLibraryService.insertTpmCourseLibrary(course);
             }
@@ -251,18 +257,54 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
     }
 
     /**
+     * T3：取同专业同学年全部方案的版本号（含已废止），用于递推不重复的新版本。
+     */
+    private String maxVersionOfSiblings(TpmTrainingPlan src)
+    {
+        String max = src.getVersion();
+        if (src.getMajorId() == null)
+        {
+            return max;
+        }
+        TpmTrainingPlan query = new TpmTrainingPlan();
+        query.setMajorId(src.getMajorId());
+        query.setPlanYear(src.getPlanYear());
+        List<TpmTrainingPlan> siblings = tpmTrainingPlanMapper.selectTpmTrainingPlanList(query);
+        if (siblings != null)
+        {
+            for (TpmTrainingPlan sibling : siblings)
+            {
+                if (versionNumber(sibling.getVersion()) > versionNumber(max))
+                {
+                    max = sibling.getVersion();
+                }
+            }
+        }
+        return max;
+    }
+
+    /**
+     * T3：解析 Vn 格式版本号的数字部分，非法/空返回 -1。
+     */
+    private int versionNumber(String version)
+    {
+        if (StringUtils.isBlank(version))
+        {
+            return -1;
+        }
+        Matcher matcher = Pattern.compile("^\\s*[Vv](\\d+)\\s*$").matcher(version);
+        return matcher.matches() ? Integer.parseInt(matcher.group(1)) : -1;
+    }
+
+    /**
      * T3：版本号递增：V1 -> V2；无版本或非 V 格式时回退为 V1。
      */
     private String nextVersion(String version)
     {
-        if (StringUtils.isBlank(version))
+        int num = versionNumber(version);
+        if (num >= 0)
         {
-            return "V1";
-        }
-        Matcher matcher = Pattern.compile("^\\s*[Vv](\\d+)\\s*$").matcher(version);
-        if (matcher.matches())
-        {
-            return "V" + (Integer.parseInt(matcher.group(1)) + 1);
+            return "V" + (num + 1);
         }
         return "V1";
     }

@@ -17,4 +17,14 @@ public interface ITpmCourseLibraryService
     public int updateTpmCourseLibrary(TpmCourseLibrary tpmCourseLibrary);
     public int deleteTpmCourseLibraryByCourseIds(Long[] courseIds);
     public int deleteTpmCourseLibraryByCourseId(Long courseId);
+
+    /**
+     * P7：批量导入课程（含逐行校验），返回校验报告
+     *
+     * @param courseList 待导入课程列表
+     * @param operName   操作人
+     * @param updateSupport 编码已存在时是否更新
+     * @return 导入结果报告
+     */
+    public String importCourse(List<TpmCourseLibrary> courseList, String operName, boolean updateSupport);
 }

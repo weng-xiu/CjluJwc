@@ -26,6 +26,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['tpm:schedule:export']">导出</el-button></el-col>
       <el-col :span="1.5"><el-button type="info" plain icon="el-icon-warning" size="mini" @click="handleDetectConflicts" v-hasPermi="['tpm:schedule:detectConflict']">冲突检测</el-button></el-col>
       <el-col :span="1.5"><el-button type="success" plain icon="el-icon-magic-stick" size="mini" @click="handleAutoAssign" v-hasPermi="['tpm:schedule:autoAssign']">自动排教室</el-button></el-col>
+      <el-col :span="1.5"><el-button type="primary" plain icon="el-icon-date" size="mini" @click="openWeekView" v-hasPermi="['tpm:schedule:list']">周课表视图</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-table v-loading="loading" :data="scheduleList" @selection-change="handleSelectionChange" :row-class-name="tableRowClassName">
@@ -172,6 +173,63 @@
       </div>
       <div slot="footer"><el-button type="primary" @click="autoAssignDialogVisible = false">关 闭</el-button></div>
     </el-dialog>
+
+    <!-- T5：周课表网格视图对话框 -->
+    <el-dialog title="周课表视图" :visible.sync="weekViewVisible" width="95%" top="5vh" append-to-body :close-on-click-modal="false">
+      <el-form :inline="true" size="small">
+        <el-form-item label="学期">
+          <el-select v-model="weekFilter.semesterId" placeholder="请选择学期" filterable clearable @change="loadWeekData">
+            <el-option v-for="item in semesterOptions" :key="item.semesterId" :label="item.semesterName" :value="item.semesterId" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="视图">
+          <el-radio-group v-model="weekFilter.viewType" @change="applyWeekFilter">
+            <el-radio-button label="all">全部</el-radio-button>
+            <el-radio-button label="teacher">按教师</el-radio-button>
+            <el-radio-button label="classroom">按教室</el-radio-button>
+            <el-radio-button label="offering">按开课</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="weekFilter.viewType === 'teacher'" label="教师">
+          <el-select v-model="weekFilter.teacherId" placeholder="请选择教师" filterable clearable @change="applyWeekFilter">
+            <el-option v-for="t in weekTeacherOptions" :key="t.id" :label="t.name" :value="t.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="weekFilter.viewType === 'classroom'" label="教室">
+          <el-select v-model="weekFilter.classroomId" placeholder="请选择教室" filterable clearable @change="applyWeekFilter">
+            <el-option v-for="c in weekClassroomOptions" :key="c.id" :label="c.name" :value="c.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="weekFilter.viewType === 'offering'" label="开课">
+          <el-select v-model="weekFilter.offeringId" placeholder="请选择开课" filterable clearable @change="applyWeekFilter">
+            <el-option v-for="o in weekOfferingOptions" :key="o.id" :label="o.name" :value="o.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-checkbox v-model="weekFilter.onlyConflict" @change="applyWeekFilter">只看冲突</el-checkbox>
+        </el-form-item>
+      </el-form>
+      <div v-loading="weekLoading">
+        <week-timetable :schedules="weekFilteredSchedules" :conflict-ids="weekConflictIds" @cell-click="handleWeekCellClick" />
+      </div>
+    </el-dialog>
+
+    <!-- T5：课程块详情 -->
+    <el-dialog title="排课详情" :visible.sync="weekDetailVisible" width="420px" append-to-body>
+      <el-descriptions :column="1" border size="small" v-if="weekDetail">
+        <el-descriptions-item label="课程">{{ weekDetail.courseName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="教师">{{ weekDetail.teacherName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="教室">{{ weekDetail.classroomName || '未分配' }}</el-descriptions-item>
+        <el-descriptions-item label="教学楼">{{ weekDetail.buildingName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="上课时间">{{ weekDayLabel(weekDetail.weekDay) }} 第{{ weekDetail.startPeriod }}-{{ weekDetail.endPeriod }}节</el-descriptions-item>
+        <el-descriptions-item label="周次">第{{ weekDetail.startWeek || 1 }}-{{ weekDetail.endWeek || 20 }}周</el-descriptions-item>
+        <el-descriptions-item label="冲突状态">
+          <el-tag v-if="isWeekConflict(weekDetail.scheduleId)" type="danger" size="mini">存在冲突</el-tag>
+          <el-tag v-else type="success" size="mini">正常</el-tag>
+        </el-descriptions-item>
+      </el-descriptions>
+      <div slot="footer"><el-button type="primary" @click="weekDetailVisible = false">关 闭</el-button></div>
+    </el-dialog>
   </div>
 </template>
 <script>
@@ -180,8 +238,9 @@ import { listOffering } from "@/api/tpm/offering"
 import { listClassroom } from "@/api/brm/classroom"
 import { listSemester } from "@/api/brm/semester"
 import { detectConflicts, findAvailableClassrooms, autoAssignClassrooms } from "@/api/tpm/scheduleOpt"
+import WeekTimetable from "./components/WeekTimetable"
 export default {
-  name: "Schedule", dicts: ['sys_normal_disable', 'tpm_schedule_type'],
+  name: "Schedule", components: { WeekTimetable }, dicts: ['sys_normal_disable', 'tpm_schedule_type'],
   data() {
     return {
       loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0,
@@ -205,6 +264,18 @@ export default {
       // 自动分配相关
       autoAssignDialogVisible: false,
       autoAssignResult: null,
+      // T5：周课表视图相关
+      weekViewVisible: false,
+      weekLoading: false,
+      weekAllSchedules: [],
+      weekFilteredSchedules: [],
+      weekConflictIds: new Set(),
+      weekTeacherOptions: [],
+      weekClassroomOptions: [],
+      weekOfferingOptions: [],
+      weekFilter: { semesterId: null, viewType: 'all', teacherId: null, classroomId: null, offeringId: null, onlyConflict: false },
+      weekDetailVisible: false,
+      weekDetail: null,
       // 星期选项
       weekDayOptions: [
         { value: 1, label: '周一' }, { value: 2, label: '周二' }, { value: 3, label: '周三' },
@@ -400,6 +471,82 @@ export default {
         this.$modal.msgSuccess(`已选择教室：${cr.classroomName}`)
         this.classroomDialogVisible = false
       }
+    },
+
+    // ========== T5：周课表视图 ==========
+    /** 打开周课表视图（默认取当前查询学期或第一个学期） */
+    openWeekView() {
+      this.weekViewVisible = true
+      this.weekFilter.viewType = 'all'
+      this.weekFilter.teacherId = null
+      this.weekFilter.classroomId = null
+      this.weekFilter.offeringId = null
+      this.weekFilter.onlyConflict = false
+      if (!this.weekFilter.semesterId) {
+        this.weekFilter.semesterId = this.queryParams.semesterId || (this.semesterOptions[0] && this.semesterOptions[0].semesterId) || null
+      }
+      if (this.weekFilter.semesterId) {
+        this.loadWeekData()
+      } else {
+        this.weekAllSchedules = []
+        this.weekFilteredSchedules = []
+      }
+    },
+    /** 加载指定学期全部排课 + 冲突集 */
+    loadWeekData() {
+      if (!this.weekFilter.semesterId) { this.$modal.msgWarning("请先选择学期"); return }
+      this.weekLoading = true
+      listSchedule({ pageNum: 1, pageSize: 2000, semesterId: this.weekFilter.semesterId }).then(res => {
+        this.weekAllSchedules = res.rows || []
+        this.buildWeekOptions()
+        return detectConflicts(this.weekFilter.semesterId).catch(() => ({ data: [] }))
+      }).then(cRes => {
+        const conflicts = (cRes && cRes.data) || []
+        const set = new Set()
+        conflicts.forEach(c => { if (c.scheduleId1) set.add(c.scheduleId1); if (c.scheduleId2) set.add(c.scheduleId2) })
+        this.weekConflictIds = set
+        this.applyWeekFilter()
+        this.weekLoading = false
+      }).catch(() => { this.weekLoading = false })
+    },
+    /** 从已加载排课推导教师/教室/开课下拉选项 */
+    buildWeekOptions() {
+      const teachers = new Map(); const classrooms = new Map(); const offerings = new Map()
+      this.weekAllSchedules.forEach(s => {
+        if (s.teacher_id != null || s.teacherId != null) {
+          const id = s.teacher_id != null ? s.teacher_id : s.teacherId
+          if (id != null && !teachers.has(id)) teachers.set(id, { id, name: s.teacherName || ('教师' + id) })
+        }
+        if (s.classroomId != null && !classrooms.has(s.classroomId)) classrooms.set(s.classroomId, { id: s.classroomId, name: s.classroomName || ('教室' + s.classroomId) })
+        if (s.offeringId != null && !offerings.has(s.offeringId)) offerings.set(s.offeringId, { id: s.offeringId, name: (s.courseName || '开课') + (s.teacherName ? '-' + s.teacherName : '') })
+      })
+      this.weekTeacherOptions = Array.from(teachers.values())
+      this.weekClassroomOptions = Array.from(classrooms.values())
+      this.weekOfferingOptions = Array.from(offerings.values())
+    },
+    /** 按当前视图筛选条件计算网格数据 */
+    applyWeekFilter() {
+      const f = this.weekFilter
+      let data = this.weekAllSchedules.slice()
+      if (f.viewType === 'teacher' && f.teacherId != null) {
+        data = data.filter(s => (s.teacher_id != null ? s.teacher_id : s.teacherId) === f.teacherId)
+      } else if (f.viewType === 'classroom' && f.classroomId != null) {
+        data = data.filter(s => s.classroomId === f.classroomId)
+      } else if (f.viewType === 'offering' && f.offeringId != null) {
+        data = data.filter(s => s.offeringId === f.offeringId)
+      }
+      if (f.onlyConflict) {
+        data = data.filter(s => this.weekConflictIds.has(s.scheduleId))
+      }
+      this.weekFilteredSchedules = data
+    },
+    /** 点击课程块查看详情 */
+    handleWeekCellClick(schedule) {
+      this.weekDetail = schedule
+      this.weekDetailVisible = true
+    },
+    isWeekConflict(id) {
+      return this.weekConflictIds.has(id)
     }
   }
 }

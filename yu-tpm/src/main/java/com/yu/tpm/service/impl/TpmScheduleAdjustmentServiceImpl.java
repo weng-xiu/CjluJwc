@@ -6,6 +6,14 @@ import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.SecurityUtils;
 import com.yu.common.utils.schedule.TimeSlotUtils;
+import com.yu.common.core.domain.entity.SysUser;
+import com.yu.system.domain.SysMessage;
+import com.yu.system.domain.SysTodo;
+import com.yu.system.service.ISysMessageService;
+import com.yu.system.service.ISysTodoService;
+import com.yu.system.service.ISysUserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,11 +32,22 @@ import com.yu.tpm.service.ITpmScheduleAdjustmentService;
 @Service
 public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentService 
 {
+    private static final Logger log = LoggerFactory.getLogger(TpmScheduleAdjustmentServiceImpl.class);
+
     @Autowired
     private TpmScheduleAdjustmentMapper tpmScheduleAdjustmentMapper;
 
     @Autowired
     private TpmScheduleMapper tpmScheduleMapper;
+
+    @Autowired
+    private ISysMessageService sysMessageService;
+
+    @Autowired
+    private ISysTodoService sysTodoService;
+
+    @Autowired
+    private ISysUserService sysUserService;
 
     @Override
     public TpmScheduleAdjustment selectTpmScheduleAdjustmentByAdjustId(Long adjustId)
@@ -168,6 +187,11 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
         update.setApproveTime(new Date());
         update.setApproveComment(approveComment);
         tpmScheduleAdjustmentMapper.updateTpmScheduleAdjustment(update);
+
+        // O1/P1：调停课审批通过——通知申请人并办结相关待办
+        notifyApplicant(adjustment, "调停课申请已通过",
+                "您的调停课申请（编号" + adjustId + "）已审批通过，排课已同步更新。意见：" + (approveComment != null ? approveComment : "无"));
+        completeAdjustTodos(adjustId);
     }
 
     @Transactional
@@ -192,5 +216,85 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
         update.setApproveTime(new Date());
         update.setApproveComment(approveComment);
         tpmScheduleAdjustmentMapper.updateTpmScheduleAdjustment(update);
+
+        // O1/P1：调停课审批驳回——通知申请人并办结相关待办
+        notifyApplicant(adjustment, "调停课申请被驳回",
+                "您的调停课申请（编号" + adjustId + "）已被驳回。意见：" + (approveComment != null ? approveComment : "无"));
+        completeAdjustTodos(adjustId);
+    }
+
+    // ========== O1 消息中心对接（异常不阻断主流程） ==========
+
+    /** 根据用户名解析用户ID（失败返回 null） */
+    private Long resolveUserId(String userName)
+    {
+        if (userName == null || userName.trim().isEmpty())
+        {
+            return null;
+        }
+        try
+        {
+            SysUser user = sysUserService.selectUserByUserName(userName);
+            return user != null ? user.getUserId() : null;
+        }
+        catch (Exception e)
+        {
+            log.warn("解析用户[{}]失败：{}", userName, e.getMessage());
+            return null;
+        }
+    }
+
+    /** 向申请人推送调停课结果消息 */
+    private void notifyApplicant(TpmScheduleAdjustment adjustment, String title, String content)
+    {
+        try
+        {
+            String applicant = adjustment.getApplicant() != null
+                    ? adjustment.getApplicant() : adjustment.getCreateBy();
+            Long receiverId = resolveUserId(applicant);
+            if (receiverId == null)
+            {
+                return;
+            }
+            SysMessage msg = new SysMessage();
+            msg.setReceiverId(receiverId);
+            msg.setMsgType("2"); // 变更
+            msg.setTitle(title);
+            msg.setContent(content);
+            msg.setBusinessType("scheduleAdjust");
+            msg.setBusinessId(adjustment.getAdjustId());
+            msg.setCreateBy(SecurityUtils.getUsername());
+            sysMessageService.sendMessage(msg);
+        }
+        catch (Exception e)
+        {
+            log.error("调停课结果消息推送失败（adjustId={}）", adjustment.getAdjustId(), e);
+        }
+    }
+
+    /** 办结该调停课申请相关的全部待办 */
+    private void completeAdjustTodos(Long adjustId)
+    {
+        try
+        {
+            SysTodo query = new SysTodo();
+            query.setBusinessType("scheduleAdjust");
+            query.setStatus("0");
+            List<SysTodo> todos = sysTodoService.selectTodoList(query);
+            if (todos != null)
+            {
+                for (SysTodo t : todos)
+                {
+                    if (adjustId.equals(t.getBusinessId()))
+                    {
+                        sysTodoService.completeTodo(t.getTodoId(), t.getReceiverId());
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            log.error("办结调停课待办失败（adjustId={}）", adjustId, e);
+        }
     }
 }

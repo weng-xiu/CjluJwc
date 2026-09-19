@@ -13,6 +13,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -83,5 +84,32 @@ public class TpmCourseLibraryController extends BaseController
     public AjaxResult remove(@PathVariable Long[] courseIds)
     {
         return toAjax(tpmCourseLibraryService.deleteTpmCourseLibraryByCourseIds(courseIds));
+    }
+
+    /**
+     * P7：下载课程导入模板
+     */
+    @PostMapping("/importTemplate")
+    public void importTemplate(HttpServletResponse response)
+    {
+        ExcelUtil<TpmCourseLibrary> util = new ExcelUtil<TpmCourseLibrary>(TpmCourseLibrary.class);
+        util.importTemplateExcel(response, "课程数据");
+    }
+
+    /**
+     * P7：批量导入课程（Excel）
+     *
+     * @param file          Excel 文件
+     * @param updateSupport 编码已存在时是否更新
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:course:import')")
+    @Log(title = "课程库", businessType = BusinessType.IMPORT)
+    @PostMapping("/importData")
+    public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception
+    {
+        ExcelUtil<TpmCourseLibrary> util = new ExcelUtil<TpmCourseLibrary>(TpmCourseLibrary.class);
+        List<TpmCourseLibrary> courseList = util.importExcel(file.getInputStream());
+        String message = tpmCourseLibraryService.importCourse(courseList, getUsername(), updateSupport);
+        return success(message);
     }
 }
