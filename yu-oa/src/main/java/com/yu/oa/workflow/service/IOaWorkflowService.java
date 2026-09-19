@@ -8,6 +8,7 @@ import org.flowable.engine.repository.Deployment;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.Task;
+import org.flowable.task.api.history.HistoricTaskInstance;
 
 import com.yu.oa.domain.OaProcessDefinition;
 import com.yu.oa.domain.OaTaskRecord;
@@ -62,6 +63,11 @@ public interface IOaWorkflowService
      * 查询待办任务（支持按任务名称模糊筛选）
      */
     public List<Task> listTodoTasks(String assignee, String taskName);
+
+    /**
+     * 查询已办任务（当前用户已完成的历史任务）
+     */
+    public List<HistoricTaskInstance> listDoneTasks(String assignee, String taskName);
 
     /**
      * 完成任务

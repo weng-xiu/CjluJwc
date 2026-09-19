@@ -1,7 +1,9 @@
 package com.yu.tpm.service;
 
 import java.util.List;
+import java.util.Map;
 import com.yu.tpm.domain.TpmCourseOffering;
+import com.yu.tpm.domain.dto.BatchOfferingRequest;
 
 /**
  * 开课计划Service接口
@@ -36,4 +38,13 @@ public interface ITpmCourseOfferingService
      * @return 结果
      */
     public int cancelOffering(Long offeringId);
+
+    /**
+     * T4 按培养方案批量生成开课计划（含容量与教师预分配）。
+     * 生成结果为待确认状态，可编辑后再确认；对已存在开课的课程默认跳过以保幂等。
+     *
+     * @param request 生成参数
+     * @return 生成结果摘要
+     */
+    public Map<String, Object> batchGenerateOfferings(BatchOfferingRequest request);
 }

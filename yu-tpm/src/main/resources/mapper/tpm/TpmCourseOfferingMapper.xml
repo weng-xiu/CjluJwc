@@ -83,6 +83,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectTpmCourseOfferingByOfferingId" parameterType="Long" resultMap="TpmCourseOfferingResult">
         <include refid="selectTpmCourseOfferingVo"/> where offering_id = #{offeringId} and del_flag = '0'
     </select>
+    <select id="selectActiveCourseIdsBySemester" parameterType="Long" resultType="java.lang.Long">
+        select distinct course_id from tpm_course_offering
+        where del_flag = '0' and offering_status &lt;&gt; '2' and semester_id = #{semesterId}
+    </select>
+    <select id="selectTeacherPool" resultType="java.lang.Long">
+        select teacher_id from brm_teacher
+        where status = '0'
+        <if test="deptId != null"> and dept_id = #{deptId}</if>
+        order by teacher_id
+    </select>
     <insert id="insertTpmCourseOffering" parameterType="TpmCourseOffering" useGeneratedKeys="true" keyProperty="offeringId">
         insert into tpm_course_offering
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -136,4 +146,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         update tpm_course_offering set del_flag = '2' where offering_id in
         <foreach item="offeringId" collection="array" open="(" separator="," close=")">#{offeringId}</foreach>
     </update>
+    <insert id="batchInsertTpmCourseOffering">
+        insert into tpm_course_offering
+        (semester_id, course_id, teacher_id, campus_id, class_count, max_students, offering_status, status, create_by, create_time, remark)
+        values
+        <foreach item="item" collection="list" separator=",">
+            (#{item.semesterId}, #{item.courseId}, #{item.teacherId}, #{item.campusId}, #{item.classCount},
+             #{item.maxStudents}, #{item.offeringStatus}, #{item.status}, #{item.createBy}, #{item.createTime}, #{item.remark})
+        </foreach>
+    </insert>
 </mapper>

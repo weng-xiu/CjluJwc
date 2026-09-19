@@ -69,6 +69,17 @@ public class TpmCourseOfferingController extends BaseController
         return toAjax(tpmCourseOfferingService.insertTpmCourseOffering(tpmCourseOffering));
     }
 
+    /**
+     * T4 按培养方案批量生成开课计划（含容量与教师预分配）
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:offering:add')")
+    @Log(title = "开课计划", businessType = BusinessType.INSERT)
+    @PostMapping("/batchGenerate")
+    public AjaxResult batchGenerate(@RequestBody com.yu.tpm.domain.dto.BatchOfferingRequest request)
+    {
+        return success(tpmCourseOfferingService.batchGenerateOfferings(request));
+    }
+
     @PreAuthorize("@ss.hasPermi('tpm:offering:edit')")
     @Log(title = "开课计划", businessType = BusinessType.UPDATE)
     @PutMapping

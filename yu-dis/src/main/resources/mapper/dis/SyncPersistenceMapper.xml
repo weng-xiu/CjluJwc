@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.dis.mapper.SyncPersistenceMapper">
+    <!--
+      动态 upsert。table / columns 已在 SyncResponseParser 通过标识符白名单校验，
+      使用 ${} 直接拼接是安全的；每行的值使用 #{} 预编译绑定。
+    -->
+    <insert id="upsertBatch">
+        insert into ${table}
+        (<foreach collection="columns" item="col" separator=",">${col}</foreach>)
+        values
+        <foreach collection="valueRows" item="valueRow" separator=",">
+            (<foreach collection="valueRow" item="val" separator=",">#{val}</foreach>)
+        </foreach>
+        on duplicate key update
+        <foreach collection="columns" item="col" separator=",">${col} = values(${col})</foreach>
+    </insert>
+</mapper>

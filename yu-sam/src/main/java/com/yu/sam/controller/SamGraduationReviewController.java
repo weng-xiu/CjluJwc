@@ -1,6 +1,7 @@
 package com.yu.sam.controller;
 
 import java.util.List;
+import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,4 +57,21 @@ public class SamGraduationReviewController extends BaseController
     @Log(title = "毕业审核", businessType = BusinessType.DELETE)
     @DeleteMapping("/{reviewIds}")
     public AjaxResult remove(@PathVariable Long[] reviewIds) { return toAjax(samGraduationReviewService.deleteSamGraduationReviewByReviewIds(reviewIds)); }
+
+    /** S1：单人自动审核 */
+    @PreAuthorize("@ss.hasPermi('sam:graduationReview:audit')")
+    @Log(title = "毕业自动审核", businessType = BusinessType.INSERT)
+    @PostMapping("/autoReview/{studentId}")
+    public AjaxResult autoReview(@PathVariable("studentId") Long studentId) {
+        return success(samGraduationReviewService.autoReview(studentId));
+    }
+
+    /** S1：批量自动审核（传 studentIds） */
+    @PreAuthorize("@ss.hasPermi('sam:graduationReview:audit')")
+    @Log(title = "毕业批量审核", businessType = BusinessType.INSERT)
+    @PostMapping("/batchReview")
+    public AjaxResult batchReview(@RequestBody List<Long> studentIds) {
+        Map<String, Object> result = samGraduationReviewService.batchAutoReview(studentIds);
+        return success(result);
+    }
 }

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamLinkageMapper">
+
+    <update id="freezeEnrollment" parameterType="Long">
+        update tpm_selection_enrollment set status = '1', update_time = now()
+        where student_id = #{studentId} and del_flag = '0' and status = '0'
+    </update>
+
+    <update id="unfreezeEnrollment" parameterType="Long">
+        update tpm_selection_enrollment set status = '0', update_time = now()
+        where student_id = #{studentId} and del_flag = '0' and status = '1'
+    </update>
+
+    <update id="flagGradeRecords">
+        update aem_grade_record set remark = #{flag}, update_time = now()
+        where student_id = #{studentId} and status = '0'
+    </update>
+
+    <update id="stopPayment" parameterType="Long">
+        update sam_student set status = '1', update_time = now()
+        where student_id = #{studentId}
+    </update>
+
+    <update id="resumePayment" parameterType="Long">
+        update sam_student set status = '0', update_time = now()
+        where student_id = #{studentId}
+    </update>
+
+</mapper>

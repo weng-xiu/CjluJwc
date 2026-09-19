@@ -1,6 +1,7 @@
 package com.yu.sam.controller;
 
 import java.util.List;
+import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,4 +57,41 @@ public class SamStatusChangeController extends BaseController
     @Log(title = "学籍异动", businessType = BusinessType.DELETE)
     @DeleteMapping("/{changeIds}")
     public AjaxResult remove(@PathVariable Long[] changeIds) { return toAjax(samStatusChangeService.deleteSamStatusChangeByChangeIds(changeIds)); }
+
+    /**
+     * 提交异动申请并启动多级审批流程
+     */
+    @PreAuthorize("@ss.hasPermi('sam:statusChange:edit')")
+    @Log(title = "学籍异动-提交审批", businessType = BusinessType.UPDATE)
+    @PostMapping("/submit/{changeId}")
+    public AjaxResult submit(@PathVariable("changeId") Long changeId)
+    {
+        return toAjax(samStatusChangeService.submitForApproval(changeId));
+    }
+
+    /**
+     * 审批通过（回写学籍状态+联动）
+     */
+    @PreAuthorize("@ss.hasPermi('sam:statusChange:approve')")
+    @Log(title = "学籍异动-审批通过", businessType = BusinessType.UPDATE)
+    @PostMapping("/approve/{changeId}")
+    public AjaxResult approve(@PathVariable("changeId") Long changeId, @RequestBody Map<String, String> params)
+    {
+        String taskId = params.get("taskId");
+        String comment = params.get("comment");
+        return toAjax(samStatusChangeService.approveChange(changeId, taskId, comment));
+    }
+
+    /**
+     * 驳回异动申请
+     */
+    @PreAuthorize("@ss.hasPermi('sam:statusChange:approve')")
+    @Log(title = "学籍异动-驳回", businessType = BusinessType.UPDATE)
+    @PostMapping("/reject/{changeId}")
+    public AjaxResult reject(@PathVariable("changeId") Long changeId, @RequestBody Map<String, String> params)
+    {
+        String taskId = params.get("taskId");
+        String comment = params.get("comment");
+        return toAjax(samStatusChangeService.rejectChange(changeId, taskId, comment));
+    }
 }

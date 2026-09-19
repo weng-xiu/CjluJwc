@@ -29,6 +29,19 @@
             <artifactId>yu-brm</artifactId>
         </dependency>
 
+        <!-- OA工作流模块（学籍异动多级审批依赖Flowable）-->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-oa</artifactId>
+        </dependency>
+
+        <!-- 单元测试（JUnit5 + Mockito，随 spring-boot-starter-test 传递）-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>

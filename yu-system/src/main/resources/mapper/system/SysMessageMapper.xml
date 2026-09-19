@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.system.mapper.SysMessageMapper">
+    <resultMap type="SysMessage" id="SysMessageResult">
+        <id property="messageId" column="message_id"/>
+        <result property="receiverId" column="receiver_id"/>
+        <result property="msgType" column="msg_type"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="businessType" column="business_type"/>
+        <result property="businessId" column="business_id"/>
+        <result property="readStatus" column="read_status"/>
+        <result property="readTime" column="read_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+    <select id="selectById" parameterType="Long" resultMap="SysMessageResult">
+        select * from sys_message where message_id = #{messageId}
+    </select>
+    <select id="selectList" parameterType="SysMessage" resultMap="SysMessageResult">
+        select * from sys_message
+        <where>
+            <if test="receiverId != null"> and receiver_id = #{receiverId}</if>
+            <if test="msgType != null and msgType != ''"> and msg_type = #{msgType}</if>
+            <if test="readStatus != null and readStatus != ''"> and read_status = #{readStatus}</if>
+            <if test="businessType != null and businessType != ''"> and business_type = #{businessType}</if>
+        </where>
+        order by create_time desc
+    </select>
+    <insert id="insert" parameterType="SysMessage" useGeneratedKeys="true" keyProperty="messageId">
+        insert into sys_message (receiver_id, msg_type, title, content, business_type, business_id, read_status, create_by, create_time)
+        values (#{receiverId}, #{msgType}, #{title}, #{content}, #{businessType}, #{businessId}, #{readStatus}, #{createBy}, #{createTime})
+    </insert>
+    <insert id="batchInsert">
+        insert into sys_message (receiver_id, msg_type, title, content, business_type, business_id, read_status, create_by, create_time) values
+        <foreach item="item" collection="list" separator=",">
+            (#{item.receiverId}, #{item.msgType}, #{item.title}, #{item.content}, #{item.businessType}, #{item.businessId}, #{item.readStatus}, #{item.createBy}, #{item.createTime})
+        </foreach>
+    </insert>
+    <update id="markRead">
+        update sys_message set read_status = '1', read_time = now() where message_id = #{messageId} and receiver_id = #{receiverId}
+    </update>
+    <update id="markAllRead" parameterType="Long">
+        update sys_message set read_status = '1', read_time = now() where receiver_id = #{receiverId} and read_status = '0'
+    </update>
+    <select id="countUnread" parameterType="Long" resultType="int">
+        select count(1) from sys_message where receiver_id = #{receiverId} and read_status = '0'
+    </select>
+</mapper>

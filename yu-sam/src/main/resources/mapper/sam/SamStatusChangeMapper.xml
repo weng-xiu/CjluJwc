@@ -17,6 +17,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="approveTime"     column="approve_time"      />
         <result property="approveOpinion"  column="approve_opinion"   />
         <result property="status"          column="status"            />
+        <result property="procInstId"     column="proc_inst_id"     />
         <result property="createBy"        column="create_by"         />
         <result property="createTime"      column="create_time"       />
         <result property="updateBy"        column="update_by"         />
@@ -24,10 +25,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"          column="remark"            />
     </resultMap>
     <sql id="selectSamStatusChangeVo">
-        select change_id, student_id, change_type, change_date, original_status, new_status, reason, applicant, approve_status, approve_by, approve_time, approve_opinion, status, create_by, create_time, update_by, update_time, remark from sam_status_change
+        select change_id, student_id, change_type, change_date, original_status, new_status, reason, applicant, approve_status, approve_by, approve_time, approve_opinion, status, proc_inst_id, create_by, create_time, update_by, update_time, remark from sam_status_change
     </sql>
     <select id="selectSamStatusChangeList" parameterType="SamStatusChange" resultMap="SamStatusChangeResult">
-        select sc.change_id, sc.student_id, sc.change_type, sc.change_date, sc.original_status, sc.new_status, sc.reason, sc.applicant, sc.approve_status, sc.approve_by, sc.approve_time, sc.approve_opinion, sc.status, sc.create_by, sc.create_time, sc.update_by, sc.update_time, sc.remark
+        select sc.change_id, sc.student_id, sc.change_type, sc.change_date, sc.original_status, sc.new_status, sc.reason, sc.applicant, sc.approve_status, sc.approve_by, sc.approve_time, sc.approve_opinion, sc.status, sc.proc_inst_id, sc.create_by, sc.create_time, sc.update_by, sc.update_time, sc.remark
         from sam_status_change sc
         left join sam_student s on sc.student_id = s.student_id
         left join sys_dept d on s.dept_id = d.dept_id
@@ -58,6 +59,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="approveTime != null">approve_time,</if>
             <if test="approveOpinion != null">approve_opinion,</if>
             <if test="status != null">status,</if>
+            <if test="procInstId != null">proc_inst_id,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="remark != null">remark,</if>
@@ -75,6 +77,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="approveTime != null">#{approveTime},</if>
             <if test="approveOpinion != null">#{approveOpinion},</if>
             <if test="status != null">#{status},</if>
+            <if test="procInstId != null">#{procInstId},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="remark != null">#{remark},</if>
@@ -95,6 +98,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="approveTime != null">approve_time = #{approveTime},</if>
             <if test="approveOpinion != null">approve_opinion = #{approveOpinion},</if>
             <if test="status != null">status = #{status},</if>
+            <if test="procInstId != null">proc_inst_id = #{procInstId},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="remark != null">remark = #{remark},</if>

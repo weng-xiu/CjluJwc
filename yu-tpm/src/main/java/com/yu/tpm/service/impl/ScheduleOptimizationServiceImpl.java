@@ -16,6 +16,7 @@ import com.yu.common.utils.schedule.TimeSlotUtils;
 import com.yu.tpm.domain.TpmSchedule;
 import com.yu.tpm.domain.dto.AvailableClassroom;
 import com.yu.tpm.domain.dto.ScheduleConflict;
+import com.yu.tpm.domain.dto.StudentScheduleSlot;
 import com.yu.tpm.mapper.TpmScheduleMapper;
 import com.yu.tpm.service.IScheduleOptimizationService;
 
@@ -60,40 +61,35 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
         List<ScheduleConflict> conflicts = new ArrayList<>();
         // 查询该学期所有排课（含关联信息）
         List<TpmSchedule> schedules = scheduleMapper.selectSchedulesBySemester(semesterId);
-        if (schedules == null || schedules.isEmpty())
+
+        if (schedules != null && !schedules.isEmpty())
         {
-            return conflicts;
+            // 按教室分组检测冲突（跳过未分配教室的排课）
+            Map<Long, List<TpmSchedule>> classroomGroups = schedules.stream()
+                    .filter(s -> s.getClassroomId() != null)
+                    .collect(Collectors.groupingBy(TpmSchedule::getClassroomId));
+
+            for (Map.Entry<Long, List<TpmSchedule>> entry : classroomGroups.entrySet())
+            {
+                List<TpmSchedule> group = entry.getValue();
+                detectPairConflicts(group, conflicts, CLASSROOM_CONFLICT);
+            }
+
+            // 按教师分组检测冲突（同一教师同一时间的不同开课）
+            detectTeacherConflicts(schedules, conflicts);
         }
 
-        // 按教室分组检测冲突（跳过未分配教室的排课）
-        Map<Long, List<TpmSchedule>> classroomGroups = schedules.stream()
-                .filter(s -> s.getClassroomId() != null)
-                .collect(Collectors.groupingBy(TpmSchedule::getClassroomId));
-
-        for (Map.Entry<Long, List<TpmSchedule>> entry : classroomGroups.entrySet())
-        {
-            List<TpmSchedule> group = entry.getValue();
-            detectPairConflicts(group, conflicts, CLASSROOM_CONFLICT);
-        }
-
-        // 按教师分组检测冲突（通过offeringId关联，同一教师同一时间的不同开课）
-        // 由于教师信息在offering层，同一teacherId的排课需要按教师分组
-        // 这里简化为按offeringId分组后，检测同一教师不同开课间的冲突
-        Map<Long, List<TpmSchedule>> teacherGroups = schedules.stream()
-                .collect(Collectors.groupingBy(TpmSchedule::getOfferingId));
-        // 获取所有开课ID并查找其教师ID，简化处理：检测跨开课的教师冲突
-        // 由于TpmSchedule不直接存储teacherId，我们按weekDay+时间段检测所有已分配教室的排课
-        // 实际教师冲突需要teacherId，这里通过offeringId关联同一教师的多个开课
-        detectTeacherConflicts(schedules, conflicts);
-
-        // 按开课ID分组检测班级冲突（同一班级在同一时间有多门课程）
-        detectClassConflicts(schedules, conflicts);
+        // 班级冲突：按"学生选课名单"精确判定（同一学生在不同开课的时间重叠）
+        // 修正原按 offeringId 跨开课两两比较导致的误报，并覆盖未分配教室的排课
+        detectClassConflictsByStudents(semesterId, conflicts);
 
         return conflicts;
     }
 
     /**
-     * 在同一分组内两两比较检测时间冲突
+     * 在同一分组内检测时间冲突。
+     * 优化：先按星期几分桶（TimeSlotUtils 仅在 weekDay 相同时判为冲突），
+     * 桶内再两两比较，降低比较规模；对同一冲突对去重。
      *
      * @param group       同一教室或同一教师的排课列表
      * @param conflicts   冲突结果列表
@@ -101,19 +97,28 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
      */
     private void detectPairConflicts(List<TpmSchedule> group, List<ScheduleConflict> conflicts, String conflictType)
     {
-        for (int i = 0; i < group.size(); i++)
+        // 按星期几分桶，仅同星期几才可能冲突
+        Map<Integer, List<TpmSchedule>> byDay = new java.util.HashMap<>();
+        for (TpmSchedule s : group)
         {
-            for (int j = i + 1; j < group.size(); j++)
+            if (s.getWeekDay() == null) { continue; }
+            byDay.computeIfAbsent(s.getWeekDay(), k -> new ArrayList<>()).add(s);
+        }
+        for (List<TpmSchedule> dayGroup : byDay.values())
+        {
+            for (int i = 0; i < dayGroup.size(); i++)
             {
-                TpmSchedule s1 = group.get(i);
-                TpmSchedule s2 = group.get(j);
-                boolean hasConflict = TimeSlotUtils.hasTimeConflict(
-                        s1.getWeekDay(), s1.getStartPeriod(), s1.getEndPeriod(), s1.getStartWeek(), s1.getEndWeek(),
-                        s2.getWeekDay(), s2.getStartPeriod(), s2.getEndPeriod(), s2.getStartWeek(), s2.getEndWeek());
-                if (hasConflict)
+                for (int j = i + 1; j < dayGroup.size(); j++)
                 {
-                    ScheduleConflict conflict = buildConflict(s1, s2, conflictType);
-                    conflicts.add(conflict);
+                    TpmSchedule s1 = dayGroup.get(i);
+                    TpmSchedule s2 = dayGroup.get(j);
+                    boolean hasConflict = TimeSlotUtils.hasTimeConflict(
+                            s1.getWeekDay(), s1.getStartPeriod(), s1.getEndPeriod(), s1.getStartWeek(), s1.getEndWeek(),
+                            s2.getWeekDay(), s2.getStartPeriod(), s2.getEndPeriod(), s2.getStartWeek(), s2.getEndWeek());
+                    if (hasConflict)
+                    {
+                        conflicts.add(buildConflict(s1, s2, conflictType));
+                    }
                 }
             }
         }
@@ -137,40 +142,93 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
     }
 
     /**
-     * 检测班级冲突：同一班级在同一时间有多门不同课程的排课
-     * 简化策略：按课程ID分组后，检测同课程不同开课间的时间冲突
-     * 以及通过选课名单检测学生跨开课的时间冲突
+     * 班级冲突检测（T2 修正）：按"学生选课名单"精确判定。
+     * 语义：同一学生在两门不同开课（offeringId 不同）的排课上时间重叠，即为班级/学生冲突。
+     * 优点：
+     *  - 消除按 offeringId 跨开课两两比较的误报（不同班级同时段上课不再误报）；
+     *  - 不依赖 classroomId，覆盖未分配教室的排课（消除漏检）；
+     *  - 按学生分组 + 星期几分桶，比较规模由全局 O(n²) 降为各学生自身课表内两两比较。
+     * 同一排课对仅报告一次（去重）。
      */
-    private void detectClassConflicts(List<TpmSchedule> schedules, List<ScheduleConflict> conflicts)
+    private void detectClassConflictsByStudents(Long semesterId, List<ScheduleConflict> conflicts)
     {
-        // 按开课ID分组
-        Map<Long, List<TpmSchedule>> offeringGroups = schedules.stream()
-                .collect(Collectors.groupingBy(TpmSchedule::getOfferingId));
-        List<Long> offeringIds = new ArrayList<>(offeringGroups.keySet());
-        // 两两比较不同开课的排课，检测班级时间冲突
-        for (int i = 0; i < offeringIds.size(); i++)
+        List<StudentScheduleSlot> slots = scheduleMapper.selectStudentScheduleSlotsBySemester(semesterId);
+        if (slots == null || slots.isEmpty())
         {
-            for (int j = i + 1; j < offeringIds.size(); j++)
+            return;
+        }
+        // 按学生分组
+        Map<Long, List<StudentScheduleSlot>> byStudent = slots.stream()
+                .filter(s -> s.getStudentId() != null)
+                .collect(Collectors.groupingBy(StudentScheduleSlot::getStudentId));
+        // 去重：同一排课对只报告一次
+        java.util.Set<String> reported = new java.util.HashSet<>();
+        for (List<StudentScheduleSlot> mine : byStudent.values())
+        {
+            // 按星期几分桶
+            Map<Integer, List<StudentScheduleSlot>> byDay = new java.util.HashMap<>();
+            for (StudentScheduleSlot s : mine)
             {
-                List<TpmSchedule> group1 = offeringGroups.get(offeringIds.get(i));
-                List<TpmSchedule> group2 = offeringGroups.get(offeringIds.get(j));
-                for (TpmSchedule s1 : group1)
+                if (s.getWeekDay() == null) { continue; }
+                byDay.computeIfAbsent(s.getWeekDay(), k -> new ArrayList<>()).add(s);
+            }
+            for (List<StudentScheduleSlot> daySlots : byDay.values())
+            {
+                for (int i = 0; i < daySlots.size(); i++)
                 {
-                    for (TpmSchedule s2 : group2)
+                    for (int j = i + 1; j < daySlots.size(); j++)
                     {
-                        if (s1.getClassroomId() == null || s2.getClassroomId() == null) { continue; }
-                        boolean hasConflict = TimeSlotUtils.hasTimeConflict(
-                                s1.getWeekDay(), s1.getStartPeriod(), s1.getEndPeriod(), s1.getStartWeek(), s1.getEndWeek(),
-                                s2.getWeekDay(), s2.getStartPeriod(), s2.getEndPeriod(), s2.getStartWeek(), s2.getEndWeek());
-                        if (hasConflict)
-                        {
-                            ScheduleConflict conflict = buildConflict(s1, s2, CLASS_CONFLICT);
-                            conflicts.add(conflict);
-                        }
+                        StudentScheduleSlot a = daySlots.get(i);
+                        StudentScheduleSlot b = daySlots.get(j);
+                        // 同一开课的多条排课不算班级冲突
+                        if (a.getOfferingId() != null && a.getOfferingId().equals(b.getOfferingId())) { continue; }
+                        boolean conflict = TimeSlotUtils.hasTimeConflict(
+                                a.getWeekDay(), a.getStartPeriod(), a.getEndPeriod(), a.getStartWeek(), a.getEndWeek(),
+                                b.getWeekDay(), b.getStartPeriod(), b.getEndPeriod(), b.getStartWeek(), b.getEndWeek());
+                        if (!conflict) { continue; }
+                        long s1 = a.getScheduleId() == null ? 0 : a.getScheduleId();
+                        long s2 = b.getScheduleId() == null ? 0 : b.getScheduleId();
+                        String key = CLASS_CONFLICT + ":" + Math.min(s1, s2) + "-" + Math.max(s1, s2);
+                        if (!reported.add(key)) { continue; }
+                        conflicts.add(buildStudentConflict(a, b));
                     }
                 }
             }
         }
+    }
+
+    /**
+     * 构建学生/班级冲突（基于学生名单）。
+     */
+    private ScheduleConflict buildStudentConflict(StudentScheduleSlot a, StudentScheduleSlot b)
+    {
+        ScheduleConflict conflict = new ScheduleConflict();
+        conflict.setScheduleId1(a.getScheduleId());
+        conflict.setScheduleId2(b.getScheduleId());
+        conflict.setConflictType(CLASS_CONFLICT);
+        conflict.setCourseName1(a.getCourseName() != null ? a.getCourseName() : "未知课程");
+        conflict.setCourseName2(b.getCourseName() != null ? b.getCourseName() : "未知课程");
+        conflict.setClassroomName("学生[" + a.getStudentId() + "]");
+        conflict.setTimeDesc(buildSlotTimeDesc(a));
+        conflict.setMessage(String.format("班级冲突：学生[%d] 所选《%s》与《%s》在 %s 时间重叠",
+                a.getStudentId(), conflict.getCourseName1(), conflict.getCourseName2(), conflict.getTimeDesc()));
+        return conflict;
+    }
+
+    /**
+     * 生成时间槽描述。
+     */
+    private String buildSlotTimeDesc(StudentScheduleSlot s)
+    {
+        String[] weekDayNames = {"", "周一", "周二", "周三", "周四", "周五", "周六", "周日"};
+        String dayName = (s.getWeekDay() != null && s.getWeekDay() >= 1 && s.getWeekDay() <= 7)
+                ? weekDayNames[s.getWeekDay()] : "星期" + s.getWeekDay();
+        return String.format("%s 第%d-%d节 第%d-%d周",
+                dayName,
+                s.getStartPeriod() != null ? s.getStartPeriod() : 0,
+                s.getEndPeriod() != null ? s.getEndPeriod() : 0,
+                s.getStartWeek() != null ? s.getStartWeek() : 0,
+                s.getEndWeek() != null ? s.getEndWeek() : 0);
     }
 
     /**

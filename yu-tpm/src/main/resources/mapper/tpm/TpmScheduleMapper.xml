@@ -168,6 +168,32 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by s.week_day, s.start_period
     </select>
 
+    <!-- 按学期查询"学生-课表时间槽"（选课名单→开课→排课），包含未分配教室的排课 -->
+    <resultMap type="com.yu.tpm.domain.dto.StudentScheduleSlot" id="StudentScheduleSlotResult">
+        <result property="studentId"   column="student_id"   />
+        <result property="offeringId"  column="offering_id"  />
+        <result property="scheduleId"  column="schedule_id"  />
+        <result property="weekDay"     column="week_day"     />
+        <result property="startPeriod" column="start_period" />
+        <result property="endPeriod"   column="end_period"   />
+        <result property="startWeek"   column="start_week"   />
+        <result property="endWeek"     column="end_week"     />
+        <result property="courseName"  column="course_name"  />
+    </resultMap>
+    <select id="selectStudentScheduleSlotsBySemester" resultMap="StudentScheduleSlotResult">
+        select e.student_id as student_id, o.offering_id as offering_id, s.schedule_id as schedule_id,
+               s.week_day, s.start_period, s.end_period, s.start_week, s.end_week,
+               cl.course_name as course_name
+        from tpm_selection_enrollment e
+        inner join tpm_course_offering o on e.course_offering_id = o.offering_id
+        inner join tpm_schedule s on s.offering_id = o.offering_id
+        left join tpm_course_library cl on o.course_id = cl.course_id
+        where e.del_flag = '0' and o.del_flag = '0' and s.del_flag = '0'
+          and e.result_status = '1' and s.status = '0'
+          and o.semester_id = #{semesterId}
+        order by e.student_id, s.week_day, s.start_period
+    </select>
+
     <!-- 查询某教室指定时间段的排课（用于冲突检测） -->
     <select id="selectByClassroomAndTime" resultMap="TpmScheduleResult">
         <include refid="selectTpmScheduleVo"/>

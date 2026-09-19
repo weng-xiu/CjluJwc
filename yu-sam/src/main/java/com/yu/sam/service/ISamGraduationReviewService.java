@@ -1,6 +1,7 @@
 package com.yu.sam.service;
 
 import java.util.List;
+import java.util.Map;
 import com.yu.sam.domain.SamGraduationReview;
 
 public interface ISamGraduationReviewService 
@@ -20,4 +21,12 @@ public interface ISamGraduationReviewService
      * @return 审核结果
      */
     public SamGraduationReview autoReview(Long studentId);
+
+    /**
+     * 批量自动审核毕业资格
+     *
+     * @param studentIds 学生ID列表
+     * @return 汇总结果
+     */
+    public Map<String, Object> batchAutoReview(List<Long> studentIds);
 }

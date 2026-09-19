@@ -285,7 +285,22 @@ public class OaDocumentServiceImpl implements IOaDocumentService
     @Override
     public List<OaDocument> selectDoneList(OaDocument oaDocument)
     {
-        return oaDocumentMapper.selectOaDocumentList(oaDocument);
+        Long userId = SecurityUtils.getLoginUser().getUserId();
+        List<Long> doneInstanceIds = oaTaskRecordMapper.selectDoneInstanceIdsByAssigneeId(userId);
+        List<OaDocument> result = new ArrayList<>();
+        for (Long instanceId : doneInstanceIds)
+        {
+            OaProcessInstance instance = oaProcessInstanceMapper.selectOaProcessInstanceByInstanceId(instanceId);
+            if (instance != null && "document".equals(instance.getBusinessType()))
+            {
+                OaDocument document = oaDocumentMapper.selectOaDocumentByDocumentId(instance.getBusinessId());
+                if (document != null)
+                {
+                    result.add(document);
+                }
+            }
+        }
+        return result;
     }
 
     private OaProcessInstance findInstanceByProcInstId(String procInstId)

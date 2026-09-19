@@ -3,6 +3,7 @@ package com.yu.tpm.mapper;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 import com.yu.tpm.domain.TpmSchedule;
+import com.yu.tpm.domain.dto.StudentScheduleSlot;
 
 /**
  * 排课Mapper接口
@@ -25,6 +26,15 @@ public interface TpmScheduleMapper
 
     /** 按学期查询所有排课（含关联信息） */
     List<TpmSchedule> selectSchedulesBySemester(@Param("semesterId") Long semesterId);
+
+    /**
+     * 按学期查询"学生-课表时间槽"列表（选课名单→开课→排课），
+     * 用于按学生名单精确判定班级/学生冲突。包含未分配教室的排课。
+     *
+     * @param semesterId 学期ID
+     * @return 学生课表时间槽列表
+     */
+    List<StudentScheduleSlot> selectStudentScheduleSlotsBySemester(@Param("semesterId") Long semesterId);
 
     /** 查询某教室指定时间段的排课 */
     List<TpmSchedule> selectByClassroomAndTime(@Param("classroomId") Long classroomId,

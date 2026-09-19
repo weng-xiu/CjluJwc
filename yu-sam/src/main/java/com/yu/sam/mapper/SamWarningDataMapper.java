@@ -98,4 +98,64 @@ public interface SamWarningDataMapper
      */
     Integer countDegreeCourseFail(@Param("studentId") Long studentId,
                                   @Param("semesterId") Long semesterId);
+
+    /**
+     * 查询学生所属培养方案ID（按专业 + 入学年级匹配已发布方案）。
+     *
+     * @param studentId 学生ID
+     * @return 培养方案ID，无匹配时返回 null
+     */
+    Long selectPlanIdByStudent(@Param("studentId") Long studentId);
+
+    /**
+     * 查询培养方案规定应修总学分（优先取方案总学分，为空则汇总学分结构要求学分）。
+     *
+     * @param planId 培养方案ID
+     * @return 应修总学分
+     */
+    Double selectPlanRequiredCredits(@Param("planId") Long planId);
+
+    /**
+     * 查询培养方案学分结构分项（通识/专业/选修/实践等）。
+     *
+     * @param planId 培养方案ID
+     * @return 每个分项含 creditType/creditTypeName/requiredCredit
+     */
+    List<java.util.Map<String, Object>> selectPlanCreditSections(@Param("planId") Long planId);
+
+    /**
+     * 按课程属性分类统计学生已获得学分（course_category 匹配）。
+     *
+     * @param studentId  学生ID
+     * @param semesterId 学期ID（可为null）
+     * @param category   课程属性分类
+     * @return 已获学分
+     */
+    Double sumEarnedCreditByCourseCategory(@Param("studentId") Long studentId,
+                                           @Param("semesterId") Long semesterId,
+                                           @Param("category") String category);
+
+    /**
+     * 按课程属性分类统计学生已修读课程门数（用于判断该分类是否已完成数据治理）。
+     *
+     * @param studentId  学生ID
+     * @param semesterId 学期ID（可为null）
+     * @param category   课程属性分类
+     * @return 修读门数
+     */
+    Integer countCoursesByCourseCategory(@Param("studentId") Long studentId,
+                                         @Param("semesterId") Long semesterId,
+                                         @Param("category") String category);
+
+    /**
+     * 按课程名称关键字统计学生已修读课程门数（用于属性缺失时的降级判定）。
+     *
+     * @param studentId  学生ID
+     * @param semesterId 学期ID（可为null）
+     * @param keyword    课程名模糊匹配关键字
+     * @return 修读门数
+     */
+    Integer countCoursesByNameKeyword(@Param("studentId") Long studentId,
+                                      @Param("semesterId") Long semesterId,
+                                      @Param("keyword") String keyword);
 }

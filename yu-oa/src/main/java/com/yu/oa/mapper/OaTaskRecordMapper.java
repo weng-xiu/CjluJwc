@@ -18,4 +18,9 @@ public interface OaTaskRecordMapper
     public int updateOaTaskRecord(OaTaskRecord oaTaskRecord);
     public int deleteOaTaskRecordByRecordId(Long recordId);
     public int deleteOaTaskRecordByRecordIds(Long[] recordIds);
+
+    /**
+     * 查询指定用户已办理的流程实例ID列表（去重）
+     */
+    public List<Long> selectDoneInstanceIdsByAssigneeId(Long assigneeId);
 }

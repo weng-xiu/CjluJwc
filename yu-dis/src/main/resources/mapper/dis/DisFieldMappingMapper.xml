@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.dis.mapper.DisFieldMappingMapper">
+    <resultMap type="DisFieldMapping" id="DisFieldMappingResult">
+        <result property="mappingId"    column="mapping_id"    />
+        <result property="interfaceId"  column="interface_id"  />
+        <result property="targetTable"  column="target_table"  />
+        <result property="sourceField"  column="source_field"  />
+        <result property="targetColumn" column="target_column" />
+        <result property="keyFlag"      column="key_flag"      />
+        <result property="sortOrder"    column="sort_order"    />
+        <result property="status"       column="status"        />
+        <result property="remark"       column="remark"        />
+    </resultMap>
+    <sql id="selectDisFieldMappingVo">select mapping_id, interface_id, target_table, source_field, target_column, key_flag, sort_order, status, remark from dis_field_mapping</sql>
+    <select id="selectEnabledByInterfaceId" parameterType="Long" resultMap="DisFieldMappingResult">
+        <include refid="selectDisFieldMappingVo"/>
+        where interface_id = #{interfaceId} and status = '0'
+        order by sort_order, mapping_id
+    </select>
+    <select id="selectDisFieldMappingByMappingId" parameterType="Long" resultMap="DisFieldMappingResult">
+        <include refid="selectDisFieldMappingVo"/> where mapping_id = #{mappingId}
+    </select>
+    <select id="selectDisFieldMappingList" parameterType="DisFieldMapping" resultMap="DisFieldMappingResult">
+        <include refid="selectDisFieldMappingVo"/><where>
+            <if test="interfaceId != null"> and interface_id = #{interfaceId}</if>
+            <if test="targetTable != null and targetTable.trim() != ''"> and target_table = #{targetTable}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where> order by interface_id, sort_order, mapping_id
+    </select>
+    <insert id="insertDisFieldMapping" parameterType="DisFieldMapping" useGeneratedKeys="true" keyProperty="mappingId">insert into dis_field_mapping
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="interfaceId != null">interface_id,</if>
+            <if test="targetTable != null">target_table,</if>
+            <if test="sourceField != null">source_field,</if>
+            <if test="targetColumn != null">target_column,</if>
+            <if test="keyFlag != null">key_flag,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="status != null">status,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="interfaceId != null">#{interfaceId},</if>
+            <if test="targetTable != null">#{targetTable},</if>
+            <if test="sourceField != null">#{sourceField},</if>
+            <if test="targetColumn != null">#{targetColumn},</if>
+            <if test="keyFlag != null">#{keyFlag},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="status != null">#{status},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateDisFieldMapping" parameterType="DisFieldMapping">update dis_field_mapping
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="interfaceId != null">interface_id = #{interfaceId},</if>
+            <if test="targetTable != null">target_table = #{targetTable},</if>
+            <if test="sourceField != null">source_field = #{sourceField},</if>
+            <if test="targetColumn != null">target_column = #{targetColumn},</if>
+            <if test="keyFlag != null">key_flag = #{keyFlag},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim> where mapping_id = #{mappingId}
+    </update>
+    <delete id="deleteDisFieldMappingByMappingId" parameterType="Long">delete from dis_field_mapping where mapping_id = #{mappingId}</delete>
+    <delete id="deleteDisFieldMappingByMappingIds" parameterType="String">delete from dis_field_mapping where mapping_id in <foreach item="mappingId" collection="array" open="(" separator="," close=")">#{mappingId}</foreach></delete>
+</mapper>

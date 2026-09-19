@@ -74,6 +74,9 @@ public class SamStatusChange extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 流程实例ID（关联Flowable） */
+    private String procInstId;
+
     public Long getChangeId() { return changeId; }
     public void setChangeId(Long changeId) { this.changeId = changeId; }
 
@@ -116,6 +119,9 @@ public class SamStatusChange extends BaseEntity
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getProcInstId() { return procInstId; }
+    public void setProcInstId(String procInstId) { this.procInstId = procInstId; }
 
     @Override
     public String toString() {

@@ -95,4 +95,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from oa_task_record where record_id in
         <foreach item="recordId" collection="array" open="(" separator="," close=")">#{recordId}</foreach>
     </delete>
+
+    <select id="selectDoneInstanceIdsByAssigneeId" parameterType="Long" resultType="Long">
+        select distinct instance_id from oa_task_record where assignee_id = #{assigneeId}
+    </select>
 </mapper>

@@ -47,6 +47,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectTpmCourseLibraryByCourseId" parameterType="Long" resultMap="TpmCourseLibraryResult">
         <include refid="selectTpmCourseLibraryVo"/> where course_id = #{courseId} and del_flag = '0'
     </select>
+    <select id="selectPlanCourses" resultMap="TpmCourseLibraryResult">
+        <include refid="selectTpmCourseLibraryVo"/>
+        where del_flag = '0' and status = '0' and plan_id = #{planId}
+        <if test="semesterOrder != null"> and semester_order = #{semesterOrder}</if>
+        order by semester_order, course_code
+    </select>
     <select id="selectTpmCourseLibraryByCourseCode" parameterType="String" resultMap="TpmCourseLibraryResult">
         <include refid="selectTpmCourseLibraryVo"/> where course_code = #{courseCode} and del_flag = '0' limit 1
     </select>

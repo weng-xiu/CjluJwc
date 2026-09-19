@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.system.mapper.SysTodoMapper">
+    <resultMap type="SysTodo" id="SysTodoResult">
+        <id property="todoId" column="todo_id"/>
+        <result property="receiverId" column="receiver_id"/>
+        <result property="todoType" column="todo_type"/>
+        <result property="title" column="title"/>
+        <result property="businessType" column="business_type"/>
+        <result property="businessId" column="business_id"/>
+        <result property="status" column="status"/>
+        <result property="completeTime" column="complete_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+    <select id="selectById" parameterType="Long" resultMap="SysTodoResult">
+        select * from sys_todo where todo_id = #{todoId}
+    </select>
+    <select id="selectList" parameterType="SysTodo" resultMap="SysTodoResult">
+        select * from sys_todo
+        <where>
+            <if test="receiverId != null"> and receiver_id = #{receiverId}</if>
+            <if test="todoType != null and todoType != ''"> and todo_type = #{todoType}</if>
+            <if test="status != null and status != ''"> and status = #{status}</if>
+            <if test="businessType != null and businessType != ''"> and business_type = #{businessType}</if>
+        </where>
+        order by create_time desc
+    </select>
+    <insert id="insert" parameterType="SysTodo" useGeneratedKeys="true" keyProperty="todoId">
+        insert into sys_todo (receiver_id, todo_type, title, business_type, business_id, status, create_by, create_time)
+        values (#{receiverId}, #{todoType}, #{title}, #{businessType}, #{businessId}, #{status}, #{createBy}, #{createTime})
+    </insert>
+    <update id="complete">
+        update sys_todo set status = '1', complete_time = now() where todo_id = #{todoId} and receiver_id = #{receiverId} and status = '0'
+    </update>
+    <select id="countPending" parameterType="Long" resultType="int">
+        select count(1) from sys_todo where receiver_id = #{receiverId} and status = '0'
+    </select>
+</mapper>

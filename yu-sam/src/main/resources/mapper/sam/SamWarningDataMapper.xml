@@ -110,4 +110,69 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           and cl.course_type = '必修'
     </select>
 
+    <!-- 查询学生所属培养方案ID：按专业 + 入学年级(方案plan_year) 匹配已发布方案，取最新一条 -->
+    <select id="selectPlanIdByStudent" resultType="java.lang.Long">
+        select tp.plan_id
+        from sam_student st
+        join tpm_training_plan tp
+          on tp.major_id = st.major_id
+         and tp.del_flag = '0'
+         and tp.publish_status = '1'
+         and (tp.plan_year = st.enrollment_year or st.enrollment_year is null or tp.plan_year is null)
+        where st.student_id = #{studentId}
+        order by tp.plan_year desc, tp.plan_id desc
+        limit 1
+    </select>
+
+    <!-- 培养方案规定应修总学分：优先方案总学分，为空则汇总学分结构要求学分 -->
+    <select id="selectPlanRequiredCredits" resultType="java.lang.Double">
+        select coalesce(
+            nullif(tp.total_credits, 0),
+            (select coalesce(sum(cs.required_credit), 0) from tpm_credit_structure cs where cs.plan_id = tp.plan_id and cs.del_flag = '0')
+        )
+        from tpm_training_plan tp
+        where tp.plan_id = #{planId}
+    </select>
+
+    <!-- 学分结构分项 -->
+    <select id="selectPlanCreditSections" resultType="java.util.HashMap">
+        select cs.credit_type as creditType, cs.credit_type_name as creditTypeName, cs.required_credit as requiredCredit
+        from tpm_credit_structure cs
+        where cs.plan_id = #{planId} and cs.del_flag = '0'
+        order by cs.struct_id
+    </select>
+
+    <!-- 按课程属性分类统计已获学分 -->
+    <select id="sumEarnedCreditByCourseCategory" resultType="java.lang.Double">
+        select coalesce(sum(cl.credit), 0)
+        from aem_grade_record gr
+        join tpm_course_library cl on gr.course_id = cl.course_id
+        where gr.student_id = #{studentId}
+          <if test="semesterId != null">and gr.semester_id = #{semesterId}</if>
+          and gr.is_pass = '1' and gr.status = '0'
+          and cl.course_category = #{category}
+    </select>
+
+    <!-- 按课程属性分类统计已修读门数 -->
+    <select id="countCoursesByCourseCategory" resultType="java.lang.Integer">
+        select count(1)
+        from aem_grade_record gr
+        join tpm_course_library cl on gr.course_id = cl.course_id
+        where gr.student_id = #{studentId}
+          <if test="semesterId != null">and gr.semester_id = #{semesterId}</if>
+          and gr.status = '0'
+          and cl.course_category = #{category}
+    </select>
+
+    <!-- 按课程名称关键字统计已修读门数 -->
+    <select id="countCoursesByNameKeyword" resultType="java.lang.Integer">
+        select count(1)
+        from aem_grade_record gr
+        join tpm_course_library cl on gr.course_id = cl.course_id
+        where gr.student_id = #{studentId}
+          <if test="semesterId != null">and gr.semester_id = #{semesterId}</if>
+          and gr.status = '0'
+          and cl.course_name like concat('%', #{keyword}, '%')
+    </select>
+
 </mapper>

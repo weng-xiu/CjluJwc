@@ -78,4 +78,15 @@ public class DisSyncTaskController extends BaseController
     {
         return toAjax(disSyncTaskService.deleteDisSyncTaskByTaskIds(taskIds));
     }
+
+    /**
+     * 手动执行同步任务（D1：调用—解析—落库—留痕）
+     */
+    @PreAuthorize("@ss.hasPermi('dis:syncTask:execute')")
+    @Log(title = "同步任务", businessType = BusinessType.OTHER)
+    @PostMapping("/execute/{taskId}")
+    public AjaxResult execute(@PathVariable("taskId") Long taskId)
+    {
+        return success(disSyncTaskService.executeSyncTask(taskId));
+    }
 }

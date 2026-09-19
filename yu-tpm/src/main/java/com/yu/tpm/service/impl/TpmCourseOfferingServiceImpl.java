@@ -1,17 +1,29 @@
 package com.yu.tpm.service.impl;
 
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import com.yu.common.annotation.DataScope;
 import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
+import com.yu.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.tpm.mapper.TpmCourseOfferingMapper;
+import com.yu.tpm.mapper.TpmCourseLibraryMapper;
 import com.yu.tpm.mapper.TpmScheduleMapper;
 import com.yu.tpm.mapper.TpmSelectionEnrollmentMapper;
 import com.yu.tpm.domain.TpmCourseOffering;
+import com.yu.tpm.domain.TpmCourseLibrary;
 import com.yu.tpm.domain.TpmSchedule;
+import com.yu.tpm.domain.dto.BatchOfferingRequest;
+import com.yu.tpm.plan.OfferingGenerationResult;
+import com.yu.tpm.plan.OfferingPlanGenerator;
 import com.yu.tpm.service.ITpmCourseOfferingService;
 
 /**
@@ -31,6 +43,16 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
 
     @Autowired
     private TpmSelectionEnrollmentMapper tpmSelectionEnrollmentMapper;
+
+    @Autowired
+    private TpmCourseLibraryMapper tpmCourseLibraryMapper;
+
+    @Autowired
+    private OfferingPlanGenerator offeringPlanGenerator;
+
+    /** 默认开课容量（可配置，兼容排课默认） */
+    @Value("${tpm.schedule.defaultCapacity:30}")
+    private int defaultCapacity;
 
     @Override
     public TpmCourseOffering selectTpmCourseOfferingByOfferingId(Long offeringId)
@@ -127,5 +149,66 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
         offering.setOfferingStatus("2");
         offering.setUpdateTime(DateUtils.getNowDate());
         return tpmCourseOfferingMapper.updateTpmCourseOffering(offering);
+    }
+
+    @Transactional
+    @Override
+    public Map<String, Object> batchGenerateOfferings(BatchOfferingRequest request)
+    {
+        Map<String, Object> result = new HashMap<>();
+        if (request == null || request.getPlanId() == null)
+        {
+            throw new ServiceException("培养方案ID不能为空");
+        }
+        if (request.getSemesterId() == null)
+        {
+            throw new ServiceException("学期ID不能为空");
+        }
+        // 1. 方案课程
+        List<TpmCourseLibrary> courses = tpmCourseLibraryMapper.selectPlanCourses(request.getPlanId(), request.getSemesterOrder());
+        result.put("scanned", courses == null ? 0 : courses.size());
+        if (courses == null || courses.isEmpty())
+        {
+            result.put("generated", 0);
+            result.put("message", "该培养方案下未找到可生成课程（请检查方案课程与建议修读学期）");
+            return result;
+        }
+        // 2. 幂等：当前学期已存在开课的课程
+        boolean skipExisting = request.getSkipExisting() == null || request.getSkipExisting();
+        Set<Long> existingCourseIds = skipExisting
+                ? new HashSet<>(tpmCourseOfferingMapper.selectActiveCourseIdsBySemester(request.getSemesterId()))
+                : new HashSet<>();
+        // 3. 教师池
+        List<Long> teacherIds = tpmCourseOfferingMapper.selectTeacherPool(request.getTeacherDeptId());
+        // 4. 参数兼容
+        int capacity = request.getDefaultCapacity() != null && request.getDefaultCapacity() > 0
+                ? request.getDefaultCapacity() : defaultCapacity;
+        int classCount = request.getClassCount() != null && request.getClassCount() > 0
+                ? request.getClassCount() : 1;
+        // 5. 生成
+        OfferingGenerationResult gen = offeringPlanGenerator.generate(courses, existingCourseIds, teacherIds,
+                request.getSemesterId(), request.getCampusId(), capacity, classCount, skipExisting);
+        List<TpmCourseOffering> toInsert = gen.getOfferings();
+        if (!toInsert.isEmpty())
+        {
+            Date now = DateUtils.getNowDate();
+            String operator;
+            try { operator = SecurityUtils.getUsername(); } catch (Exception e) { operator = "system"; }
+            for (TpmCourseOffering o : toInsert)
+            {
+                o.setCreateBy(operator);
+                o.setCreateTime(now);
+            }
+            tpmCourseOfferingMapper.batchInsertTpmCourseOffering(toInsert);
+        }
+        result.put("generated", gen.getGenerated());
+        result.put("skippedExisting", gen.getSkippedExisting());
+        result.put("teacherAssigned", gen.getTeacherAssigned());
+        result.put("capacity", capacity);
+        result.put("classCount", classCount);
+        result.put("teacherPoolSize", teacherIds == null ? 0 : teacherIds.size());
+        result.put("message", String.format("开课计划生成完成：新增%d门，跳过已存在%d门，预分配教师%d门（待确认，可编辑后确认）",
+                gen.getGenerated(), gen.getSkippedExisting(), gen.getTeacherAssigned()));
+        return result;
     }
 }

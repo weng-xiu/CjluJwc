@@ -29,6 +29,11 @@
         </where> order by task_id
     </select>
     <select id="selectDisSyncTaskByTaskId" parameterType="Long" resultMap="DisSyncTaskResult"><include refid="selectDisSyncTaskVo"/> where task_id = #{taskId}</select>
+    <select id="selectDueSyncTasks" parameterType="java.util.Date" resultMap="DisSyncTaskResult">
+        <include refid="selectDisSyncTaskVo"/>
+        where status = '0' and (next_execute_time is null or next_execute_time &lt;= #{now})
+        order by task_id
+    </select>
     <insert id="insertDisSyncTask" parameterType="DisSyncTask" useGeneratedKeys="true" keyProperty="taskId">insert into dis_sync_task
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="taskName != null and taskName != ''">task_name,</if><if test="taskCode != null and taskCode != ''">task_code,</if>

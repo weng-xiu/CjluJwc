@@ -22,6 +22,7 @@ import org.flowable.engine.task.Comment;
 import org.flowable.task.api.Task;
 import org.flowable.task.api.TaskQuery;
 import org.flowable.task.api.history.HistoricTaskInstance;
+import org.flowable.task.api.history.HistoricTaskInstanceQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -190,6 +191,18 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
             query.taskNameLike("%" + taskName + "%");
         }
         return query.orderByTaskCreateTime().desc().list();
+    }
+
+    @Override
+    public List<HistoricTaskInstance> listDoneTasks(String assignee, String taskName)
+    {
+        HistoricTaskInstanceQuery query = historyService.createHistoricTaskInstanceQuery()
+                .taskAssignee(assignee).finished();
+        if (StringUtils.isNotEmpty(taskName))
+        {
+            query.taskNameLike("%" + taskName + "%");
+        }
+        return query.orderByHistoricTaskInstanceEndTime().desc().list();
     }
 
     @Override

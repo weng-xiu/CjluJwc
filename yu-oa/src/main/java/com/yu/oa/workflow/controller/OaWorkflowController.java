@@ -13,6 +13,7 @@ import org.flowable.engine.repository.Deployment;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.Task;
+import org.flowable.task.api.history.HistoricTaskInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -167,6 +168,32 @@ public class OaWorkflowController extends BaseController
             map.put("processDefinitionId", task.getProcessDefinitionId());
             map.put("createTime", task.getCreateTime());
             map.put("assignee", task.getAssignee());
+            result.add(map);
+        }
+        return getDataTable(result);
+    }
+
+    /**
+     * 查询当前用户已办任务
+     */
+    @PreAuthorize("@ss.hasPermi('oa:task:list')")
+    @GetMapping("/task/done")
+    public TableDataInfo doneList(@RequestParam(value = "taskName", required = false) String taskName)
+    {
+        startPage();
+        String assignee = SecurityUtils.getUsername();
+        List<HistoricTaskInstance> list = oaWorkflowService.listDoneTasks(assignee, taskName);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (HistoricTaskInstance hti : list)
+        {
+            Map<String, Object> map = new HashMap<>();
+            map.put("taskId", hti.getId());
+            map.put("taskName", hti.getName());
+            map.put("processInstanceId", hti.getProcessInstanceId());
+            map.put("processDefinitionId", hti.getProcessDefinitionId());
+            map.put("assignee", hti.getAssignee());
+            map.put("startTime", hti.getStartTime());
+            map.put("endTime", hti.getEndTime());
             result.add(map);
         }
         return getDataTable(result);

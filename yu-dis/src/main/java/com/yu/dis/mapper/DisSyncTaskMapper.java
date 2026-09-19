@@ -11,4 +11,7 @@ public interface DisSyncTaskMapper
     public int updateDisSyncTask(DisSyncTask disSyncTask);
     public int deleteDisSyncTaskByTaskId(Long taskId);
     public int deleteDisSyncTaskByTaskIds(Long[] taskIds);
+
+    /** 查询已启用且到达下次执行时间的任务（next_execute_time 为空视为立即到期） */
+    public List<DisSyncTask> selectDueSyncTasks(java.util.Date now);
 }
