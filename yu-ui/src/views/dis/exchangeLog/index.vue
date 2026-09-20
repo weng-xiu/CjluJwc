@@ -22,6 +22,8 @@
       <el-table-column label="响应码" align="center" prop="responseCode" width="80" />
       <el-table-column label="执行状态" align="center" prop="status" width="90"><template slot-scope="scope"><dict-tag :options="dict.type.sys_common_status" :value="scope.row.status"/></template></el-table-column>
       <el-table-column label="消耗时间(ms)" align="center" prop="costTime" width="110" />
+      <el-table-column label="同步批次号" align="center" prop="syncBatchNo" show-overflow-tooltip />
+      <el-table-column label="人工重推" align="center" prop="retryFlag" width="90"><template slot-scope="scope"><el-tag v-if="scope.row.retryFlag === '1'" type="warning" size="mini">重推</el-tag><span v-else>—</span></template></el-table-column>
       <el-table-column label="操作人员" align="center" prop="operator" width="100" />
       <el-table-column label="执行时间" align="center" prop="executeTime" width="160"><template slot-scope="scope"><span>{{ parseTime(scope.row.executeTime) }}</span></template></el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="120">
@@ -41,6 +43,8 @@
         <el-form-item label="请求方式"><el-input v-model="form.requestMethod" /></el-form-item>
         <el-form-item label="响应码"><el-input v-model="form.responseCode" /></el-form-item>
         <el-form-item label="消耗时间(ms)"><el-input v-model="form.costTime" /></el-form-item>
+        <el-form-item label="同步批次号"><el-input v-model="form.syncBatchNo" /></el-form-item>
+        <el-form-item label="人工重推"><el-input :value="form.retryFlag === '1' ? '是' : '否'" /></el-form-item>
         <el-form-item label="错误消息"><el-input v-model="form.errorMsg" type="textarea" /></el-form-item>
         <el-form-item label="请求数据"><el-input v-model="form.requestData" type="textarea" :rows="4" /></el-form-item>
         <el-form-item label="响应数据"><el-input v-model="form.responseData" type="textarea" :rows="4" /></el-form-item>

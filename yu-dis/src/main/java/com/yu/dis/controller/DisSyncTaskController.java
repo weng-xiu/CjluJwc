@@ -89,4 +89,15 @@ public class DisSyncTaskController extends BaseController
     {
         return success(disSyncTaskService.executeSyncTask(taskId));
     }
+
+    /**
+     * 人工重推（D2：失败补偿同步，日志留痕 retryFlag=1）
+     */
+    @PreAuthorize("@ss.hasPermi('dis:syncTask:repush')")
+    @Log(title = "同步任务", businessType = BusinessType.OTHER)
+    @PostMapping("/repush/{taskId}")
+    public AjaxResult repush(@PathVariable("taskId") Long taskId)
+    {
+        return success(disSyncTaskService.rePushTask(taskId));
+    }
 }

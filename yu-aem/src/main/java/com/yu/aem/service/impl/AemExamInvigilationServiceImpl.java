@@ -12,6 +12,7 @@ import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.aem.mapper.AemExamInvigilationMapper;
@@ -46,6 +47,18 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
 
     @Autowired
     private BrmTeacherMapper brmTeacherMapper;
+
+    /** A3：单教师本学期监考工作量上限（历史+本轮），<=0 表示不限制。 */
+    @Value("${aem.invigilation.maxPerTeacher:6}")
+    private int maxPerTeacher;
+
+    /** A3：是否硬性回避本课程任课教师（任课教师不派往本课程考场）。 */
+    @Value("${aem.invigilation.courseTeacherAvoid:true}")
+    private boolean courseTeacherAvoid;
+
+    /** A3：是否软性回避任课教师所属院系（无其他可选时可放宽）。 */
+    @Value("${aem.invigilation.deptAvoid:true}")
+    private boolean deptAvoid;
 
     @Override
     public AemExamInvigilation selectAemExamInvigilationByInvigilationId(Long invigilationId)
@@ -147,7 +160,41 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
         List<Long> busyIds = aemExamInvigilationMapper.selectBusyTeacherIds(
                 examPlan.getExamDate(), examPlan.getStartTime(), examPlan.getEndTime(), examId);
         Set<Long> busyTeacherIds = busyIds == null ? new HashSet<>() : new HashSet<>(busyIds);
-        // 5. 分配监考（每个考场1主1副，回避冲突：同场不重复 + 跨考试时间不冲突）
+        // 4.2 A3：本课程任课教师（硬回避，不派往本课程考场）
+        Set<Long> courseTeacherIds = new HashSet<>();
+        if (courseTeacherAvoid && examPlan.getCourseId() != null)
+        {
+            List<Long> ct = aemExamInvigilationMapper.selectCourseTeacherIds(examPlan.getCourseId(), examPlan.getSemesterId());
+            if (ct != null) courseTeacherIds.addAll(ct);
+        }
+        // 4.3 A3：任课教师所属院系（软回避）
+        Set<Long> courseDeptIds = new HashSet<>();
+        if (deptAvoid && examPlan.getCourseId() != null)
+        {
+            List<Long> cd = aemExamInvigilationMapper.selectCourseTeacherDeptIds(examPlan.getCourseId(), examPlan.getSemesterId());
+            if (cd != null) courseDeptIds.addAll(cd);
+        }
+        // 4.4 A3：各教师本学期已监考次数（次数均衡 + 工作量上限基数）
+        Map<Long, Integer> load = new HashMap<>();
+        if (examPlan.getSemesterId() != null)
+        {
+            List<Map<String, Object>> counts = aemExamInvigilationMapper.selectInvigilationCountBySemester(examPlan.getSemesterId(), examId);
+            if (counts != null)
+            {
+                for (Map<String, Object> row : counts)
+                {
+                    Object tid = row.get("teacherId");
+                    Object cnt = row.get("cnt");
+                    if (tid != null && cnt != null)
+                    {
+                        load.put(Long.valueOf(tid.toString()), Integer.valueOf(cnt.toString()));
+                    }
+                }
+            }
+        }
+        // 5. 分配监考（每个考场1主1副）
+        //    硬约束：同场不重复 + 跨考试时间不冲突 + 回避本课程任课教师；
+        //    软偏好：回避任课教师院系、工作量上限、优先选取本学期累计监考次数最少者（次数均衡）。
         List<AemExamInvigilation> dispatchList = new ArrayList<>();
         Set<Long> usedTeacherIds = new HashSet<>(); // 已分配的教师（避免同一场考试重复分配）
         int assignedCount = 0;
@@ -155,24 +202,26 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
         List<String> failReasons = new ArrayList<>();
         for (Long classroomId : classroomIds)
         {
-            // 分配主监考：检查跨考试时间冲突
-            Long mainTeacherId = findAvailableTeacher(teachers, usedTeacherIds, busyTeacherIds);
+            // 分配主监考
+            Long mainTeacherId = findAvailableTeacher(teachers, usedTeacherIds, busyTeacherIds,
+                    courseTeacherIds, courseDeptIds, load);
             if (mainTeacherId == null)
             {
                 failCount++;
-                failReasons.add("教室[" + classroomId + "]无可用主监考教师（均时间冲突）");
+                failReasons.add("教室[" + classroomId + "]无可用主监考教师（均时间冲突/回避）");
                 continue;
             }
             usedTeacherIds.add(mainTeacherId);
-            AemExamInvigilation mainInvigilation = buildInvigilation(examId, classroomId, mainTeacherId, examPlan, "0");
-            dispatchList.add(mainInvigilation);
+            bumpLoad(load, mainTeacherId);
+            dispatchList.add(buildInvigilation(examId, classroomId, mainTeacherId, examPlan, "0"));
             // 分配副监考
-            Long assistTeacherId = findAvailableTeacher(teachers, usedTeacherIds, busyTeacherIds);
+            Long assistTeacherId = findAvailableTeacher(teachers, usedTeacherIds, busyTeacherIds,
+                    courseTeacherIds, courseDeptIds, load);
             if (assistTeacherId != null)
             {
                 usedTeacherIds.add(assistTeacherId);
-                AemExamInvigilation assistInvigilation = buildInvigilation(examId, classroomId, assistTeacherId, examPlan, "1");
-                dispatchList.add(assistInvigilation);
+                bumpLoad(load, assistTeacherId);
+                dispatchList.add(buildInvigilation(examId, classroomId, assistTeacherId, examPlan, "1"));
             }
             assignedCount++;
         }
@@ -185,27 +234,58 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
         result.put("assignedCount", assignedCount);
         result.put("failCount", failCount);
         result.put("failReasons", failReasons);
+        result.put("courseTeacherAvoided", courseTeacherIds.size());
+        result.put("maxPerTeacher", maxPerTeacher);
         result.put("message", String.format("监考派发完成：安排%d个考场，成功%d个，失败%d个", classroomIds.size(), assignedCount, failCount));
-        log.info("考试[{}]监考派发完成：成功{}个考场", examId, assignedCount);
+        log.info("考试[{}]监考派发完成：成功{}个考场，回避任课教师{}人", examId, assignedCount, courseTeacherIds.size());
         return result;
     }
 
+    /** 本轮派发计数自增（用于次数均衡与工作量上限的实时评估）。 */
+    private void bumpLoad(Map<Long, Integer> load, Long teacherId)
+    {
+        load.merge(teacherId, 1, Integer::sum);
+    }
+
     /**
-     * 从教师列表中查找可用教师。
-     * 双重校验：1) 同一场考试未分配过；2) 在考试时间段内无其他监考任务（跨考试冲突，使用预取的冲突集合）。
+     * 从教师列表中查找可用教师（A3 增强）。
+     * 硬排除：本轮已用、时段冲突(busy)、本课程任课教师。
+     * 软偏好：回避任课教师院系、未超工作量上限；在可选集合中优先选取本学期累计监考次数最少者，实现次数均衡。
+     * 若软偏好集合为空则放宽软约束（仍严格遵守硬排除），保证可派发。
      */
     private Long findAvailableTeacher(List<BrmTeacher> teachers, Set<Long> usedTeacherIds,
-                                     Set<Long> busyTeacherIds)
+                                     Set<Long> busyTeacherIds, Set<Long> courseTeacherIds,
+                                     Set<Long> courseDeptIds, Map<Long, Integer> load)
     {
+        BrmTeacher preferred = null;   // 满足软偏好者
+        BrmTeacher fallback = null;    // 仅满足硬约束者
         for (BrmTeacher teacher : teachers)
         {
             Long tid = teacher.getTeacherId();
-            if (usedTeacherIds.contains(tid) || busyTeacherIds.contains(tid))
+            if (tid == null || usedTeacherIds.contains(tid) || busyTeacherIds.contains(tid)
+                    || courseTeacherIds.contains(tid))
             {
-                continue;
+                continue; // 硬排除
             }
-            return tid;
+            int cnt = load.getOrDefault(tid, 0);
+            boolean withinCap = maxPerTeacher <= 0 || cnt < maxPerTeacher;
+            boolean deptOk = !deptAvoid || teacher.getDeptId() == null
+                    || !courseDeptIds.contains(teacher.getDeptId());
+            // 次数均衡：累计监考次数最少者优先
+            if (preferred == null || cnt < load.getOrDefault(preferred.getTeacherId(), 0))
+            {
+                if (withinCap && deptOk)
+                {
+                    preferred = teacher;
+                }
+            }
+            if (fallback == null || cnt < load.getOrDefault(fallback.getTeacherId(), 0))
+            {
+                fallback = teacher;
+            }
         }
+        if (preferred != null) return preferred.getTeacherId();
+        if (fallback != null) return fallback.getTeacherId();
         return null;
     }
 

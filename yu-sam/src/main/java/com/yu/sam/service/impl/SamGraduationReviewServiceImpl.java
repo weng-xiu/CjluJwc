@@ -227,4 +227,121 @@ public class SamGraduationReviewServiceImpl implements ISamGraduationReviewServi
         }
         return sb.toString().trim();
     }
+
+    /**
+     * 学生自助毕业预审（S4，只读，不落库）。
+     * 复用 S1/S2 的判定口径，但产出结构化的分项达成明细、差距清单与预计结论，
+     * 供学生门户「毕业预审」页展示；不写入 sam_graduation_review。
+     */
+    @Override
+    public Map<String, Object> preReview(Long studentId)
+    {
+        Map<String, Object> result = new LinkedHashMap<>();
+        // 总学分：已获 vs 应修（培养方案优先，降级旧口径）
+        Double earnedCredits = samWarningDataMapper.selectStudentEarnedCredits(studentId, null);
+        Integer failCount = samWarningDataMapper.selectStudentFailCourseCount(studentId, null);
+        Long planId = samWarningDataMapper.selectPlanIdByStudent(studentId);
+        Double requiredCredits;
+        String creditSource;
+        if (planId != null) {
+            Double planReq = samWarningDataMapper.selectPlanRequiredCredits(planId);
+            if (planReq != null && planReq > 0) {
+                requiredCredits = planReq;
+                creditSource = "培养方案";
+            } else {
+                requiredCredits = samWarningDataMapper.selectStudentRequiredCredits(studentId, null);
+                creditSource = "已修学分之和（方案未配置应修学分）";
+            }
+        } else {
+            requiredCredits = samWarningDataMapper.selectStudentRequiredCredits(studentId, null);
+            creditSource = "已修学分之和（无匹配培养方案）";
+        }
+        double earned = earnedCredits != null ? earnedCredits : 0.0;
+        double required = requiredCredits != null ? requiredCredits : 0.0;
+        boolean creditQualified = earned >= required;
+
+        // 英语/体育分项
+        Integer englishFail = countFailByAttributeOrKeyword(studentId, "FOREIGN_LANGUAGE", "英语");
+        Integer peFail = countFailByAttributeOrKeyword(studentId, "PE", "体育");
+        boolean courseQualified = failCount == null || failCount == 0;
+        boolean englishQualified = englishFail == null || englishFail == 0;
+        boolean peQualified = peFail == null || peFail == 0;
+
+        // 概览
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("earnedCredits", earned);
+        summary.put("requiredCredits", required);
+        summary.put("creditGap", Math.max(0.0, required - earned));
+        summary.put("creditPercent", required > 0 ? Math.min(100.0, Math.round(earned / required * 1000.0) / 10.0) : 100.0);
+        summary.put("failCourseCount", failCount == null ? 0 : failCount);
+        summary.put("creditSource", creditSource);
+        result.put("summary", summary);
+
+        // 分项达标情况（四项条件）
+        List<Map<String, Object>> items = new ArrayList<>();
+        items.add(preReviewItem("总学分", creditQualified,
+                "已获 " + earned + " / 应修 " + required + "（" + creditSource + "）"));
+        items.add(preReviewItem("不及格课程", courseQualified,
+                courseQualified ? "无不及格课程" : ("存在 " + failCount + " 门不及格课程")));
+        items.add(preReviewItem("英语课程", englishQualified,
+                englishQualified ? "英语类课程全部通过" : "存在未通过的英语类课程"));
+        items.add(preReviewItem("体育课程", peQualified,
+                peQualified ? "体育类课程全部通过" : "存在未通过的体育类课程"));
+        result.put("items", items);
+
+        // 培养方案学分结构分项（若可获取）
+        List<Map<String, Object>> sections = new ArrayList<>();
+        if (planId != null) {
+            List<Map<String, Object>> planSections = samWarningDataMapper.selectPlanCreditSections(planId);
+            if (planSections != null) {
+                for (Map<String, Object> s : planSections) {
+                    String category = s.get("creditType") != null ? s.get("creditType").toString() : null;
+                    String name = s.get("creditTypeName") != null ? s.get("creditTypeName").toString() : category;
+                    double reqSec = s.get("requiredCredit") != null ? Double.parseDouble(s.get("requiredCredit").toString()) : 0.0;
+                    Double e = samWarningDataMapper.sumEarnedCreditByCourseCategory(studentId, null, category);
+                    double earnedSec = e != null ? e : 0.0;
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("creditType", category);
+                    row.put("creditTypeName", name);
+                    row.put("requiredCredit", reqSec);
+                    row.put("earnedCredit", earnedSec);
+                    row.put("qualified", earnedSec >= reqSec);
+                    row.put("gap", Math.max(0.0, reqSec - earnedSec));
+                    sections.add(row);
+                }
+            }
+        }
+        result.put("sections", sections);
+
+        // 差距清单
+        List<String> gaps = new ArrayList<>();
+        if (!creditQualified) gaps.add("总学分还差 " + Math.round((required - earned) * 10.0) / 10.0 + " 学分");
+        if (!courseQualified) gaps.add("尚有 " + failCount + " 门不及格课程需重修/补考");
+        if (!englishQualified) gaps.add("英语类课程未全部通过");
+        if (!peQualified) gaps.add("体育类课程未全部通过");
+        for (Map<String, Object> row : sections) {
+            if (Boolean.FALSE.equals(row.get("qualified"))) {
+                gaps.add(row.get("creditTypeName") + "还差 " + row.get("gap") + " 学分");
+            }
+        }
+        result.put("gaps", gaps);
+
+        boolean willGraduate = creditQualified && courseQualified && englishQualified && peQualified;
+        result.put("willGraduate", willGraduate);
+        result.put("conclusion", willGraduate
+                ? "按当前学业进展，预计满足毕业条件"
+                : "按当前学业进展，预计暂不满足毕业条件，请关注差距清单");
+        result.put("planId", planId);
+        result.put("disclaimer", "本结果为系统自助预审，仅供参考，最终毕业资格以学校毕业审核为准");
+        return result;
+    }
+
+    /** 构造预审分项项 */
+    private Map<String, Object> preReviewItem(String name, boolean qualified, String detail) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("name", name);
+        m.put("qualified", qualified);
+        m.put("detail", detail);
+        return m;
+    }
 }

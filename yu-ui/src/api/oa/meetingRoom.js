@@ -29,3 +29,8 @@ export function delMeetingRoom(roomId) {
 export function exportMeetingRoom(query) {
   return request({ url: '/oa/meetingRoom/export', method: 'post', params: query, responseType: 'blob' })
 }
+
+// O2：查询会议室某天占用安排
+export function roomOccupancy(roomId, date) {
+  return request({ url: '/oa/meetingRoom/occupancy/' + roomId, method: 'get', params: { date } })
+}

@@ -34,3 +34,8 @@ export function exportSyncTask(query) {
 export function executeSyncTask(taskId) {
   return request({ url: '/dis/task/execute/' + taskId, method: 'post' })
 }
+
+// D2：人工重推（失败补偿同步，日志标记重推标识）
+export function repushSyncTask(taskId) {
+  return request({ url: '/dis/task/repush/' + taskId, method: 'post' })
+}

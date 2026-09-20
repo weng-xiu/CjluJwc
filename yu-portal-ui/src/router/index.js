@@ -57,6 +57,7 @@ export const constantRoutes = [
       { path: 'exam',            component: () => import('@/views/exam/index'),            name: 'Exam',            meta: { title: '考试安排',     permission: 'portal:exam:list' } },
       { path: 'evaluation',      component: () => import('@/views/evaluation/index'),      name: 'Evaluation',      meta: { title: '评教入口',     permission: 'portal:evaluation:list' } },
       { path: 'studentStatus',   component: () => import('@/views/studentStatus/index'),   name: 'StudentStatus',   meta: { title: '学籍服务',     permission: 'portal:status:list' } },
+      { path: 'graduation',      component: () => import('@/views/graduation/index'),      name: 'Graduation',      meta: { title: '毕业预审',     permission: 'portal:graduation:list' } },
       { path: 'notice',          component: () => import('@/views/notice/index'),          name: 'Notice',          meta: { title: '教务通知',     permission: 'portal:notice:list' } },
       { path: 'teacherSchedule', component: () => import('@/views/teacherSchedule/index'), name: 'TeacherSchedule', meta: { title: '个人课表',     permission: 'portal:teacherSchedule:list' } },
       { path: 'gradeEntry',      component: () => import('@/views/gradeEntry/index'),      name: 'GradeEntry',      meta: { title: '成绩录入',     permission: 'portal:gradeEntry:list' } },

@@ -122,4 +122,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             or (start_time &lt;= #{startTime} and end_time &gt;= #{endTime})
         )
     </select>
+
+    <!-- O2：会议室占用日历——查询指定会议室在时间区间内的有效会议安排（排除已取消） -->
+    <select id="selectRoomOccupancy" parameterType="java.util.HashMap" resultMap="OaMeetingResult">
+        <include refid="selectOaMeetingVo"/>
+        where room_id = #{roomId}
+          and meeting_status != '3'
+          <if test="beginTime != null">and start_time &gt;= #{beginTime}</if>
+          <if test="endTime != null">and start_time &lt; #{endTime}</if>
+        order by start_time
+    </select>
 </mapper>

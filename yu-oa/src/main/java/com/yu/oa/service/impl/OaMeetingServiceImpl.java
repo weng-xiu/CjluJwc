@@ -9,12 +9,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.SecurityUtils;
+import com.yu.common.exception.ServiceException;
 import com.yu.oa.domain.OaMeeting;
 import com.yu.oa.domain.OaMeetingMinutes;
 import com.yu.oa.domain.OaMeetingParticipant;
+import com.yu.oa.domain.OaMeetingRoom;
 import com.yu.oa.mapper.OaMeetingMapper;
 import com.yu.oa.mapper.OaMeetingMinutesMapper;
 import com.yu.oa.mapper.OaMeetingParticipantMapper;
+import com.yu.oa.mapper.OaMeetingRoomMapper;
 import com.yu.oa.service.IOaMeetingService;
 
 /**
@@ -34,6 +37,9 @@ public class OaMeetingServiceImpl implements IOaMeetingService
 
     @Autowired
     private OaMeetingMinutesMapper oaMeetingMinutesMapper;
+
+    @Autowired
+    private OaMeetingRoomMapper oaMeetingRoomMapper;
 
     @Override
     public OaMeeting selectOaMeetingByMeetingId(Long meetingId)
@@ -61,6 +67,7 @@ public class OaMeetingServiceImpl implements IOaMeetingService
         {
             throw new RuntimeException("会议室时间冲突，请选择其他时间段");
         }
+        checkRoomCapacity(oaMeeting);
         oaMeeting.setCreateTime(DateUtils.getNowDate());
         oaMeeting.setOrganizerId(SecurityUtils.getLoginUser().getUserId());
         oaMeeting.setOrganizerName(SecurityUtils.getUsername());
@@ -78,6 +85,7 @@ public class OaMeetingServiceImpl implements IOaMeetingService
         {
             throw new RuntimeException("会议室时间冲突，请选择其他时间段");
         }
+        checkRoomCapacity(oaMeeting);
         oaMeeting.setUpdateTime(DateUtils.getNowDate());
         oaMeetingParticipantMapper.deleteOaMeetingParticipantByMeetingId(oaMeeting.getMeetingId());
         insertParticipant(oaMeeting);
@@ -118,6 +126,39 @@ public class OaMeetingServiceImpl implements IOaMeetingService
         params.put("endTime", oaMeeting.getEndTime());
         params.put("meetingId", oaMeeting.getMeetingId());
         return oaMeetingMapper.countMeetingConflict(params) > 0;
+    }
+
+    @Override
+    public List<OaMeeting> roomOccupancy(Long roomId, Date beginTime, Date endTime)
+    {
+        Map<String, Object> params = new HashMap<>();
+        params.put("roomId", roomId);
+        params.put("beginTime", beginTime);
+        params.put("endTime", endTime);
+        return oaMeetingMapper.selectRoomOccupancy(params);
+    }
+
+    /**
+     * O2：容量校验——参会人数（含组织者，至少 1）不得超过会议室容纳人数；capacity 为空表示不限制。
+     */
+    private void checkRoomCapacity(OaMeeting oaMeeting)
+    {
+        if (oaMeeting.getRoomId() == null)
+        {
+            return;
+        }
+        OaMeetingRoom room = oaMeetingRoomMapper.selectOaMeetingRoomByRoomId(oaMeeting.getRoomId());
+        if (room == null || room.getCapacity() == null || room.getCapacity() <= 0)
+        {
+            return; // 未配置容量则不限制
+        }
+        List<OaMeetingParticipant> participants = oaMeeting.getParticipantList();
+        int attendees = (participants == null || participants.isEmpty()) ? 1 : participants.size() + 1;
+        if (attendees > room.getCapacity())
+        {
+            throw new ServiceException("参会人数(" + attendees + ")超过会议室容纳人数("
+                    + room.getCapacity() + ")，请更换更大的会议室");
+        }
     }
 
     @Override

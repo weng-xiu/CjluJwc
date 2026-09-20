@@ -61,6 +61,15 @@ public class DisSyncTask extends BaseEntity
     @Excel(name = "失败次数")
     private Integer failCount;
 
+    /** D2：同步模式（0全量 1增量） */
+    @Excel(name = "同步模式", readConverterExp = "0=全量,1=增量")
+    private String syncMode;
+
+    /** D2：增量水位（上次成功同步的截止时间点，仅成功执行后推进） */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Excel(name = "增量水位", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
+    private Date lastWatermark;
+
     /** 状态 */
     @Excel(name = "状态", readConverterExp = "0=启用,1=停用")
     private String status;
@@ -100,6 +109,12 @@ public class DisSyncTask extends BaseEntity
 
     public Integer getFailCount() { return failCount; }
     public void setFailCount(Integer failCount) { this.failCount = failCount; }
+
+    public String getSyncMode() { return syncMode; }
+    public void setSyncMode(String syncMode) { this.syncMode = syncMode; }
+
+    public Date getLastWatermark() { return lastWatermark; }
+    public void setLastWatermark(Date lastWatermark) { this.lastWatermark = lastWatermark; }
 
     @Size(min = 0, max = 1, message = "状态长度不能超过1个字符")
     public String getStatus() { return status; }

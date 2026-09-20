@@ -15,15 +15,18 @@
         <result property="executeTime"   column="execute_time"    />
         <result property="costTime"      column="cost_time"       />
         <result property="operator"      column="operator"        />
+        <result property="syncBatchNo"   column="sync_batch_no"   />
+        <result property="retryFlag"     column="retry_flag"      />
         <result property="createTime"    column="create_time"     />
     </resultMap>
-    <sql id="selectDisDataExchangeLogVo">select log_id, system_id, interface_id, request_url, request_method, request_data, response_data, response_code, status, error_msg, execute_time, cost_time, operator, create_time from dis_data_exchange_log</sql>
+    <sql id="selectDisDataExchangeLogVo">select log_id, system_id, interface_id, request_url, request_method, request_data, response_data, response_code, status, error_msg, execute_time, cost_time, operator, sync_batch_no, retry_flag, create_time from dis_data_exchange_log</sql>
     <select id="selectDisDataExchangeLogList" parameterType="DisDataExchangeLog" resultMap="DisDataExchangeLogResult">
         <include refid="selectDisDataExchangeLogVo"/><where>
             <if test="systemId != null"> and system_id = #{systemId}</if>
             <if test="interfaceId != null"> and interface_id = #{interfaceId}</if>
             <if test="status != null and status.trim() != ''"> and status = #{status}</if>
             <if test="requestMethod != null and requestMethod.trim() != ''"> and request_method = #{requestMethod}</if>
+            <if test="syncBatchNo != null and syncBatchNo.trim() != ''"> and sync_batch_no = #{syncBatchNo}</if>
         </where> order by log_id desc
     </select>
     <select id="selectDisDataExchangeLogByLogId" parameterType="Long" resultMap="DisDataExchangeLogResult"><include refid="selectDisDataExchangeLogVo"/> where log_id = #{logId}</select>
@@ -34,7 +37,8 @@
             <if test="requestData != null">request_data,</if><if test="responseData != null">response_data,</if>
             <if test="responseCode != null">response_code,</if><if test="status != null">status,</if>
             <if test="errorMsg != null">error_msg,</if><if test="executeTime != null">execute_time,</if>
-            <if test="costTime != null">cost_time,</if><if test="operator != null">operator,</if><if test="createTime != null">create_time,</if>
+            <if test="costTime != null">cost_time,</if><if test="operator != null">operator,</if>
+            <if test="syncBatchNo != null">sync_batch_no,</if><if test="retryFlag != null">retry_flag,</if><if test="createTime != null">create_time,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="systemId != null">#{systemId},</if><if test="interfaceId != null">#{interfaceId},</if>
@@ -42,7 +46,8 @@
             <if test="requestData != null">#{requestData},</if><if test="responseData != null">#{responseData},</if>
             <if test="responseCode != null">#{responseCode},</if><if test="status != null">#{status},</if>
             <if test="errorMsg != null">#{errorMsg},</if><if test="executeTime != null">#{executeTime},</if>
-            <if test="costTime != null">#{costTime},</if><if test="operator != null">#{operator},</if><if test="createTime != null">#{createTime},</if>
+            <if test="costTime != null">#{costTime},</if><if test="operator != null">#{operator},</if>
+            <if test="syncBatchNo != null">#{syncBatchNo},</if><if test="retryFlag != null">#{retryFlag},</if><if test="createTime != null">#{createTime},</if>
         </trim>
     </insert>
     <delete id="deleteDisDataExchangeLogByLogId" parameterType="Long">delete from dis_data_exchange_log where log_id = #{logId}</delete>

@@ -2,6 +2,7 @@ package com.yu.aem.mapper;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import org.apache.ibatis.annotations.Param;
 import com.yu.aem.domain.AemExamInvigilation;
 
@@ -50,4 +51,26 @@ public interface AemExamInvigilationMapper
                                     @Param("startTime") String startTime,
                                     @Param("endTime") String endTime,
                                     @Param("excludeExamId") Long excludeExamId);
+
+    /**
+     * A3：查询某课程的任课教师ID集合（来自 tpm_course_offering，用于回避派发）。
+     *
+     * @param courseId   课程ID
+     * @param semesterId 学期ID（可为null，为空时匹配该课程全部任课教师）
+     */
+    List<Long> selectCourseTeacherIds(@Param("courseId") Long courseId,
+                                      @Param("semesterId") Long semesterId);
+
+    /**
+     * A3：查询某课程任课教师所属院系ID集合（用于院系回避，软约束）。
+     */
+    List<Long> selectCourseTeacherDeptIds(@Param("courseId") Long courseId,
+                                          @Param("semesterId") Long semesterId);
+
+    /**
+     * A3：按学期统计各教师已有监考次数（用于次数均衡与工作量上限）。
+     * 返回每项含 teacherId 与 cnt。excludeExamId 用于排除当前考试（重排前旧记录已删除，一般传 null）。
+     */
+    List<Map<String, Object>> selectInvigilationCountBySemester(@Param("semesterId") Long semesterId,
+                                                                @Param("excludeExamId") Long excludeExamId);
 }

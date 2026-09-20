@@ -19,6 +19,8 @@
       <el-table-column label="系统ID" align="center" prop="systemId" width="80" />
       <el-table-column label="接口ID" align="center" prop="interfaceId" width="80" />
       <el-table-column label="Cron表达式" align="center" prop="cronExpression" />
+      <el-table-column label="同步模式" align="center" prop="syncMode" width="80"><template slot-scope="scope"><span>{{ scope.row.syncMode === '1' ? '增量' : '全量' }}</span></template></el-table-column>
+      <el-table-column label="增量水位" align="center" prop="lastWatermark" width="160"><template slot-scope="scope"><span>{{ parseTime(scope.row.lastWatermark) || '—' }}</span></template></el-table-column>
       <el-table-column label="上次执行时间" align="center" prop="lastExecuteTime" width="160"><template slot-scope="scope"><span>{{ parseTime(scope.row.lastExecuteTime) }}</span></template></el-table-column>
       <el-table-column label="执行次数" align="center" prop="executeCount" width="80" />
       <el-table-column label="失败次数" align="center" prop="failCount" width="80" />
@@ -26,6 +28,7 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-video-play" @click="handleExecute(scope.row)" v-hasPermi="['dis:syncTask:execute']">执行</el-button>
+          <el-button size="mini" type="text" icon="el-icon-refresh" @click="handleRepush(scope.row)" v-hasPermi="['dis:syncTask:repush']">重推</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['dis:syncTask:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['dis:syncTask:remove']">删除</el-button>
         </template>
@@ -39,6 +42,7 @@
         <el-form-item label="外部系统" prop="systemId"><el-input-number v-model="form.systemId" placeholder="请输入系统ID" :min="1" /></el-form-item>
         <el-form-item label="接口ID"><el-input-number v-model="form.interfaceId" placeholder="请输入接口ID" :min="1" /></el-form-item>
         <el-form-item label="Cron表达式"><el-input v-model="form.cronExpression" placeholder="请输入Cron表达式" /></el-form-item>
+        <el-form-item label="同步模式"><el-radio-group v-model="form.syncMode"><el-radio label="0">全量</el-radio><el-radio label="1">增量（水位线）</el-radio></el-radio-group></el-form-item>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
@@ -54,6 +58,7 @@
             <el-descriptions-item label="耗时(ms)">{{ execResult.elapsedMs }}</el-descriptions-item>
             <el-descriptions-item label="落库行数">{{ execResult.persistedRows }}</el-descriptions-item>
             <el-descriptions-item label="落库表">{{ (execResult.tables || []).join(', ') || '—' }}</el-descriptions-item>
+            <el-descriptions-item label="批次号" :span="2">{{ execResult.batchNo }}</el-descriptions-item>
           </el-descriptions>
           <div v-if="execResult.persistError" style="color:#E6A23C;margin-top:8px">落库异常：{{ execResult.persistError }}</div>
         </template>
@@ -65,7 +70,7 @@
   </div>
 </template>
 <script>
-import { listSyncTask, getSyncTask, delSyncTask, addSyncTask, updateSyncTask, executeSyncTask } from "@/api/dis/syncTask"
+import { listSyncTask, getSyncTask, delSyncTask, addSyncTask, updateSyncTask, executeSyncTask, repushSyncTask } from "@/api/dis/syncTask"
 export default {
   name: "DisSyncTask", dicts: ['sys_normal_disable'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, taskList: [], title: "", open: false,
@@ -77,7 +82,7 @@ export default {
   methods: {
     getList() { this.loading = true; listSyncTask(this.queryParams).then(response => { this.taskList = response.rows; this.total = response.total; this.loading = false }) },
     cancel() { this.open = false; this.reset() },
-    reset() { this.form = { taskId: null, taskName: null, taskCode: null, systemId: null, interfaceId: null, cronExpression: null, status: "0" }; this.resetForm("form") },
+    reset() { this.form = { taskId: null, taskName: null, taskCode: null, systemId: null, interfaceId: null, cronExpression: null, syncMode: "0", status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.taskId); this.single = selection.length !== 1; this.multiple = !selection.length },
@@ -90,6 +95,16 @@ export default {
     handleExecute(row) {
       this.$modal.confirm('是否立即执行同步任务「' + row.taskName + '」（调用—解析—落库—留痕）？').then(() => {
         return executeSyncTask(row.taskId);
+      }).then(response => {
+        this.execResult = response.data;
+        this.execOpen = true;
+        this.getList();
+      }).catch(() => {});
+    },
+    /** D2：人工重推（失败补偿同步） */
+    handleRepush(row) {
+      this.$modal.confirm('是否人工重推同步任务「' + row.taskName + '」？将以批次留痕方式重新执行一次补偿同步。').then(() => {
+        return repushSyncTask(row.taskId);
       }).then(response => {
         this.execResult = response.data;
         this.execOpen = true;

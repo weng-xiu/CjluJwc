@@ -70,6 +70,14 @@ public class DisDataExchangeLog extends BaseEntity
     @Excel(name = "操作人员")
     private String operator;
 
+    /** 同步批次号（D2：一次执行的全链路留痕标识） */
+    @Excel(name = "同步批次号")
+    private String syncBatchNo;
+
+    /** 是否人工重推（0否 1是） */
+    @Excel(name = "人工重推", readConverterExp = "0=否,1=是")
+    private String retryFlag;
+
     public Long getLogId() { return logId; }
     public void setLogId(Long logId) { this.logId = logId; }
 
@@ -118,6 +126,13 @@ public class DisDataExchangeLog extends BaseEntity
     @Size(min = 0, max = 50, message = "操作人员长度不能超过50个字符")
     public String getOperator() { return operator; }
     public void setOperator(String operator) { this.operator = operator; }
+
+    @Size(min = 0, max = 64, message = "同步批次号长度不能超过64个字符")
+    public String getSyncBatchNo() { return syncBatchNo; }
+    public void setSyncBatchNo(String syncBatchNo) { this.syncBatchNo = syncBatchNo; }
+
+    public String getRetryFlag() { return retryFlag; }
+    public void setRetryFlag(String retryFlag) { this.retryFlag = retryFlag; }
 
     @Override
     public String toString() {

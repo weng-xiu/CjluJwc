@@ -19,4 +19,7 @@ public interface OaMeetingMapper
     public int deleteOaMeetingByMeetingId(Long meetingId);
     public int deleteOaMeetingByMeetingIds(Long[] meetingIds);
     public int countMeetingConflict(Map<String, Object> params);
+
+    /** O2：查询会议室在给定时间区间内的占用安排（排除已取消） */
+    public List<OaMeeting> selectRoomOccupancy(Map<String, Object> params);
 }

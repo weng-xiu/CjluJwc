@@ -13,6 +13,7 @@ export const portalMenuConfig = [
   { permission: 'portal:exam:list',           path: '/exam',            title: '考试安排',     icon: 'el-icon-tickets',        group: '学生服务' },
   { permission: 'portal:evaluation:list',     path: '/evaluation',      title: '评教入口',     icon: 'el-icon-star-on',        group: '学生服务' },
   { permission: 'portal:status:list',         path: '/studentStatus',   title: '学籍服务',     icon: 'el-icon-postcard',       group: '学生服务' },
+  { permission: 'portal:graduation:list',     path: '/graduation',      title: '毕业预审',     icon: 'el-icon-s-check',        group: '学生服务' },
   { permission: 'portal:notice:list',         path: '/notice',          title: '教务通知',     icon: 'el-icon-message-solid',  group: '学生服务' },
   // 教师端菜单
   { permission: 'portal:teacherSchedule:list', path: '/teacherSchedule', title: '个人课表',     icon: 'el-icon-date',           group: '教师服务' },

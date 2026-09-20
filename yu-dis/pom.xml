@@ -23,6 +23,12 @@
             <artifactId>yu-common</artifactId>
         </dependency>
 
+        <!-- 系统模块（D2 异常告警复用统一消息 SysMessage / ISysMessageService）-->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-system</artifactId>
+        </dependency>
+
         <!-- 单元测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

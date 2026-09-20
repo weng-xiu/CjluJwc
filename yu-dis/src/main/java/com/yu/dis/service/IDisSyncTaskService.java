@@ -26,4 +26,12 @@ public interface IDisSyncTaskService
      * @return 执行结果
      */
     public java.util.Map<String, Object> executeSyncTask(Long taskId);
+
+    /**
+     * 人工重推（D2）：手动触发一次补偿同步，交换日志标记重推标识
+     *
+     * @param taskId 任务ID
+     * @return 执行结果
+     */
+    public java.util.Map<String, Object> rePushTask(Long taskId);
 }

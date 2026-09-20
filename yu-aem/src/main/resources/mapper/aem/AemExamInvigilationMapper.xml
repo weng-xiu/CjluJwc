@@ -127,4 +127,36 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
               or (start_time &gt;= #{startTime} and end_time &lt;= #{endTime})
           )
     </select>
+
+    <!-- A3：某课程的任课教师ID（来自开课表 tpm_course_offering），用于回避派发 -->
+    <select id="selectCourseTeacherIds" resultType="java.lang.Long">
+        select distinct o.teacher_id
+        from tpm_course_offering o
+        where o.del_flag = '0'
+          and o.teacher_id is not null
+          and o.course_id = #{courseId}
+          <if test="semesterId != null">and o.semester_id = #{semesterId}</if>
+    </select>
+
+    <!-- A3：某课程任课教师所属院系ID，用于院系回避（软约束） -->
+    <select id="selectCourseTeacherDeptIds" resultType="java.lang.Long">
+        select distinct t.dept_id
+        from tpm_course_offering o
+        join brm_teacher t on o.teacher_id = t.teacher_id
+        where o.del_flag = '0'
+          and t.dept_id is not null
+          and o.course_id = #{courseId}
+          <if test="semesterId != null">and o.semester_id = #{semesterId}</if>
+    </select>
+
+    <!-- A3：按学期统计各教师已有监考次数，用于次数均衡与工作量上限 -->
+    <select id="selectInvigilationCountBySemester" resultType="java.util.HashMap">
+        select iv.teacher_id as teacherId, count(1) as cnt
+        from aem_exam_invigilation iv
+        join aem_exam_plan p on iv.exam_id = p.exam_id
+        where iv.status = '0'
+          <if test="semesterId != null">and p.semester_id = #{semesterId}</if>
+          <if test="excludeExamId != null">and iv.exam_id != #{excludeExamId}</if>
+        group by iv.teacher_id
+    </select>
 </mapper>

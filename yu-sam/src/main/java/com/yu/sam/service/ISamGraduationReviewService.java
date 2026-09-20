@@ -29,4 +29,14 @@ public interface ISamGraduationReviewService
      * @return 汇总结果
      */
     public Map<String, Object> batchAutoReview(List<Long> studentIds);
+
+    /**
+     * 学生自助毕业预审（S4，只读，不落库）
+     * 分项返回：总学分达成、培养方案学分结构分项达成、课程/英语/体育合格情况、
+     * 差距清单与预计结论，供学生门户自助查询。
+     *
+     * @param studentId 学生ID
+     * @return 预审结果（只读视图）
+     */
+    public Map<String, Object> preReview(Long studentId);
 }

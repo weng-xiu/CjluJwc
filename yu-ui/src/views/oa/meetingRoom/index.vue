@@ -44,9 +44,10 @@
           <dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status" />
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="220">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['oa:meetingRoom:edit']">修改</el-button>
+          <el-button size="mini" type="text" icon="el-icon-date" @click="handleOccupancy(scope.row)" v-hasPermi="['oa:meetingRoom:list']">占用日历</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['oa:meetingRoom:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -84,11 +85,45 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- O2：会议室占用日历 -->
+    <el-dialog :title="occupancyTitle" :visible.sync="occupancyOpen" width="720px" append-to-body>
+      <div style="margin-bottom: 12px;">
+        <el-date-picker
+          v-model="occupancyDate"
+          type="date"
+          placeholder="选择日期"
+          value-format="yyyy-MM-dd"
+          :clearable="false"
+          @change="loadOccupancy"
+        />
+        <span style="margin-left: 12px; color: #909399;">共 {{ occupancyList.length }} 个有效安排</span>
+      </div>
+      <el-table v-loading="occupancyLoading" :data="occupancyList" border>
+        <el-table-column label="会议主题" align="center" prop="meetingTheme" :show-overflow-tooltip="true" />
+        <el-table-column label="时间" align="center" width="300">
+          <template slot-scope="scope">
+            <span>{{ parseTime(scope.row.startTime, '{y}-{m}-{d} {h}:{i}') }} ~ {{ parseTime(scope.row.endTime, '{h}:{i}') }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="组织者" align="center" prop="organizerName" width="120" />
+        <el-table-column label="状态" align="center" width="90">
+          <template slot-scope="scope">
+            <el-tag size="mini" :type="scope.row.meetingStatus === '0' ? 'info' : scope.row.meetingStatus === '1' ? 'success' : 'warning'">
+              {{ scope.row.meetingStatus === '0' ? '未开始' : scope.row.meetingStatus === '1' ? '进行中' : '已结束' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="occupancyOpen = false">关 闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { listMeetingRoom, getMeetingRoom, delMeetingRoom, addMeetingRoom, updateMeetingRoom, exportMeetingRoom } from "@/api/oa/meetingRoom"
+import { listMeetingRoom, getMeetingRoom, delMeetingRoom, addMeetingRoom, updateMeetingRoom, exportMeetingRoom, roomOccupancy } from "@/api/oa/meetingRoom"
 import { listUser } from "@/api/system/user"
 
 export default {
@@ -106,6 +141,13 @@ export default {
       title: "",
       open: false,
       userOptions: [],
+      // O2：占用日历
+      occupancyOpen: false,
+      occupancyLoading: false,
+      occupancyList: [],
+      occupancyDate: undefined,
+      occupancyRoomId: undefined,
+      occupancyTitle: "",
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -216,6 +258,23 @@ export default {
     },
     handleExport() {
       this.download('oa/meetingRoom/export', { ...this.queryParams }, `meetingRoom_${new Date().getTime()}.xlsx`)
+    },
+    // O2：打开占用日历
+    handleOccupancy(row) {
+      this.occupancyRoomId = row.roomId
+      this.occupancyTitle = "会议室占用日历 - " + (row.roomName || "")
+      this.occupancyDate = this.parseTime(new Date(), '{y}-{m}-{d}')
+      this.occupancyOpen = true
+      this.loadOccupancy()
+    },
+    loadOccupancy() {
+      if (!this.occupancyRoomId) return
+      this.occupancyLoading = true
+      roomOccupancy(this.occupancyRoomId, this.occupancyDate).then(response => {
+        this.occupancyList = response.data || []
+      }).finally(() => {
+        this.occupancyLoading = false
+      })
     }
   }
 }

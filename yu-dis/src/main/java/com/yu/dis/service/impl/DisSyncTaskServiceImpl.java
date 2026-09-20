@@ -1,10 +1,12 @@
 package com.yu.dis.service.impl;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -20,8 +22,11 @@ import com.alibaba.fastjson2.JSONObject;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.yu.system.domain.SysMessage;
+import com.yu.system.service.ISysMessageService;
 import com.yu.dis.mapper.DisSyncTaskMapper;
 import com.yu.dis.mapper.DisInterfaceConfigMapper;
 import com.yu.dis.mapper.DisExternalSystemMapper;
@@ -64,6 +69,13 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
 
     @Autowired
     private SyncPersistenceMapper syncPersistenceMapper;
+
+    @Autowired
+    private ISysMessageService sysMessageService;
+
+    /** 同步异常告警接收人用户ID（默认 admin） */
+    @Value("${dis.alert.receiverId:1}")
+    private Long alertReceiverId;
 
     private final SyncResponseParser responseParser = new SyncResponseParser();
 
@@ -110,14 +122,30 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
     }
 
     /**
-     * 执行同步任务（D1 完整链路：调用—解析—落库—留痕）
+     * 执行同步任务（D1 完整链路 + D2 可靠性增强：调用—解析—落库—留痕）
      * 1. 加载任务/接口/外部系统配置
-     * 2. 携带鉴权头调用外部接口（失败按配置重试）
-     * 3. 依字段映射解析响应并 upsert 落库
-     * 4. 更新任务执行记录并写入数据交换日志（无论成功失败均留痕）
+     * 2. D2：生成同步批次号；增量模式下以水位(lastWatermark)替换 ${watermark} 占位符
+     * 3. 携带鉴权头调用外部接口（失败按配置重试）
+     * 4. 依字段映射解析响应并 upsert 落库（幂等）
+     * 5. 仅整体成功时推进增量水位；更新任务执行记录并写入数据交换日志（含批次号/重推标记）
+     * 6. 失败时推送 SysMessage 站内告警
      */
     @Override
     public Map<String, Object> executeSyncTask(Long taskId)
+    {
+        return executeSyncTaskInternal(taskId, false);
+    }
+
+    /**
+     * 人工重推（D2）：手动触发一次补偿同步，交换日志标记 retryFlag=1，便于全链路留痕
+     */
+    @Override
+    public Map<String, Object> rePushTask(Long taskId)
+    {
+        return executeSyncTaskInternal(taskId, true);
+    }
+
+    private Map<String, Object> executeSyncTaskInternal(Long taskId, boolean isRepush)
     {
         Map<String, Object> result = new HashMap<>();
         // 1. 获取任务配置
@@ -144,7 +172,23 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
         }
         DisExternalSystem externalSystem = task.getSystemId() != null
                 ? disExternalSystemMapper.selectDisExternalSystemBySystemId(task.getSystemId()) : null;
-        // 3. 执行HTTP调用（含重试）
+        // 3. D2：批次号 + 增量水位占位符替换
+        java.util.Date execStart = new java.util.Date();
+        String batchNo = "SYNC-" + taskId + "-" + new SimpleDateFormat("yyyyMMddHHmmss").format(execStart)
+                + (isRepush ? "-R" : "");
+        String requestPath = interfaceConfig.getRequestPath();
+        String requestTemplate = interfaceConfig.getRequestTemplate();
+        if ("1".equals(task.getSyncMode()))
+        {
+            java.util.Date wmBase = task.getLastWatermark() != null ? task.getLastWatermark()
+                    : (task.getLastExecuteTime() != null ? task.getLastExecuteTime() : new java.util.Date(0));
+            String watermark = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(wmBase);
+            requestPath = replacePlaceholder(requestPath, "${watermark}", URLEncoder.encode(watermark, StandardCharsets.UTF_8));
+            requestTemplate = replacePlaceholder(requestTemplate, "${watermark}", watermark);
+        }
+        requestPath = replacePlaceholder(requestPath, "${batchNo}", batchNo);
+        requestTemplate = replacePlaceholder(requestTemplate, "${batchNo}", batchNo);
+        // 4. 执行HTTP调用（含重试）
         int maxRetry = interfaceConfig.getRetryCount() != null ? interfaceConfig.getRetryCount() : 0;
         int timeoutSeconds = interfaceConfig.getTimeoutSeconds() != null ? interfaceConfig.getTimeoutSeconds() : 30;
         String requestMethod = interfaceConfig.getRequestMethod() != null
@@ -164,7 +208,7 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
                         .connectTimeout(Duration.ofSeconds(timeoutSeconds))
                         .build();
                 HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                        .uri(URI.create(interfaceConfig.getRequestPath()))
+                        .uri(URI.create(requestPath))
                         .timeout(Duration.ofSeconds(timeoutSeconds));
                 applyAuthHeaders(requestBuilder, externalSystem);
                 if ("GET".equals(requestMethod))
@@ -173,8 +217,7 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
                 }
                 else if ("POST".equals(requestMethod))
                 {
-                    String body = interfaceConfig.getRequestTemplate() != null
-                            ? interfaceConfig.getRequestTemplate() : "";
+                    String body = requestTemplate != null ? requestTemplate : "";
                     requestBuilder.header("Content-Type", "application/json");
                     requestBuilder.POST(HttpRequest.BodyPublishers.ofString(body));
                 }
@@ -209,7 +252,7 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
         }
         long elapsed = System.currentTimeMillis() - startTime;
 
-        // 4. 解析—落库
+        // 5. 解析—落库
         int persistedRows = 0;
         List<String> tables = new ArrayList<>();
         String persistError = null;
@@ -247,7 +290,7 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
             }
         }
 
-        // 5. 更新任务执行记录
+        // 6. 更新任务执行记录
         java.util.Date now = new java.util.Date();
         task.setLastExecuteTime(now);
         task.setNextExecuteTime(computeNextExecuteTime(task.getCronExpression(), now));
@@ -256,16 +299,29 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
         {
             task.setFailCount((task.getFailCount() != null ? task.getFailCount() : 0) + 1);
         }
+        // D2：仅整体成功（调用+落库）时推进增量水位，失败保持旧水位以便重推补数
+        if (callSuccess && persistError == null && "1".equals(task.getSyncMode()))
+        {
+            task.setLastWatermark(execStart);
+        }
         task.setUpdateTime(now);
         disSyncTaskMapper.updateDisSyncTask(task);
 
-        // 6. 写入数据交换日志（留痕，无论成功失败）
+        // 7. 写入数据交换日志（留痕，无论成功失败；含批次号与重推标记）
         String error = !lastError.isEmpty() ? lastError : persistError;
-        writeExchangeLog(task, interfaceConfig, requestMethod, statusCode, callSuccess, responseBody, error, elapsed);
+        writeExchangeLog(task, requestMethod, statusCode, callSuccess, responseBody, error, elapsed,
+                requestPath, requestTemplate, batchNo, isRepush);
 
-        // 7. 返回结果
+        // 8. 返回结果
         boolean overallSuccess = callSuccess && persistError == null;
+        if (!overallSuccess)
+        {
+            // D2：异常告警——推送站内消息给运维负责人，便于及时人工重推
+            sendSyncAlert(task, batchNo, error, isRepush);
+        }
         result.put("success", overallSuccess);
+        result.put("batchNo", batchNo);
+        result.put("repush", isRepush);
         result.put("callSuccess", callSuccess);
         result.put("attempts", attempt);
         result.put("elapsedMs", elapsed);
@@ -340,20 +396,54 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
         }
     }
 
-    /** 写入数据交换日志 */
-    private void writeExchangeLog(DisSyncTask task, DisInterfaceConfig iface, String method, int statusCode,
-                                  boolean success, String responseBody, String error, long elapsed)
+    /** 占位符替换（null 安全） */
+    private String replacePlaceholder(String text, String placeholder, String value)
+    {
+        if (text == null || value == null || !text.contains(placeholder))
+        {
+            return text;
+        }
+        return text.replace(placeholder, value);
+    }
+
+    /** 同步失败推送站内告警（D2：异常告警） */
+    private void sendSyncAlert(DisSyncTask task, String batchNo, String error, boolean isRepush)
+    {
+        try
+        {
+            SysMessage msg = new SysMessage();
+            msg.setReceiverId(alertReceiverId);
+            msg.setMsgType("0");
+            msg.setTitle(((isRepush ? "[重推失败] " : "[同步任务失败] ") + task.getTaskName()));
+            String content = String.format("同步任务[%s]（批次%s）执行失败：%s。请核查数据交换日志，必要时人工重推。",
+                    task.getTaskName(), batchNo, error == null || error.isEmpty() ? "未知错误" : error);
+            if (content.length() > 490) { content = content.substring(0, 490); }
+            msg.setContent(content);
+            msg.setBusinessType("dis_sync");
+            msg.setBusinessId(task.getTaskId());
+            sysMessageService.sendMessage(msg);
+        }
+        catch (Exception e)
+        {
+            log.error("发送同步告警消息失败：{}", e.getMessage());
+        }
+    }
+
+    /** 写入数据交换日志（含批次号与人工重推标记） */
+    private void writeExchangeLog(DisSyncTask task, String method, int statusCode,
+                                  boolean success, String responseBody, String error, long elapsed,
+                                  String requestUrl, String requestBody, String batchNo, boolean isRepush)
     {
         try
         {
             DisDataExchangeLog exchangeLog = new DisDataExchangeLog();
             exchangeLog.setSystemId(task.getSystemId());
             exchangeLog.setInterfaceId(task.getInterfaceId());
-            String url = iface.getRequestPath();
+            String url = requestUrl;
             if (url != null && url.length() > 500) { url = url.substring(0, 500); }
             exchangeLog.setRequestUrl(url);
             exchangeLog.setRequestMethod(method);
-            exchangeLog.setRequestData(iface.getRequestTemplate());
+            exchangeLog.setRequestData(requestBody);
             String resp = responseBody;
             if (resp != null && resp.length() > 20000) { resp = resp.substring(0, 20000); }
             exchangeLog.setResponseData(resp);
@@ -366,6 +456,8 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
             String op;
             try { op = SecurityUtils.getUsername(); } catch (Exception e) { op = "system"; }
             exchangeLog.setOperator(op);
+            exchangeLog.setSyncBatchNo(batchNo);
+            exchangeLog.setRetryFlag(isRepush ? "1" : "0");
             exchangeLog.setCreateTime(new java.util.Date());
             disDataExchangeLogMapper.insertDisDataExchangeLog(exchangeLog);
         }

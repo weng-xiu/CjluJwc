@@ -1,6 +1,8 @@
 package com.yu.oa.controller;
 
 import java.util.List;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
@@ -18,8 +21,10 @@ import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.enums.BusinessType;
 import com.yu.common.utils.poi.ExcelUtil;
 import com.yu.common.core.page.TableDataInfo;
+import com.yu.oa.domain.OaMeeting;
 import com.yu.oa.domain.OaMeetingRoom;
 import com.yu.oa.service.IOaMeetingRoomService;
+import com.yu.oa.service.IOaMeetingService;
 
 /**
  * 会议室Controller
@@ -33,6 +38,44 @@ public class OaMeetingRoomController extends BaseController
 {
     @Autowired
     private IOaMeetingRoomService oaMeetingRoomService;
+
+    @Autowired
+    private IOaMeetingService oaMeetingService;
+
+    /**
+     * O2：会议室占用日历——查询某会议室某天的会议安排。
+     *
+     * @param roomId 会议室ID
+     * @param date   日期（yyyy-MM-dd，默认今天）
+     */
+    @PreAuthorize("@ss.hasPermi('oa:meetingRoom:list')")
+    @GetMapping("/occupancy/{roomId}")
+    public AjaxResult occupancy(@PathVariable("roomId") Long roomId,
+                                @RequestParam(required = false) String date)
+    {
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        if (date != null && !date.isEmpty())
+        {
+            try
+            {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                cal.setTime(sdf.parse(date));
+            }
+            catch (Exception e)
+            {
+                return error("日期格式不正确，应为 yyyy-MM-dd");
+            }
+        }
+        cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+        cal.set(java.util.Calendar.MINUTE, 0);
+        cal.set(java.util.Calendar.SECOND, 0);
+        cal.set(java.util.Calendar.MILLISECOND, 0);
+        Date beginTime = cal.getTime();
+        cal.add(java.util.Calendar.DAY_OF_MONTH, 1);
+        Date endTime = cal.getTime();
+        List<OaMeeting> list = oaMeetingService.roomOccupancy(roomId, beginTime, endTime);
+        return success(list);
+    }
 
     /**
      * 查询会议室列表

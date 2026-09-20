@@ -1,5 +1,6 @@
 package com.yu.oa.service;
 
+import java.util.Date;
 import java.util.List;
 import com.yu.oa.domain.OaMeeting;
 import com.yu.oa.domain.OaMeetingMinutes;
@@ -24,6 +25,11 @@ public interface IOaMeetingService
      * 检测会议室时间冲突
      */
     public boolean checkMeetingConflict(OaMeeting oaMeeting);
+
+    /**
+     * O2：查询某会议室在给定时间区间内的占用安排（排除已取消），用于占用日历视图。
+     */
+    public List<OaMeeting> roomOccupancy(Long roomId, Date beginTime, Date endTime);
 
     /**
      * 保存会议纪要
