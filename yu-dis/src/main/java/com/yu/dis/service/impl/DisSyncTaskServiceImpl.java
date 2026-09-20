@@ -242,8 +242,8 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
             }
             catch (Exception e)
             {
-                lastError = e.getMessage();
-                log.warn("同步任务[{}]第{}次调用异常：{}", task.getTaskName(), attempt, e.getMessage());
+                lastError = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                log.warn("同步任务[{}]第{}次调用异常：{}", task.getTaskName(), attempt, e.toString());
             }
             if (!callSuccess && attempt <= maxRetry)
             {
@@ -308,7 +308,7 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
         disSyncTaskMapper.updateDisSyncTask(task);
 
         // 7. 写入数据交换日志（留痕，无论成功失败；含批次号与重推标记）
-        String error = !lastError.isEmpty() ? lastError : persistError;
+        String error = (lastError != null && !lastError.isEmpty()) ? lastError : persistError;
         writeExchangeLog(task, requestMethod, statusCode, callSuccess, responseBody, error, elapsed,
                 requestPath, requestTemplate, batchNo, isRepush);
 

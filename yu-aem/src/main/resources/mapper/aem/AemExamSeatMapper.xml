@@ -19,7 +19,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"         column="remark"           />
     </resultMap>
     <sql id="selectAemExamSeatVo">
-        select seat_id, exam_id, classroom_id, student_id, seat_number, row_number, col_number, status, create_by, create_time, update_by, update_time, remark from aem_exam_seat
+        select seat_id, exam_id, classroom_id, student_id, seat_number, `row_number`, `col_number`, status, create_by, create_time, update_by, update_time, remark from aem_exam_seat
     </sql>
     <select id="selectAemExamSeatList" parameterType="AemExamSeat" resultMap="AemExamSeatResult">
         <include refid="selectAemExamSeatVo"/>
@@ -41,8 +41,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="classroomId != null">classroom_id,</if>
             <if test="studentId != null">student_id,</if>
             <if test="seatNumber != null">seat_number,</if>
-            <if test="rowNumber != null">row_number,</if>
-            <if test="colNumber != null">col_number,</if>
+            <if test="rowNumber != null">`row_number`,</if>
+            <if test="colNumber != null">`col_number`,</if>
             <if test="status != null">status,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
@@ -68,8 +68,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="classroomId != null">classroom_id = #{classroomId},</if>
             <if test="studentId != null">student_id = #{studentId},</if>
             <if test="seatNumber != null">seat_number = #{seatNumber},</if>
-            <if test="rowNumber != null">row_number = #{rowNumber},</if>
-            <if test="colNumber != null">col_number = #{colNumber},</if>
+            <if test="rowNumber != null">`row_number` = #{rowNumber},</if>
+            <if test="colNumber != null">`col_number` = #{colNumber},</if>
             <if test="status != null">status = #{status},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
@@ -90,7 +90,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <insert id="batchInsert" parameterType="java.util.List">
-        insert into aem_exam_seat (exam_id, classroom_id, student_id, seat_number, row_number, col_number, status, create_time)
+        insert into aem_exam_seat (exam_id, classroom_id, student_id, seat_number, `row_number`, `col_number`, status, create_time)
         values
         <foreach collection="list" item="item" separator=",">
             (#{item.examId}, #{item.classroomId}, #{item.studentId}, #{item.seatNumber}, #{item.rowNumber}, #{item.colNumber}, #{item.status}, #{item.createTime})
