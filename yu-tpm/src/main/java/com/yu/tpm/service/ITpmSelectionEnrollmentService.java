@@ -61,6 +61,23 @@ public interface ITpmSelectionEnrollmentService
     public Map<String, Object> runLottery(Long roundId);
 
     /**
+     * T6：执行抽签（可指定随机种子以支持结果复现审计）。
+     *
+     * @param roundId 轮次ID
+     * @param seed    随机种子；为空时自动生成并记录到轮次
+     * @return 抽签结果统计（含实际使用的种子）
+     */
+    public Map<String, Object> runLottery(Long roundId, Long seed);
+
+    /**
+     * T6：候补递补——当中签者退课释放容量时，按候补排名顺序将落选学生递补为中签。
+     *
+     * @param offeringId 开课ID
+     * @return 递补结果统计
+     */
+    public Map<String, Object> promoteWaitlist(Long offeringId);
+
+    /**
      * 学生退课：将结果状态置为退课并回补Redis容量
      *
      * @param enrollId 选课记录ID

@@ -13,6 +13,10 @@
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['aem:gradeRecord:remove']">删除</el-button></el-col>
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['aem:gradeRecord:export']">导出</el-button></el-col>
       <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['aem:gradeRecord:import']">导入</el-button></el-col>
+      <el-col :span="1.5"><el-button type="primary" plain icon="el-icon-s-promotion" size="mini" :disabled="multiple" @click="handleSubmit" v-hasPermi="['aem:gradeRecord:submit']">提交</el-button></el-col>
+      <el-col :span="1.5"><el-button type="success" plain icon="el-icon-lock" size="mini" :disabled="multiple" @click="handleAudit(true)" v-hasPermi="['aem:gradeRecord:audit']">审核锁定</el-button></el-col>
+      <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-refresh-left" size="mini" :disabled="multiple" @click="handleAudit(false)" v-hasPermi="['aem:gradeRecord:audit']">驳回</el-button></el-col>
+      <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-unlock" size="mini" :disabled="multiple" @click="handleUnlock" v-hasPermi="['aem:gradeRecord:unlock']">解锁</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-table ref="gradeRecordTable" v-loading="loading" :data="gradeRecordList" @selection-change="handleSelectionChange" :row-key="getRowKey" @expand-change="handleExpandChange">
@@ -45,6 +49,7 @@
       <el-table-column label="等级" align="center" prop="gradeLevel"><template slot-scope="scope"><dict-tag :options="dict.type.aem_grade_level" :value="scope.row.gradeLevel"/></template></el-table-column>
       <el-table-column label="是否通过" align="center" prop="isPass"><template slot-scope="scope"><dict-tag :options="dict.type.aem_is_pass" :value="scope.row.isPass"/></template></el-table-column>
       <el-table-column label="是否已复核" align="center" prop="isReviewed"><template slot-scope="scope"><dict-tag :options="dict.type.aem_is_reviewed" :value="scope.row.isReviewed"/></template></el-table-column>
+      <el-table-column label="提交状态" align="center" prop="submitStatus"><template slot-scope="scope"><el-tag :type="submitStatusTag(scope.row.submitStatus)" size="mini">{{ submitStatusText(scope.row.submitStatus) }}</el-tag></template></el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-view" @click="toggleExpand(scope.row)">明细</el-button>
@@ -84,7 +89,7 @@
   </div>
 </template>
 <script>
-import { listGradeRecord, getGradeRecord, delGradeRecord, addGradeRecord, updateGradeRecord, importGrade } from "@/api/aem/gradeRecord"
+import { listGradeRecord, getGradeRecord, delGradeRecord, addGradeRecord, updateGradeRecord, importGrade, submitGrade, auditGrade, unlockGrade } from "@/api/aem/gradeRecord"
 import { listGradeReview, addGradeReview, updateGradeReview, delGradeReview } from "@/api/aem/gradeReview"
 import MasterDetailPanel from "../components/MasterDetailPanel"
 import ImportExcelDialog from "../components/ImportExcelDialog"
@@ -131,7 +136,25 @@ export default {
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.gradeId != null) { updateGradeRecord(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addGradeRecord(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const gradeIds = row.gradeId || this.ids; this.$modal.confirm('是否确认删除成绩记录编号为"' + gradeIds + '"的数据项？').then(function() { return delGradeRecord(gradeIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('aem/gradeRecord/export', { ...this.queryParams }, `gradeRecord_${new Date().getTime()}.xlsx`) },
-    handleImport() { this.$refs.importDialog.open() }
+    handleImport() { this.$refs.importDialog.open() },
+    submitStatusText(s) { return { '0': '未提交', '1': '已提交待审', '2': '已锁定', '3': '已驳回' }[s || '0'] || '未提交' },
+    submitStatusTag(s) { return { '0': 'info', '1': 'warning', '2': 'success', '3': 'danger' }[s || '0'] || 'info' },
+    handleSubmit() {
+      const gradeIds = this.ids;
+      this.$modal.confirm('确认提交选中的 ' + gradeIds.length + ' 条成绩待审核？').then(() => submitGrade(gradeIds))
+        .then(() => { this.getList(); this.$modal.msgSuccess("提交成功") }).catch(() => {});
+    },
+    handleAudit(approved) {
+      const gradeIds = this.ids;
+      const tip = approved ? '确认审核通过并锁定选中的 ' + gradeIds.length + ' 条成绩？锁定后仅可通过成绩复核流程修改。' : '确认驳回选中的 ' + gradeIds.length + ' 条成绩？';
+      this.$modal.confirm(tip).then(() => auditGrade(gradeIds, approved))
+        .then(() => { this.getList(); this.$modal.msgSuccess(approved ? "已锁定" : "已驳回") }).catch(() => {});
+    },
+    handleUnlock() {
+      const gradeIds = this.ids;
+      this.$modal.confirm('确认解锁选中的 ' + gradeIds.length + ' 条已锁定成绩？解锁后转为驳回状态，需重新提交。').then(() => unlockGrade(gradeIds))
+        .then(() => { this.getList(); this.$modal.msgSuccess("解锁成功") }).catch(() => {});
+    }
   }
 }
 </script>

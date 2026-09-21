@@ -11,6 +11,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="selectTime"       column="select_time"         />
         <result property="lotteryResult"    column="lottery_result"      />
         <result property="resultStatus"     column="result_status"       />
+        <result property="waitlistRank"     column="waitlist_rank"       />
         <result property="dropTime"         column="drop_time"           />
         <result property="status"           column="status"              />
         <result property="delFlag"          column="del_flag"            />
@@ -25,7 +26,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="roundName"        column="round_name"          />
     </resultMap>
     <sql id="selectTpmSelectionEnrollmentVo">
-        select e.enroll_id, e.round_id, e.student_id, e.course_offering_id, e.select_time, e.lottery_result, e.result_status, e.drop_time, e.status, e.del_flag, e.create_by, e.create_time, e.update_by, e.update_time, e.remark,
+        select e.enroll_id, e.round_id, e.student_id, e.course_offering_id, e.select_time, e.lottery_result, e.result_status, e.waitlist_rank, e.drop_time, e.status, e.del_flag, e.create_by, e.create_time, e.update_by, e.update_time, e.remark,
         ss.student_no as student_code,
         ss.student_name as student_name,
         cl.course_name as course_name,
@@ -92,6 +93,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="selectTime != null">select_time = #{selectTime},</if>
             <if test="lotteryResult != null">lottery_result = #{lotteryResult},</if>
             <if test="resultStatus != null">result_status = #{resultStatus},</if>
+            <if test="waitlistRank != null">waitlist_rank = #{waitlistRank},</if>
             <if test="dropTime != null">drop_time = #{dropTime},</if>
             <if test="status != null">status = #{status},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
@@ -130,4 +132,28 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         and o.course_id in
         <foreach item="courseId" collection="courseIds" open="(" separator="," close=")">#{courseId}</foreach>
     </select>
+    <!-- T6：查询某开课的候补队列（抽签落选记录），按递补序号升序 -->
+    <select id="selectWaitlistByOffering" resultMap="TpmSelectionEnrollmentResult">
+        <include refid="selectTpmSelectionEnrollmentVo"/>
+        where e.course_offering_id = #{courseOfferingId}
+        and e.lottery_result = '2'
+        and e.result_status = '2'
+        and e.waitlist_rank is not null
+        and e.del_flag = '0'
+        order by e.waitlist_rank asc
+    </select>
+    <!-- T6：统计某开课抽签中签人数 -->
+    <select id="countAdmittedByOffering" resultType="int">
+        select count(1) from tpm_selection_enrollment
+        where course_offering_id = #{courseOfferingId}
+        and lottery_result = '1'
+        and result_status = '1'
+        and del_flag = '0'
+    </select>
+    <!-- T6：递补——将候补记录置为中签并清空候补排名 -->
+    <update id="promoteFromWaitlist">
+        update tpm_selection_enrollment
+        set lottery_result = '1', result_status = '1', waitlist_rank = null, update_time = #{updateTime}
+        where enroll_id = #{enrollId}
+    </update>
 </mapper>

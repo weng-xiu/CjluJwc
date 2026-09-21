@@ -39,3 +39,13 @@ export function autoArrangeSeat(examId, classroomId) {
 export function autoDispatch(examId) {
   return request({ url: '/aem/examPlan/autoDispatch/' + examId, method: 'post' })
 }
+
+// A1：考试自动编排（多教室拆分+冲突规避）
+export function autoArrangeExam(examId) {
+  return request({ url: '/aem/examPlan/autoArrange/' + examId, method: 'post' })
+}
+
+// A2：考试冲突检测
+export function detectExamConflicts(semesterId) {
+  return request({ url: '/aem/examPlan/detectConflicts', method: 'get', params: { semesterId } })
+}

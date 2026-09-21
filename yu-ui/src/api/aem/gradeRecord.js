@@ -34,3 +34,23 @@ export function delGradeRecord(gradeId) {
 export function importGrade(data) {
   return request({ url: '/aem/gradeRecord/importData', method: 'post', headers: { 'Content-Type': 'multipart/form-data' }, data: data })
 }
+
+// A5：查询成绩录入开放期状态
+export function getEntryWindow() {
+  return request({ url: '/aem/gradeRecord/entryWindow', method: 'get' })
+}
+
+// A5：教师提交成绩（批量）
+export function submitGrade(gradeIds) {
+  return request({ url: '/aem/gradeRecord/submit/' + gradeIds, method: 'put' })
+}
+
+// A5：教研室审核成绩（approved=true 锁定，false 驳回）
+export function auditGrade(gradeIds, approved) {
+  return request({ url: '/aem/gradeRecord/audit/' + gradeIds, method: 'put', params: { approved } })
+}
+
+// A5：解锁已锁定成绩
+export function unlockGrade(gradeIds) {
+  return request({ url: '/aem/gradeRecord/unlock/' + gradeIds, method: 'put' })
+}

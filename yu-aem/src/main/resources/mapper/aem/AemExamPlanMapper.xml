@@ -44,6 +44,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectAemExamPlanByExamId" parameterType="Long" resultMap="AemExamPlanResult">
         <include refid="selectAemExamPlanVo"/> where exam_id = #{examId}
     </select>
+    <!-- A2：按学期查询全部考试计划（不套数据范围），用于冲突批量检测 -->
+    <select id="selectBySemesterForConflict" parameterType="Long" resultMap="AemExamPlanResult">
+        <include refid="selectAemExamPlanVo"/>
+        where semester_id = #{semesterId}
+          and exam_date is not null
+          and start_time is not null and start_time != ''
+          and end_time is not null and end_time != ''
+        order by exam_id
+    </select>
     <insert id="insertAemExamPlan" parameterType="AemExamPlan" useGeneratedKeys="true" keyProperty="examId">
         insert into aem_exam_plan
         <trim prefix="(" suffix=")" suffixOverrides=",">

@@ -73,4 +73,7 @@ public interface AemExamInvigilationMapper
      */
     List<Map<String, Object>> selectInvigilationCountBySemester(@Param("semesterId") Long semesterId,
                                                                 @Param("excludeExamId") Long excludeExamId);
+
+    /** A2：查询某考试的监考教师ID集合（去重），用于跨考试教师冲突检测。 */
+    List<Long> selectTeacherIdsByExamId(@Param("examId") Long examId);
 }

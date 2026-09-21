@@ -17,4 +17,7 @@ public interface AemExamPlanMapper
     public int updateAemExamPlan(AemExamPlan aemExamPlan);
     public int deleteAemExamPlanByExamId(Long examId);
     public int deleteAemExamPlanByExamIds(Long[] examIds);
+
+    /** A2：按学期查询全部考试计划（不套数据范围），用于冲突批量检测。 */
+    public java.util.List<AemExamPlan> selectBySemesterForConflict(Long semesterId);
 }

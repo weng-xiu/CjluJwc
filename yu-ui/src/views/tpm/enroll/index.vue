@@ -31,6 +31,7 @@
       <el-col :span="1.5"><el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['tpm:enroll:edit']">修改</el-button></el-col>
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['tpm:enroll:remove']">删除</el-button></el-col>
       <el-col :span="1.5"><el-button type="info" plain icon="el-icon-s-flag" size="mini" @click="handleLottery" v-hasPermi="['tpm:enroll:edit']">发起抽签</el-button></el-col>
+      <el-col :span="1.5"><el-button type="primary" plain icon="el-icon-sort" size="mini" @click="handlePromoteWaitlist" v-hasPermi="['tpm:enroll:edit']">候补递补</el-button></el-col>
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['tpm:enroll:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -48,6 +49,9 @@
       </el-table-column>
       <el-table-column label="抽签结果" align="center" prop="lotteryResult" width="100">
         <template slot-scope="scope"><dict-tag :options="dict.type.tpm_lottery_result" :value="scope.row.lotteryResult"/></template>
+      </el-table-column>
+      <el-table-column label="候补排名" align="center" prop="waitlistRank" width="90">
+        <template slot-scope="scope"><span>{{ scope.row.waitlistRank == null ? '-' : scope.row.waitlistRank }}</span></template>
       </el-table-column>
       <el-table-column label="结果状态" align="center" prop="resultStatus" width="100">
         <template slot-scope="scope"><dict-tag :options="dict.type.tpm_enroll_result" :value="scope.row.resultStatus"/></template>
@@ -106,6 +110,9 @@
             <el-option v-for="item in roundOptions" :key="item.roundId" :label="item.roundName" :value="item.roundId"/>
           </el-select>
         </el-form-item>
+        <el-form-item label="随机种子">
+          <el-input v-model="lotterySeed" placeholder="留空则系统自动生成；填写相同种子可复现抽签结果" clearable/>
+        </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitLottery">确 定</el-button>
@@ -115,7 +122,7 @@
   </div>
 </template>
 <script>
-import { listEnroll, getEnroll, delEnroll, addEnroll, updateEnroll, runLottery, dropCourse } from "@/api/tpm/enroll"
+import { listEnroll, getEnroll, delEnroll, addEnroll, updateEnroll, runLottery, promoteWaitlist, dropCourse } from "@/api/tpm/enroll"
 import { listRound } from "@/api/tpm/round"
 import { listOffering } from "@/api/tpm/offering"
 import { listStudent } from "@/api/sam/student"
@@ -128,7 +135,7 @@ export default {
       loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0,
       enrollList: [], roundOptions: [], studentOptions: [], offeringOptions: [],
       title: "", open: false,
-      lotteryOpen: false, lotteryRoundId: null,
+      lotteryOpen: false, lotteryRoundId: null, lotterySeed: null,
       queryParams: { pageNum: 1, pageSize: 10, roundId: null, studentId: null, resultStatus: null, lotteryResult: null },
       form: {},
       rules: {
@@ -185,15 +192,25 @@ export default {
     handleDrop(row) {
       this.$modal.confirm('是否确认退课？退课后将回补课程容量。').then(() => dropCourse(row.enrollId)).then(() => { this.$modal.msgSuccess("退课成功"); this.getList() }).catch(() => {})
     },
-    handleLottery() { this.lotteryRoundId = null; this.lotteryOpen = true },
+    handleLottery() { this.lotteryRoundId = null; this.lotterySeed = null; this.lotteryOpen = true },
     submitLottery() {
       if (this.lotteryRoundId == null) { this.$modal.msgWarning("请选择轮次"); return }
-      runLottery(this.lotteryRoundId).then(response => {
+      const seed = (this.lotterySeed === '' || this.lotterySeed == null) ? undefined : this.lotterySeed
+      runLottery(this.lotteryRoundId, seed).then(response => {
         this.lotteryOpen = false
         const data = response.data || {}
         this.$alert(data.message || "抽签完成", "抽签结果", { confirmButtonText: "确定" })
         this.getList()
       })
+    },
+    handlePromoteWaitlist() {
+      this.$prompt('请输入开课ID以执行候补递补（按空出容量顺序递补候补队列）', '候补递补', { confirmButtonText: '确定', cancelButtonText: '取消', inputPattern: /^\d+$/, inputErrorMessage: '开课ID必须为数字' })
+        .then(({ value }) => promoteWaitlist(value))
+        .then(res => {
+          const d = res.data || {}
+          this.$alert(d.message || '递补完成', '候补递补结果', { confirmButtonText: '确定' })
+          this.getList()
+        }).catch(() => {})
     },
     handleExport() { this.download('tpm/enroll/export', { ...this.queryParams }, `enroll_${new Date().getTime()}.xlsx`) }
   }

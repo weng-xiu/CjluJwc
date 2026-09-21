@@ -46,6 +46,71 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     @Autowired
     private IAemGradeWeightService aemGradeWeightService;
 
+    /** A5：成绩录入开放期控制（默认关闭，保持历史行为；开启后仅窗口内可录入/修改） */
+    @org.springframework.beans.factory.annotation.Value("${aem.grade.entry.enabled:false}")
+    private boolean entryEnabled;
+    @org.springframework.beans.factory.annotation.Value("${aem.grade.entry.start:}")
+    private String entryStart;
+    @org.springframework.beans.factory.annotation.Value("${aem.grade.entry.end:}")
+    private String entryEnd;
+
+    /** 录入窗口时间格式 */
+    private static final String ENTRY_PAT = "yyyy-MM-dd HH:mm:ss";
+
+    /**
+     * A5：录入开放期校验。未开启时直接放行；开启且当前时间不在 [start,end] 内则拒绝。
+     */
+    private void checkEntryWindow()
+    {
+        if (!entryEnabled)
+        {
+            return;
+        }
+        java.util.Date now = DateUtils.getNowDate();
+        java.util.Date start = parseEntryTime(entryStart);
+        java.util.Date end = parseEntryTime(entryEnd);
+        if (start != null && now.before(start))
+        {
+            throw new ServiceException("成绩录入未开放，开放时间：" + entryStart);
+        }
+        if (end != null && now.after(end))
+        {
+            throw new ServiceException("成绩录入已截止（" + entryEnd + "），如需修改请走成绩复核流程");
+        }
+    }
+
+    private java.util.Date parseEntryTime(String s)
+    {
+        if (s == null || s.trim().isEmpty())
+        {
+            return null;
+        }
+        try
+        {
+            return new java.text.SimpleDateFormat(ENTRY_PAT).parse(s.trim());
+        }
+        catch (java.text.ParseException e)
+        {
+            return null;
+        }
+    }
+
+    @Override
+    public java.util.Map<String, Object> getEntryWindowStatus()
+    {
+        java.util.Map<String, Object> map = new java.util.LinkedHashMap<>();
+        java.util.Date now = DateUtils.getNowDate();
+        java.util.Date start = parseEntryTime(entryStart);
+        java.util.Date end = parseEntryTime(entryEnd);
+        boolean open = !entryEnabled
+                || ((start == null || !now.before(start)) && (end == null || !now.after(end)));
+        map.put("enabled", entryEnabled);
+        map.put("open", open);
+        map.put("start", entryStart);
+        map.put("end", entryEnd);
+        return map;
+    }
+
     @Override
     public AemGradeRecord selectAemGradeRecordByGradeId(Long gradeId)
     {
@@ -97,6 +162,13 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
         {
             throw new ServiceException("总成绩必须在0-100范围内");
         }
+        // A5：录入开放期校验
+        checkEntryWindow();
+        // A5：新录入成绩默认未提交
+        if (aemGradeRecord.getSubmitStatus() == null)
+        {
+            aemGradeRecord.setSubmitStatus("0");
+        }
         aemGradeRecord.setCreateTime(DateUtils.getNowDate());
         return aemGradeRecordMapper.insertAemGradeRecord(aemGradeRecord);
     }
@@ -111,6 +183,13 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
         {
             throw new ServiceException("已复核的成绩记录不允许修改");
         }
+        // A5：提交/锁定状态守卫——已提交待审或已锁定的成绩不可直接改，须走复核流程
+        if (existing != null && ("1".equals(existing.getSubmitStatus()) || "2".equals(existing.getSubmitStatus())))
+        {
+            throw new ServiceException("成绩已提交/锁定，不可直接修改，请通过成绩复核流程处理");
+        }
+        // A5：录入开放期校验
+        checkEntryWindow();
         // 数据范围校验：成绩分数必须在0-100范围内
         if (aemGradeRecord.getRegularScore() != null && (aemGradeRecord.getRegularScore() < 0 || aemGradeRecord.getRegularScore() > 100))
         {
@@ -250,6 +329,41 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
             record.setCreateTime(now);
         }
         return aemGradeRecordMapper.batchInsert(list);
+    }
+
+    @Override
+    @Transactional
+    public int submitGrade(Long[] gradeIds, String operator)
+    {
+        if (gradeIds == null || gradeIds.length == 0)
+        {
+            throw new ServiceException("请选择要提交的成绩记录");
+        }
+        return aemGradeRecordMapper.submitGradeBatch(gradeIds, operator, DateUtils.getNowDate());
+    }
+
+    @Override
+    @Transactional
+    public int auditGrade(Long[] gradeIds, boolean approved, String operator)
+    {
+        if (gradeIds == null || gradeIds.length == 0)
+        {
+            throw new ServiceException("请选择要审核的成绩记录");
+        }
+        // 通过→锁定(2)；驳回→已驳回可改(3)
+        String target = approved ? "2" : "3";
+        return aemGradeRecordMapper.auditGradeBatch(gradeIds, target, operator, DateUtils.getNowDate());
+    }
+
+    @Override
+    @Transactional
+    public int unlockGrade(Long[] gradeIds, String operator)
+    {
+        if (gradeIds == null || gradeIds.length == 0)
+        {
+            throw new ServiceException("请选择要解锁的成绩记录");
+        }
+        return aemGradeRecordMapper.unlockGradeBatch(gradeIds, operator, DateUtils.getNowDate());
     }
 
     /**

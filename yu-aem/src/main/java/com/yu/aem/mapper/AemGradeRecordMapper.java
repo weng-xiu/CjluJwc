@@ -29,4 +29,20 @@ public interface AemGradeRecordMapper
     public int batchInsert(List<AemGradeRecord> list);
 
     public Double selectCourseCreditByCourseId(Long courseId);
+
+    /** A5：教师提交成绩（未提交/已驳回 → 已提交待审），锁定记录不受影响 */
+    public int submitGradeBatch(@Param("gradeIds") Long[] gradeIds,
+                                @Param("submitBy") String submitBy,
+                                @Param("submitTime") java.util.Date submitTime);
+
+    /** A5：教研室审核（通过→锁定2 / 驳回→3），仅作用于已提交待审记录 */
+    public int auditGradeBatch(@Param("gradeIds") Long[] gradeIds,
+                               @Param("targetStatus") String targetStatus,
+                               @Param("auditBy") String auditBy,
+                               @Param("auditTime") java.util.Date auditTime);
+
+    /** A5：管理解锁（锁定2 → 已驳回3），异常纠正用 */
+    public int unlockGradeBatch(@Param("gradeIds") Long[] gradeIds,
+                                @Param("auditBy") String auditBy,
+                                @Param("auditTime") java.util.Date auditTime);
 }

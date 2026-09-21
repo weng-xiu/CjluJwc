@@ -159,4 +159,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           <if test="excludeExamId != null">and iv.exam_id != #{excludeExamId}</if>
         group by iv.teacher_id
     </select>
+
+    <!-- A2：某考试的监考教师ID（去重），用于跨考试教师冲突检测 -->
+    <select id="selectTeacherIdsByExamId" resultType="java.lang.Long">
+        select distinct teacher_id from aem_exam_invigilation
+        where exam_id = #{examId} and status = '0' and teacher_id is not null
+    </select>
 </mapper>

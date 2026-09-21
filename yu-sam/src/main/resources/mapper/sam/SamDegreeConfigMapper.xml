@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamDegreeConfigMapper">
+    <resultMap type="SamDegreeConfig" id="SamDegreeConfigResult">
+        <result property="configId"              column="config_id"                />
+        <result property="configName"            column="config_name"              />
+        <result property="gpaThreshold"          column="gpa_threshold"            />
+        <result property="requireDegreeCourse"   column="require_degree_course"    />
+        <result property="requireForeignLanguage" column="require_foreign_language" />
+        <result property="requireThesis"         column="require_thesis"           />
+        <result property="requireAchievement"    column="require_achievement"      />
+        <result property="isDefault"             column="is_default"               />
+        <result property="status"                column="status"                   />
+        <result property="remark"                column="remark"                   />
+        <result property="createBy"              column="create_by"                />
+        <result property="createTime"            column="create_time"              />
+        <result property="updateBy"              column="update_by"                />
+        <result property="updateTime"            column="update_time"              />
+    </resultMap>
+    <sql id="selectSamDegreeConfigVo">
+        select config_id, config_name, gpa_threshold, require_degree_course, require_foreign_language, require_thesis, require_achievement, is_default, status, remark, create_by, create_time, update_by, update_time from sam_degree_config
+    </sql>
+    <select id="selectSamDegreeConfigList" parameterType="SamDegreeConfig" resultMap="SamDegreeConfigResult">
+        <include refid="selectSamDegreeConfigVo"/>
+        <where>
+            <if test="configName != null and configName.trim() != ''"> and config_name like concat('%', #{configName}, '%')</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            <if test="isDefault != null and isDefault.trim() != ''"> and is_default = #{isDefault}</if>
+        </where>
+        order by is_default desc, config_id asc
+    </select>
+    <select id="selectSamDegreeConfigByConfigId" parameterType="Long" resultMap="SamDegreeConfigResult">
+        <include refid="selectSamDegreeConfigVo"/> where config_id = #{configId}
+    </select>
+    <select id="selectDefaultConfig" resultMap="SamDegreeConfigResult">
+        <include refid="selectSamDegreeConfigVo"/> where is_default = '1' and status = '0' order by config_id asc limit 1
+    </select>
+    <update id="clearDefaultFlag">
+        update sam_degree_config set is_default = '0'
+    </update>
+    <insert id="insertSamDegreeConfig" parameterType="SamDegreeConfig" useGeneratedKeys="true" keyProperty="configId">
+        insert into sam_degree_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="configName != null and configName != ''">config_name,</if>
+            <if test="gpaThreshold != null">gpa_threshold,</if>
+            <if test="requireDegreeCourse != null">require_degree_course,</if>
+            <if test="requireForeignLanguage != null">require_foreign_language,</if>
+            <if test="requireThesis != null">require_thesis,</if>
+            <if test="requireAchievement != null">require_achievement,</if>
+            <if test="isDefault != null">is_default,</if>
+            <if test="status != null">status,</if>
+            <if test="remark != null">remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="configName != null and configName != ''">#{configName},</if>
+            <if test="gpaThreshold != null">#{gpaThreshold},</if>
+            <if test="requireDegreeCourse != null">#{requireDegreeCourse},</if>
+            <if test="requireForeignLanguage != null">#{requireForeignLanguage},</if>
+            <if test="requireThesis != null">#{requireThesis},</if>
+            <if test="requireAchievement != null">#{requireAchievement},</if>
+            <if test="isDefault != null">#{isDefault},</if>
+            <if test="status != null">#{status},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+    <update id="updateSamDegreeConfig" parameterType="SamDegreeConfig">
+        update sam_degree_config
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="configName != null and configName != ''">config_name = #{configName},</if>
+            <if test="gpaThreshold != null">gpa_threshold = #{gpaThreshold},</if>
+            <if test="requireDegreeCourse != null">require_degree_course = #{requireDegreeCourse},</if>
+            <if test="requireForeignLanguage != null">require_foreign_language = #{requireForeignLanguage},</if>
+            <if test="requireThesis != null">require_thesis = #{requireThesis},</if>
+            <if test="requireAchievement != null">require_achievement = #{requireAchievement},</if>
+            <if test="isDefault != null">is_default = #{isDefault},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where config_id = #{configId}
+    </update>
+    <delete id="deleteSamDegreeConfigByConfigId" parameterType="Long">
+        delete from sam_degree_config where config_id = #{configId}
+    </delete>
+    <delete id="deleteSamDegreeConfigByConfigIds" parameterType="String">
+        delete from sam_degree_config where config_id in
+        <foreach item="configId" collection="array" open="(" separator="," close=")">#{configId}</foreach>
+    </delete>
+</mapper>

@@ -538,6 +538,19 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
     @Override
     public Map<String, Object> runLottery(Long roundId)
     {
+        return runLottery(roundId, null);
+    }
+
+    /**
+     * T6：执行抽签（可指定随机种子以支持结果复现审计）。
+     * 相比旧实现新增：① 记录并复用随机种子，逐开课用 seed+offeringId 派生确定性随机序列，结果可复现；
+     * ② 落选学生写入候补排名 waitlist_rank（按抽签顺序），供后续递补；
+     * ③ 抽签完成后按开课回写 Redis 剩余容量，消除缓存与库不一致。
+     */
+    @Transactional
+    @Override
+    public Map<String, Object> runLottery(Long roundId, Long seed)
+    {
         Map<String, Object> result = new HashMap<>();
         TpmSelectionRound round = tpmSelectionRoundMapper.selectTpmSelectionRoundByRoundId(roundId);
         if (round == null)
@@ -557,6 +570,9 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
             return result;
         }
 
+        // 随机种子：为空则以当前毫秒生成，保证可复现（记录到轮次）
+        long effectiveSeed = (seed != null) ? seed : System.currentTimeMillis();
+
         // 按开课ID分组
         Map<Long, List<TpmSelectionEnrollment>> offeringMap = allEnrollments.stream()
                 .collect(Collectors.groupingBy(TpmSelectionEnrollment::getCourseOfferingId));
@@ -565,6 +581,8 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         int successCount = 0;
         int failCount = 0;
         List<TpmSelectionEnrollment> toUpdate = new ArrayList<>();
+        // 记录每个开课抽签后的剩余容量，用于抽签完成后回写 Redis
+        Map<Long, Integer> remainingByOffering = new HashMap<>();
 
         for (Map.Entry<Long, List<TpmSelectionEnrollment>> entry : offeringMap.entrySet())
         {
@@ -586,16 +604,19 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
                 {
                     e.setLotteryResult("1"); // 中签
                     e.setResultStatus("1");  // 选中
+                    e.setWaitlistRank(null);
                     toUpdate.add(e);
                     successCount++;
                 }
+                remainingByOffering.put(offeringId, maxCapacity - enrollments.size());
                 continue;
             }
 
-            // 超容量，执行随机抽签
-            Collections.shuffle(enrollments);
+            // 超容量，执行确定性随机抽签：用 seed+offeringId 派生随机序列，同种子同结果可复现、可审计
+            Collections.shuffle(enrollments, new java.util.Random(effectiveSeed + offeringId));
             lotteryCount++;
 
+            int admitted = 0;
             for (int i = 0; i < enrollments.size(); i++)
             {
                 TpmSelectionEnrollment e = enrollments.get(i);
@@ -603,16 +624,20 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
                 {
                     e.setLotteryResult("1"); // 中签
                     e.setResultStatus("1");  // 选中
+                    e.setWaitlistRank(null);
                     successCount++;
+                    admitted++;
                 }
                 else
                 {
                     e.setLotteryResult("2"); // 落选
                     e.setResultStatus("2");  // 未选中
+                    e.setWaitlistRank(i - maxCapacity + 1); // 候补排名：1 为最优递补
                     failCount++;
                 }
                 toUpdate.add(e);
             }
+            remainingByOffering.put(offeringId, maxCapacity - admitted);
         }
 
         // 批量更新
@@ -622,7 +647,15 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
             tpmSelectionEnrollmentMapper.updateTpmSelectionEnrollment(e);
         }
 
-        // 更新轮次状态为已结束
+        // 抽签后回写 Redis 剩余容量，保证缓存与库一致
+        for (Map.Entry<Long, Integer> re : remainingByOffering.entrySet())
+        {
+            selectionCacheManager.setCapacity(re.getKey(), re.getValue());
+        }
+
+        // 记录种子与抽签时间，并更新轮次状态为已结束
+        round.setLotterySeed(effectiveSeed);
+        round.setLotteryTime(new Date());
         round.setRoundStatus("2");
         round.setUpdateTime(new Date());
         tpmSelectionRoundMapper.updateTpmSelectionRound(round);
@@ -630,7 +663,67 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         result.put("lotteryCourses", lotteryCount);
         result.put("successCount", successCount);
         result.put("failCount", failCount);
-        result.put("message", String.format("抽签完成：涉及%d门课程，中签%d人，落选%d人", lotteryCount, successCount, failCount));
+        result.put("seed", effectiveSeed);
+        result.put("message", String.format("抽签完成：涉及%d门课程，中签%d人，落选%d人（候补已按序入列，随机种子=%d，可用于结果复现审计）",
+                lotteryCount, successCount, failCount, effectiveSeed));
+        return result;
+    }
+
+    /**
+     * T6：候补递补。当中签人数低于容量时，按候补排名顺序将落选学生递补为中签，并同步回写 Redis 容量。
+     */
+    @Transactional
+    @Override
+    public Map<String, Object> promoteWaitlist(Long offeringId)
+    {
+        Map<String, Object> result = new HashMap<>();
+        TpmCourseOffering offering = tpmCourseOfferingMapper.selectTpmCourseOfferingByOfferingId(offeringId);
+        if (offering == null || offering.getMaxStudents() == null)
+        {
+            result.put("promoted", 0);
+            result.put("message", "开课不存在或容量未配置");
+            return result;
+        }
+        int maxCapacity = offering.getMaxStudents();
+        int admitted = tpmSelectionEnrollmentMapper.countAdmittedByOffering(offeringId);
+        int free = maxCapacity - admitted;
+        if (free <= 0)
+        {
+            result.put("promoted", 0);
+            result.put("admitted", admitted);
+            result.put("capacity", maxCapacity);
+            result.put("message", "无空余容量，无需递补");
+            return result;
+        }
+        List<TpmSelectionEnrollment> waitlist = tpmSelectionEnrollmentMapper.selectWaitlistByOffering(offeringId);
+        if (waitlist == null || waitlist.isEmpty())
+        {
+            result.put("promoted", 0);
+            result.put("admitted", admitted);
+            result.put("capacity", maxCapacity);
+            result.put("message", "无候补学生");
+            return result;
+        }
+        int promoted = 0;
+        Date now = new Date();
+        for (TpmSelectionEnrollment e : waitlist)
+        {
+            if (promoted >= free)
+            {
+                break;
+            }
+            tpmSelectionEnrollmentMapper.promoteFromWaitlist(e.getEnrollId(), now);
+            // 每递补一名，回写 Redis 剩余容量（一名）
+            selectionCacheManager.decrementCapacity(offeringId);
+            selectionCacheManager.clearStudentCache(e.getStudentId(), e.getRoundId());
+            promoted++;
+        }
+        int remaining = Math.max(0, maxCapacity - (admitted + promoted));
+        selectionCacheManager.setCapacity(offeringId, remaining);
+        result.put("promoted", promoted);
+        result.put("admitted", admitted + promoted);
+        result.put("capacity", maxCapacity);
+        result.put("message", String.format("候补递补完成：本次递补%d人，累计中签%d人（容量%d）", promoted, admitted + promoted, maxCapacity));
         return result;
     }
 
@@ -656,7 +749,9 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         {
             return AjaxResult.error("选课轮次不存在");
         }
-        if (!"1".equals(round.getRoundStatus()))
+        // 轮次非进行中：仅抽签中签（lotteryResult=1）的学生可退课（用于触发候补递补闭环），其余不允许
+        boolean admittedByLottery = "1".equals(enrollment.getLotteryResult());
+        if (!"1".equals(round.getRoundStatus()) && !admittedByLottery)
         {
             return AjaxResult.error("选课轮次非进行中，不允许退课");
         }
@@ -671,6 +766,12 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         selectionCacheManager.incrementCapacity(enrollment.getCourseOfferingId());
         // 清除学生选课缓存
         selectionCacheManager.clearStudentCache(enrollment.getStudentId(), enrollment.getRoundId());
+
+        // T6：抽签后中签学生退课释放的容量，自动触发候补递补
+        if (admittedByLottery)
+        {
+            promoteWaitlist(enrollment.getCourseOfferingId());
+        }
 
         return AjaxResult.success("退课成功");
     }

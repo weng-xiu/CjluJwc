@@ -125,4 +125,25 @@ public class AemExamPlanController extends BaseController
     {
         return success(aemExamInvigilationService.autoDispatchInvigilators(examId));
     }
+
+    /**
+     * A1：考试自动编排（多教室拆分+冲突规避）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:examPlan:arrange')")
+    @Log(title = "考试安排-自动编排", businessType = BusinessType.OTHER)
+    @PostMapping("/autoArrange/{examId}")
+    public AjaxResult autoArrange(@PathVariable Long examId)
+    {
+        return success(aemExamPlanService.autoArrangeExam(examId));
+    }
+
+    /**
+     * A2：考试冲突检测
+     */
+    @PreAuthorize("@ss.hasPermi('aem:examPlan:list')")
+    @GetMapping("/detectConflicts")
+    public AjaxResult detectConflicts(@org.springframework.web.bind.annotation.RequestParam Long semesterId)
+    {
+        return success(aemExamPlanService.detectExamConflicts(semesterId));
+    }
 }

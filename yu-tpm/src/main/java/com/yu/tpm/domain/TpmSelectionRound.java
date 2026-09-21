@@ -58,6 +58,15 @@ public class TpmSelectionRound extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** T6：抽签随机种子（记录以支持结果复现审计） */
+    @Excel(name = "抽签种子")
+    private Long lotterySeed;
+
+    /** T6：抽签执行时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Excel(name = "抽签时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
+    private Date lotteryTime;
+
     /** 删除标志（0代表存在 2代表删除） */
     private String delFlag;
 
@@ -96,6 +105,12 @@ public class TpmSelectionRound extends BaseEntity
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public Long getLotterySeed() { return lotterySeed; }
+    public void setLotterySeed(Long lotterySeed) { this.lotterySeed = lotterySeed; }
+
+    public Date getLotteryTime() { return lotteryTime; }
+    public void setLotteryTime(Date lotteryTime) { this.lotteryTime = lotteryTime; }
 
     public String getDelFlag() { return delFlag; }
     public void setDelFlag(String delFlag) { this.delFlag = delFlag; }

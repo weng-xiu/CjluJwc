@@ -17,6 +17,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="isPass"         column="is_pass"          />
         <result property="isReviewed"     column="is_reviewed"      />
         <result property="status"         column="status"           />
+        <result property="submitStatus"   column="submit_status"    />
+        <result property="submitBy"       column="submit_by"        />
+        <result property="submitTime"     column="submit_time"      />
+        <result property="lockTime"       column="lock_time"        />
         <result property="createBy"       column="create_by"        />
         <result property="createTime"     column="create_time"      />
         <result property="updateBy"       column="update_by"        />
@@ -27,10 +31,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="semesterName"   column="semester_name"    />
     </resultMap>
     <sql id="selectAemGradeRecordVo">
-        select grade_id, student_id, course_id, semester_id, exam_type, regular_score, exam_score, total_score, grade_point, grade_level, is_pass, is_reviewed, status, create_by, create_time, update_by, update_time, remark from aem_grade_record
+        select grade_id, student_id, course_id, semester_id, exam_type, regular_score, exam_score, total_score, grade_point, grade_level, is_pass, is_reviewed, status, submit_status, submit_by, submit_time, lock_time, create_by, create_time, update_by, update_time, remark from aem_grade_record
     </sql>
     <select id="selectAemGradeRecordList" parameterType="AemGradeRecord" resultMap="AemGradeRecordResult">
-        select gr.grade_id, gr.student_id, gr.course_id, gr.semester_id, gr.exam_type, gr.regular_score, gr.exam_score, gr.total_score, gr.grade_point, gr.grade_level, gr.is_pass, gr.is_reviewed, gr.status, gr.create_by, gr.create_time, gr.update_by, gr.update_time, gr.remark
+        select gr.grade_id, gr.student_id, gr.course_id, gr.semester_id, gr.exam_type, gr.regular_score, gr.exam_score, gr.total_score, gr.grade_point, gr.grade_level, gr.is_pass, gr.is_reviewed, gr.status, gr.submit_status, gr.submit_by, gr.submit_time, gr.lock_time, gr.create_by, gr.create_time, gr.update_by, gr.update_time, gr.remark
         from aem_grade_record gr
         left join sam_student ss on gr.student_id = ss.student_id
         left join sys_dept d on ss.dept_id = d.dept_id
@@ -43,6 +47,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="isPass != null and isPass.trim() != ''"> and gr.is_pass = #{isPass}</if>
             <if test="isReviewed != null and isReviewed.trim() != ''"> and gr.is_reviewed = #{isReviewed}</if>
             <if test="status != null and status.trim() != ''"> and gr.status = #{status}</if>
+            <if test="submitStatus != null and submitStatus.trim() != ''"> and gr.submit_status = #{submitStatus}</if>
             <!-- 数据范围过滤 -->
             ${params.dataScope}
         </where>
@@ -80,6 +85,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="isPass != null">is_pass,</if>
             <if test="isReviewed != null">is_reviewed,</if>
             <if test="status != null">status,</if>
+            <if test="submitStatus != null">submit_status,</if>
+            <if test="submitBy != null">submit_by,</if>
+            <if test="submitTime != null">submit_time,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="remark != null">remark,</if>
@@ -97,6 +105,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="isPass != null">#{isPass},</if>
             <if test="isReviewed != null">#{isReviewed},</if>
             <if test="status != null">#{status},</if>
+            <if test="submitStatus != null">#{submitStatus},</if>
+            <if test="submitBy != null">#{submitBy},</if>
+            <if test="submitTime != null">#{submitTime},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="remark != null">#{remark},</if>
@@ -117,6 +128,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="isPass != null">is_pass = #{isPass},</if>
             <if test="isReviewed != null">is_reviewed = #{isReviewed},</if>
             <if test="status != null">status = #{status},</if>
+            <if test="submitStatus != null">submit_status = #{submitStatus},</if>
+            <if test="submitBy != null">submit_by = #{submitBy},</if>
+            <if test="submitTime != null">submit_time = #{submitTime},</if>
+            <if test="lockTime != null">lock_time = #{lockTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="remark != null">remark = #{remark},</if>
@@ -190,4 +205,32 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             update_by = values(create_by),
             update_time = now()
     </insert>
+
+    <!-- A5：教师提交成绩（未提交/已驳回→已提交待审），锁定记录不受影响 -->
+    <update id="submitGradeBatch">
+        update aem_grade_record
+        set submit_status = '1', submit_by = #{submitBy}, submit_time = #{submitTime}, update_time = #{submitTime}
+        where (submit_status is null or submit_status in ('0', '3'))
+        and grade_id in
+        <foreach item="gradeId" collection="gradeIds" open="(" separator="," close=")">#{gradeId}</foreach>
+    </update>
+
+    <!-- A5：教研室审核。pass=true 置为已锁定(2)并记录锁定时间；pass=false 驳回(3)回退可改 -->
+    <update id="auditGradeBatch">
+        update aem_grade_record
+        set submit_status = #{targetStatus}, update_by = #{auditBy}, update_time = #{auditTime}
+        <if test="targetStatus == '2'">, lock_time = #{auditTime}</if>
+        where submit_status = '1'
+        and grade_id in
+        <foreach item="gradeId" collection="gradeIds" open="(" separator="," close=")">#{gradeId}</foreach>
+    </update>
+
+    <!-- A5：管理解锁（已锁定→已驳回可改），仅用于异常纠正并留痕 -->
+    <update id="unlockGradeBatch">
+        update aem_grade_record
+        set submit_status = '3', update_by = #{auditBy}, update_time = #{auditTime}
+        where submit_status = '2'
+        and grade_id in
+        <foreach item="gradeId" collection="gradeIds" open="(" separator="," close=")">#{gradeId}</foreach>
+    </update>
 </mapper>

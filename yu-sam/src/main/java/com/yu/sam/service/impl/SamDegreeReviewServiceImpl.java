@@ -9,13 +9,14 @@ import com.yu.common.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.sam.mapper.SamDegreeReviewMapper;
 import com.yu.sam.mapper.SamWarningDataMapper;
 import com.yu.sam.domain.SamDegreeReview;
+import com.yu.sam.domain.SamDegreeConfig;
 import com.yu.sam.service.ISamDegreeReviewService;
+import com.yu.sam.service.ISamDegreeConfigService;
 
 @Service
 public class SamDegreeReviewServiceImpl implements ISamDegreeReviewService
@@ -28,9 +29,9 @@ public class SamDegreeReviewServiceImpl implements ISamDegreeReviewService
     @Autowired
     private SamWarningDataMapper samWarningDataMapper;
 
-    /** 学位审核 GPA 最低要求（默认 2.0，可后台配置，S3 基础）。 */
-    @Value("${sam.degree.gpaThreshold:2.0}")
-    private double gpaThreshold;
+    /** S3：学位授予条件后台可配置服务（GPA、学位课程、外语、论文、学术成果）。 */
+    @Autowired
+    private ISamDegreeConfigService samDegreeConfigService;
 
     @Override
     public SamDegreeReview selectSamDegreeReviewByReviewId(Long reviewId) { return samDegreeReviewMapper.selectSamDegreeReviewByReviewId(reviewId); }
@@ -50,48 +51,66 @@ public class SamDegreeReviewServiceImpl implements ISamDegreeReviewService
     public int deleteSamDegreeReviewByReviewIds(Long[] reviewIds) { return samDegreeReviewMapper.deleteSamDegreeReviewByReviewIds(reviewIds); }
 
     /**
-     * 自动审核学位资格
-     * 校验条件：GPA达标、学位课程（必修）全部合格
-     * 数据来源：跨模块查询 aem_grade_record + tpm_course_library
-     * 注：论文校验需对接论文管理系统，当前数据模型中无论文表，保留默认合格并记录审核意见
+     * 自动审核学位资格（S3：条件全部来自后台可配置的学位授予条件配置）
+     * 校验条件：GPA达标、学位课程（必修）合格要求、外语课程合格要求、论文、学术成果。
+     * 数据来源：跨模块查询 aem_grade_record + tpm_course_library；论文/学术成果暂无数据源，
+     *   由配置项决定是否强制（强制且无数据则判不通过并提示需对接对应系统）。
      */
     @Override
     @Transactional
     public SamDegreeReview autoReview(Long studentId)
     {
+        SamDegreeConfig cfg = samDegreeConfigService.resolveEffective();
+        double gpaThreshold = cfg.getGpaThreshold();
+
         // 查询学生GPA（全部学期累计加权）
         Double gpa = samWarningDataMapper.selectStudentGpa(studentId, null);
         // 学位课程（必修课）不及格门数
         Integer degreeFail = samWarningDataMapper.countDegreeCourseFail(studentId, null);
+        // 外语课程（以课程名含"英语"代理判定）不及格门数
+        Integer foreignFail = samWarningDataMapper.countFailByCourseNameKeyword(studentId, null, "英语");
 
         SamDegreeReview review = new SamDegreeReview();
         review.setStudentId(studentId);
         review.setGpa(gpa != null ? gpa : 0.0);
 
-        // GPA校验（默认要求GPA >= 2.0，可配置）
+        // GPA校验
         boolean gpaQualified = gpa != null && gpa >= gpaThreshold;
         review.setIsGpaQualified(gpaQualified ? "1" : "0");
 
-        // 学位课程校验（必修课程全部通过）
-        boolean degreeCourseQualified = degreeFail == null || degreeFail == 0;
+        // 学位课程校验（配置要求时必修须全部通过，否则视为合格）
+        boolean degreeCourseQualified = !"1".equals(cfg.getRequireDegreeCourse())
+                || degreeFail == null || degreeFail == 0;
         review.setIsDegreeCourseQualified(degreeCourseQualified ? "1" : "0");
 
-        // 论文校验：当前无论文管理模块，默认合格（待对接论文系统后完善）
-        review.setIsThesisQualified("1");
+        // 外语校验（配置要求时须无外语课程不及格）
+        boolean foreignQualified = !"1".equals(cfg.getRequireForeignLanguage())
+                || foreignFail == null || foreignFail == 0;
+
+        // 论文校验：当前无论文管理模块，无数据源。
+        //   requireThesis=0：默认放行（保持旧口径）；=1：判不合格并提示需对接论文系统。
+        boolean thesisQualified = !"1".equals(cfg.getRequireThesis());
+        review.setIsThesisQualified(thesisQualified ? "1" : "0");
+
+        // 学术成果校验：无数据源，requireAchievement=1 时判不合格并提示需人工确认
+        boolean achievementQualified = !"1".equals(cfg.getRequireAchievement());
 
         // 综合审核结果
-        boolean allQualified = gpaQualified && degreeCourseQualified;
+        boolean allQualified = gpaQualified && degreeCourseQualified && foreignQualified && thesisQualified && achievementQualified;
         review.setReviewStatus(allQualified ? "1" : "2");
         review.setReviewDate(new Date());
         review.setReviewer("系统自动审核");
 
         StringBuilder opinion = new StringBuilder();
         if (allQualified) {
-            opinion.append("自动审核通过：GPA=").append(gpa).append("，学位课程全部合格");
+            opinion.append("自动审核通过：GPA=").append(gpa).append("，满足配置["+cfg.getConfigName()+"]全部学位授予条件");
         } else {
             opinion.append("自动审核不通过：");
             if (!gpaQualified) opinion.append("GPA=").append(gpa != null ? gpa : "无").append("，未达到").append(gpaThreshold).append("要求；");
             if (!degreeCourseQualified) opinion.append("有").append(degreeFail).append("门学位课程（必修）未通过；");
+            if (!foreignQualified) opinion.append("有").append(foreignFail).append("门外语课程未通过；");
+            if (!thesisQualified) opinion.append("要求论文合格但暂无论文数据，需对接论文系统；");
+            if (!achievementQualified) opinion.append("要求学术成果但暂无数据源，需人工确认；");
         }
         review.setReviewOpinion(opinion.toString());
         review.setStatus("0");

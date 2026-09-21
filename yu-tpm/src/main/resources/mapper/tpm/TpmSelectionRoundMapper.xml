@@ -13,6 +13,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="maxCoursesPerStudent" column="max_courses_per_student" />
         <result property="roundStatus"          column="round_status"            />
         <result property="status"               column="status"                  />
+        <result property="lotterySeed"          column="lottery_seed"            />
+        <result property="lotteryTime"          column="lottery_time"            />
         <result property="delFlag"              column="del_flag"                />
         <result property="createBy"             column="create_by"               />
         <result property="createTime"           column="create_time"             />
@@ -22,7 +24,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="semesterName"         column="semester_name"           />
     </resultMap>
     <sql id="selectTpmSelectionRoundVo">
-        select r.round_id, r.semester_id, r.round_name, r.round_order, r.start_time, r.end_time, r.max_courses_per_student, r.round_status, r.status, r.del_flag, r.create_by, r.create_time, r.update_by, r.update_time, r.remark,
+        select r.round_id, r.semester_id, r.round_name, r.round_order, r.start_time, r.end_time, r.max_courses_per_student, r.round_status, r.status, r.lottery_seed, r.lottery_time, r.del_flag, r.create_by, r.create_time, r.update_by, r.update_time, r.remark,
         s.semester_name as semester_name
         from tpm_selection_round r
         left join brm_semester s on r.semester_id = s.semester_id
@@ -83,6 +85,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="maxCoursesPerStudent != null">max_courses_per_student = #{maxCoursesPerStudent},</if>
             <if test="roundStatus != null">round_status = #{roundStatus},</if>
             <if test="status != null">status = #{status},</if>
+            <if test="lotterySeed != null">lottery_seed = #{lotterySeed},</if>
+            <if test="lotteryTime != null">lottery_time = #{lotteryTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="remark != null">remark = #{remark},</if>

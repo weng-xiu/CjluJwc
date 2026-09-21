@@ -70,6 +70,21 @@ public class AemGradeRecord extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** A5：提交状态（0未提交 1已提交待审 2已锁定 3已驳回可改） */
+    @Excel(name = "提交状态", readConverterExp = "0=未提交,1=已提交待审,2=已锁定,3=已驳回")
+    private String submitStatus;
+
+    /** A5：提交人 */
+    private String submitBy;
+
+    /** A5：提交时间 */
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private java.util.Date submitTime;
+
+    /** A5：锁定（审核通过）时间 */
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private java.util.Date lockTime;
+
     /** 课程学分（非持久化，JOIN tpm_course_library 取得，用于GPA加权计算） */
     private transient Double credit;
 
@@ -135,6 +150,18 @@ public class AemGradeRecord extends BaseEntity
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getSubmitStatus() { return submitStatus; }
+    public void setSubmitStatus(String submitStatus) { this.submitStatus = submitStatus; }
+
+    public String getSubmitBy() { return submitBy; }
+    public void setSubmitBy(String submitBy) { this.submitBy = submitBy; }
+
+    public java.util.Date getSubmitTime() { return submitTime; }
+    public void setSubmitTime(java.util.Date submitTime) { this.submitTime = submitTime; }
+
+    public java.util.Date getLockTime() { return lockTime; }
+    public void setLockTime(java.util.Date lockTime) { this.lockTime = lockTime; }
 
     @Override
     public String toString() {

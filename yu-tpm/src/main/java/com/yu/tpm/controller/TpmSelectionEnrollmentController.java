@@ -128,14 +128,27 @@ public class TpmSelectionEnrollmentController extends BaseController
 
     /**
      * 执行抽签
+     * T6：可选传入随机种子（seed），传入相同种子可复现同一抽签结果用于审计；不传则自动生成并记录。
      */
     @PreAuthorize("@ss.hasPermi('tpm:enroll:edit')")
     @PostMapping("/lottery/{roundId}")
     @Log(title = "选课抽签", businessType = BusinessType.UPDATE)
-    public AjaxResult lottery(@PathVariable Long roundId)
+    public AjaxResult lottery(@PathVariable Long roundId,
+                              @RequestParam(required = false) Long seed)
     {
-        Map<String, Object> result = tpmSelectionEnrollmentService.runLottery(roundId);
+        Map<String, Object> result = tpmSelectionEnrollmentService.runLottery(roundId, seed);
         return success(result);
+    }
+
+    /**
+     * T6：候补递补——按候补排名将落选学生递补至空余容量
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:enroll:edit')")
+    @PostMapping("/promoteWaitlist/{offeringId}")
+    @Log(title = "选课候补递补", businessType = BusinessType.UPDATE)
+    public AjaxResult promoteWaitlist(@PathVariable Long offeringId)
+    {
+        return success(tpmSelectionEnrollmentService.promoteWaitlist(offeringId));
     }
 
     /**

@@ -123,4 +123,47 @@ public class AemGradeRecordController extends BaseController
         ExcelUtil<AemGradeRecord> util = new ExcelUtil<AemGradeRecord>(AemGradeRecord.class);
         util.importTemplateExcel(response, "成绩数据");
     }
+
+    /**
+     * A5：查询成绩录入开放期状态（供前端提示）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeRecord:list')")
+    @GetMapping("/entryWindow")
+    public AjaxResult entryWindow()
+    {
+        return success(aemGradeRecordService.getEntryWindowStatus());
+    }
+
+    /**
+     * A5：教师提交成绩（批量）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeRecord:submit')")
+    @Log(title = "成绩提交", businessType = BusinessType.UPDATE)
+    @PutMapping("/submit/{gradeIds}")
+    public AjaxResult submit(@PathVariable Long[] gradeIds)
+    {
+        return toAjax(aemGradeRecordService.submitGrade(gradeIds, getUsername()));
+    }
+
+    /**
+     * A5：教研室审核成绩（approved=true 锁定，false 驳回）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeRecord:audit')")
+    @Log(title = "成绩审核锁定", businessType = BusinessType.UPDATE)
+    @PutMapping("/audit/{gradeIds}")
+    public AjaxResult audit(@PathVariable Long[] gradeIds, @RequestParam(defaultValue = "true") boolean approved)
+    {
+        return toAjax(aemGradeRecordService.auditGrade(gradeIds, approved, getUsername()));
+    }
+
+    /**
+     * A5：管理解锁已锁定成绩（异常纠正）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeRecord:unlock')")
+    @Log(title = "成绩解锁", businessType = BusinessType.UPDATE)
+    @PutMapping("/unlock/{gradeIds}")
+    public AjaxResult unlock(@PathVariable Long[] gradeIds)
+    {
+        return toAjax(aemGradeRecordService.unlockGrade(gradeIds, getUsername()));
+    }
 }

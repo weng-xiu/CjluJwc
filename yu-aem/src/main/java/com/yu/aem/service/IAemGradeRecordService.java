@@ -42,4 +42,16 @@ public interface IAemGradeRecordService
      * @return 成功导入条数
      */
     public int importGrade(List<AemGradeRecord> list, String operator, String algorithmCode);
+
+    /** A5：教师提交成绩（批量） */
+    public int submitGrade(Long[] gradeIds, String operator);
+
+    /** A5：教研室审核成绩（批量）。approved=true 锁定，false 驳回可改 */
+    public int auditGrade(Long[] gradeIds, boolean approved, String operator);
+
+    /** A5：管理解锁已锁定成绩（异常纠正） */
+    public int unlockGrade(Long[] gradeIds, String operator);
+
+    /** A5：查询成绩录入开放期状态（供前端提示） */
+    public java.util.Map<String, Object> getEntryWindowStatus();
 }

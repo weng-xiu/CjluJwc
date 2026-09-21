@@ -40,9 +40,14 @@ export function getSuggestions(courseOfferingId, query) {
   return request({ url: '/tpm/enroll/suggestions/' + courseOfferingId, method: 'get', params: query })
 }
 
-// 发起抽签
-export function runLottery(roundId) {
-  return request({ url: '/tpm/enroll/lottery/' + roundId, method: 'post' })
+// 发起抽签（可传随机种子以复现）
+export function runLottery(roundId, seed) {
+  return request({ url: '/tpm/enroll/lottery/' + roundId, method: 'post', params: { seed } })
+}
+
+// T6：候补递补（按空出容量顺序递补候补队列）
+export function promoteWaitlist(offeringId) {
+  return request({ url: '/tpm/enroll/promoteWaitlist/' + offeringId, method: 'post' })
 }
 
 // 学生退课

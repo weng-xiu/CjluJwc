@@ -47,6 +47,10 @@ public class TpmSelectionEnrollment extends BaseEntity
     @Excel(name = "结果状态", readConverterExp = "1=选中,2=落选,3=退课")
     private String resultStatus;
 
+    /** T6：候补排名（抽签落选时的递补序号，1为最优；非落选记录为空） */
+    @Excel(name = "候补排名")
+    private Integer waitlistRank;
+
     /** 退课时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "退课时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
@@ -98,6 +102,9 @@ public class TpmSelectionEnrollment extends BaseEntity
 
     public String getResultStatus() { return resultStatus; }
     public void setResultStatus(String resultStatus) { this.resultStatus = resultStatus; }
+
+    public Integer getWaitlistRank() { return waitlistRank; }
+    public void setWaitlistRank(Integer waitlistRank) { this.waitlistRank = waitlistRank; }
 
     public Date getDropTime() { return dropTime; }
     public void setDropTime(Date dropTime) { this.dropTime = dropTime; }

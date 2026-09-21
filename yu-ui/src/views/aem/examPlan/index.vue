@@ -11,6 +11,7 @@
       <el-col :span="1.5"><el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['aem:examPlan:edit']">修改</el-button></el-col>
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['aem:examPlan:remove']">删除</el-button></el-col>
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['aem:examPlan:export']">导出</el-button></el-col>
+      <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-warning" size="mini" @click="handleDetectConflicts" v-hasPermi="['aem:examPlan:list']">冲突检测</el-button></el-col>
       <el-col :span="1.5"><el-tooltip content="点击左侧箭头展开可维护座位编排与监考安排" placement="top"><span class="tips-text">点击行首箭头维护明细</span></el-tooltip></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -60,11 +61,12 @@
       <el-table-column label="考试时长(分)" align="center" prop="duration" width="100" />
       <el-table-column label="考生人数" align="center" prop="totalStudents" width="80" />
       <el-table-column label="安排状态" align="center" prop="planStatus" width="90"><template slot-scope="scope"><dict-tag :options="dict.type.aem_plan_status" :value="scope.row.planStatus"/></template></el-table-column>
-      <el-table-column label="操作" align="center" width="280" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="360" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-view" @click="toggleExpand(scope.row)">明细</el-button>
           <el-button size="mini" type="text" icon="el-icon-s-grid" @click="handleAutoSeat(scope.row)" v-hasPermi="['aem:examSeat:add']">排座</el-button>
           <el-button size="mini" type="text" icon="el-icon-user" @click="handleAutoDispatch(scope.row)" v-hasPermi="['aem:invigilation:add']">派监考</el-button>
+          <el-button size="mini" type="text" icon="el-icon-magic-stick" @click="handleAutoArrangeExam(scope.row)" v-hasPermi="['aem:examPlan:arrange']">自动编排</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['aem:examPlan:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['aem:examPlan:remove']">删除</el-button>
         </template>
@@ -86,10 +88,26 @@
       </el-form>
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
     </el-dialog>
+
+    <!-- A2：考试冲突检测结果对话框 -->
+    <el-dialog title="考试冲突检测结果" :visible.sync="conflictOpen" width="760px" append-to-body>
+      <el-alert v-if="conflictList.length === 0" title="未检测到冲突：本学期时间重叠的考试在教室/学生/监考教师维度均无冲突" type="success" :closable="false" show-icon />
+      <div v-else>
+        <el-alert :title="'检测到 ' + conflictList.length + ' 项冲突，请调整考试安排'" type="warning" :closable="false" show-icon style="margin-bottom:12px" />
+        <el-table :data="conflictList" border size="mini" max-height="420">
+          <el-table-column label="冲突类型" align="center" prop="conflictType" width="110"><template slot-scope="scope"><el-tag type="danger" size="mini">{{ scope.row.conflictType }}</el-tag></template></el-table-column>
+          <el-table-column label="考试A" align="center" prop="examNameA" :show-overflow-tooltip="true" />
+          <el-table-column label="考试B" align="center" prop="examNameB" :show-overflow-tooltip="true" />
+          <el-table-column label="涉及数量" align="center" prop="count" width="90" />
+          <el-table-column label="涉及ID" align="center" prop="relatedIds" :show-overflow-tooltip="true"><template slot-scope="scope">{{ (scope.row.relatedIds || []).join(', ') }}</template></el-table-column>
+        </el-table>
+      </div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="conflictOpen = false">关 闭</el-button></div>
+    </el-dialog>
   </div>
 </template>
 <script>
-import { listExamPlan, getExamPlan, delExamPlan, addExamPlan, updateExamPlan, getExamPlanDetail, autoArrangeSeat, autoDispatch } from "@/api/aem/examPlan"
+import { listExamPlan, getExamPlan, delExamPlan, addExamPlan, updateExamPlan, getExamPlanDetail, autoArrangeSeat, autoDispatch, autoArrangeExam, detectExamConflicts } from "@/api/aem/examPlan"
 import { listExamSeat, addExamSeat, updateExamSeat, delExamSeat } from "@/api/aem/examSeat"
 import { listInvigilation, addInvigilation, updateInvigilation, delInvigilation } from "@/api/aem/invigilation"
 import MasterDetailPanel from "../components/MasterDetailPanel"
@@ -100,7 +118,7 @@ export default {
   data() {
     return {
       loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, examPlanList: [], title: "", open: false,
-      activeTab: {},
+      activeTab: {}, conflictOpen: false, conflictList: [],
       queryParams: { pageNum: 1, pageSize: 10, examName: null, examType: null, planStatus: null },
       form: {},
       rules: { examName: [{ required: true, message: "考试名称不能为空", trigger: "blur" }] },
@@ -191,6 +209,23 @@ export default {
         this.$modal.msgSuccess((res.data && res.data.message) || res.msg || '派监考完成')
         this.getList()
       }).catch(() => {})
+    },
+    handleAutoArrangeExam(row) {
+      this.$modal.confirm('确认对考试「' + row.examName + '」执行自动编排？将按考生名单拆分至多个可用教室（避开同时段已占用教室），并清除原座位记录。').then(() => {
+        return autoArrangeExam(row.examId)
+      }).then(res => {
+        const d = (res && res.data) || {}
+        this.$alert(d.message || '编排完成', '自动编排结果', { confirmButtonText: '确定' })
+        this.getList()
+      }).catch(() => {})
+    },
+    handleDetectConflicts() {
+      const semesterId = this.queryParams.semesterId || (this.examPlanList[0] && this.examPlanList[0].semesterId)
+      if (!semesterId) { this.$modal.msgWarning("请先在查询条件中选择学期（或列表中存在考试以推断学期）"); return }
+      detectExamConflicts(semesterId).then(res => {
+        this.conflictList = res.data || []
+        this.conflictOpen = true
+      })
     },
     handleExport() { this.download('aem/examPlan/export', { ...this.queryParams }, `examPlan_${new Date().getTime()}.xlsx`) }
   }

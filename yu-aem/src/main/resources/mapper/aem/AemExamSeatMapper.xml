@@ -106,4 +106,31 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           and e.result_status != '3'
         order by e.student_id
     </select>
+
+    <!-- A1：查询指定日期与时段内已被占用的教室ID（座位关联考试计划，时间区间重叠判定） -->
+    <select id="selectOccupiedClassroomIds" resultType="java.lang.Long">
+        select distinct s.classroom_id
+        from aem_exam_seat s
+        inner join aem_exam_plan p on s.exam_id = p.exam_id
+        where s.classroom_id is not null
+          and p.exam_date = #{examDate}
+          <if test="excludeExamId != null">and s.exam_id != #{excludeExamId}</if>
+          and (
+              (p.start_time &lt;= #{startTime} and p.end_time &gt; #{startTime})
+              or (p.start_time &lt; #{endTime} and p.end_time &gt;= #{endTime})
+              or (p.start_time &gt;= #{startTime} and p.end_time &lt;= #{endTime})
+          )
+    </select>
+
+    <!-- A2：某考试已占用的教室ID（去重） -->
+    <select id="selectClassroomIdsByExamId" resultType="java.lang.Long">
+        select distinct classroom_id from aem_exam_seat
+        where exam_id = #{examId} and classroom_id is not null
+    </select>
+
+    <!-- A2：某考试的考生学生ID（去重） -->
+    <select id="selectStudentIdsByExamId" resultType="java.lang.Long">
+        select distinct student_id from aem_exam_seat
+        where exam_id = #{examId} and student_id is not null
+    </select>
 </mapper>

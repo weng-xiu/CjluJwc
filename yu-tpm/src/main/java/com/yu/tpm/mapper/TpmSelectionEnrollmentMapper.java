@@ -44,4 +44,29 @@ public interface TpmSelectionEnrollmentMapper
      * @return 已完成的课程门数
      */
     public int countCompletedCourses(@Param("studentId") Long studentId, @Param("courseIds") List<Long> courseIds);
+
+    /**
+     * T6：查询某开课的候补队列（抽签落选记录），按递补序号升序。
+     *
+     * @param courseOfferingId 开课ID
+     * @return 候补选课记录列表
+     */
+    public List<TpmSelectionEnrollment> selectWaitlistByOffering(@Param("courseOfferingId") Long courseOfferingId);
+
+    /**
+     * T6：统计某开课抽签中签人数。
+     *
+     * @param courseOfferingId 开课ID
+     * @return 中签人数
+     */
+    public int countAdmittedByOffering(@Param("courseOfferingId") Long courseOfferingId);
+
+    /**
+     * T6：将候补记录递补为中签（清空候补排名）。
+     *
+     * @param enrollId   选课记录ID
+     * @param updateTime 更新时间
+     * @return 影响行数
+     */
+    public int promoteFromWaitlist(@Param("enrollId") Long enrollId, @Param("updateTime") java.util.Date updateTime);
 }
