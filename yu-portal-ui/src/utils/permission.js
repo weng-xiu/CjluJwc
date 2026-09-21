@@ -22,6 +22,7 @@ export const portalMenuConfig = [
   { permission: 'portal:invigilation:list',    path: '/invigilation',    title: '监考安排',     icon: 'el-icon-view',           group: '教师服务' },
   { permission: 'portal:evalResult:list',      path: '/evalResult',      title: '评教结果查询', icon: 'el-icon-data-line',      group: '教师服务' },
   { permission: 'portal:adjustment:list',      path: '/adjustment',      title: '调停课申请',   icon: 'el-icon-refresh',        group: '教师服务' },
+  { permission: 'portal:borrow:list',          path: '/borrow',          title: '教室借用申请', icon: 'el-icon-office-building', group: '教师服务' },
   { permission: 'portal:notice:list',          path: '/notice',          title: '教务通知',     icon: 'el-icon-message-solid',  group: '教师服务' }
 ]
 

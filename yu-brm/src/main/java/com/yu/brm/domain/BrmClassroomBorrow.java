@@ -52,21 +52,99 @@ public class BrmClassroomBorrow extends BaseEntity
     @Excel(name = "借用用途")
     private String purpose;
 
-    /** 审批状态 */
-    @Excel(name = "审批状态", readConverterExp = "0=待审,1=通过,2=驳回")
+    /** 审批状态（流程状态机：0待院系审核 1待教务处审核 2已通过 3已驳回 4已撤销） */
+    @Excel(name = "审批状态", readConverterExp = "0=待院系审核,1=待教务处审核,2=已通过,3=已驳回,4=已撤销")
     private String approveStatus;
 
-    /** 审批人 */
+    /** 审批人（最近一次处理人） */
     @Excel(name = "审批人")
     private String approveBy;
 
-    /** 审批时间 */
+    /** 审批时间（最近一次处理时间） */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date approveTime;
 
     /** 状态 */
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
+
+    // ========== B1 借用申请单：流程与多级审批留痕字段 ==========
+
+    /** 申请人用户ID（门户申请时绑定登录用户，防越权） */
+    private Long applicantUserId;
+
+    /** 联系电话 */
+    @Excel(name = "联系电话")
+    private String contactPhone;
+
+    /** 借用人次 */
+    @Excel(name = "借用人次")
+    private Integer attendeeCount;
+
+    /** 院系审核人 */
+    private String deptApproveBy;
+
+    /** 院系审核时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date deptApproveTime;
+
+    /** 院系审核意见 */
+    private String deptOpinion;
+
+    /** 教务处审核人 */
+    private String aaApproveBy;
+
+    /** 教务处审核时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date aaApproveTime;
+
+    /** 教务处审核意见 */
+    private String aaOpinion;
+
+    /** 流程实例ID（关联Flowable） */
+    private String procInstId;
+
+    /** 教室名称（关联查询冗余） */
+    private String classroomName;
+
+    /** 教学楼名称（关联查询冗余） */
+    private String buildingName;
+
+    public Long getApplicantUserId() { return applicantUserId; }
+    public void setApplicantUserId(Long applicantUserId) { this.applicantUserId = applicantUserId; }
+
+    public String getContactPhone() { return contactPhone; }
+    public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
+
+    public Integer getAttendeeCount() { return attendeeCount; }
+    public void setAttendeeCount(Integer attendeeCount) { this.attendeeCount = attendeeCount; }
+
+    public String getDeptApproveBy() { return deptApproveBy; }
+    public void setDeptApproveBy(String deptApproveBy) { this.deptApproveBy = deptApproveBy; }
+
+    public Date getDeptApproveTime() { return deptApproveTime; }
+    public void setDeptApproveTime(Date deptApproveTime) { this.deptApproveTime = deptApproveTime; }
+
+    public String getDeptOpinion() { return deptOpinion; }
+    public void setDeptOpinion(String deptOpinion) { this.deptOpinion = deptOpinion; }
+
+    public String getAaApproveBy() { return aaApproveBy; }
+    public void setAaApproveBy(String aaApproveBy) { this.aaApproveBy = aaApproveBy; }
+
+    public Date getAaApproveTime() { return aaApproveTime; }
+    public void setAaApproveTime(Date aaApproveTime) { this.aaApproveTime = aaApproveTime; }
+
+    public String getAaOpinion() { return aaOpinion; }
+    public void setAaOpinion(String aaOpinion) { this.aaOpinion = aaOpinion; }
+
+    public String getProcInstId() { return procInstId; }
+    public void setProcInstId(String procInstId) { this.procInstId = procInstId; }
+
+    public String getClassroomName() { return classroomName; }
+    public void setClassroomName(String classroomName) { this.classroomName = classroomName; }
+
+    public String getBuildingName() { return buildingName; }
+    public void setBuildingName(String buildingName) { this.buildingName = buildingName; }
 
     public Long getBorrowId() { return borrowId; }
     public void setBorrowId(Long borrowId) { this.borrowId = borrowId; }

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.aem.mapper.AemEvaluationStatMapper">
+
+    <!-- 归一化得分百分比：total_score / full_score * 100，缺省满分100 -->
+    <sql id="pctExpr">
+        (r.total_score / COALESCE(q.full_score, 100) * 100)
+    </sql>
+
+    <!-- 公共过滤：仅统计正常状态且已打分记录 -->
+    <sql id="baseWhere">
+        r.status = '0' and r.total_score is not null
+        <if test="questionnaireId != null"> and r.questionnaire_id = #{questionnaireId}</if>
+        <if test="semesterId != null"> and q.semester_id = #{semesterId}</if>
+    </sql>
+
+    <select id="statOverview" resultType="java.util.Map">
+        select count(1) as totalCount,
+               count(distinct r.teacher_id) as teacherCount,
+               count(distinct r.course_id) as courseCount,
+               count(distinct r.student_id) as studentCount,
+               coalesce(round(avg(<include refid="pctExpr"/>),2),0) as avgScore,
+               coalesce(round(max(<include refid="pctExpr"/>),2),0) as maxScore,
+               coalesce(round(min(<include refid="pctExpr"/>),2),0) as minScore,
+               coalesce(round(sum(case when <include refid="pctExpr"/> &gt;= 85 then 1 else 0 end)/count(1)*100,2),0) as satisfactionRate
+        from aem_evaluation_result r
+        left join aem_evaluation_questionnaire q on r.questionnaire_id = q.questionnaire_id
+        where <include refid="baseWhere"/>
+    </select>
+
+    <select id="statDistribution" resultType="java.util.Map">
+        select
+          sum(case when <include refid="pctExpr"/> &gt;= 90 then 1 else 0 end) as excellentCount,
+          sum(case when <include refid="pctExpr"/> &gt;= 80 and <include refid="pctExpr"/> &lt; 90 then 1 else 0 end) as goodCount,
+          sum(case when <include refid="pctExpr"/> &gt;= 70 and <include refid="pctExpr"/> &lt; 80 then 1 else 0 end) as mediumCount,
+          sum(case when <include refid="pctExpr"/> &gt;= 60 and <include refid="pctExpr"/> &lt; 70 then 1 else 0 end) as passCount,
+          sum(case when <include refid="pctExpr"/> &lt; 60 then 1 else 0 end) as needsCount
+        from aem_evaluation_result r
+        left join aem_evaluation_questionnaire q on r.questionnaire_id = q.questionnaire_id
+        where <include refid="baseWhere"/>
+    </select>
+
+    <select id="statByCourse" resultType="java.util.Map">
+        select r.course_id as courseId,
+               c.course_name as courseName,
+               c.credit as credit,
+               count(1) as totalCount,
+               coalesce(round(avg(<include refid="pctExpr"/>),2),0) as avgScore,
+               coalesce(round(max(<include refid="pctExpr"/>),2),0) as maxScore,
+               coalesce(round(min(<include refid="pctExpr"/>),2),0) as minScore,
+               coalesce(round(sum(case when <include refid="pctExpr"/> &gt;= 85 then 1 else 0 end)/count(1)*100,2),0) as satisfactionRate
+        from aem_evaluation_result r
+        left join aem_evaluation_questionnaire q on r.questionnaire_id = q.questionnaire_id
+        left join tpm_course_library c on c.course_id = r.course_id
+        where <include refid="baseWhere"/>
+        group by r.course_id, c.course_name, c.credit
+        order by avgScore desc
+    </select>
+
+    <select id="statByTeacher" resultType="java.util.Map">
+        select r.teacher_id as teacherId,
+               t.teacher_name as teacherName,
+               t.teacher_code as teacherCode,
+               count(distinct r.course_id) as courseCount,
+               count(1) as totalCount,
+               coalesce(round(avg(<include refid="pctExpr"/>),2),0) as avgScore,
+               coalesce(round(sum(case when <include refid="pctExpr"/> &gt;= 85 then 1 else 0 end)/count(1)*100,2),0) as satisfactionRate
+        from aem_evaluation_result r
+        left join aem_evaluation_questionnaire q on r.questionnaire_id = q.questionnaire_id
+        left join brm_teacher t on t.teacher_id = r.teacher_id
+        where <include refid="baseWhere"/>
+        group by r.teacher_id, t.teacher_name, t.teacher_code
+        order by avgScore desc
+    </select>
+
+    <select id="statByClass" resultType="java.util.Map">
+        select cl.class_id as classId,
+               cl.class_name as className,
+               count(1) as totalCount,
+               coalesce(round(avg(<include refid="pctExpr"/>),2),0) as avgScore
+        from aem_evaluation_result r
+        left join aem_evaluation_questionnaire q on r.questionnaire_id = q.questionnaire_id
+        left join sam_student s on s.student_id = r.student_id
+        left join brm_class cl on cl.class_id = s.class_id
+        <where>
+            r.status = '0' and r.total_score is not null and s.class_id is not null
+            <if test="questionnaireId != null"> and r.questionnaire_id = #{questionnaireId}</if>
+            <if test="semesterId != null"> and q.semester_id = #{semesterId}</if>
+            <if test="courseId != null"> and r.course_id = #{courseId}</if>
+        </where>
+        group by cl.class_id, cl.class_name
+        order by avgScore desc
+    </select>
+
+    <select id="statTrend" resultType="java.util.Map">
+        select date_format(r.eval_date, '%Y-%m') as month,
+               count(1) as totalCount,
+               coalesce(round(avg(<include refid="pctExpr"/>),2),0) as avgScore
+        from aem_evaluation_result r
+        left join aem_evaluation_questionnaire q on r.questionnaire_id = q.questionnaire_id
+        <where>
+            r.status = '0' and r.total_score is not null and r.eval_date is not null
+            <if test="questionnaireId != null"> and r.questionnaire_id = #{questionnaireId}</if>
+        </where>
+        group by date_format(r.eval_date, '%Y-%m')
+        order by month asc
+    </select>
+
+    <select id="teacherCourseBreakdown" resultType="java.util.Map">
+        select r.course_id as courseId,
+               c.course_name as courseName,
+               sem.semester_name as semesterName,
+               count(1) as totalCount,
+               coalesce(round(avg(<include refid="pctExpr"/>),2),0) as avgScore,
+               coalesce(round(max(<include refid="pctExpr"/>),2),0) as maxScore,
+               coalesce(round(min(<include refid="pctExpr"/>),2),0) as minScore,
+               coalesce(round(sum(case when <include refid="pctExpr"/> &gt;= 85 then 1 else 0 end)/count(1)*100,2),0) as satisfactionRate
+        from aem_evaluation_result r
+        left join aem_evaluation_questionnaire q on r.questionnaire_id = q.questionnaire_id
+        left join tpm_course_library c on c.course_id = r.course_id
+        left join brm_semester sem on sem.semester_id = q.semester_id
+        where r.status = '0' and r.total_score is not null and r.teacher_id = #{teacherId}
+        group by r.course_id, c.course_name, sem.semester_name
+        order by avgScore desc
+    </select>
+
+    <select id="teacherDistribution" resultType="java.util.Map">
+        select
+          sum(case when <include refid="pctExpr"/> &gt;= 90 then 1 else 0 end) as excellentCount,
+          sum(case when <include refid="pctExpr"/> &gt;= 80 and <include refid="pctExpr"/> &lt; 90 then 1 else 0 end) as goodCount,
+          sum(case when <include refid="pctExpr"/> &gt;= 70 and <include refid="pctExpr"/> &lt; 80 then 1 else 0 end) as mediumCount,
+          sum(case when <include refid="pctExpr"/> &gt;= 60 and <include refid="pctExpr"/> &lt; 70 then 1 else 0 end) as passCount,
+          sum(case when <include refid="pctExpr"/> &lt; 60 then 1 else 0 end) as needsCount
+        from aem_evaluation_result r
+        left join aem_evaluation_questionnaire q on r.questionnaire_id = q.questionnaire_id
+        where r.status = '0' and r.total_score is not null and r.teacher_id = #{teacherId}
+    </select>
+
+    <select id="teacherSummary" resultType="java.util.Map">
+        select count(1) as totalCount,
+               count(distinct r.course_id) as courseCount,
+               count(distinct r.student_id) as studentCount,
+               coalesce(round(avg(<include refid="pctExpr"/>),2),0) as avgScore,
+               coalesce(round(sum(case when <include refid="pctExpr"/> &gt;= 85 then 1 else 0 end)/count(1)*100,2),0) as satisfactionRate
+        from aem_evaluation_result r
+        left join aem_evaluation_questionnaire q on r.questionnaire_id = q.questionnaire_id
+        where r.status = '0' and r.total_score is not null and r.teacher_id = #{teacherId}
+    </select>
+
+    <select id="selectComments" resultType="java.lang.String">
+        select r.comment
+        from aem_evaluation_result r
+        <where>
+            r.status = '0' and r.comment is not null and trim(r.comment) &lt;&gt; ''
+            <if test="teacherId != null"> and r.teacher_id = #{teacherId}</if>
+            <if test="courseId != null"> and r.course_id = #{courseId}</if>
+            <if test="questionnaireId != null"> and r.questionnaire_id = #{questionnaireId}</if>
+        </where>
+        order by r.eval_date desc
+        limit 500
+    </select>
+
+</mapper>

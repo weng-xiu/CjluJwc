@@ -16,6 +16,11 @@ export function getTeacherEvalResults() {
   return request({ url: '/portal/evaluation/teacherResults', method: 'get' })
 }
 
+// 教师本人评教分析报告（汇总 + 分课程 + 分布 + 评语词频）
+export function getMyEvalReport() {
+  return request({ url: '/portal/evaluation/myReport', method: 'get' })
+}
+
 // 获取某门课程的评教评语列表
 export function getCourseComments(courseId) {
   return request({ url: '/portal/evaluation/comments/' + courseId, method: 'get' })

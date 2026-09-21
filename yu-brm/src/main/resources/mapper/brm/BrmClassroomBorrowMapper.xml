@@ -2,53 +2,88 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.yu.brm.mapper.BrmClassroomBorrowMapper">
     <resultMap type="BrmClassroomBorrow" id="BrmClassroomBorrowResult">
-        <result property="borrowId"       column="borrow_id"       />
-        <result property="classroomId"    column="classroom_id"    />
-        <result property="applicant"      column="applicant"       />
-        <result property="applicantDept"  column="applicant_dept"  />
-        <result property="borrowDate"     column="borrow_date"     />
-        <result property="startTime"      column="start_time"      />
-        <result property="endTime"        column="end_time"        />
-        <result property="purpose"        column="purpose"         />
-        <result property="approveStatus"  column="approve_status"  />
-        <result property="approveBy"      column="approve_by"      />
-        <result property="approveTime"    column="approve_time"    />
-        <result property="status"         column="status"          />
-        <result property="createBy"       column="create_by"       />
-        <result property="createTime"     column="create_time"     />
-        <result property="updateBy"       column="update_by"       />
-        <result property="updateTime"     column="update_time"     />
-        <result property="remark"         column="remark"          />
+        <result property="borrowId"         column="borrow_id"         />
+        <result property="classroomId"      column="classroom_id"      />
+        <result property="applicant"        column="applicant"         />
+        <result property="applicantUserId"  column="applicant_user_id" />
+        <result property="applicantDept"    column="applicant_dept"    />
+        <result property="borrowDate"       column="borrow_date"       />
+        <result property="startTime"        column="start_time"        />
+        <result property="endTime"          column="end_time"          />
+        <result property="purpose"          column="purpose"           />
+        <result property="contactPhone"     column="contact_phone"     />
+        <result property="attendeeCount"    column="attendee_count"    />
+        <result property="approveStatus"    column="approve_status"    />
+        <result property="approveBy"        column="approve_by"        />
+        <result property="approveTime"      column="approve_time"      />
+        <result property="deptApproveBy"    column="dept_approve_by"   />
+        <result property="deptApproveTime"  column="dept_approve_time" />
+        <result property="deptOpinion"      column="dept_opinion"      />
+        <result property="aaApproveBy"      column="aa_approve_by"     />
+        <result property="aaApproveTime"    column="aa_approve_time"   />
+        <result property="aaOpinion"        column="aa_opinion"        />
+        <result property="procInstId"       column="proc_inst_id"      />
+        <result property="status"           column="status"            />
+        <result property="createBy"         column="create_by"         />
+        <result property="createTime"       column="create_time"       />
+        <result property="updateBy"         column="update_by"         />
+        <result property="updateTime"       column="update_time"       />
+        <result property="remark"           column="remark"            />
+        <result property="classroomName"    column="classroom_name"    />
+        <result property="buildingName"     column="building_name"     />
     </resultMap>
     <sql id="selectBrmClassroomBorrowVo">
-        select borrow_id, classroom_id, applicant, applicant_dept, borrow_date, start_time, end_time, purpose, approve_status, approve_by, approve_time, status, create_by, create_time, update_by, update_time, remark from brm_classroom_borrow
+        select b.borrow_id, b.classroom_id, b.applicant, b.applicant_user_id, b.applicant_dept,
+               b.borrow_date, b.start_time, b.end_time, b.purpose, b.contact_phone, b.attendee_count,
+               b.approve_status, b.approve_by, b.approve_time,
+               b.dept_approve_by, b.dept_approve_time, b.dept_opinion,
+               b.aa_approve_by, b.aa_approve_time, b.aa_opinion, b.proc_inst_id,
+               b.status, b.create_by, b.create_time, b.update_by, b.update_time, b.remark,
+               c.classroom_name, bd.building_name
+        from brm_classroom_borrow b
+        left join brm_classroom c on b.classroom_id = c.classroom_id
+        left join brm_building bd on c.building_id = bd.building_id
     </sql>
     <select id="selectBrmClassroomBorrowList" parameterType="BrmClassroomBorrow" resultMap="BrmClassroomBorrowResult">
         <include refid="selectBrmClassroomBorrowVo"/>
         <where>
-            <if test="classroomId != null"> and classroom_id = #{classroomId}</if>
-            <if test="applicant != null and applicant.trim() != ''"> and applicant like concat('%', #{applicant}, '%')</if>
-            <if test="approveStatus != null and approveStatus.trim() != ''"> and approve_status = #{approveStatus}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
-            <if test="borrowDate != null"> and borrow_date = #{borrowDate}</if>
+            <if test="classroomId != null"> and b.classroom_id = #{classroomId}</if>
+            <if test="applicant != null and applicant.trim() != ''"> and b.applicant like concat('%', #{applicant}, '%')</if>
+            <if test="applicantUserId != null"> and b.applicant_user_id = #{applicantUserId}</if>
+            <if test="approveStatus != null and approveStatus.trim() != ''"> and b.approve_status = #{approveStatus}</if>
+            <if test="status != null and status.trim() != ''"> and b.status = #{status}</if>
+            <if test="borrowDate != null"> and b.borrow_date = #{borrowDate}</if>
+            <if test="params.beginDate != null and params.beginDate != ''"> and b.borrow_date &gt;= #{params.beginDate}</if>
+            <if test="params.endDate != null and params.endDate != ''"> and b.borrow_date &lt;= #{params.endDate}</if>
         </where>
+        order by b.create_time desc
     </select>
     <select id="selectBrmClassroomBorrowByBorrowId" parameterType="Long" resultMap="BrmClassroomBorrowResult">
-        <include refid="selectBrmClassroomBorrowVo"/> where borrow_id = #{borrowId}
+        <include refid="selectBrmClassroomBorrowVo"/> where b.borrow_id = #{borrowId}
     </select>
     <insert id="insertBrmClassroomBorrow" parameterType="BrmClassroomBorrow" useGeneratedKeys="true" keyProperty="borrowId">
         insert into brm_classroom_borrow
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="classroomId != null">classroom_id,</if>
             <if test="applicant != null and applicant != ''">applicant,</if>
+            <if test="applicantUserId != null">applicant_user_id,</if>
             <if test="applicantDept != null">applicant_dept,</if>
             <if test="borrowDate != null">borrow_date,</if>
             <if test="startTime != null">start_time,</if>
             <if test="endTime != null">end_time,</if>
             <if test="purpose != null">purpose,</if>
+            <if test="contactPhone != null">contact_phone,</if>
+            <if test="attendeeCount != null">attendee_count,</if>
             <if test="approveStatus != null">approve_status,</if>
             <if test="approveBy != null">approve_by,</if>
             <if test="approveTime != null">approve_time,</if>
+            <if test="deptApproveBy != null">dept_approve_by,</if>
+            <if test="deptApproveTime != null">dept_approve_time,</if>
+            <if test="deptOpinion != null">dept_opinion,</if>
+            <if test="aaApproveBy != null">aa_approve_by,</if>
+            <if test="aaApproveTime != null">aa_approve_time,</if>
+            <if test="aaOpinion != null">aa_opinion,</if>
+            <if test="procInstId != null">proc_inst_id,</if>
             <if test="status != null">status,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
@@ -57,14 +92,24 @@
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="classroomId != null">#{classroomId},</if>
             <if test="applicant != null and applicant != ''">#{applicant},</if>
+            <if test="applicantUserId != null">#{applicantUserId},</if>
             <if test="applicantDept != null">#{applicantDept},</if>
             <if test="borrowDate != null">#{borrowDate},</if>
             <if test="startTime != null">#{startTime},</if>
             <if test="endTime != null">#{endTime},</if>
             <if test="purpose != null">#{purpose},</if>
+            <if test="contactPhone != null">#{contactPhone},</if>
+            <if test="attendeeCount != null">#{attendeeCount},</if>
             <if test="approveStatus != null">#{approveStatus},</if>
             <if test="approveBy != null">#{approveBy},</if>
             <if test="approveTime != null">#{approveTime},</if>
+            <if test="deptApproveBy != null">#{deptApproveBy},</if>
+            <if test="deptApproveTime != null">#{deptApproveTime},</if>
+            <if test="deptOpinion != null">#{deptOpinion},</if>
+            <if test="aaApproveBy != null">#{aaApproveBy},</if>
+            <if test="aaApproveTime != null">#{aaApproveTime},</if>
+            <if test="aaOpinion != null">#{aaOpinion},</if>
+            <if test="procInstId != null">#{procInstId},</if>
             <if test="status != null">#{status},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
@@ -76,14 +121,24 @@
         <trim prefix="SET" suffixOverrides=",">
             <if test="classroomId != null">classroom_id = #{classroomId},</if>
             <if test="applicant != null and applicant != ''">applicant = #{applicant},</if>
+            <if test="applicantUserId != null">applicant_user_id = #{applicantUserId},</if>
             <if test="applicantDept != null">applicant_dept = #{applicantDept},</if>
             <if test="borrowDate != null">borrow_date = #{borrowDate},</if>
             <if test="startTime != null">start_time = #{startTime},</if>
             <if test="endTime != null">end_time = #{endTime},</if>
             <if test="purpose != null">purpose = #{purpose},</if>
+            <if test="contactPhone != null">contact_phone = #{contactPhone},</if>
+            <if test="attendeeCount != null">attendee_count = #{attendeeCount},</if>
             <if test="approveStatus != null">approve_status = #{approveStatus},</if>
             <if test="approveBy != null">approve_by = #{approveBy},</if>
             <if test="approveTime != null">approve_time = #{approveTime},</if>
+            <if test="deptApproveBy != null">dept_approve_by = #{deptApproveBy},</if>
+            <if test="deptApproveTime != null">dept_approve_time = #{deptApproveTime},</if>
+            <if test="deptOpinion != null">dept_opinion = #{deptOpinion},</if>
+            <if test="aaApproveBy != null">aa_approve_by = #{aaApproveBy},</if>
+            <if test="aaApproveTime != null">aa_approve_time = #{aaApproveTime},</if>
+            <if test="aaOpinion != null">aa_opinion = #{aaOpinion},</if>
+            <if test="procInstId != null">proc_inst_id = #{procInstId},</if>
             <if test="status != null">status = #{status},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>

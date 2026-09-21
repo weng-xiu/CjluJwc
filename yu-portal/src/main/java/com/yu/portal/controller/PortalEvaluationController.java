@@ -25,6 +25,9 @@ import com.yu.aem.domain.AemEvaluationResult;
 import com.yu.aem.service.IAemEvaluationQuestionService;
 import com.yu.aem.service.IAemEvaluationQuestionnaireService;
 import com.yu.aem.service.IAemEvaluationResultService;
+import com.yu.aem.service.IAemEvaluationStatService;
+import com.yu.brm.domain.BrmTeacher;
+import com.yu.brm.service.IBrmTeacherService;
 
 /**
  * 评教门户Controller（学生评教入口 + 教师评教结果查询）
@@ -44,6 +47,12 @@ public class PortalEvaluationController extends BaseController
 
     @Autowired
     private IAemEvaluationResultService aemEvaluationResultService;
+
+    @Autowired
+    private IAemEvaluationStatService aemEvaluationStatService;
+
+    @Autowired
+    private IBrmTeacherService brmTeacherService;
 
     /** 学生端：待评教问卷列表（附带当前用户 completed 标记） */
     @PreAuthorize("@ss.hasPermi('portal:evaluation:list')")
@@ -142,27 +151,30 @@ public class PortalEvaluationController extends BaseController
         return getDataTable(list);
     }
 
-    /** 教师端：评教结果汇总（前端调用） */
+    /** 教师端：本人评教结果汇总（真实课程名/学期名，强制绑定当前登录教师，修复旧版硬编码与越权） */
     @PreAuthorize("@ss.hasPermi('portal:evalResult:list') and @ss.hasAnyRoles('admin,teacher')")
     @GetMapping("/teacherResults")
-    public TableDataInfo teacherResults()
+    public AjaxResult teacherResults()
     {
-        startPage();
-        List<AemEvaluationResult> list = aemEvaluationResultService.selectAemEvaluationResultList(new AemEvaluationResult());
-        List<Map<String, Object>> resultList = list.stream().collect(Collectors.groupingBy(
-            AemEvaluationResult::getCourseId,
-            Collectors.collectingAndThen(Collectors.toList(), results -> {
-                Map<String, Object> m = new HashMap<>();
-                AemEvaluationResult first = results.get(0);
-                m.put("courseId", first.getCourseId());
-                m.put("courseName", "课程" + first.getCourseId());
-                m.put("semesterName", "本学期");
-                m.put("participantCount", results.size());
-                m.put("avgScore", results.stream().mapToDouble(r -> r.getTotalScore() != null ? r.getTotalScore() : 0.0).average().orElse(0.0));
-                return m;
-            })
-        )).values().stream().collect(Collectors.toList());
-        return getDataTable(resultList);
+        BrmTeacher teacher = brmTeacherService.selectBrmTeacherByUserId(getUserId());
+        if (teacher == null)
+        {
+            return success(new java.util.ArrayList<>());
+        }
+        return success(aemEvaluationStatService.teacherCourseBreakdown(teacher.getTeacherId()));
+    }
+
+    /** 教师端：本人评教分析报告（汇总 + 分课程 + 分数段分布 + 评语词频，A6） */
+    @PreAuthorize("@ss.hasPermi('portal:evalResult:list') and @ss.hasAnyRoles('admin,teacher')")
+    @GetMapping("/myReport")
+    public AjaxResult myReport()
+    {
+        BrmTeacher teacher = brmTeacherService.selectBrmTeacherByUserId(getUserId());
+        if (teacher == null)
+        {
+            return error("未找到当前用户对应的教师档案");
+        }
+        return success(aemEvaluationStatService.teacherReport(teacher.getTeacherId()));
     }
 
     /** 教师端：获取某门课程的真实评语列表（非空评语） */

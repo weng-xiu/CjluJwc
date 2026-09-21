@@ -64,7 +64,8 @@ export const constantRoutes = [
       { path: 'teachingTask',    component: () => import('@/views/teachingTask/index'),    name: 'TeachingTask',    meta: { title: '教学任务查询', permission: 'portal:teachingTask:list' } },
       { path: 'invigilation',    component: () => import('@/views/invigilation/index'),    name: 'Invigilation',    meta: { title: '监考安排',     permission: 'portal:invigilation:list' } },
       { path: 'evalResult',      component: () => import('@/views/evalResult/index'),      name: 'EvalResult',      meta: { title: '评教结果查询', permission: 'portal:evalResult:list' } },
-      { path: 'adjustment',      component: () => import('@/views/adjustment/index'),      name: 'Adjustment',      meta: { title: '调停课申请',   permission: 'portal:adjustment:list' } }
+      { path: 'adjustment',      component: () => import('@/views/adjustment/index'),      name: 'Adjustment',      meta: { title: '调停课申请',   permission: 'portal:adjustment:list' } },
+      { path: 'borrow',          component: () => import('@/views/borrow/index'),          name: 'ClassroomBorrow', meta: { title: '教室借用申请', permission: 'portal:borrow:list' } }
     ]
   },
   // 移动端路由

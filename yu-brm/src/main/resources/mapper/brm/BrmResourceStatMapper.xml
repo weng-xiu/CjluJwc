@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.brm.mapper.BrmResourceStatMapper">
+
+    <!-- 教室利用率：全部正常教室左连接排课，学期过滤放在 offering 关联条件上，
+         保证无排课的教室也出现（占用为0）。weeklySessions=各排课行(结束节次-开始节次+1)之和 -->
+    <select id="classroomUtilization" resultType="java.util.Map">
+        select c.classroom_id   as classroomId,
+               c.classroom_name as classroomName,
+               b.building_name  as buildingName,
+               ct.type_name     as typeName,
+               c.capacity       as capacity,
+               count(o.offering_id) as scheduleCount,
+               coalesce(sum(case when o.offering_id is not null
+                                 then (s.end_period - s.start_period + 1) else 0 end), 0) as weeklySessions
+        from brm_classroom c
+        left join brm_building b on c.building_id = b.building_id
+        left join brm_classroom_type ct on c.type_id = ct.type_id
+        left join tpm_schedule s on s.classroom_id = c.classroom_id and s.del_flag = '0' and s.status = '0'
+        left join tpm_course_offering o on s.offering_id = o.offering_id and o.del_flag = '0'
+            <if test="semesterId != null"> and o.semester_id = #{semesterId}</if>
+        <where>
+            c.status = '0'
+            <if test="buildingId != null"> and c.building_id = #{buildingId}</if>
+        </where>
+        group by c.classroom_id, c.classroom_name, b.building_name, ct.type_name, c.capacity
+        order by weeklySessions desc, c.classroom_name asc
+    </select>
+
+    <!-- 设备状态汇总 -->
+    <select id="equipmentStatusSummary" resultType="java.util.Map">
+        select status, count(1) as cnt
+        from brm_equipment
+        group by status
+    </select>
+
+    <!-- 维保到期提醒：正常设备中最近一次维修超过 dueDays 或从未维修 -->
+    <select id="maintenanceDueList" resultType="java.util.Map">
+        select e.equip_id            as equipId,
+               e.equip_name          as equipName,
+               e.equip_type          as equipType,
+               e.model               as model,
+               c.classroom_name      as classroomName,
+               m.last_repair_date    as lastRepairDate,
+               case when m.last_repair_date is null then null
+                    else datediff(curdate(), m.last_repair_date) end as daysSince
+        from brm_equipment e
+        left join brm_classroom c on e.classroom_id = c.classroom_id
+        left join (
+            select equip_id, max(repair_date) as last_repair_date
+            from brm_equipment_maintenance
+            group by equip_id
+        ) m on m.equip_id = e.equip_id
+        where e.status = '0'
+          and (m.last_repair_date is null or datediff(curdate(), m.last_repair_date) &gt;= #{dueDays})
+        order by daysSince desc, e.equip_name asc
+    </select>
+
+    <!-- 教师工作量：全部教师左连接开课与排课，学期过滤放在 offering 关联条件上 -->
+    <select id="teacherWorkload" resultType="java.util.Map">
+        select t.teacher_id     as teacherId,
+               t.teacher_name   as teacherName,
+               t.teacher_code   as teacherCode,
+               d.dept_name      as deptName,
+               count(distinct o.course_id)    as courseCount,
+               count(distinct s.offering_id)  as offeringCount,
+               count(s.schedule_id)           as scheduleCount,
+               coalesce(sum(case when s.schedule_id is not null
+                                 then (s.end_period - s.start_period + 1) else 0 end), 0) as weeklySessions
+        from brm_teacher t
+        left join brm_department d on t.dept_id = d.dept_id
+        left join tpm_course_offering o on o.teacher_id = t.teacher_id and o.del_flag = '0'
+            <if test="semesterId != null"> and o.semester_id = #{semesterId}</if>
+        left join tpm_schedule s on s.offering_id = o.offering_id and s.del_flag = '0' and s.status = '0'
+        where t.status = '0'
+        group by t.teacher_id, t.teacher_name, t.teacher_code, d.dept_name
+        order by weeklySessions desc, t.teacher_name asc
+    </select>
+
+</mapper>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.brm.mapper.BrmBorrowConflictMapper">
+
+    <!-- 星期换算：MySQL DAYOFWEEK 1=周日..7=周六，转成 1=周一..7=周日（与 tpm_schedule.week_day 对齐） -->
+    <sql id="weekDayExpr">
+        ((DAYOFWEEK(#{borrowDate}) + 5) % 7) + 1
+    </sql>
+
+    <!-- 排课冲突：借用日期对应星期上，该教室是否存在有效排课（关联开课且未删除） -->
+    <select id="countScheduleConflict" resultType="int">
+        select count(1)
+        from tpm_schedule s
+        join tpm_course_offering o on s.offering_id = o.offering_id and o.del_flag = '0'
+        where s.classroom_id = #{classroomId}
+          and s.del_flag = '0' and s.status = '0'
+          and s.week_day = (<include refid="weekDayExpr"/>)
+    </select>
+
+    <!-- 冲突排课明细 -->
+    <select id="listScheduleConflict" resultType="java.util.Map">
+        select c.course_name     as courseName,
+               s.week_day        as weekDay,
+               s.start_period    as startPeriod,
+               s.end_period      as endPeriod,
+               t.teacher_name    as teacherName
+        from tpm_schedule s
+        join tpm_course_offering o on s.offering_id = o.offering_id and o.del_flag = '0'
+        left join tpm_course_library c on o.course_id = c.course_id
+        left join brm_teacher t on o.teacher_id = t.teacher_id
+        where s.classroom_id = #{classroomId}
+          and s.del_flag = '0' and s.status = '0'
+          and s.week_day = (<include refid="weekDayExpr"/>)
+        order by s.start_period
+    </select>
+
+    <!-- 借用单时段重叠冲突：同一教室、同一日期、HH:mm 区间交叠，且处于待审/审批中/已通过状态 -->
+    <select id="countBorrowConflict" resultType="int">
+        select count(1)
+        from brm_classroom_borrow
+        where classroom_id = #{classroomId}
+          and borrow_date = #{borrowDate}
+          and approve_status in ('0', '1', '2')
+          and (start_time is null or end_time is null or #{startTime} is null or #{endTime} is null
+               or (start_time &lt; #{endTime} and end_time &gt; #{startTime}))
+          <if test="excludeBorrowId != null"> and borrow_id != #{excludeBorrowId}</if>
+    </select>
+
+    <!-- 教室占用日历：区间内处于待审/审批中/已通过的借用单 -->
+    <select id="listBorrowOccupancy" resultType="java.util.Map">
+        select b.borrow_id      as borrowId,
+               b.borrow_date    as borrowDate,
+               b.start_time     as startTime,
+               b.end_time       as endTime,
+               b.applicant      as applicant,
+               b.purpose        as purpose,
+               b.approve_status as approveStatus
+        from brm_classroom_borrow b
+        where b.classroom_id = #{classroomId}
+          and b.approve_status in ('0', '1', '2')
+          <if test="beginDate != null"> and b.borrow_date &gt;= #{beginDate}</if>
+          <if test="endDate != null"> and b.borrow_date &lt;= #{endDate}</if>
+        order by b.borrow_date, b.start_time
+    </select>
+
+    <!-- 教室每周固定排课占用（全星期），占用日历底纹用 -->
+    <select id="listWeeklySchedule" resultType="java.util.Map">
+        select s.week_day        as weekDay,
+               s.start_period    as startPeriod,
+               s.end_period      as endPeriod,
+               cl.course_name    as courseName,
+               t.teacher_name    as teacherName
+        from tpm_schedule s
+        join tpm_course_offering o on s.offering_id = o.offering_id and o.del_flag = '0'
+        left join tpm_course_library cl on o.course_id = cl.course_id
+        left join brm_teacher t on o.teacher_id = t.teacher_id
+        where s.classroom_id = #{classroomId}
+          and s.del_flag = '0' and s.status = '0'
+        order by s.week_day, s.start_period
+    </select>
+
+</mapper>
