@@ -19,3 +19,13 @@ export function findAvailableClassrooms(params) {
 export function autoAssignClassrooms(semesterId) {
   return request({ url: '/tpm/scheduleOpt/autoAssign', method: 'post', params: { semesterId } })
 }
+
+// 时间片自动排课预览（T1，不落库）
+export function autoSchedulePreview(params) {
+  return request({ url: '/tpm/scheduleOpt/autoSchedulePreview', method: 'post', params })
+}
+
+// 时间片自动排课落库（T1）
+export function autoScheduleApply(params) {
+  return request({ url: '/tpm/scheduleOpt/autoScheduleApply', method: 'post', params })
+}

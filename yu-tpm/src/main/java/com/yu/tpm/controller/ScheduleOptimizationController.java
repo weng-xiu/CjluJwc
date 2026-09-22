@@ -80,4 +80,38 @@ public class ScheduleOptimizationController extends BaseController
         Map<String, Object> result = scheduleOptimizationService.autoAssignClassrooms(semesterId);
         return success(result);
     }
+
+    /**
+     * 时间片自动排课预览（T1）：对已确认且尚无排课的开课试排，仅返回结果不落库。
+     * 周课时/节次/周数等参数可选，缺省取系统配置。
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:schedule:autoAssign')")
+    @PostMapping("/autoSchedulePreview")
+    public AjaxResult autoSchedulePreview(@RequestParam Long semesterId,
+                                          @RequestParam(required = false) Integer daysPerWeek,
+                                          @RequestParam(required = false) Integer periodsPerDay,
+                                          @RequestParam(required = false) Integer periodsPerSession,
+                                          @RequestParam(required = false) Integer totalWeeks)
+    {
+        Map<String, Object> result = scheduleOptimizationService.autoScheduleTimetable(
+                semesterId, true, daysPerWeek, periodsPerDay, periodsPerSession, totalWeeks);
+        return success(result);
+    }
+
+    /**
+     * 时间片自动排课落库（T1）：按预览算法生成排课并写入（schedule_type=auto），可在排课管理中人工调整。
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:schedule:autoAssign')")
+    @PostMapping("/autoScheduleApply")
+    @Log(title = "时间片自动排课", businessType = BusinessType.INSERT)
+    public AjaxResult autoScheduleApply(@RequestParam Long semesterId,
+                                        @RequestParam(required = false) Integer daysPerWeek,
+                                        @RequestParam(required = false) Integer periodsPerDay,
+                                        @RequestParam(required = false) Integer periodsPerSession,
+                                        @RequestParam(required = false) Integer totalWeeks)
+    {
+        Map<String, Object> result = scheduleOptimizationService.autoScheduleTimetable(
+                semesterId, false, daysPerWeek, periodsPerDay, periodsPerSession, totalWeeks);
+        return success(result);
+    }
 }

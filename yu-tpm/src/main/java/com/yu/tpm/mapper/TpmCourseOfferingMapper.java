@@ -2,6 +2,7 @@ package com.yu.tpm.mapper;
 
 import java.util.List;
 import com.yu.tpm.domain.TpmCourseOffering;
+import com.yu.tpm.domain.dto.ScheduleCandidate;
 import org.apache.ibatis.annotations.Param;
 
 /**
@@ -30,4 +31,13 @@ public interface TpmCourseOfferingMapper
 
     /** 批量插入开课计划 */
     public int batchInsertTpmCourseOffering(@Param("list") List<TpmCourseOffering> list);
+
+    /**
+     * 查询指定学期"待自动排课"的开课（T1）：已确认(offering_status='1')、正常、且尚无任何未删除排课记录，
+     * 附带课程学时信息（总学时/实践学时）用于推导周课时与教室类型偏好。
+     *
+     * @param semesterId 学期ID
+     * @return 排课候选列表
+     */
+    public List<ScheduleCandidate> selectOfferingsToSchedule(@Param("semesterId") Long semesterId);
 }

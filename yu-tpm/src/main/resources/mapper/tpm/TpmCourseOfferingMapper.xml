@@ -155,4 +155,30 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
              #{item.maxStudents}, #{item.offeringStatus}, #{item.status}, #{item.createBy}, #{item.createTime}, #{item.remark})
         </foreach>
     </insert>
+
+    <!-- T1：查询待自动排课的开课（已确认且尚无排课记录），附课程学时信息 -->
+    <select id="selectOfferingsToSchedule" resultType="com.yu.tpm.domain.dto.ScheduleCandidate">
+        select o.offering_id        as offeringId,
+               o.course_id          as courseId,
+               o.teacher_id         as teacherId,
+               o.campus_id          as campusId,
+               o.class_count        as classCount,
+               o.max_students       as maxStudents,
+               cl.course_name       as courseName,
+               cl.total_hours       as totalHours,
+               cl.practice_hours    as practiceHours,
+               t.teacher_name       as teacherName
+        from tpm_course_offering o
+        left join tpm_course_library cl on o.course_id = cl.course_id
+        left join brm_teacher t on o.teacher_id = t.teacher_id
+        where o.del_flag = '0'
+          and o.status = '0'
+          and o.offering_status = '1'
+          and o.semester_id = #{semesterId}
+          and not exists (
+              select 1 from tpm_schedule s
+              where s.offering_id = o.offering_id and s.del_flag = '0'
+          )
+        order by o.max_students desc, o.offering_id asc
+    </select>
 </mapper>

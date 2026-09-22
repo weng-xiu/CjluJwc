@@ -77,4 +77,11 @@ public interface TpmScheduleMapper
                                                     @Param("weekDay") Integer weekDay,
                                                     @Param("startPeriod") Integer startPeriod,
                                                     @Param("endPeriod") Integer endPeriod);
+
+    /**
+     * 查询可自动排课的教室（T1）：状态正常，含楼宇/校区/类型信息，用于容量、类型匹配与跨校区软约束。
+     *
+     * @return 可排课教室列表
+     */
+    java.util.List<com.yu.tpm.domain.dto.SchedulableClassroom> selectSchedulableClassrooms();
 }

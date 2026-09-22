@@ -252,4 +252,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         and start_period &lt;= #{endPeriod}
         and end_period &gt;= #{startPeriod}
     </select>
+
+    <!-- T1：查询可自动排课的教室（含楼宇/校区/类型），仅取状态正常教室 -->
+    <select id="selectSchedulableClassrooms" resultType="com.yu.tpm.domain.dto.SchedulableClassroom">
+        select c.classroom_id   as classroomId,
+               c.classroom_name as classroomName,
+               c.building_id    as buildingId,
+               b.building_name  as buildingName,
+               b.campus_id      as campusId,
+               c.type_id        as typeId,
+               ct.type_name     as typeName,
+               c.capacity       as capacity
+        from brm_classroom c
+        left join brm_building b on c.building_id = b.building_id
+        left join brm_classroom_type ct on c.type_id = ct.type_id
+        where c.status = '0'
+        order by c.capacity asc
+    </select>
 </mapper>

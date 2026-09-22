@@ -53,4 +53,22 @@ public interface IScheduleOptimizationService
      * @return 分配结果统计，包含successCount、failCount、failReasons等
      */
     Map<String, Object> autoAssignClassrooms(Long semesterId);
+
+    /**
+     * 时间片自动排课（T1）：对已确认但尚无排课的开课，自动决定星期/节次/周次并分配教室，
+     * 输出可行课表。硬约束：教室容量、教师不冲突、教室不冲突；软约束：教室类型匹配、
+     * 跨校区同楼宇、周课时均衡、班级不连堂。支持预览（dryRun 不落库）与落库，
+     * 落库结果 schedule_type=auto，可在排课管理中人工拖拽调整。
+     *
+     * @param semesterId        学期ID
+     * @param dryRun            true 仅预览不落库
+     * @param daysPerWeek       每周排课天数（null 用配置默认）
+     * @param periodsPerDay     每天最大节次（null 用配置默认）
+     * @param periodsPerSession 每次连堂节数（null 用配置默认）
+     * @param totalWeeks        学期总周数（null 用配置默认）
+     * @return 排课结果统计与明细（items/failReasons/scheduledOfferings 等）
+     */
+    Map<String, Object> autoScheduleTimetable(Long semesterId, boolean dryRun,
+                                              Integer daysPerWeek, Integer periodsPerDay,
+                                              Integer periodsPerSession, Integer totalWeeks);
 }

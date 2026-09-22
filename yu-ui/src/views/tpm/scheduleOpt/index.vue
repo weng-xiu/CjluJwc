@@ -9,6 +9,7 @@
           </el-select>
           <el-button type="primary" icon="el-icon-search" size="small" @click="handleDetect">检测冲突</el-button>
           <el-button type="success" icon="el-icon-magic-stick" size="small" :loading="assigning" @click="handleAutoAssign">一键分配教室</el-button>
+          <el-button type="warning" icon="el-icon-alarm-clock" size="small" @click="openAutoSchedule">时间片自动排课</el-button>
         </div>
       </div>
 
@@ -84,11 +85,56 @@
         <el-button type="primary" @click="assignResultVisible = false">关 闭</el-button>
       </div>
     </el-dialog>
+
+    <!-- T1 时间片自动排课对话框 -->
+    <el-dialog title="时间片自动排课（T1）" :visible.sync="asVisible" width="900px" append-to-body>
+      <el-alert title="对已确认且尚无排课记录的开课，自动决定星期/节次/周次并分配教室。硬约束：教室容量、教师/教室时间不冲突；软约束：教室类型匹配、跨校区同楼宇、周课时均衡、班级不连堂。可先预览确认再落库，落库后可在排课管理中人工调整。" type="info" :closable="false" show-icon style="margin-bottom:12px" />
+      <el-form :inline="true" size="small">
+        <el-form-item label="每周天数"><el-input-number v-model="asParam.daysPerWeek" :min="1" :max="7" controls-position="right" style="width:100px" /></el-form-item>
+        <el-form-item label="每天节数"><el-input-number v-model="asParam.periodsPerDay" :min="1" :max="20" controls-position="right" style="width:100px" /></el-form-item>
+        <el-form-item label="连堂节数"><el-input-number v-model="asParam.periodsPerSession" :min="1" :max="20" controls-position="right" style="width:100px" /></el-form-item>
+        <el-form-item label="学期周数"><el-input-number v-model="asParam.totalWeeks" :min="1" :max="60" controls-position="right" style="width:110px" /></el-form-item>
+        <el-form-item><el-button type="primary" icon="el-icon-view" :loading="asLoading" @click="runPreview">预览排课</el-button></el-form-item>
+      </el-form>
+
+      <div v-if="asResult">
+        <el-descriptions :column="4" border size="small" style="margin-bottom:12px">
+          <el-descriptions-item label="待排开课">{{ asResult.totalCandidates }}</el-descriptions-item>
+          <el-descriptions-item label="成功编排"><span style="color:#67C23A;font-weight:bold">{{ asResult.scheduledOfferings }}</span></el-descriptions-item>
+          <el-descriptions-item label="生成课次">{{ asResult.totalSessions }}</el-descriptions-item>
+          <el-descriptions-item label="失败/未满"><span style="color:#F56C6C;font-weight:bold">{{ asResult.failedOfferings }}</span></el-descriptions-item>
+          <el-descriptions-item label="结果" :span="4">{{ asResult.message }}</el-descriptions-item>
+        </el-descriptions>
+
+        <el-table :data="asResult.items" border size="small" max-height="300" v-if="asResult.items && asResult.items.length">
+          <el-table-column label="课程" prop="courseName" min-width="120" show-overflow-tooltip />
+          <el-table-column label="教师" prop="teacherName" width="90" show-overflow-tooltip />
+          <el-table-column label="星期" width="70" align="center"><template slot-scope="scope">{{ weekDayName(scope.row.weekDay) }}</template></el-table-column>
+          <el-table-column label="节次" width="90" align="center"><template slot-scope="scope">第{{ scope.row.startPeriod }}-{{ scope.row.endPeriod }}节</template></el-table-column>
+          <el-table-column label="周次" width="90" align="center"><template slot-scope="scope">第{{ scope.row.startWeek }}-{{ scope.row.endWeek }}周</template></el-table-column>
+          <el-table-column label="教室" prop="classroomName" width="120" show-overflow-tooltip />
+          <el-table-column label="选排依据" prop="note" min-width="150" show-overflow-tooltip />
+        </el-table>
+
+        <div v-if="asFailRows.length" style="margin-top:12px">
+          <el-alert title="失败 / 未满明细" type="warning" :closable="false" show-icon style="margin-bottom:8px" />
+          <ul style="margin:0;padding-left:20px;color:#E6A23C;font-size:13px;line-height:1.8">
+            <li v-for="(r,i) in asFailRows" :key="i">{{ r }}</li>
+          </ul>
+        </div>
+      </div>
+      <el-empty v-else description="点击「预览排课」查看算法生成的课表" :image-size="80" />
+
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="asVisible = false">取 消</el-button>
+        <el-button type="primary" icon="el-icon-check" :loading="asApplying" :disabled="!asResult || !(asResult.items && asResult.items.length)" @click="runApply">确认落库</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { detectConflicts, findAvailableClassrooms, autoAssignClassrooms } from '@/api/tpm/scheduleOpt'
+import { detectConflicts, findAvailableClassrooms, autoAssignClassrooms, autoSchedulePreview, autoScheduleApply } from '@/api/tpm/scheduleOpt'
 import { listSemester } from '@/api/brm/semester'
 
 export default {
@@ -104,13 +150,22 @@ export default {
       conflicts: [],
       rooms: [],
       loadingRooms: false,
-      query: { minCapacity: 30, weekDay: 1, startPeriod: 1, endPeriod: 2, startWeek: 1, endWeek: 18 }
+      query: { minCapacity: 30, weekDay: 1, startPeriod: 1, endPeriod: 2, startWeek: 1, endWeek: 18 },
+      // T1 自动排课
+      asVisible: false,
+      asLoading: false,
+      asApplying: false,
+      asResult: null,
+      asParam: { daysPerWeek: 5, periodsPerDay: 8, periodsPerSession: 2, totalWeeks: 16 }
     }
   },
   computed: {
     failReasonRows() {
       const reasons = (this.assignResult && this.assignResult.failReasons) || []
       return reasons.map(r => ({ reason: r }))
+    },
+    asFailRows() {
+      return (this.asResult && this.asResult.failReasons) || []
     }
   },
   created() {
@@ -122,6 +177,9 @@ export default {
     })
   },
   methods: {
+    weekDayName(d) {
+      return ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'][d] || ('周' + d)
+    },
     handleDetect() {
       if (!this.semesterId) { this.$message.warning('请选择学期'); return }
       this.loadingConflict = true
@@ -146,6 +204,30 @@ export default {
           this.assignResultVisible = true
           this.handleDetect()
         }).finally(() => { this.assigning = false })
+      }).catch(() => {})
+    },
+    openAutoSchedule() {
+      if (!this.semesterId) { this.$message.warning('请选择学期'); return }
+      this.asResult = null
+      this.asVisible = true
+    },
+    runPreview() {
+      if (!this.semesterId) { this.$message.warning('请选择学期'); return }
+      this.asLoading = true
+      autoSchedulePreview({ semesterId: this.semesterId, ...this.asParam }).then(res => {
+        this.asResult = res.data || {}
+      }).finally(() => { this.asLoading = false })
+    },
+    runApply() {
+      if (!this.semesterId) { this.$message.warning('请选择学期'); return }
+      this.$confirm('确认按当前预览方案落库生成排课（schedule_type=auto）？落库后可在排课管理中人工调整。', '提示', { type: 'warning' }).then(() => {
+        this.asApplying = true
+        autoScheduleApply({ semesterId: this.semesterId, ...this.asParam }).then(res => {
+          this.asResult = res.data || {}
+          this.$message.success(this.asResult.message || '自动排课已落库')
+          this.asVisible = false
+          this.handleDetect()
+        }).finally(() => { this.asApplying = false })
       }).catch(() => {})
     }
   }

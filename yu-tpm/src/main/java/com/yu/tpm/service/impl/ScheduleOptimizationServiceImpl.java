@@ -2,8 +2,10 @@ package com.yu.tpm.service.impl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,11 +14,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.brm.domain.BrmClassroom;
 import com.yu.brm.mapper.BrmClassroomMapper;
+import com.yu.common.utils.DateUtils;
+import com.yu.common.utils.SecurityUtils;
 import com.yu.common.utils.schedule.TimeSlotUtils;
 import com.yu.tpm.domain.TpmSchedule;
 import com.yu.tpm.domain.dto.AvailableClassroom;
+import com.yu.tpm.domain.dto.AutoScheduleItem;
+import com.yu.tpm.domain.dto.ScheduleCandidate;
+import com.yu.tpm.domain.dto.SchedulableClassroom;
 import com.yu.tpm.domain.dto.ScheduleConflict;
 import com.yu.tpm.domain.dto.StudentScheduleSlot;
+import com.yu.tpm.mapper.TpmCourseOfferingMapper;
 import com.yu.tpm.mapper.TpmScheduleMapper;
 import com.yu.tpm.service.IScheduleOptimizationService;
 
@@ -45,9 +53,32 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
     @Autowired
     private BrmClassroomMapper classroomMapper;
 
+    @Autowired
+    private TpmCourseOfferingMapper courseOfferingMapper;
+
     /** 默认课程容量（从配置读取） */
     @org.springframework.beans.factory.annotation.Value("${tpm.schedule.defaultCapacity:30}")
     private int defaultCapacity;
+
+    /** T1 自动排课：每周排课天数 */
+    @org.springframework.beans.factory.annotation.Value("${tpm.autoSchedule.daysPerWeek:5}")
+    private int cfgDaysPerWeek;
+
+    /** T1 自动排课：每天最大节次 */
+    @org.springframework.beans.factory.annotation.Value("${tpm.autoSchedule.periodsPerDay:8}")
+    private int cfgPeriodsPerDay;
+
+    /** T1 自动排课：每次连堂节数 */
+    @org.springframework.beans.factory.annotation.Value("${tpm.autoSchedule.periodsPerSession:2}")
+    private int cfgPeriodsPerSession;
+
+    /** T1 自动排课：学期总周数 */
+    @org.springframework.beans.factory.annotation.Value("${tpm.autoSchedule.totalWeeks:16}")
+    private int cfgTotalWeeks;
+
+    /** T1 自动排课：无学时数据时默认周课时 */
+    @org.springframework.beans.factory.annotation.Value("${tpm.autoSchedule.defaultWeeklyHours:2}")
+    private int cfgDefaultWeeklyHours;
 
     /**
      * 检测指定学期的所有排课冲突
@@ -402,5 +433,354 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
 
         log.info("自动分配教室完成：成功{}，失败{}，共{}", successCount, failCount, unassigned.size());
         return result;
+    }
+
+    /**
+     * 时间片自动排课引擎（T1）：对已确认但尚无排课的开课，自动决定星期/节次/周次并分配教室。
+     * 采用"约束贪心 + 占用网格"构造式算法：按难度（容量）降序处理开课，逐次课在空闲时间片
+     * 中择优（教师不冲突、教室不冲突为硬约束；类型/校区/楼宇/容量贴合、周课时均衡为软约束评分）。
+     * 以 (星期,节次) 二维网格保守屏蔽占用，并用学期内已有排课预热，保证与手动课表零硬冲突。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> autoScheduleTimetable(Long semesterId, boolean dryRun,
+                                                     Integer daysPerWeek, Integer periodsPerDay,
+                                                     Integer periodsPerSession, Integer totalWeeks)
+    {
+        Map<String, Object> result = new HashMap<>();
+        int days = clamp(daysPerWeek != null ? daysPerWeek : cfgDaysPerWeek, 1, 7);
+        int ppd = clamp(periodsPerDay != null ? periodsPerDay : cfgPeriodsPerDay, 1, 20);
+        int pps = clamp(periodsPerSession != null ? periodsPerSession : cfgPeriodsPerSession, 1, ppd);
+        int weeks = clamp(totalWeeks != null ? totalWeeks : cfgTotalWeeks, 1, 60);
+        result.put("daysPerWeek", days);
+        result.put("periodsPerDay", ppd);
+        result.put("periodsPerSession", pps);
+        result.put("totalWeeks", weeks);
+
+        List<ScheduleCandidate> candidates = courseOfferingMapper.selectOfferingsToSchedule(semesterId);
+        if (candidates == null || candidates.isEmpty())
+        {
+            result.put("totalCandidates", 0);
+            result.put("scheduledOfferings", 0);
+            result.put("failedOfferings", 0);
+            result.put("totalSessions", 0);
+            result.put("items", new ArrayList<>());
+            result.put("failReasons", new ArrayList<>());
+            result.put("dryRun", dryRun);
+            result.put("message", "没有需要自动排课的开课（已确认且尚无排课记录）");
+            return result;
+        }
+
+        List<SchedulableClassroom> rooms = scheduleMapper.selectSchedulableClassrooms();
+        if (rooms == null || rooms.isEmpty())
+        {
+            List<String> fr = new ArrayList<>();
+            fr.add("无可用教室（brm_classroom 无状态正常记录）");
+            result.put("totalCandidates", candidates.size());
+            result.put("scheduledOfferings", 0);
+            result.put("failedOfferings", candidates.size());
+            result.put("totalSessions", 0);
+            result.put("items", new ArrayList<>());
+            result.put("failReasons", fr);
+            result.put("dryRun", dryRun);
+            result.put("message", "自动排课失败：没有可用教室");
+            return result;
+        }
+
+        // 占用网格：教室、教师。索引 [day(1..days)][period(1..ppd)]，保守按 (星期,节次) 屏蔽（忽略周次差异以确保零硬冲突）
+        Map<Long, boolean[][]> roomGrid = new HashMap<>();
+        Map<Long, boolean[][]> teacherGrid = new HashMap<>();
+        List<TpmSchedule> existing = scheduleMapper.selectSchedulesBySemester(semesterId);
+        if (existing != null)
+        {
+            for (TpmSchedule s : existing)
+            {
+                if (s.getWeekDay() == null || s.getStartPeriod() == null || s.getEndPeriod() == null) { continue; }
+                int day = s.getWeekDay();
+                if (day < 1 || day > days) { continue; }
+                int sp = Math.max(1, s.getStartPeriod());
+                int ep = Math.min(ppd, s.getEndPeriod());
+                if (s.getClassroomId() != null)
+                {
+                    markOccupied(roomGrid.computeIfAbsent(s.getClassroomId(), k -> newGrid(days, ppd)), day, sp, ep);
+                }
+                if (s.getTeacherId() != null)
+                {
+                    markOccupied(teacherGrid.computeIfAbsent(s.getTeacherId(), k -> newGrid(days, ppd)), day, sp, ep);
+                }
+            }
+        }
+
+        Map<Long, int[]> teacherDayLoad = new HashMap<>();
+        List<AutoScheduleItem> items = new ArrayList<>();
+        List<String> failReasons = new ArrayList<>();
+        int scheduledOfferings = 0;
+        int failedOfferings = 0;
+
+        for (ScheduleCandidate c : candidates)
+        {
+            int reqCap = (c.getMaxStudents() != null && c.getMaxStudents() > 0) ? c.getMaxStudents() : defaultCapacity;
+            int weeklyHours = deriveWeeklyHours(c, weeks);
+            int sessions = computeSessions(weeklyHours, pps, days);
+            boolean needsLab = c.getPracticeHours() != null && c.getPracticeHours() > 0;
+
+            Set<Integer> usedDays = new HashSet<>();
+            Long primaryBuilding = null;
+            int placed = 0;
+            for (int sIdx = 0; sIdx < sessions; sIdx++)
+            {
+                List<Integer> dayOrder = orderDays(days, usedDays, c.getTeacherId(), teacherDayLoad);
+                AutoScheduleItem item = null;
+                outer:
+                for (Integer day : dayOrder)
+                {
+                    for (int start = 1; start + pps - 1 <= ppd; start++)
+                    {
+                        int end = start + pps - 1;
+                        if (c.getTeacherId() != null && !blockFree(teacherGrid.get(c.getTeacherId()), day, start, end))
+                        {
+                            continue;
+                        }
+                        SchedulableClassroom best = chooseClassroom(rooms, roomGrid, day, start, end,
+                                reqCap, needsLab, c.getCampusId(), primaryBuilding);
+                        if (best != null)
+                        {
+                            item = new AutoScheduleItem();
+                            item.setOfferingId(c.getOfferingId());
+                            item.setCourseName(c.getCourseName());
+                            item.setTeacherName(c.getTeacherName());
+                            item.setWeekDay(day);
+                            item.setStartPeriod(start);
+                            item.setEndPeriod(end);
+                            item.setStartWeek(1);
+                            item.setEndWeek(weeks);
+                            item.setClassroomId(best.getClassroomId());
+                            item.setClassroomName(best.getClassroomName());
+                            item.setNote(buildNote(needsLab, best, c.getCampusId(), primaryBuilding, reqCap));
+                            break outer;
+                        }
+                    }
+                }
+                if (item == null)
+                {
+                    break;
+                }
+                markOccupied(roomGrid.computeIfAbsent(item.getClassroomId(), k -> newGrid(days, ppd)),
+                        item.getWeekDay(), item.getStartPeriod(), item.getEndPeriod());
+                if (c.getTeacherId() != null)
+                {
+                    markOccupied(teacherGrid.computeIfAbsent(c.getTeacherId(), k -> newGrid(days, ppd)),
+                            item.getWeekDay(), item.getStartPeriod(), item.getEndPeriod());
+                    teacherDayLoad.computeIfAbsent(c.getTeacherId(), k -> new int[days + 1])[item.getWeekDay()]++;
+                }
+                usedDays.add(item.getWeekDay());
+                if (primaryBuilding == null)
+                {
+                    SchedulableClassroom r = findRoomById(rooms, item.getClassroomId());
+                    if (r != null) { primaryBuilding = r.getBuildingId(); }
+                }
+                items.add(item);
+                placed++;
+            }
+
+            String label = c.getCourseName() != null ? c.getCourseName() : ("ID" + c.getOfferingId());
+            if (placed == 0)
+            {
+                failedOfferings++;
+                failReasons.add(String.format("开课[%s]（需容量%d，%s）：无满足约束的可用时间片/教室",
+                        label, reqCap, needsLab ? "实践类" : "理论类"));
+            }
+            else
+            {
+                scheduledOfferings++;
+                if (placed < sessions)
+                {
+                    failReasons.add(String.format("开课[%s]：计划%d次/周，实际排入%d次（后续会话无可用时间片）",
+                            label, sessions, placed));
+                }
+            }
+        }
+
+        int inserted = 0;
+        if (!dryRun)
+        {
+            String op = safeUsername();
+            for (AutoScheduleItem it : items)
+            {
+                TpmSchedule tpmSchedule = new TpmSchedule();
+                tpmSchedule.setOfferingId(it.getOfferingId());
+                tpmSchedule.setClassroomId(it.getClassroomId());
+                tpmSchedule.setWeekDay(it.getWeekDay());
+                tpmSchedule.setStartPeriod(it.getStartPeriod());
+                tpmSchedule.setEndPeriod(it.getEndPeriod());
+                tpmSchedule.setStartWeek(it.getStartWeek());
+                tpmSchedule.setEndWeek(it.getEndWeek());
+                tpmSchedule.setScheduleType("auto");
+                tpmSchedule.setStatus("0");
+                tpmSchedule.setCreateBy(op);
+                tpmSchedule.setCreateTime(DateUtils.getNowDate());
+                inserted += scheduleMapper.insertTpmSchedule(tpmSchedule);
+            }
+        }
+
+        result.put("totalCandidates", candidates.size());
+        result.put("scheduledOfferings", scheduledOfferings);
+        result.put("failedOfferings", failedOfferings);
+        result.put("totalSessions", items.size());
+        result.put("inserted", dryRun ? 0 : inserted);
+        result.put("dryRun", dryRun);
+        result.put("items", items);
+        result.put("failReasons", failReasons);
+        result.put("message", String.format("%s：%d个开课待排，成功编排%d个（共%d次课），失败/未满%d个%s",
+                dryRun ? "预览" : "自动排课",
+                candidates.size(), scheduledOfferings, items.size(), failedOfferings,
+                dryRun ? "（未落库）" : ("，已写入" + inserted + "条排课")));
+        log.info("T1自动排课：学期={} 候选={} 成功={} 会话={} 失败={} dryRun={}",
+                semesterId, candidates.size(), scheduledOfferings, items.size(), failedOfferings, dryRun);
+        return result;
+    }
+
+    // ================= T1 自动排课辅助方法 =================
+
+    /** 数值裁剪到 [min,max] */
+    private int clamp(int v, int min, int max)
+    {
+        if (v < min) { return min; }
+        if (v > max) { return max; }
+        return v;
+    }
+
+    /** 新建 [days+1][ppd+1] 占用网格（1 基索引） */
+    private boolean[][] newGrid(int days, int ppd)
+    {
+        return new boolean[days + 1][ppd + 1];
+    }
+
+    /** 标记节次区间占用 */
+    private void markOccupied(boolean[][] grid, int day, int start, int end)
+    {
+        for (int p = start; p <= end; p++)
+        {
+            if (day >= 0 && day < grid.length && p >= 1 && p < grid[day].length)
+            {
+                grid[day][p] = true;
+            }
+        }
+    }
+
+    /** 判断节次区间是否空闲（grid 为 null 视为空闲） */
+    private boolean blockFree(boolean[][] grid, int day, int start, int end)
+    {
+        if (grid == null) { return true; }
+        for (int p = start; p <= end; p++)
+        {
+            if (day >= 0 && day < grid.length && p >= 1 && p < grid[day].length && grid[day][p])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** 由总学时与周数推导周课时；无学时数据取默认周课时 */
+    private int deriveWeeklyHours(ScheduleCandidate c, int weeks)
+    {
+        int wh;
+        if (c.getTotalHours() != null && c.getTotalHours() > 0 && weeks > 0)
+        {
+            wh = (int) Math.round(c.getTotalHours() / (double) weeks);
+        }
+        else
+        {
+            wh = cfgDefaultWeeklyHours;
+        }
+        return wh < 1 ? 1 : wh;
+    }
+
+    /** 由周课时推导每周会话数（每会话 pps 节），并裁剪到 [1,days] */
+    private int computeSessions(int weeklyHours, int pps, int days)
+    {
+        int sessions = (int) Math.ceil(weeklyHours / (double) pps);
+        if (sessions < 1) { sessions = 1; }
+        if (sessions > days) { sessions = days; }
+        return sessions;
+    }
+
+    /** 择日顺序：优先未用过的天（不连堂/铺开），再按教师当日负载升序、日期升序（周课时均衡） */
+    private List<Integer> orderDays(int days, Set<Integer> usedDays, Long teacherId, Map<Long, int[]> teacherDayLoad)
+    {
+        List<Integer> order = new ArrayList<>();
+        for (int d = 1; d <= days; d++) { order.add(d); }
+        final int[] load = teacherId != null ? teacherDayLoad.get(teacherId) : null;
+        order.sort((a, b) -> {
+            int ua = usedDays.contains(a) ? 1 : 0;
+            int ub = usedDays.contains(b) ? 1 : 0;
+            if (ua != ub) { return ua - ub; }
+            int la = load != null ? load[a] : 0;
+            int lb = load != null ? load[b] : 0;
+            if (la != lb) { return la - lb; }
+            return a - b;
+        });
+        return order;
+    }
+
+    /** 在满足容量且时段空闲的教室中按软约束评分择优（类型匹配 > 同校区 > 同楼宇 > 容量贴合） */
+    private SchedulableClassroom chooseClassroom(List<SchedulableClassroom> rooms, Map<Long, boolean[][]> roomGrid,
+                                                 int day, int start, int end, int reqCap, boolean needsLab,
+                                                 Long campusId, Long primaryBuilding)
+    {
+        SchedulableClassroom best = null;
+        int bestScore = Integer.MIN_VALUE;
+        for (SchedulableClassroom r : rooms)
+        {
+            if (r.getCapacity() == null || r.getCapacity() < reqCap) { continue; }
+            if (!blockFree(roomGrid.get(r.getClassroomId()), day, start, end)) { continue; }
+            boolean lab = isLabRoom(r.getTypeName());
+            int score;
+            if (needsLab) { score = lab ? 100 : -20; }
+            else { score = lab ? -10 : 5; }
+            if (campusId != null && campusId.equals(r.getCampusId())) { score += 50; }
+            if (primaryBuilding != null && primaryBuilding.equals(r.getBuildingId())) { score += 30; }
+            score -= (r.getCapacity() - reqCap) / 10;
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = r;
+            }
+        }
+        return best;
+    }
+
+    /** 依据教室类型名称判断是否实验/机房类 */
+    private boolean isLabRoom(String typeName)
+    {
+        if (typeName == null) { return false; }
+        return typeName.contains("实验") || typeName.contains("机房") || typeName.contains("实践")
+                || typeName.contains("实训") || typeName.contains("计算");
+    }
+
+    private SchedulableClassroom findRoomById(List<SchedulableClassroom> rooms, Long id)
+    {
+        if (id == null) { return null; }
+        for (SchedulableClassroom r : rooms)
+        {
+            if (id.equals(r.getClassroomId())) { return r; }
+        }
+        return null;
+    }
+
+    private String buildNote(boolean needsLab, SchedulableClassroom room, Long campusId, Long primaryBuilding, int reqCap)
+    {
+        StringBuilder sb = new StringBuilder();
+        if (needsLab && isLabRoom(room.getTypeName())) { sb.append("实验/机房匹配; "); }
+        if (campusId != null && campusId.equals(room.getCampusId())) { sb.append("同校区; "); }
+        if (primaryBuilding != null && primaryBuilding.equals(room.getBuildingId())) { sb.append("同楼宇; "); }
+        sb.append("容量").append(room.getCapacity()).append("≥").append(reqCap);
+        return sb.toString();
+    }
+
+    private String safeUsername()
+    {
+        try { return SecurityUtils.getUsername(); } catch (Exception e) { return "system"; }
     }
 }
