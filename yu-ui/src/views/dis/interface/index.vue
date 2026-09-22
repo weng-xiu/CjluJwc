@@ -36,7 +36,10 @@
         <el-form-item label="接口名称" prop="interfaceName"><el-input v-model="form.interfaceName" placeholder="请输入接口名称" /></el-form-item>
         <el-form-item label="接口编码" prop="interfaceCode"><el-input v-model="form.interfaceCode" placeholder="请输入接口编码" /></el-form-item>
         <el-form-item label="请求方式"><el-select v-model="form.requestMethod" placeholder="请选择请求方式"><el-option label="GET" value="GET"/><el-option label="POST" value="POST"/><el-option label="PUT" value="PUT"/><el-option label="DELETE" value="DELETE"/></el-select></el-form-item>
-        <el-form-item label="请求路径" prop="requestPath"><el-input v-model="form.requestPath" placeholder="请输入请求路径" /></el-form-item>
+        <el-form-item label="请求路径" prop="requestPath"><el-input v-model="form.requestPath" placeholder="绝对URL(http/https)或相对路径(自动拼接所属系统baseUrl)，支持 ${batchNo} 等变量" /></el-form-item>
+        <el-form-item label="请求模板"><el-input v-model="form.requestTemplate" type="textarea" :rows="4" placeholder="POST 请求体(JSON)，支持变量占位符" />
+          <div style="font-size:12px;color:#909399;line-height:1.6">可用变量：${batchNo} 批次号、${taskId} 任务ID、${timestamp} 时间戳、${date}/${datetime} 执行时间、${watermark} 增量水位（仅增量模式任务）</div>
+        </el-form-item>
         <el-form-item label="超时时间(秒)"><el-input-number v-model="form.timeoutSeconds" :min="1" :max="300" /></el-form-item>
         <el-form-item label="重试次数"><el-input-number v-model="form.retryCount" :min="0" :max="10" /></el-form-item>
         <el-form-item label="接口描述"><el-input v-model="form.description" type="textarea" placeholder="请输入接口描述" /></el-form-item>
@@ -58,7 +61,7 @@ export default {
   methods: {
     getList() { this.loading = true; listInterface(this.queryParams).then(response => { this.interfaceList = response.rows; this.total = response.total; this.loading = false }) },
     cancel() { this.open = false; this.reset() },
-    reset() { this.form = { interfaceId: null, systemId: null, interfaceName: null, interfaceCode: null, requestMethod: 'GET', requestPath: null, timeoutSeconds: 30, retryCount: 0, description: null, status: "0" }; this.resetForm("form") },
+    reset() { this.form = { interfaceId: null, systemId: null, interfaceName: null, interfaceCode: null, requestMethod: 'GET', requestPath: null, requestTemplate: null, timeoutSeconds: 30, retryCount: 0, description: null, status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.interfaceId); this.single = selection.length !== 1; this.multiple = !selection.length },

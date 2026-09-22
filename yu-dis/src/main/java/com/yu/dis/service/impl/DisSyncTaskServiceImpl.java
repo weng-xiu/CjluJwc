@@ -15,6 +15,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.alibaba.fastjson2.JSON;
@@ -172,22 +173,26 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
         }
         DisExternalSystem externalSystem = task.getSystemId() != null
                 ? disExternalSystemMapper.selectDisExternalSystemBySystemId(task.getSystemId()) : null;
-        // 3. D2：批次号 + 增量水位占位符替换
+        // 3. D2：批次号 + 增量水位；D3：拼装变量表并对 URL/请求模板做通用 ${变量} 替换
         java.util.Date execStart = new java.util.Date();
         String batchNo = "SYNC-" + taskId + "-" + new SimpleDateFormat("yyyyMMddHHmmss").format(execStart)
                 + (isRepush ? "-R" : "");
-        String requestPath = interfaceConfig.getRequestPath();
-        String requestTemplate = interfaceConfig.getRequestTemplate();
+        Map<String, String> vars = new HashMap<>();
+        vars.put("batchNo", batchNo);
+        vars.put("taskId", String.valueOf(taskId));
+        vars.put("timestamp", String.valueOf(execStart.getTime()));
+        vars.put("date", new SimpleDateFormat("yyyy-MM-dd").format(execStart));
+        vars.put("datetime", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(execStart));
         if ("1".equals(task.getSyncMode()))
         {
             java.util.Date wmBase = task.getLastWatermark() != null ? task.getLastWatermark()
                     : (task.getLastExecuteTime() != null ? task.getLastExecuteTime() : new java.util.Date(0));
-            String watermark = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(wmBase);
-            requestPath = replacePlaceholder(requestPath, "${watermark}", URLEncoder.encode(watermark, StandardCharsets.UTF_8));
-            requestTemplate = replacePlaceholder(requestTemplate, "${watermark}", watermark);
+            vars.put("watermark", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(wmBase));
         }
-        requestPath = replacePlaceholder(requestPath, "${batchNo}", batchNo);
-        requestTemplate = replacePlaceholder(requestTemplate, "${batchNo}", batchNo);
+        String requestPath = resolveTemplate(interfaceConfig.getRequestPath(), vars, true);
+        String requestTemplate = resolveTemplate(interfaceConfig.getRequestTemplate(), vars, false);
+        // D3：请求路径为相对路径时拼接外部系统 baseUrl
+        String requestUrl = buildRequestUrl(externalSystem != null ? externalSystem.getBaseUrl() : null, requestPath);
         // 4. 执行HTTP调用（含重试）
         int maxRetry = interfaceConfig.getRetryCount() != null ? interfaceConfig.getRetryCount() : 0;
         int timeoutSeconds = interfaceConfig.getTimeoutSeconds() != null ? interfaceConfig.getTimeoutSeconds() : 30;
@@ -208,9 +213,9 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
                         .connectTimeout(Duration.ofSeconds(timeoutSeconds))
                         .build();
                 HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                        .uri(URI.create(requestPath))
+                        .uri(URI.create(requestUrl))
                         .timeout(Duration.ofSeconds(timeoutSeconds));
-                applyAuthHeaders(requestBuilder, externalSystem);
+                applyAuthHeaders(requestBuilder, externalSystem, timeoutSeconds);
                 if ("GET".equals(requestMethod))
                 {
                     requestBuilder.GET();
@@ -310,7 +315,7 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
         // 7. 写入数据交换日志（留痕，无论成功失败；含批次号与重推标记）
         String error = (lastError != null && !lastError.isEmpty()) ? lastError : persistError;
         writeExchangeLog(task, requestMethod, statusCode, callSuccess, responseBody, error, elapsed,
-                requestPath, requestTemplate, batchNo, isRepush);
+                requestUrl, requestTemplate, batchNo, isRepush);
 
         // 8. 返回结果
         boolean overallSuccess = callSuccess && persistError == null;
@@ -334,8 +339,23 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
         return result;
     }
 
-    /** 依据外部系统认证配置注入鉴权头（TOKEN/BASIC） */
-    private void applyAuthHeaders(HttpRequest.Builder builder, DisExternalSystem system)
+    /** OAuth2 令牌缓存：systemId -> (accessToken, 过期时间戳ms)，提前 30s 视为过期 */
+    private static final Map<Long, OAuth2Token> OAUTH2_TOKEN_CACHE = new ConcurrentHashMap<>();
+
+    /** OAuth2 令牌缓存条目 */
+    private static class OAuth2Token
+    {
+        final String accessToken;
+        final long expireAt;
+        OAuth2Token(String accessToken, long expireAt)
+        {
+            this.accessToken = accessToken;
+            this.expireAt = expireAt;
+        }
+    }
+
+    /** 依据外部系统认证配置注入鉴权头（TOKEN/BASIC/OAUTH2） */
+    private void applyAuthHeaders(HttpRequest.Builder builder, DisExternalSystem system, int timeoutSeconds) throws Exception
     {
         if (system == null || system.getAuthType() == null || "NONE".equalsIgnoreCase(system.getAuthType()))
         {
@@ -371,7 +391,105 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
                 builder.header("Authorization", "Basic " + Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8)));
             }
         }
-        // OAUTH2 需先做令牌交换，视具体对接补充，此处不发起额外请求
+        else if ("OAUTH2".equals(type))
+        {
+            // D3：client_credentials 模式令牌交换，令牌按系统缓存至过期前 30s
+            if (cfg == null || cfg.getString("tokenUrl") == null || cfg.getString("clientId") == null)
+            {
+                throw new Exception("OAUTH2 认证配置不完整：authConfig 需包含 tokenUrl/clientId/clientSecret");
+            }
+            String token = fetchOAuth2Token(system.getSystemId(), cfg, timeoutSeconds);
+            String headerName = cfg.getString("headerName") != null ? cfg.getString("headerName") : "Authorization";
+            String prefix = cfg.getString("tokenPrefix") != null ? cfg.getString("tokenPrefix") : "Bearer";
+            builder.header(headerName, (prefix.isEmpty() ? "" : prefix + " ") + token);
+        }
+    }
+
+    /**
+     * 获取 OAuth2 访问令牌（D3）：缓存命中直接返回；否则以 client_credentials 向 tokenUrl
+     * POST 换取令牌，并按 expires_in 缓存（提前 30s 过期）。失败抛异常由调用方重试。
+     */
+    private String fetchOAuth2Token(Long systemId, JSONObject cfg, int timeoutSeconds) throws Exception
+    {
+        OAuth2Token cached = OAUTH2_TOKEN_CACHE.get(systemId);
+        if (cached != null && cached.expireAt > System.currentTimeMillis())
+        {
+            return cached.accessToken;
+        }
+        StringBuilder form = new StringBuilder("grant_type=client_credentials")
+                .append("&client_id=").append(URLEncoder.encode(cfg.getString("clientId"), StandardCharsets.UTF_8))
+                .append("&client_secret=").append(URLEncoder.encode(cfg.getString("clientSecret") == null ? "" : cfg.getString("clientSecret"), StandardCharsets.UTF_8));
+        if (cfg.getString("scope") != null && !cfg.getString("scope").isEmpty())
+        {
+            form.append("&scope=").append(URLEncoder.encode(cfg.getString("scope"), StandardCharsets.UTF_8));
+        }
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(timeoutSeconds)).build();
+        HttpRequest tokenRequest = HttpRequest.newBuilder()
+                .uri(URI.create(cfg.getString("tokenUrl")))
+                .timeout(Duration.ofSeconds(timeoutSeconds))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .POST(HttpRequest.BodyPublishers.ofString(form.toString()))
+                .build();
+        HttpResponse<String> tokenResponse = client.send(tokenRequest, HttpResponse.BodyHandlers.ofString());
+        if (tokenResponse.statusCode() < 200 || tokenResponse.statusCode() >= 300)
+        {
+            throw new Exception("OAuth2 令牌获取失败，状态码：" + tokenResponse.statusCode());
+        }
+        JSONObject tokenJson = JSON.parseObject(tokenResponse.body());
+        String accessToken = tokenJson != null ? tokenJson.getString("access_token") : null;
+        if (accessToken == null || accessToken.isEmpty())
+        {
+            throw new Exception("OAuth2 令牌响应缺少 access_token");
+        }
+        long expiresIn = tokenJson.getLongValue("expires_in");
+        if (expiresIn <= 30) { expiresIn = 3600; }
+        OAUTH2_TOKEN_CACHE.put(systemId, new OAuth2Token(accessToken, System.currentTimeMillis() + (expiresIn - 30) * 1000L));
+        log.info("OAuth2 令牌获取成功（系统ID={}），有效期{}秒", systemId, expiresIn);
+        return accessToken;
+    }
+
+    /**
+     * D3：通用 ${变量} 占位符替换。urlValue=true 时对替换值做 URL 编码，
+     * 未知占位符保持原样以便排查配置错误。
+     */
+    private String resolveTemplate(String text, Map<String, String> vars, boolean urlValue)
+    {
+        if (text == null || text.isEmpty())
+        {
+            return text;
+        }
+        String out = text;
+        for (Map.Entry<String, String> e : vars.entrySet())
+        {
+            String placeholder = "${" + e.getKey() + "}";
+            if (out.contains(placeholder))
+            {
+                String value = urlValue
+                        ? URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8)
+                        : e.getValue();
+                out = out.replace(placeholder, value);
+            }
+        }
+        return out;
+    }
+
+    /** D3：请求路径为相对路径时拼接外部系统 baseUrl；已是绝对 URL 或无 baseUrl 则原样返回 */
+    private String buildRequestUrl(String baseUrl, String requestPath)
+    {
+        if (requestPath == null)
+        {
+            return null;
+        }
+        String lower = requestPath.toLowerCase();
+        if (lower.startsWith("http://") || lower.startsWith("https://")
+                || baseUrl == null || baseUrl.trim().isEmpty())
+        {
+            return requestPath;
+        }
+        String base = baseUrl.trim();
+        String path = requestPath.startsWith("/") ? requestPath.substring(1) : requestPath;
+        return base.endsWith("/") ? base + path : base + "/" + path;
     }
 
     /** 依据 Cron 表达式计算下次执行时间（Spring CronExpression，解析失败返回 null） */
@@ -394,16 +512,6 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
             log.warn("Cron表达式解析失败[{}]：{}", cron, e.getMessage());
             return null;
         }
-    }
-
-    /** 占位符替换（null 安全） */
-    private String replacePlaceholder(String text, String placeholder, String value)
-    {
-        if (text == null || value == null || !text.contains(placeholder))
-        {
-            return text;
-        }
-        return text.replace(placeholder, value);
     }
 
     /** 同步失败推送站内告警（D2：异常告警） */

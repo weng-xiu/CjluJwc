@@ -36,7 +36,9 @@
         <el-form-item label="系统类型" prop="systemType"><el-select v-model="form.systemType" placeholder="请选择系统类型"><el-option v-for="dict in dict.type.dis_system_type" :key="dict.value" :label="dict.label" :value="dict.value"/></el-select></el-form-item>
         <el-form-item label="基础URL" prop="baseUrl"><el-input v-model="form.baseUrl" placeholder="请输入基础URL" /></el-form-item>
         <el-form-item label="认证方式" prop="authType"><el-select v-model="form.authType" placeholder="请选择认证方式"><el-option v-for="dict in dict.type.dis_auth_type" :key="dict.value" :label="dict.label" :value="dict.value"/></el-select></el-form-item>
-        <el-form-item label="认证配置"><el-input v-model="form.authConfig" type="textarea" placeholder="请输入JSON格式认证配置" /></el-form-item>
+        <el-form-item label="认证配置"><el-input v-model="form.authConfig" type="textarea" :rows="3" placeholder="请输入JSON格式认证配置" />
+          <div style="font-size:12px;color:#909399;line-height:1.6">TOKEN: {"token":"...","headerName":"Authorization","tokenPrefix":"Bearer"}<br/>BASIC: {"username":"...","password":"..."}<br/>OAUTH2: {"tokenUrl":"https://.../token","clientId":"...","clientSecret":"...","scope":"可选"}（client_credentials 模式，令牌自动获取并缓存）</div>
+        </el-form-item>
         <el-form-item label="系统描述"><el-input v-model="form.description" type="textarea" placeholder="请输入系统描述" /></el-form-item>
         <el-form-item label="对接负责人"><el-input v-model="form.contactName" placeholder="请输入对接负责人" /></el-form-item>
         <el-form-item label="联系电话"><el-input v-model="form.contactPhone" placeholder="请输入联系电话" /></el-form-item>
