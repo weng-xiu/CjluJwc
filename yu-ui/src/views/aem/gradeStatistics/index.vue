@@ -45,6 +45,53 @@
       </el-col>
     </el-row>
 
+    <!-- A7：多维成绩分析（班级 / 教师 / 专业 / 历史趋势） -->
+    <el-card shadow="never" style="margin-top:12px">
+      <div slot="header"><span>多维成绩分析（A7）</span><span style="color:#909399;font-size:12px;margin-left:10px">需先输入学期ID并点击「统计分析」；课程ID可选（仅班级维度与趋势支持按课程过滤）</span></div>
+      <el-tabs v-model="a7Tab" @tab-click="loadA7Tab">
+        <el-tab-pane label="班级维度" name="class">
+          <el-table :data="a7.classList" v-loading="a7.classLoading" size="small" max-height="360">
+            <el-table-column label="班级" prop="className" show-overflow-tooltip/>
+            <el-table-column label="成绩人次" prop="totalStudents" width="90" align="center"/>
+            <el-table-column label="平均分" prop="avgScore" width="90" align="center"/>
+            <el-table-column label="最高分" prop="maxScore" width="80" align="center"/>
+            <el-table-column label="最低分" prop="minScore" width="80" align="center"/>
+            <el-table-column label="不及格数" prop="failCount" width="90" align="center"/>
+            <el-table-column label="通过率(%)" prop="passRate" width="100" align="center"/>
+            <el-table-column label="优秀率(%)" prop="excellentRate" width="100" align="center"/>
+          </el-table>
+        </el-tab-pane>
+        <el-tab-pane label="教师维度" name="teacher">
+          <el-table :data="a7.teacherList" v-loading="a7.teacherLoading" size="small" max-height="360">
+            <el-table-column label="教师工号" prop="teacherCode" width="120"/>
+            <el-table-column label="教师姓名" prop="teacherName" width="110"/>
+            <el-table-column label="院系" prop="deptName" show-overflow-tooltip/>
+            <el-table-column label="课程数" prop="courseCount" width="80" align="center"/>
+            <el-table-column label="成绩人次" prop="totalStudents" width="90" align="center"/>
+            <el-table-column label="平均分" prop="avgScore" width="90" align="center"/>
+            <el-table-column label="不及格数" prop="failCount" width="90" align="center"/>
+            <el-table-column label="通过率(%)" prop="passRate" width="100" align="center"/>
+            <el-table-column label="优秀率(%)" prop="excellentRate" width="100" align="center"/>
+          </el-table>
+        </el-tab-pane>
+        <el-tab-pane label="专业维度" name="major">
+          <el-table :data="a7.majorList" v-loading="a7.majorLoading" size="small" max-height="360">
+            <el-table-column label="专业" prop="majorName" show-overflow-tooltip/>
+            <el-table-column label="学生数" prop="studentCount" width="90" align="center"/>
+            <el-table-column label="成绩人次" prop="totalStudents" width="90" align="center"/>
+            <el-table-column label="平均分" prop="avgScore" width="90" align="center"/>
+            <el-table-column label="平均绩点" prop="avgGpa" width="90" align="center"/>
+            <el-table-column label="不及格数" prop="failCount" width="90" align="center"/>
+            <el-table-column label="通过率(%)" prop="passRate" width="100" align="center"/>
+            <el-table-column label="优秀率(%)" prop="excellentRate" width="100" align="center"/>
+          </el-table>
+        </el-tab-pane>
+        <el-tab-pane label="历史趋势" name="trend">
+          <div ref="trendChart" style="height:320px" v-loading="a7.trendLoading"></div>
+        </el-tab-pane>
+      </el-tabs>
+    </el-card>
+
     <!-- 历史统计快照 -->
     <el-card shadow="never" style="margin-top:12px">
       <div slot="header"><span>统计快照</span></div>
@@ -68,7 +115,7 @@
 </template>
 <script>
 import * as echarts from 'echarts'
-import { listGradeStatistics, aggregateGrade, aggregateSemester as aggSemester, scoreDistribution, semesterOverview, courseRanking } from "@/api/aem/gradeStatistics"
+import { listGradeStatistics, aggregateGrade, aggregateSemester as aggSemester, scoreDistribution, semesterOverview, courseRanking, statByClass, statByTeacher, statByMajor, gradeTrend } from "@/api/aem/gradeStatistics"
 export default {
   name: "GradeStatistics",
   dicts: [],
@@ -79,12 +126,21 @@ export default {
       analysis: { semesterId: null, courseId: null },
       overview: {}, overviewLoading: false,
       chartLoading: false, rankLoading: false, rankingList: [],
-      chart: null
+      chart: null,
+      // A7：多维分析
+      a7Tab: "class",
+      a7: { classList: [], teacherList: [], majorList: [], trendList: [],
+        classLoading: false, teacherLoading: false, majorLoading: false, trendLoading: false, loaded: false },
+      trendChart: null
     }
   },
   created() { this.getList() },
-  mounted() { window.addEventListener('resize', this.resizeChart) },
-  beforeDestroy() { window.removeEventListener('resize', this.resizeChart); if (this.chart) { this.chart.dispose(); this.chart = null } },
+  mounted() { window.addEventListener('resize', this.resizeChart); window.addEventListener('resize', this.resizeTrendChart) },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.resizeChart); window.removeEventListener('resize', this.resizeTrendChart)
+    if (this.chart) { this.chart.dispose(); this.chart = null }
+    if (this.trendChart) { this.trendChart.dispose(); this.trendChart = null }
+  },
   methods: {
     getList() {
       this.loading = true
@@ -96,6 +152,7 @@ export default {
       if (!this.analysis.semesterId) { this.$modal.msgWarning("请先输入学期ID"); return }
       this.loadOverview()
       if (this.analysis.courseId) { this.loadDistribution(); this.loadRanking() }
+      this.loadA7Tab()
     },
     loadOverview() {
       this.overviewLoading = true
@@ -139,6 +196,54 @@ export default {
       courseRanking({ courseId: this.analysis.courseId, semesterId: this.analysis.semesterId, pageNum: 1, pageSize: 50 })
         .then(res => { this.rankingList = res.rows || [] }).finally(() => { this.rankLoading = false })
     },
+    /** A7：按当前 tab 加载多维统计（教师/专业结果缓存，切 tab 不重复请求） */
+    loadA7Tab() {
+      if (!this.analysis.semesterId) return
+      const tab = typeof this.a7Tab === 'string' ? this.a7Tab : (this.a7Tab && this.a7Tab.name) || 'class'
+      if (tab === 'class') {
+        this.a7.classLoading = true
+        statByClass({ semesterId: this.analysis.semesterId, courseId: this.analysis.courseId || undefined, pageNum: 1, pageSize: 200 })
+          .then(res => { this.a7.classList = res.rows || []; this.a7.loaded = true })
+          .finally(() => { this.a7.classLoading = false })
+      } else if (tab === 'teacher') {
+        this.a7.teacherLoading = true
+        statByTeacher(this.analysis.semesterId).then(res => { this.a7.teacherList = res.rows || [] })
+          .finally(() => { this.a7.teacherLoading = false })
+      } else if (tab === 'major') {
+        this.a7.majorLoading = true
+        statByMajor(this.analysis.semesterId).then(res => { this.a7.majorList = res.rows || [] })
+          .finally(() => { this.a7.majorLoading = false })
+      } else if (tab === 'trend') {
+        this.a7.trendLoading = true
+        gradeTrend(this.analysis.courseId || undefined).then(res => {
+          this.a7.trendList = res.data || []
+          this.renderTrendChart()
+        }).finally(() => { this.a7.trendLoading = false })
+      }
+    },
+    renderTrendChart() {
+      this.$nextTick(() => {
+        if (!this.$refs.trendChart) return
+        if (!this.trendChart) { this.trendChart = echarts.init(this.$refs.trendChart) }
+        const list = this.a7.trendList || []
+        this.trendChart.setOption({
+          tooltip: { trigger: 'axis' },
+          legend: { data: ['平均分', '通过率(%)', '优秀率(%)'] },
+          grid: { left: 40, right: 40, top: 40, bottom: 30 },
+          xAxis: { type: 'category', data: list.map(i => i.semesterName || ('学期' + i.semesterId)) },
+          yAxis: [
+            { type: 'value', name: '分数' },
+            { type: 'value', name: '百分比(%)', max: 100 }
+          ],
+          series: [
+            { name: '平均分', type: 'line', data: list.map(i => Number(i.avgScore) || 0), label: { show: true } },
+            { name: '通过率(%)', type: 'line', yAxisIndex: 1, data: list.map(i => Number(i.passRate) || 0) },
+            { name: '优秀率(%)', type: 'line', yAxisIndex: 1, data: list.map(i => Number(i.excellentRate) || 0) }
+          ]
+        }, true)
+      })
+    },
+    resizeTrendChart() { this.trendChart && this.trendChart.resize() },
     aggregateSemester() {
       if (!this.analysis.semesterId) { this.$modal.msgWarning("请先输入学期ID"); return }
       this.$modal.confirm('确认对学期[' + this.analysis.semesterId + ']所有课程重新聚合统计？').then(() => {

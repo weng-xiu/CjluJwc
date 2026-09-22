@@ -22,4 +22,7 @@ public interface IBrmTeacherService
     public int deleteBrmTeacherByTeacherId(Long teacherId);
     public int deleteBrmTeacherByTeacherIds(Long[] teacherIds);
     public int deleteBrmTeacherByUserId(Long userId);
+
+    /** P7：教师批量导入（逐行校验并生成校验报告） */
+    public String importTeacher(List<BrmTeacher> teacherList, String operName, boolean updateSupport);
 }

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.multipart.MultipartFile;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -83,5 +84,25 @@ public class SamStudentController extends BaseController
     public AjaxResult remove(@PathVariable Long[] studentIds)
     {
         return toAjax(samStudentService.deleteSamStudentByStudentIds(studentIds));
+    }
+
+    /** P7：下载学籍导入模板 */
+    @PostMapping("/importTemplate")
+    public void importTemplate(HttpServletResponse response)
+    {
+        ExcelUtil<SamStudent> util = new ExcelUtil<SamStudent>(SamStudent.class);
+        util.importTemplateExcel(response, "学籍数据");
+    }
+
+    /** P7：学籍 Excel 导入（逐行校验并返回校验报告） */
+    @PreAuthorize("@ss.hasPermi('sam:student:import')")
+    @Log(title = "学生学籍", businessType = BusinessType.IMPORT)
+    @PostMapping("/importData")
+    public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception
+    {
+        ExcelUtil<SamStudent> util = new ExcelUtil<SamStudent>(SamStudent.class);
+        List<SamStudent> studentList = util.importExcel(file.getInputStream());
+        String message = samStudentService.importStudent(studentList, getUsername(), updateSupport);
+        return success(message);
     }
 }

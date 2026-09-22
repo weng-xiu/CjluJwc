@@ -32,6 +32,10 @@
         </where>
     </select>
     <select id="selectBrmClassroomByClassroomId" parameterType="Long" resultMap="BrmClassroomResult"><include refid="selectBrmClassroomVo"/> where classroom_id = #{classroomId}</select>
+    <select id="selectByBuildingAndName" resultMap="BrmClassroomResult">
+        <include refid="selectBrmClassroomVo"/>
+        where building_id = #{buildingId} and classroom_name = #{classroomName} limit 1
+    </select>
     <insert id="insertBrmClassroom" parameterType="BrmClassroom" useGeneratedKeys="true" keyProperty="classroomId">insert into brm_classroom
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="classroomName != null and classroomName != ''">classroom_name,</if><if test="buildingId != null">building_id,</if>

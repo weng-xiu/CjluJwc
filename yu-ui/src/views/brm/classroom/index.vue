@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['brm:classroom:edit']">修改</el-button></el-col>
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['brm:classroom:remove']">删除</el-button></el-col>
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['brm:classroom:export']">导出</el-button></el-col>
+      <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['brm:classroom:import']">导入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-table v-loading="loading" :data="classroomList" @selection-change="handleSelectionChange">
@@ -41,6 +42,16 @@
       </el-form>
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
     </el-dialog>
+
+    <!-- P7：教室导入对话框 -->
+    <excel-import-dialog
+      ref="importClassroomRef"
+      title="教室导入"
+      action="/brm/classroom/importData"
+      template-action="/brm/classroom/importTemplate"
+      template-file-name="classroom_template"
+      update-support-label="是否更新已存在的教室（按教学楼+教室名称匹配）"
+      @success="getList" />
   </div>
 </template>
 <script>
@@ -48,8 +59,10 @@ import { listClassroom, getClassroom, delClassroom, addClassroom, updateClassroo
 import { listCampus } from "@/api/brm/campus"
 import { listBuilding } from "@/api/brm/building"
 import { listRoomtype } from "@/api/brm/roomtype"
+import ExcelImportDialog from "@/components/ExcelImportDialog"
 export default {
   name: "Classroom", dicts: ['sys_normal_disable'],
+  components: { ExcelImportDialog },
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, classroomList: [], campusList: [], allBuildingList: [], queryBuildingList: [], formBuildingList: [], typeList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, classroomName: null, campusId: null, buildingId: null, typeId: null, status: null },
     form: {}, rules: { classroomName: [{ required: true, message: "教室名称不能为空", trigger: "blur" }], buildingId: [{ required: true, message: "所属教学楼不能为空", trigger: "change" }], typeId: [{ required: true, message: "教室类型不能为空", trigger: "change" }] } }
@@ -73,7 +86,9 @@ export default {
     handleUpdate(row) { this.reset(); const classroomId = row.classroomId || this.ids; getClassroom(classroomId).then(response => { this.form = response.data; const b = this.allBuildingList.find(x => x.buildingId === this.form.buildingId); if (b) { this.form.campusId = b.campusId; this.formBuildingList = this.allBuildingList.filter(x => x.campusId === b.campusId) } this.open = true; this.title = "修改教室" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.classroomId != null) { updateClassroom(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addClassroom(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const classroomIds = row.classroomId || this.ids; this.$modal.confirm('是否确认删除教室编号为"' + classroomIds + '"的数据项？').then(function() { return delClassroom(classroomIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
-    handleExport() { this.download('brm/classroom/export', { ...this.queryParams }, `classroom_${new Date().getTime()}.xlsx`) }
+    handleExport() { this.download('brm/classroom/export', { ...this.queryParams }, `classroom_${new Date().getTime()}.xlsx`) },
+    /** P7：打开导入对话框 */
+    handleImport() { this.$refs.importClassroomRef.open() }
   }
 }
 </script>

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.multipart.MultipartFile;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -77,5 +78,25 @@ public class BrmClassroomController extends BaseController
     public AjaxResult remove(@PathVariable Long[] classroomIds)
     {
         return toAjax(brmClassroomService.deleteBrmClassroomByClassroomIds(classroomIds));
+    }
+
+    /** P7：下载教室导入模板 */
+    @PostMapping("/importTemplate")
+    public void importTemplate(HttpServletResponse response)
+    {
+        ExcelUtil<BrmClassroom> util = new ExcelUtil<BrmClassroom>(BrmClassroom.class);
+        util.importTemplateExcel(response, "教室数据");
+    }
+
+    /** P7：教室 Excel 导入（逐行校验并返回校验报告） */
+    @PreAuthorize("@ss.hasPermi('brm:classroom:import')")
+    @Log(title = "教室", businessType = BusinessType.IMPORT)
+    @PostMapping("/importData")
+    public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception
+    {
+        ExcelUtil<BrmClassroom> util = new ExcelUtil<BrmClassroom>(BrmClassroom.class);
+        List<BrmClassroom> classroomList = util.importExcel(file.getInputStream());
+        String message = brmClassroomService.importClassroom(classroomList, getUsername(), updateSupport);
+        return success(message);
     }
 }

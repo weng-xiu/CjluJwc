@@ -119,4 +119,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="checkStudentHasGradeRecord" parameterType="Long" resultType="int">
         select count(1) from aem_grade_record where student_id = #{studentId}
     </select>
+
+    <select id="selectSamStudentByStudentNo" parameterType="String" resultMap="SamStudentResult">
+        <include refid="selectSamStudentVo"/> where student_no = #{studentNo} limit 1
+    </select>
+    <select id="countMajorExists" parameterType="Long" resultType="int">
+        select count(1) from brm_major where major_id = #{majorId}
+    </select>
+    <select id="countDeptExists" parameterType="Long" resultType="int">
+        select count(1) from brm_department where dept_id = #{deptId}
+    </select>
+    <select id="countClassExists" parameterType="Long" resultType="int">
+        select count(1) from brm_class where class_id = #{classId}
+    </select>
+    <select id="countIdCardConflict" resultType="int">
+        select count(1) from sam_student where id_card = #{idCard}
+        <if test="studentId != null"> and student_id != #{studentId}</if>
+    </select>
 </mapper>

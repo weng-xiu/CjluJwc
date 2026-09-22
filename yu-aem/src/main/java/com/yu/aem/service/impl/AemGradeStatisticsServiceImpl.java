@@ -132,6 +132,34 @@ public class AemGradeStatisticsServiceImpl implements IAemGradeStatisticsService
         return aemGradeStatisticsMapper.courseRanking(courseId, semesterId);
     }
 
+    /** A7：班级维度成绩统计 */
+    @Override
+    public List<Map<String, Object>> statByClass(Long semesterId, Long courseId)
+    {
+        return aemGradeStatisticsMapper.statByClass(semesterId, courseId);
+    }
+
+    /** A7：教师维度成绩统计（经开课计划归口，近似口径） */
+    @Override
+    public List<Map<String, Object>> statByTeacher(Long semesterId)
+    {
+        return aemGradeStatisticsMapper.statByTeacher(semesterId);
+    }
+
+    /** A7：专业维度成绩统计 */
+    @Override
+    public List<Map<String, Object>> statByMajor(Long semesterId)
+    {
+        return aemGradeStatisticsMapper.statByMajor(semesterId);
+    }
+
+    /** A7：按学期历史趋势 */
+    @Override
+    public List<Map<String, Object>> gradeTrend(Long courseId)
+    {
+        return aemGradeStatisticsMapper.gradeTrend(courseId);
+    }
+
     /**
      * 新增或更新统计快照
      */

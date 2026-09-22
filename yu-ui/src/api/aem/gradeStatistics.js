@@ -34,3 +34,23 @@ export function semesterOverview(semesterId) {
 export function courseRanking(query) {
   return request({ url: '/aem/gradeStatistics/ranking', method: 'get', params: query })
 }
+
+// A7：班级维度统计
+export function statByClass(query) {
+  return request({ url: '/aem/gradeStatistics/byClass', method: 'get', params: query })
+}
+
+// A7：教师维度统计
+export function statByTeacher(semesterId) {
+  return request({ url: '/aem/gradeStatistics/byTeacher', method: 'get', params: { semesterId } })
+}
+
+// A7：专业维度统计
+export function statByMajor(semesterId) {
+  return request({ url: '/aem/gradeStatistics/byMajor', method: 'get', params: { semesterId } })
+}
+
+// A7：按学期历史趋势
+export function gradeTrend(courseId) {
+  return request({ url: '/aem/gradeStatistics/trend', method: 'get', params: { courseId } })
+}

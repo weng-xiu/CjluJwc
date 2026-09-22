@@ -11,6 +11,7 @@
       <el-col :span="1.5"><el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['sam:student:edit']">修改</el-button></el-col>
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['sam:student:remove']">删除</el-button></el-col>
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['sam:student:export']">导出</el-button></el-col>
+      <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['sam:student:import']">导入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-table v-loading="loading" :data="studentList" @selection-change="handleSelectionChange">
@@ -46,12 +47,24 @@
       </el-form>
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
     </el-dialog>
+
+    <!-- P7：学籍导入对话框 -->
+    <excel-import-dialog
+      ref="importStudentRef"
+      title="学籍导入"
+      action="/sam/student/importData"
+      template-action="/sam/student/importTemplate"
+      template-file-name="student_template"
+      update-support-label="是否更新已存在的学籍（按学号匹配，已毕业学生不覆盖）"
+      @success="getList" />
   </div>
 </template>
 <script>
 import { listStudent, getStudent, delStudent, addStudent, updateStudent } from "@/api/sam/student"
+import ExcelImportDialog from "@/components/ExcelImportDialog"
 export default {
   name: "Student", dicts: ['sys_normal_disable'],
+  components: { ExcelImportDialog },
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, studentList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, studentNo: null, studentName: null, studentStatus: null },
     form: {}, rules: { studentNo: [{ required: true, message: "学号不能为空", trigger: "blur" }], studentName: [{ required: true, message: "姓名不能为空", trigger: "blur" }] } }
@@ -68,7 +81,9 @@ export default {
     handleUpdate(row) { this.reset(); const studentId = row.studentId || this.ids; getStudent(studentId).then(response => { this.form = response.data; this.open = true; this.title = "修改学生学籍" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.studentId != null) { updateStudent(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addStudent(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const studentIds = row.studentId || this.ids; this.$modal.confirm('是否确认删除学籍编号为"' + studentIds + '"的数据项？').then(function() { return delStudent(studentIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
-    handleExport() { this.download('sam/student/export', { ...this.queryParams }, `student_${new Date().getTime()}.xlsx`) }
+    handleExport() { this.download('sam/student/export', { ...this.queryParams }, `student_${new Date().getTime()}.xlsx`) },
+    /** P7：打开导入对话框 */
+    handleImport() { this.$refs.importStudentRef.open() }
   }
 }
 </script>

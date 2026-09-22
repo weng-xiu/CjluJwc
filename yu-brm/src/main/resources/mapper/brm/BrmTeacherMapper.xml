@@ -63,6 +63,7 @@
         </where>
     </select>
     <select id="selectBrmTeacherByTeacherId" parameterType="Long" resultMap="BrmTeacherResult"><include refid="selectBrmTeacherVo"/> where teacher_id = #{teacherId}</select>
+    <select id="selectBrmTeacherByTeacherCode" parameterType="String" resultMap="BrmTeacherResult"><include refid="selectBrmTeacherVo"/> where teacher_code = #{teacherCode} limit 1</select>
     <insert id="insertBrmTeacher" parameterType="BrmTeacher" useGeneratedKeys="true" keyProperty="teacherId">insert into brm_teacher
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="teacherCode != null and teacherCode != ''">teacher_code,</if><if test="teacherName != null and teacherName != ''">teacher_name,</if>

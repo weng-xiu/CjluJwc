@@ -17,4 +17,7 @@ public interface ISamStudentService
     public int updateSamStudent(SamStudent samStudent);
     public int deleteSamStudentByStudentIds(Long[] studentIds);
     public int deleteSamStudentByStudentId(Long studentId);
+
+    /** P7：学籍批量导入（逐行校验并生成校验报告） */
+    public String importStudent(List<SamStudent> studentList, String operName, boolean updateSupport);
 }

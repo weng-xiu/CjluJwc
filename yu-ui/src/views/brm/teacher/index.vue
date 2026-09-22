@@ -11,6 +11,7 @@
       <el-col :span="1.5"><el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['brm:teacher:edit']">修改</el-button></el-col>
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['brm:teacher:remove']">删除</el-button></el-col>
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['brm:teacher:export']">导出</el-button></el-col>
+      <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['brm:teacher:import']">导入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-table v-loading="loading" :data="teacherList" @selection-change="handleSelectionChange">
@@ -82,12 +83,24 @@
       </el-form>
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
     </el-dialog>
+
+    <!-- P7：教师导入对话框 -->
+    <excel-import-dialog
+      ref="importTeacherRef"
+      title="教师导入"
+      action="/brm/teacher/importData"
+      template-action="/brm/teacher/importTemplate"
+      template-file-name="teacher_template"
+      update-support-label="是否更新已存在的教师（按教师工号匹配）"
+      @success="getList" />
   </div>
 </template>
 <script>
 import { listTeacher, getTeacher, delTeacher, addTeacher, updateTeacher } from "@/api/brm/teacher"
+import ExcelImportDialog from "@/components/ExcelImportDialog"
 export default {
   name: "Teacher", dicts: ['sys_normal_disable', 'sys_user_sex'],
+  components: { ExcelImportDialog },
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, teacherList: [], title: "", open: false,
     positionList: [], checkedPosition: [], qualificationList: [], checkedQualification: [],
     queryParams: { pageNum: 1, pageSize: 10, teacherCode: null, teacherName: null, status: null },
@@ -118,6 +131,8 @@ export default {
     },
     handleDelete(row) { const teacherIds = row.teacherId || this.ids; this.$modal.confirm('是否确认删除教师编号为"' + teacherIds + '"的数据项？').then(function() { return delTeacher(teacherIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('brm/teacher/export', { ...this.queryParams }, `teacher_${new Date().getTime()}.xlsx`) },
+    /** P7：打开导入对话框 */
+    handleImport() { this.$refs.importTeacherRef.open() },
     rowPositionIndex({ row, rowIndex }) { row.index = rowIndex + 1 },
     rowQualificationIndex({ row, rowIndex }) { row.index = rowIndex + 1 },
     handleAddPosition() { let obj = {}; obj.deptId = ""; obj.positionTitle = ""; obj.startDate = ""; obj.endDate = ""; obj.isCurrent = "0"; this.positionList.push(obj) },

@@ -43,4 +43,16 @@ public interface IAemGradeStatisticsService
      * 课程成绩排名列表
      */
     public List<Map<String, Object>> courseRanking(Long courseId, Long semesterId);
+
+    /** A7：班级维度成绩统计（courseId 可选） */
+    public List<Map<String, Object>> statByClass(Long semesterId, Long courseId);
+
+    /** A7：教师维度成绩统计 */
+    public List<Map<String, Object>> statByTeacher(Long semesterId);
+
+    /** A7：专业维度成绩统计 */
+    public List<Map<String, Object>> statByMajor(Long semesterId);
+
+    /** A7：按学期历史趋势（courseId 可选） */
+    public List<Map<String, Object>> gradeTrend(Long courseId);
 }

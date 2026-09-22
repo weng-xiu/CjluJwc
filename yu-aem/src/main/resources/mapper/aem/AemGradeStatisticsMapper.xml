@@ -196,4 +196,86 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           and r.total_score is not null and r.status = '0'
         order by r.total_score desc, r.student_id asc
     </select>
+
+    <!-- A7 班级维度统计：按学生班级聚合（courseId 可选，不传为全部课程） -->
+    <select id="statByClass" resultType="java.util.Map">
+        select s.class_id as classId,
+               cl.class_name as className,
+               count(1) as totalStudents,
+               coalesce(round(avg(r.total_score),2),0) as avgScore,
+               coalesce(max(r.total_score),0) as maxScore,
+               coalesce(min(r.total_score),0) as minScore,
+               sum(case when r.total_score &gt;= 60 then 1 else 0 end) as passCount,
+               sum(case when r.total_score &lt; 60 then 1 else 0 end) as failCount,
+               coalesce(round(sum(case when r.total_score &gt;= 60 then 1 else 0 end)/count(1)*100,2),0) as passRate,
+               coalesce(round(sum(case when r.total_score &gt;= 90 then 1 else 0 end)/count(1)*100,2),0) as excellentRate
+        from aem_grade_record r
+        join sam_student s on s.student_id = r.student_id
+        left join brm_class cl on cl.class_id = s.class_id
+        where r.semester_id = #{semesterId} and r.total_score is not null and r.status = '0'
+        <if test="courseId != null"> and r.course_id = #{courseId}</if>
+        group by s.class_id, cl.class_name
+        order by passRate desc, avgScore desc
+    </select>
+
+    <!-- A7 教师维度统计：经 tpm_course_offering 归口到任课教师（按课程+学期去重教师；
+         同一课程多教师共开时，各教师计入该课程全部成绩，为近似口径） -->
+    <select id="statByTeacher" resultType="java.util.Map">
+        select t.teacher_id as teacherId,
+               t.teacher_name as teacherName,
+               t.teacher_code as teacherCode,
+               d.dept_name as deptName,
+               count(distinct r.course_id) as courseCount,
+               count(1) as totalStudents,
+               coalesce(round(avg(r.total_score),2),0) as avgScore,
+               sum(case when r.total_score &gt;= 60 then 1 else 0 end) as passCount,
+               sum(case when r.total_score &lt; 60 then 1 else 0 end) as failCount,
+               coalesce(round(sum(case when r.total_score &gt;= 60 then 1 else 0 end)/count(1)*100,2),0) as passRate,
+               coalesce(round(sum(case when r.total_score &gt;= 90 then 1 else 0 end)/count(1)*100,2),0) as excellentRate
+        from aem_grade_record r
+        join (select distinct course_id, teacher_id from tpm_course_offering
+              where del_flag = '0' and semester_id = #{semesterId} and teacher_id is not null) o
+          on o.course_id = r.course_id
+        join brm_teacher t on t.teacher_id = o.teacher_id
+        left join brm_department d on d.dept_id = t.dept_id
+        where r.semester_id = #{semesterId} and r.total_score is not null and r.status = '0'
+        group by t.teacher_id, t.teacher_name, t.teacher_code, d.dept_name
+        order by passRate desc, avgScore desc
+    </select>
+
+    <!-- A7 专业维度统计：按学生所属专业聚合 -->
+    <select id="statByMajor" resultType="java.util.Map">
+        select s.major_id as majorId,
+               mj.major_name as majorName,
+               count(distinct r.student_id) as studentCount,
+               count(1) as totalStudents,
+               coalesce(round(avg(r.total_score),2),0) as avgScore,
+               coalesce(round(avg(r.grade_point),2),0) as avgGpa,
+               sum(case when r.total_score &lt; 60 then 1 else 0 end) as failCount,
+               coalesce(round(sum(case when r.total_score &gt;= 60 then 1 else 0 end)/count(1)*100,2),0) as passRate,
+               coalesce(round(sum(case when r.total_score &gt;= 90 then 1 else 0 end)/count(1)*100,2),0) as excellentRate
+        from aem_grade_record r
+        join sam_student s on s.student_id = r.student_id
+        left join brm_major mj on mj.major_id = s.major_id
+        where r.semester_id = #{semesterId} and r.total_score is not null and r.status = '0'
+        group by s.major_id, mj.major_name
+        order by passRate desc, avgScore desc
+    </select>
+
+    <!-- A7 历史趋势：按学期聚合（courseId 可选），用于趋势对比图 -->
+    <select id="gradeTrend" resultType="java.util.Map">
+        select r.semester_id as semesterId,
+               sm.semester_name as semesterName,
+               count(1) as totalStudents,
+               coalesce(round(avg(r.total_score),2),0) as avgScore,
+               coalesce(round(avg(r.grade_point),2),0) as avgGpa,
+               coalesce(round(sum(case when r.total_score &gt;= 60 then 1 else 0 end)/count(1)*100,2),0) as passRate,
+               coalesce(round(sum(case when r.total_score &gt;= 90 then 1 else 0 end)/count(1)*100,2),0) as excellentRate
+        from aem_grade_record r
+        left join brm_semester sm on sm.semester_id = r.semester_id
+        where r.total_score is not null and r.status = '0'
+        <if test="courseId != null"> and r.course_id = #{courseId}</if>
+        group by r.semester_id, sm.semester_name
+        order by r.semester_id asc
+    </select>
 </mapper>

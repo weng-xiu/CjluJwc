@@ -8,6 +8,7 @@ import com.yu.brm.domain.BrmTeacherQualification;
 public interface BrmTeacherMapper
 {
     public BrmTeacher selectBrmTeacherByTeacherId(Long teacherId);
+    public BrmTeacher selectBrmTeacherByTeacherCode(String teacherCode);
     public BrmTeacher selectBrmTeacherByUserId(Long userId);
     public List<BrmTeacher> selectBrmTeacherList(BrmTeacher brmTeacher);
     public int insertBrmTeacher(BrmTeacher brmTeacher);

@@ -15,4 +15,7 @@ public interface BrmClassroomMapper
 
     /** 按最小容量查询教室列表（含教学楼名称、教室类型名称） */
     List<BrmClassroom> selectByMinCapacity(@Param("minCapacity") Integer minCapacity);
+
+    /** P7 导入：按教学楼+教室名称精确查询（业务唯一键） */
+    BrmClassroom selectByBuildingAndName(@Param("buildingId") Long buildingId, @Param("classroomName") String classroomName);
 }

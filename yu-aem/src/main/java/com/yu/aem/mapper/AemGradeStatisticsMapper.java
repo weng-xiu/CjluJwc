@@ -48,4 +48,16 @@ public interface AemGradeStatisticsMapper
      * 课程成绩排名（按总分降序），支持分页由PageHelper控制。
      */
     public List<Map<String, Object>> courseRanking(@Param("courseId") Long courseId, @Param("semesterId") Long semesterId);
+
+    /** A7：班级维度成绩统计（courseId 可选） */
+    public List<Map<String, Object>> statByClass(@Param("semesterId") Long semesterId, @Param("courseId") Long courseId);
+
+    /** A7：教师维度成绩统计（经开课计划归口，近似口径） */
+    public List<Map<String, Object>> statByTeacher(@Param("semesterId") Long semesterId);
+
+    /** A7：专业维度成绩统计 */
+    public List<Map<String, Object>> statByMajor(@Param("semesterId") Long semesterId);
+
+    /** A7：按学期历史趋势（courseId 可选） */
+    public List<Map<String, Object>> gradeTrend(@Param("courseId") Long courseId);
 }

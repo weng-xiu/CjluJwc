@@ -114,4 +114,51 @@ public class AemGradeStatisticsController extends BaseController
         List<java.util.Map<String, Object>> list = aemGradeStatisticsService.courseRanking(courseId, semesterId);
         return getDataTable(list);
     }
+
+    /**
+     * A7：班级维度成绩统计（courseId 可选，不传为学期内全部课程）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeStatistics:query')")
+    @GetMapping("/byClass")
+    public TableDataInfo byClass(@org.springframework.web.bind.annotation.RequestParam Long semesterId,
+                                 @org.springframework.web.bind.annotation.RequestParam(required = false) Long courseId)
+    {
+        startPage();
+        List<java.util.Map<String, Object>> list = aemGradeStatisticsService.statByClass(semesterId, courseId);
+        return getDataTable(list);
+    }
+
+    /**
+     * A7：教师维度成绩统计（经开课计划归口，近似口径）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeStatistics:query')")
+    @GetMapping("/byTeacher")
+    public TableDataInfo byTeacher(@org.springframework.web.bind.annotation.RequestParam Long semesterId)
+    {
+        startPage();
+        List<java.util.Map<String, Object>> list = aemGradeStatisticsService.statByTeacher(semesterId);
+        return getDataTable(list);
+    }
+
+    /**
+     * A7：专业维度成绩统计
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeStatistics:query')")
+    @GetMapping("/byMajor")
+    public TableDataInfo byMajor(@org.springframework.web.bind.annotation.RequestParam Long semesterId)
+    {
+        startPage();
+        List<java.util.Map<String, Object>> list = aemGradeStatisticsService.statByMajor(semesterId);
+        return getDataTable(list);
+    }
+
+    /**
+     * A7：按学期历史趋势（courseId 可选，返回全量不分页）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeStatistics:query')")
+    @GetMapping("/trend")
+    public AjaxResult trend(@org.springframework.web.bind.annotation.RequestParam(required = false) Long courseId)
+    {
+        return success(aemGradeStatisticsService.gradeTrend(courseId));
+    }
 }
