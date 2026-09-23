@@ -14,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yu.common.annotation.Log;
@@ -24,6 +25,7 @@ import com.yu.common.utils.SecurityUtils;
 import com.yu.tpm.domain.TpmTrainingPlan;
 import com.yu.tpm.domain.TpmCourseLibrary;
 import com.yu.tpm.domain.TpmCreditStructure;
+import com.yu.tpm.domain.dto.PlanImportRow;
 import com.yu.tpm.service.ITpmTrainingPlanService;
 import com.yu.common.utils.poi.ExcelUtil;
 import com.yu.common.core.page.TableDataInfo;
@@ -170,5 +172,29 @@ public class TpmTrainingPlanController extends BaseController
             }
         }
         return toAjax(tpmTrainingPlanService.savePlanWithChildren(plan, courseList, creditList));
+    }
+
+    /**
+     * P7：培养方案导入模板
+     */
+    @PostMapping("/importTemplate")
+    public void importTemplate(HttpServletResponse response)
+    {
+        ExcelUtil<PlanImportRow> util = new ExcelUtil<PlanImportRow>(PlanImportRow.class);
+        util.importTemplateExcel(response, "方案数据");
+    }
+
+    /**
+     * P7：培养方案导入（逐行校验报告，业务键=专业编码+方案年份+学历层次）
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:plan:import')")
+    @Log(title = "培养方案", businessType = BusinessType.IMPORT)
+    @PostMapping("/importData")
+    public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception
+    {
+        ExcelUtil<PlanImportRow> util = new ExcelUtil<PlanImportRow>(PlanImportRow.class);
+        List<PlanImportRow> rows = util.importExcel(file.getInputStream());
+        String message = tpmTrainingPlanService.importPlan(rows, getUsername(), updateSupport);
+        return success(message);
     }
 }

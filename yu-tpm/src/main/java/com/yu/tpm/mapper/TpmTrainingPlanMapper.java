@@ -28,5 +28,15 @@ public interface TpmTrainingPlanMapper
      * @return 已发布方案数
      */
     public int countPublishedConflict(@Param("majorId") Long majorId, @Param("planYear") String planYear, @Param("excludePlanId") Long excludePlanId);
+
+    /**
+     * P7：按业务唯一键（专业+年份+学历层次）查询方案，用于导入匹配
+     */
+    public TpmTrainingPlan selectPlanByBizKey(@Param("majorId") Long majorId, @Param("planYear") String planYear, @Param("educationLevel") String educationLevel);
+
+    /**
+     * P7：按专业编码解析专业ID（跨库读 brm_major）
+     */
+    public Long selectMajorIdByCode(@Param("majorCode") String majorCode);
 }
 

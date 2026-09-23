@@ -1,6 +1,10 @@
 package com.yu.tpm.service.impl;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.yu.common.annotation.DataScope;
@@ -17,6 +21,7 @@ import com.yu.tpm.mapper.TpmCourseLibraryMapper;
 import com.yu.tpm.domain.TpmTrainingPlan;
 import com.yu.tpm.domain.TpmCreditStructure;
 import com.yu.tpm.domain.TpmCourseLibrary;
+import com.yu.tpm.domain.dto.PlanImportRow;
 import com.yu.tpm.service.ITpmTrainingPlanService;
 import com.yu.tpm.service.ITpmCourseLibraryService;
 import com.yu.tpm.service.ITpmCreditStructureService;
@@ -361,5 +366,206 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
             }
         }
         return rows;
+    }
+
+    /**
+     * P7：培养方案 Excel 导入。
+     * 逐行校验（必填 → 专业编码存在 → 课程编码存在），业务键=专业+年份+学历层次；
+     * 新行建为草稿(V1)，已存在且 updateSupport 时仅允许覆盖未发布方案；课程清单按编码挂接 plan_id。
+     * 部分失败不回滚已成功行，返回逐行报告。
+     */
+    @Override
+    public String importPlan(List<PlanImportRow> rows, String operName, boolean updateSupport)
+    {
+        if (rows == null || rows.isEmpty())
+        {
+            throw new ServiceException("导入培养方案数据不能为空！");
+        }
+        int successNum = 0;
+        int updateNum = 0;
+        int failureNum = 0;
+        StringBuilder successMsg = new StringBuilder();
+        StringBuilder failureMsg = new StringBuilder();
+        int rowNo = 0;
+        // 同文件内业务键去重（防止一个 Excel 中多行指向同一方案）
+        Set<String> bizKeys = new HashSet<>();
+        for (PlanImportRow row : rows)
+        {
+            rowNo++;
+            String planName = StringUtils.trimToEmpty(row.getPlanName());
+            String majorCode = StringUtils.trimToEmpty(row.getMajorCode());
+            String planYear = StringUtils.trimToEmpty(row.getPlanYear());
+            // 1. 必填校验
+            if (planName.isEmpty() || majorCode.isEmpty() || planYear.isEmpty())
+            {
+                failureNum++;
+                failureMsg.append("<br/>第 ").append(rowNo).append(" 行：方案名称、专业编码、方案年份均不能为空");
+                continue;
+            }
+            // 2. 专业编码解析
+            Long majorId = tpmTrainingPlanMapper.selectMajorIdByCode(majorCode);
+            if (majorId == null)
+            {
+                failureNum++;
+                failureMsg.append("<br/>第 ").append(rowNo).append(" 行：专业编码 ").append(majorCode).append(" 不存在");
+                continue;
+            }
+            String educationLevel = normalizeEducationLevel(row.getEducationLevel());
+            String bizKey = majorId + "|" + planYear + "|" + educationLevel;
+            if (!bizKeys.add(bizKey))
+            {
+                failureNum++;
+                failureMsg.append("<br/>第 ").append(rowNo).append(" 行：文件内存在相同业务键（专业+年份+学历层次）的方案行，已跳过");
+                continue;
+            }
+            // 3. 课程编码清单预检（全部存在才挂接，避免半挂接）
+            List<TpmCourseLibrary> courses = new ArrayList<>();
+            String courseErr = resolveImportCourses(row.getCourseCodes(), courses);
+            if (courseErr != null)
+            {
+                failureNum++;
+                failureMsg.append("<br/>第 ").append(rowNo).append(" 行：").append(courseErr);
+                continue;
+            }
+            try
+            {
+                TpmTrainingPlan existing = tpmTrainingPlanMapper.selectPlanByBizKey(majorId, planYear, educationLevel);
+                if (existing == null)
+                {
+                    TpmTrainingPlan plan = new TpmTrainingPlan();
+                    plan.setPlanName(planName);
+                    plan.setMajorId(majorId);
+                    plan.setPlanYear(planYear);
+                    plan.setEducationLevel(educationLevel);
+                    plan.setTotalCredits(row.getTotalCredits());
+                    plan.setVersion(StringUtils.isNotBlank(row.getVersion()) ? row.getVersion().trim() : "V1");
+                    plan.setPublishStatus("0");
+                    plan.setStatus("0");
+                    plan.setCreateBy(operName);
+                    plan.setCreateTime(DateUtils.getNowDate());
+                    tpmTrainingPlanMapper.insertTpmTrainingPlan(plan);
+                    bindImportCourses(plan.getPlanId(), courses, operName);
+                    successNum++;
+                    successMsg.append("<br/>").append(successNum).append("、方案 ").append(planName)
+                            .append("（专业 ").append(majorCode).append(" / ").append(planYear).append(" 级）导入成功，已建为草稿");
+                }
+                else if (updateSupport)
+                {
+                    if ("1".equals(existing.getPublishStatus()))
+                    {
+                        failureNum++;
+                        failureMsg.append("<br/>第 ").append(rowNo).append(" 行：方案【").append(existing.getPlanName())
+                                .append("】已发布，不允许覆盖导入");
+                        continue;
+                    }
+                    TpmTrainingPlan upd = new TpmTrainingPlan();
+                    upd.setPlanId(existing.getPlanId());
+                    upd.setPlanName(planName);
+                    upd.setTotalCredits(row.getTotalCredits());
+                    if (StringUtils.isNotBlank(row.getVersion()))
+                    {
+                        upd.setVersion(row.getVersion().trim());
+                    }
+                    upd.setUpdateBy(operName);
+                    upd.setUpdateTime(DateUtils.getNowDate());
+                    tpmTrainingPlanMapper.updateTpmTrainingPlan(upd);
+                    bindImportCourses(existing.getPlanId(), courses, operName);
+                    updateNum++;
+                    successMsg.append("<br/>").append(updateNum).append("、方案 ").append(planName).append(" 覆盖更新成功");
+                }
+                else
+                {
+                    failureNum++;
+                    failureMsg.append("<br/>第 ").append(rowNo).append(" 行：方案已存在（专业 ").append(majorCode)
+                            .append(" / ").append(planYear).append(" 级 / 学历 ").append(educationLevel)
+                            .append("），如需覆盖请勾选更新支持");
+                }
+            }
+            catch (Exception e)
+            {
+                failureNum++;
+                failureMsg.append("<br/>第 ").append(rowNo).append(" 行：").append(e.getMessage());
+            }
+        }
+        if (failureNum > 0)
+        {
+            failureMsg.insert(0, "很抱歉，导入失败！共 " + failureNum + " 条数据格式不正确，错误如下：");
+            throw new ServiceException(failureMsg.toString());
+        }
+        successMsg.insert(0, "恭喜您，数据已全部导入成功！共 " + successNum + " 条新增");
+        if (updateNum > 0)
+        {
+            successMsg.append("，").append(updateNum).append(" 条覆盖更新");
+        }
+        return successMsg.toString();
+    }
+
+    /**
+     * P7：学历层次宽容归一——历史数据存在编码（'1'）与文本（'本科'）两种口径，
+     * 导入时按常见标签归一为编码，其余原样保留。
+     */
+    private String normalizeEducationLevel(String raw)
+    {
+        String v = StringUtils.trimToEmpty(raw);
+        switch (v)
+        {
+            case "本科": return "1";
+            case "专科": return "2";
+            case "硕士研究生":
+            case "硕士": return "3";
+            case "博士研究生":
+            case "博士": return "4";
+            default: return v.isEmpty() ? null : v;
+        }
+    }
+
+    /**
+     * P7：解析并预检课程编码清单（逗号/分号/顿号/空白分隔）。
+     * 全部编码存在于课程库则填充 courses 并返回 null；否则返回错误信息。
+     */
+    private String resolveImportCourses(String courseCodes, List<TpmCourseLibrary> courses)
+    {
+        if (StringUtils.isBlank(courseCodes))
+        {
+            return null;
+        }
+        Set<String> codes = new LinkedHashSet<>();
+        for (String code : courseCodes.split("[,，;；、\\s]+"))
+        {
+            if (StringUtils.isNotBlank(code))
+            {
+                codes.add(code.trim());
+            }
+        }
+        for (String code : codes)
+        {
+            TpmCourseLibrary course = tpmCourseLibraryMapper.selectTpmCourseLibraryByCourseCode(code);
+            if (course == null)
+            {
+                return "课程编码 " + code + " 在课程库中不存在";
+            }
+            courses.add(course);
+        }
+        return null;
+    }
+
+    /**
+     * P7：将课程挂接到方案（plan_id）。仅更新 plan_id 与审计字段，不覆盖课程其他属性。
+     */
+    private void bindImportCourses(Long planId, List<TpmCourseLibrary> courses, String operName)
+    {
+        for (TpmCourseLibrary course : courses)
+        {
+            if (planId.equals(course.getPlanId()))
+            {
+                continue;
+            }
+            TpmCourseLibrary upd = new TpmCourseLibrary();
+            upd.setCourseId(course.getCourseId());
+            upd.setPlanId(planId);
+            upd.setUpdateBy(operName);
+            upd.setUpdateTime(DateUtils.getNowDate());
+            tpmCourseLibraryMapper.updateTpmCourseLibrary(upd);
+        }
     }
 }

@@ -42,4 +42,9 @@ public interface ITpmTrainingPlanService
      * 保存培养方案主表及其子表（课程库、学分结构），仅做新增/修改，不删除子表
      */
     public int savePlanWithChildren(TpmTrainingPlan plan, List<TpmCourseLibrary> courseList, List<TpmCreditStructure> creditList);
+
+    /**
+     * P7：培养方案 Excel 导入（逐行校验报告，业务键=专业编码+方案年份+学历层次，课程编码清单挂接方案）
+     */
+    public String importPlan(List<com.yu.tpm.domain.dto.PlanImportRow> rows, String operName, boolean updateSupport);
 }

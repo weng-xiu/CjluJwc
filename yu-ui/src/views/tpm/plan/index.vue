@@ -25,6 +25,7 @@
       <el-col :span="1.5"><el-button type="success" plain icon="el-icon-edit" size="mini" :disabled="single" @click="handleUpdate" v-hasPermi="['tpm:plan:edit']">修改</el-button></el-col>
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['tpm:plan:remove']">删除</el-button></el-col>
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['tpm:plan:export']">导出</el-button></el-col>
+      <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['tpm:plan:import']">导入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-table v-loading="loading" :data="planList" @selection-change="handleSelectionChange">
@@ -191,6 +192,16 @@
       </el-tabs>
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
     </el-dialog>
+
+    <!-- P7：培养方案导入对话框 -->
+    <excel-import-dialog
+      ref="importPlanRef"
+      title="培养方案导入"
+      action="/tpm/plan/importData"
+      template-action="/tpm/plan/importTemplate"
+      template-file-name="plan_template"
+      update-support-label="是否覆盖已存在方案（按 专业+年份+学历层次 匹配，仅未发布方案可覆盖）"
+      @success="getList" />
   </div>
 </template>
 <script>
@@ -199,9 +210,11 @@ import { listCourseLib, delCourseLib } from "@/api/tpm/courseLib"
 import { listCreditStruct, delCreditStruct } from "@/api/tpm/creditStruct"
 import { listMajor } from "@/api/brm/major"
 import { listDept } from "@/api/brm/dept"
+import ExcelImportDialog from "@/components/ExcelImportDialog"
 
 export default {
   name: "Plan",
+  components: { ExcelImportDialog },
   dicts: ['sys_normal_disable', 'tpm_plan_publish_status', 'tpm_course_type', 'tpm_course_category', 'tpm_assessment', 'tpm_credit_type'],
   data() {
     return {
@@ -291,6 +304,8 @@ export default {
       this.$modal.confirm('将基于"' + row.planName + '（' + (row.version || 'V1') + '）"复制新的草稿版本，是否继续？').then(function() { return copyPlan(row.planId) }).then(() => { this.getList(); this.$modal.msgSuccess("复制成功，已生成新草稿版本") }).catch(() => {})
     },
     handleExport() { this.download('tpm/plan/export', { ...this.queryParams }, `plan_${new Date().getTime()}.xlsx`) },
+    /** P7：打开导入对话框 */
+    handleImport() { this.$refs.importPlanRef.open() },
     handleAddCourse() {
       this.courseList.push({ planId: this.form.planId, status: '0', theoryHours: 0, practiceHours: 0, totalHours: 0 })
     },

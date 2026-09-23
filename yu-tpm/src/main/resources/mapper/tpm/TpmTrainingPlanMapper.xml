@@ -116,4 +116,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <if test="planYear != null and planYear != ''"> and plan_year = #{planYear}</if>
         <if test="excludePlanId != null"> and plan_id != #{excludePlanId}</if>
     </select>
+    <!-- P7：按业务唯一键（专业+年份+学历层次）匹配方案，用于导入 -->
+    <select id="selectPlanByBizKey" resultMap="TpmTrainingPlanResult">
+        <include refid="selectTpmTrainingPlanVo"/>
+        where del_flag = '0' and major_id = #{majorId}
+          and plan_year = #{planYear}
+          and (education_level = #{educationLevel} or (education_level is null and #{educationLevel} is null))
+        order by plan_id asc limit 1
+    </select>
+    <!-- P7：按专业编码解析专业ID（brm_major 无 del_flag 列） -->
+    <select id="selectMajorIdByCode" resultType="java.lang.Long">
+        select major_id from brm_major where major_code = #{majorCode} limit 1
+    </select>
 </mapper>
