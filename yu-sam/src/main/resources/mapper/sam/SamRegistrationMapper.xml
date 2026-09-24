@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamRegistrationMapper">
+    <resultMap type="SamRegistration" id="SamRegistrationResult">
+        <result property="registrationId" column="registration_id" />
+        <result property="studentId"      column="student_id"      />
+        <result property="semesterId"     column="semester_id"     />
+        <result property="registerStatus" column="register_status" />
+        <result property="registerTime"   column="register_time"   />
+        <result property="registerBy"     column="register_by"     />
+        <result property="channel"        column="channel"         />
+        <result property="deferReason"    column="defer_reason"    />
+        <result property="remark"         column="remark"          />
+        <result property="createBy"       column="create_by"       />
+        <result property="createTime"     column="create_time"     />
+        <result property="updateBy"       column="update_by"       />
+        <result property="updateTime"     column="update_time"     />
+        <result property="studentNo"      column="student_no"      />
+        <result property="studentName"    column="student_name"    />
+        <result property="className"      column="class_name"      />
+        <result property="deptName"       column="dept_name"       />
+        <result property="semesterName"   column="semester_name"   />
+        <result property="studentStatus"  column="student_status"  />
+    </resultMap>
+
+    <sql id="selectJoinColumns">
+        select r.registration_id, r.student_id, r.semester_id, r.register_status, r.register_time,
+               r.register_by, r.channel, r.defer_reason, r.remark, r.create_by, r.create_time,
+               r.update_by, r.update_time,
+               s.student_no, s.student_name, s.student_status,
+               c.class_name, d.dept_name, sem.semester_name
+        from sam_registration r
+        join sam_student s on r.student_id = s.student_id
+        left join brm_class c on s.class_id = c.class_id
+        left join brm_department d on s.dept_id = d.dept_id
+        left join brm_semester sem on r.semester_id = sem.semester_id
+    </sql>
+
+    <select id="selectSamRegistrationList" parameterType="SamRegistration" resultMap="SamRegistrationResult">
+        <include refid="selectJoinColumns"/>
+        <where>
+            <if test="semesterId != null"> and r.semester_id = #{semesterId}</if>
+            <if test="registerStatus != null and registerStatus != ''"> and r.register_status = #{registerStatus}</if>
+            <if test="studentNo != null and studentNo.trim() != ''"> and s.student_no like concat('%', #{studentNo}, '%')</if>
+            <if test="studentName != null and studentName.trim() != ''"> and s.student_name like concat('%', #{studentName}, '%')</if>
+            <if test="studentStatus != null and studentStatus != ''"> and s.student_status = #{studentStatus}</if>
+        </where>
+        order by r.register_status asc, s.student_no asc, r.registration_id desc
+    </select>
+
+    <select id="selectSamRegistrationByRegistrationId" parameterType="Long" resultMap="SamRegistrationResult">
+        <include refid="selectJoinColumns"/> where r.registration_id = #{registrationId}
+    </select>
+
+    <insert id="insertSamRegistration" parameterType="SamRegistration" useGeneratedKeys="true" keyProperty="registrationId">
+        insert into sam_registration
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="semesterId != null">semester_id,</if>
+            <if test="registerStatus != null">register_status,</if>
+            <if test="registerTime != null">register_time,</if>
+            <if test="registerBy != null">register_by,</if>
+            <if test="channel != null">channel,</if>
+            <if test="deferReason != null">defer_reason,</if>
+            <if test="remark != null">remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="semesterId != null">#{semesterId},</if>
+            <if test="registerStatus != null">#{registerStatus},</if>
+            <if test="registerTime != null">#{registerTime},</if>
+            <if test="registerBy != null">#{registerBy},</if>
+            <if test="channel != null">#{channel},</if>
+            <if test="deferReason != null">#{deferReason},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateSamRegistration" parameterType="SamRegistration">
+        update sam_registration
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="registerStatus != null and registerStatus != ''">register_status = #{registerStatus},</if>
+            <if test="registerTime != null">register_time = #{registerTime},</if>
+            <if test="registerBy != null">register_by = #{registerBy},</if>
+            <if test="channel != null">channel = #{channel},</if>
+            <if test="deferReason != null">defer_reason = #{deferReason},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where registration_id = #{registrationId}
+    </update>
+
+    <delete id="deleteSamRegistrationByRegistrationIds" parameterType="String">
+        delete from sam_registration where registration_id in
+        <foreach item="registrationId" collection="array" open="(" separator="," close=")">#{registrationId}</foreach>
+    </delete>
+
+    <!-- 报到初始化：为指定学期全部在读学生生成未注册记录，NOT EXISTS 保证幂等 -->
+    <insert id="initRegistrationForSemester">
+        insert into sam_registration (student_id, semester_id, register_status, create_by, create_time)
+        select s.student_id, #{semesterId}, '0', #{createBy}, sysdate()
+        from sam_student s
+        where s.student_status = '0'
+          and not exists (
+            select 1 from sam_registration r
+            where r.student_id = s.student_id and r.semester_id = #{semesterId}
+          )
+    </insert>
+
+    <select id="countUnregistered" parameterType="Long" resultType="int">
+        select count(1) from sam_registration where semester_id = #{semesterId} and register_status = '0'
+    </select>
+
+    <select id="statOverview" parameterType="Long" resultType="java.util.HashMap">
+        select count(1) as total,
+               sum(case when register_status = '1' then 1 else 0 end) as registered,
+               sum(case when register_status = '2' then 1 else 0 end) as deferred,
+               sum(case when register_status = '0' then 1 else 0 end) as unregistered
+        from sam_registration where semester_id = #{semesterId}
+    </select>
+
+    <select id="statByDept" parameterType="Long" resultType="java.util.HashMap">
+        select ifnull(d.dept_name, '未分配院系') as deptName,
+               count(1) as total,
+               sum(case when r.register_status = '1' then 1 else 0 end) as registered,
+               sum(case when r.register_status = '2' then 1 else 0 end) as deferred,
+               sum(case when r.register_status = '0' then 1 else 0 end) as unregistered,
+               round(sum(case when r.register_status = '1' then 1 else 0 end) * 100.0 / count(1), 2) as registerRate
+        from sam_registration r
+        join sam_student s on r.student_id = s.student_id
+        left join brm_department d on s.dept_id = d.dept_id
+        where r.semester_id = #{semesterId}
+        group by d.dept_name
+        order by registerRate desc, total desc
+    </select>
+
+    <select id="selectCurrentSemesterId" resultType="java.lang.Long">
+        select semester_id from brm_semester
+        where status = '0'
+        order by (start_date &lt;= curdate() and end_date &gt;= curdate()) desc, semester_id desc
+        limit 1
+    </select>
+</mapper>
