@@ -62,6 +62,30 @@ public class SamCertificate extends BaseEntity
     @Excel(name = "领取人")
     private String receiver;
 
+    /** 证书来源（0原始 1补办） */
+    @Excel(name = "证书来源", readConverterExp = "0=原始,1=补办")
+    private String reissueType;
+
+    /** 来源证书ID（补办时指向原证书） */
+    private Long certSourceId;
+
+    /** 毕业年份（查询参数，用于按年份生成/检索） */
+    private transient String gradYear;
+
+    /** 学生学号（联查展示字段） */
+    @Excel(name = "学号")
+    private String studentNo;
+
+    /** 学生姓名（联查展示字段） */
+    @Excel(name = "学生姓名")
+    private String studentName;
+
+    /** 班级名称（联查展示字段） */
+    private String className;
+
+    /** 院系名称（联查展示字段） */
+    private String deptName;
+
     /** 状态 */
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
@@ -78,8 +102,7 @@ public class SamCertificate extends BaseEntity
     public String getCertType() { return certType; }
     public void setCertType(String certType) { this.certType = certType; }
 
-    @NotBlank(message = "证书编号不能为空")
-    @Size(min = 0, max = 50, message = "证书编号长度不能超过50个字符")
+    @Size(min = 0, max = 100, message = "证书编号长度不能超过100个字符")
     public String getCertNumber() { return certNumber; }
     public void setCertNumber(String certNumber) { this.certNumber = certNumber; }
 
@@ -101,6 +124,27 @@ public class SamCertificate extends BaseEntity
     public String getReceiver() { return receiver; }
     public void setReceiver(String receiver) { this.receiver = receiver; }
 
+    public String getReissueType() { return reissueType; }
+    public void setReissueType(String reissueType) { this.reissueType = reissueType; }
+
+    public Long getCertSourceId() { return certSourceId; }
+    public void setCertSourceId(Long certSourceId) { this.certSourceId = certSourceId; }
+
+    public String getGradYear() { return gradYear; }
+    public void setGradYear(String gradYear) { this.gradYear = gradYear; }
+
+    public String getStudentNo() { return studentNo; }
+    public void setStudentNo(String studentNo) { this.studentNo = studentNo; }
+
+    public String getStudentName() { return studentName; }
+    public void setStudentName(String studentName) { this.studentName = studentName; }
+
+    public String getClassName() { return className; }
+    public void setClassName(String className) { this.className = className; }
+
+    public String getDeptName() { return deptName; }
+    public void setDeptName(String deptName) { this.deptName = deptName; }
+
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
@@ -117,6 +161,8 @@ public class SamCertificate extends BaseEntity
             .append("isIssued", getIsIssued())
             .append("issueDate", getIssueDate())
             .append("receiver", getReceiver())
+            .append("reissueType", getReissueType())
+            .append("certSourceId", getCertSourceId())
             .append("status", getStatus())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())

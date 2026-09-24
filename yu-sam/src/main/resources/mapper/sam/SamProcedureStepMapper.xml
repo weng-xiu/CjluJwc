@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamProcedureStepMapper">
+    <resultMap type="SamProcedureStep" id="SamProcedureStepResult">
+        <result property="stepId"         column="step_id"          />
+        <result property="stepKey"        column="step_key"         />
+        <result property="stepName"       column="step_name"        />
+        <result property="orderNum"       column="order_num"        />
+        <result property="requiredFlag"   column="required_flag"    />
+        <result property="autoCheckType"  column="auto_check_type"  />
+        <result property="status"         column="status"           />
+        <result property="createBy"       column="create_by"        />
+        <result property="createTime"     column="create_time"      />
+        <result property="updateBy"       column="update_by"        />
+        <result property="updateTime"     column="update_time"      />
+        <result property="remark"         column="remark"           />
+        <result property="doneCount"      column="done_count"       />
+    </resultMap>
+    <sql id="selectSamProcedureStepVo">
+        select step_id, step_key, step_name, order_num, required_flag, auto_check_type, status,
+               create_by, create_time, update_by, update_time, remark from sam_procedure_step
+    </sql>
+    <select id="selectSamProcedureStepList" parameterType="SamProcedureStep" resultMap="SamProcedureStepResult">
+        <include refid="selectSamProcedureStepVo"/>
+        <where>
+            <if test="stepKey != null and stepKey.trim() != ''"> and step_key like concat('%', #{stepKey}, '%')</if>
+            <if test="stepName != null and stepName.trim() != ''"> and step_name like concat('%', #{stepName}, '%')</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+        order by order_num asc, step_id asc
+    </select>
+    <select id="selectSamProcedureStepByStepId" parameterType="Long" resultMap="SamProcedureStepResult">
+        <include refid="selectSamProcedureStepVo"/> where step_id = #{stepId}
+    </select>
+    <select id="selectActiveSteps" resultMap="SamProcedureStepResult">
+        <include refid="selectSamProcedureStepVo"/> where status = '0' order by order_num asc, step_id asc
+    </select>
+    <select id="countByStepKey" resultType="int">
+        select count(1) from sam_procedure_step where step_key = #{stepKey}
+        <if test="excludeStepId != null"> and step_id != #{excludeStepId}</if>
+    </select>
+    <select id="statProcedureSteps" resultType="java.util.HashMap">
+        select st.step_id as stepId, st.step_key as stepKey, st.step_name as stepName, st.required_flag as requiredFlag,
+               (select count(1) from sam_graduation_procedure p where p.status = '0') as total,
+               (select count(1) from sam_procedure_item i where i.step_id = st.step_id and i.item_status = '1') as doneCount
+        from sam_procedure_step st
+        where st.status = '0'
+        order by st.order_num asc, st.step_id asc
+    </select>
+    <insert id="insertSamProcedureStep" parameterType="SamProcedureStep" useGeneratedKeys="true" keyProperty="stepId">
+        insert into sam_procedure_step
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="stepKey != null">step_key,</if>
+            <if test="stepName != null">step_name,</if>
+            <if test="orderNum != null">order_num,</if>
+            <if test="requiredFlag != null">required_flag,</if>
+            <if test="autoCheckType != null">auto_check_type,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="stepKey != null">#{stepKey},</if>
+            <if test="stepName != null">#{stepName},</if>
+            <if test="orderNum != null">#{orderNum},</if>
+            <if test="requiredFlag != null">#{requiredFlag},</if>
+            <if test="autoCheckType != null">#{autoCheckType},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateSamProcedureStep" parameterType="SamProcedureStep">
+        update sam_procedure_step
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="stepKey != null">step_key = #{stepKey},</if>
+            <if test="stepName != null">step_name = #{stepName},</if>
+            <if test="orderNum != null">order_num = #{orderNum},</if>
+            <if test="requiredFlag != null">required_flag = #{requiredFlag},</if>
+            <if test="autoCheckType != null">auto_check_type = #{autoCheckType},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where step_id = #{stepId}
+    </update>
+    <delete id="deleteSamProcedureStepByStepIds" parameterType="String">
+        delete from sam_procedure_step where step_id in
+        <foreach item="stepId" collection="array" open="(" separator="," close=")">#{stepId}</foreach>
+    </delete>
+</mapper>

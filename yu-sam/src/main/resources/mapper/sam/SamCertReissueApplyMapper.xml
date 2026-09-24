@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamCertReissueApplyMapper">
+    <resultMap type="SamCertReissueApply" id="SamCertReissueApplyResult">
+        <result property="applyId"        column="apply_id"          />
+        <result property="studentId"      column="student_id"        />
+        <result property="origCertId"     column="orig_cert_id"      />
+        <result property="newCertId"      column="new_cert_id"       />
+        <result property="reason"         column="reason"            />
+        <result property="applyStatus"    column="apply_status"      />
+        <result property="auditBy"        column="audit_by"          />
+        <result property="auditTime"      column="audit_time"        />
+        <result property="auditOpinion"   column="audit_opinion"     />
+        <result property="createBy"       column="create_by"         />
+        <result property="createTime"     column="create_time"       />
+        <result property="updateBy"       column="update_by"         />
+        <result property="updateTime"     column="update_time"       />
+        <result property="remark"         column="remark"            />
+        <result property="studentNo"      column="student_no"        />
+        <result property="studentName"    column="student_name"      />
+        <result property="origCertNumber" column="orig_cert_number"  />
+        <result property="origCertType"   column="orig_cert_type"    />
+        <result property="newCertNumber"  column="new_cert_number"   />
+    </resultMap>
+    <sql id="selectJoinVo">
+        select a.apply_id, a.student_id, a.orig_cert_id, a.new_cert_id, a.reason, a.apply_status,
+               a.audit_by, a.audit_time, a.audit_opinion, a.create_by, a.create_time, a.update_by, a.update_time, a.remark,
+               s.student_no, s.student_name,
+               oc.cert_number as orig_cert_number, oc.cert_type as orig_cert_type,
+               nc.cert_number as new_cert_number
+        from sam_cert_reissue_apply a
+        left join sam_student s on a.student_id = s.student_id
+        left join sam_certificate oc on a.orig_cert_id = oc.cert_id
+        left join sam_certificate nc on a.new_cert_id = nc.cert_id
+    </sql>
+    <select id="selectSamCertReissueApplyByApplyId" parameterType="Long" resultMap="SamCertReissueApplyResult">
+        <include refid="selectJoinVo"/> where a.apply_id = #{applyId}
+    </select>
+    <select id="selectSamCertReissueApplyList" parameterType="SamCertReissueApply" resultMap="SamCertReissueApplyResult">
+        <include refid="selectJoinVo"/>
+        <where>
+            <if test="studentId != null"> and a.student_id = #{studentId}</if>
+            <if test="applyStatus != null and applyStatus.trim() != ''"> and a.apply_status = #{applyStatus}</if>
+            <if test="origCertId != null"> and a.orig_cert_id = #{origCertId}</if>
+            <if test="studentNo != null and studentNo.trim() != ''"> and s.student_no like concat('%', #{studentNo}, '%')</if>
+            <if test="studentName != null and studentName.trim() != ''"> and s.student_name like concat('%', #{studentName}, '%')</if>
+        </where>
+        order by a.apply_id desc
+    </select>
+    <select id="countPendingByOrigCertId" parameterType="Long" resultType="int">
+        select count(1) from sam_cert_reissue_apply where orig_cert_id = #{origCertId} and apply_status = '0'
+    </select>
+    <select id="selectCertsByStudentId" parameterType="Long" resultMap="SamCertReissueApplyResult">
+        select c.cert_id as orig_cert_id, c.cert_number as orig_cert_number, c.cert_type as orig_cert_type,
+               s.student_no as student_no, s.student_name as student_name
+        from sam_certificate c
+        left join sam_student s on c.student_id = s.student_id
+        where c.student_id = #{studentId} and c.reissue_type = '0'
+        order by c.cert_id desc
+    </select>
+    <insert id="insertSamCertReissueApply" parameterType="SamCertReissueApply" useGeneratedKeys="true" keyProperty="applyId">
+        insert into sam_cert_reissue_apply
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="origCertId != null">orig_cert_id,</if>
+            <if test="newCertId != null">new_cert_id,</if>
+            <if test="reason != null">reason,</if>
+            <if test="applyStatus != null">apply_status,</if>
+            <if test="auditBy != null">audit_by,</if>
+            <if test="auditTime != null">audit_time,</if>
+            <if test="auditOpinion != null">audit_opinion,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="origCertId != null">#{origCertId},</if>
+            <if test="newCertId != null">#{newCertId},</if>
+            <if test="reason != null">#{reason},</if>
+            <if test="applyStatus != null">#{applyStatus},</if>
+            <if test="auditBy != null">#{auditBy},</if>
+            <if test="auditTime != null">#{auditTime},</if>
+            <if test="auditOpinion != null">#{auditOpinion},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateSamCertReissueApply" parameterType="SamCertReissueApply">
+        update sam_cert_reissue_apply
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="newCertId != null">new_cert_id = #{newCertId},</if>
+            <if test="reason != null">reason = #{reason},</if>
+            <if test="applyStatus != null and applyStatus != ''">apply_status = #{applyStatus},</if>
+            <if test="auditBy != null">audit_by = #{auditBy},</if>
+            <if test="auditTime != null">audit_time = #{auditTime},</if>
+            <if test="auditOpinion != null">audit_opinion = #{auditOpinion},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where apply_id = #{applyId}
+    </update>
+    <delete id="deleteSamCertReissueApplyByApplyIds" parameterType="String">
+        delete from sam_cert_reissue_apply where apply_id in
+        <foreach item="applyId" collection="array" open="(" separator="," close=")">#{applyId}</foreach>
+    </delete>
+</mapper>

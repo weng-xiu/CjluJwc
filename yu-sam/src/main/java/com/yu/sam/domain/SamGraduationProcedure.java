@@ -55,6 +55,21 @@ public class SamGraduationProcedure extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    /** 学生学号（联查展示字段） */
+    @Excel(name = "学号")
+    private String studentNo;
+
+    /** 学生姓名（联查展示字段） */
+    @Excel(name = "学生姓名")
+    private String studentName;
+
+    /** 班级名称（联查展示字段） */
+    private String className;
+
+    /** 已办环节数/应办必办环节数（非库字段，列表展示） */
+    private Integer doneStepCount;
+    private Integer totalStepCount;
+
     public Long getProcedureId() { return procedureId; }
     public void setProcedureId(Long procedureId) { this.procedureId = procedureId; }
 
@@ -82,6 +97,21 @@ public class SamGraduationProcedure extends BaseEntity
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getStudentNo() { return studentNo; }
+    public void setStudentNo(String studentNo) { this.studentNo = studentNo; }
+
+    public String getStudentName() { return studentName; }
+    public void setStudentName(String studentName) { this.studentName = studentName; }
+
+    public String getClassName() { return className; }
+    public void setClassName(String className) { this.className = className; }
+
+    public Integer getDoneStepCount() { return doneStepCount; }
+    public void setDoneStepCount(Integer doneStepCount) { this.doneStepCount = doneStepCount; }
+
+    public Integer getTotalStepCount() { return totalStepCount; }
+    public void setTotalStepCount(Integer totalStepCount) { this.totalStepCount = totalStepCount; }
 
     @Override
     public String toString() {

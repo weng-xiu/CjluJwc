@@ -14,28 +14,77 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="isIssued"        column="is_issued"         />
         <result property="issueDate"       column="issue_date"        />
         <result property="receiver"        column="receiver"          />
+        <result property="reissueType"    column="reissue_type"      />
+        <result property="certSourceId"   column="cert_source_id"    />
         <result property="status"          column="status"            />
         <result property="createBy"        column="create_by"         />
         <result property="createTime"      column="create_time"       />
         <result property="updateBy"        column="update_by"         />
         <result property="updateTime"      column="update_time"       />
         <result property="remark"          column="remark"            />
+        <result property="studentNo"       column="student_no"        />
+        <result property="studentName"     column="student_name"      />
+        <result property="className"       column="class_name"        />
+        <result property="deptName"        column="dept_name"         />
     </resultMap>
     <sql id="selectSamCertificateVo">
-        select cert_id, student_id, cert_type, cert_number, cert_date, major_id, education_level, is_issued, issue_date, receiver, status, create_by, create_time, update_by, update_time, remark from sam_certificate
+        select c.cert_id, c.student_id, c.cert_type, c.cert_number, c.cert_date, c.major_id, c.education_level,
+               c.is_issued, c.issue_date, c.receiver, c.reissue_type, c.cert_source_id, c.status,
+               c.create_by, c.create_time, c.update_by, c.update_time, c.remark,
+               s.student_no, s.student_name, cl.class_name, d.dept_name
+        from sam_certificate c
+        left join sam_student s on c.student_id = s.student_id
+        left join brm_class cl on s.class_id = cl.class_id
+        left join brm_department d on s.dept_id = d.dept_id
     </sql>
     <select id="selectSamCertificateList" parameterType="SamCertificate" resultMap="SamCertificateResult">
         <include refid="selectSamCertificateVo"/>
         <where>
-            <if test="studentId != null"> and student_id = #{studentId}</if>
-            <if test="certType != null and certType.trim() != ''"> and cert_type = #{certType}</if>
-            <if test="certNumber != null and certNumber.trim() != ''"> and cert_number like concat('%', #{certNumber}, '%')</if>
-            <if test="isIssued != null and isIssued.trim() != ''"> and is_issued = #{isIssued}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            <if test="studentId != null"> and c.student_id = #{studentId}</if>
+            <if test="certType != null and certType.trim() != ''"> and c.cert_type = #{certType}</if>
+            <if test="certNumber != null and certNumber.trim() != ''"> and c.cert_number like concat('%', #{certNumber}, '%')</if>
+            <if test="isIssued != null and isIssued.trim() != ''"> and c.is_issued = #{isIssued}</if>
+            <if test="reissueType != null and reissueType.trim() != ''"> and c.reissue_type = #{reissueType}</if>
+            <if test="studentNo != null and studentNo.trim() != ''"> and s.student_no like concat('%', #{studentNo}, '%')</if>
+            <if test="studentName != null and studentName.trim() != ''"> and s.student_name like concat('%', #{studentName}, '%')</if>
+            <if test="status != null and status.trim() != ''"> and c.status = #{status}</if>
         </where>
+        order by c.cert_id desc
     </select>
     <select id="selectSamCertificateByCertId" parameterType="Long" resultMap="SamCertificateResult">
-        <include refid="selectSamCertificateVo"/> where cert_id = #{certId}
+        <include refid="selectSamCertificateVo"/> where c.cert_id = #{certId}
+    </select>
+    <select id="countByCertNumber" resultType="int">
+        select count(1) from sam_certificate
+        where cert_number = #{certNumber}
+        <if test="excludeCertId != null"> and cert_id != #{excludeCertId}</if>
+    </select>
+    <select id="selectMaxSeqByBucket" resultType="java.lang.Long">
+        select max(cast(right(cert_number, #{seqLen}) as unsigned))
+        from sam_certificate
+        where cert_number like concat(#{bucket}, '%')
+          and char_length(cert_number) = char_length(#{bucket}) + #{seqLen}
+    </select>
+    <select id="selectByStudentId" parameterType="Long" resultMap="SamCertificateResult">
+        <include refid="selectSamCertificateVo"/> where c.student_id = #{studentId} order by c.cert_id desc
+    </select>
+    <!-- 批量生成候选：按证书类型对应审核口径取已通过审核且尚无该类型证书的学生。
+         certType=0/2 毕业/结业 -> sam_graduation_review.review_status；certType=1 学位 -> sam_degree_review.review_status -->
+    <select id="selectStudentsWithoutCert" resultType="java.util.HashMap">
+        select s.student_id as studentId, s.student_no as studentNo, s.student_name as studentName,
+               s.major_id as majorId, s.education_level as educationLevel, s.enrollment_year as enrollmentYear
+        from sam_student s
+        join <choose>
+               <when test="certType == '1'">sam_degree_review r on r.student_id = s.student_id</when>
+               <otherwise>sam_graduation_review r on r.student_id = s.student_id</otherwise>
+             </choose>
+        where r.review_status = #{reviewPassStatus}
+          and s.student_status = '3'
+          and not exists (
+            select 1 from sam_certificate c where c.student_id = s.student_id and c.cert_type = #{certType}
+          )
+        <if test="gradYear != null and gradYear.trim() != ''"> and r.review_date like concat(#{gradYear}, '%')</if>
+        order by s.student_id asc
     </select>
     <insert id="insertSamCertificate" parameterType="SamCertificate" useGeneratedKeys="true" keyProperty="certId">
         insert into sam_certificate
@@ -49,6 +98,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="isIssued != null">is_issued,</if>
             <if test="issueDate != null">issue_date,</if>
             <if test="receiver != null">receiver,</if>
+            <if test="reissueType != null">reissue_type,</if>
+            <if test="certSourceId != null">cert_source_id,</if>
             <if test="status != null">status,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
@@ -64,6 +115,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="isIssued != null">#{isIssued},</if>
             <if test="issueDate != null">#{issueDate},</if>
             <if test="receiver != null">#{receiver},</if>
+            <if test="reissueType != null">#{reissueType},</if>
+            <if test="certSourceId != null">#{certSourceId},</if>
             <if test="status != null">#{status},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
@@ -82,6 +135,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="isIssued != null">is_issued = #{isIssued},</if>
             <if test="issueDate != null">issue_date = #{issueDate},</if>
             <if test="receiver != null">receiver = #{receiver},</if>
+            <if test="reissueType != null">reissue_type = #{reissueType},</if>
+            <if test="certSourceId != null">cert_source_id = #{certSourceId},</if>
             <if test="status != null">status = #{status},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>

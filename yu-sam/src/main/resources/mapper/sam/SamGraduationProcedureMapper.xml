@@ -18,20 +18,55 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateBy"           column="update_by"            />
         <result property="updateTime"         column="update_time"          />
         <result property="remark"             column="remark"               />
+        <result property="studentNo"          column="student_no"           />
+        <result property="studentName"        column="student_name"         />
+        <result property="className"          column="class_name"           />
+        <result property="doneStepCount"      column="done_step_count"      />
+        <result property="totalStepCount"     column="total_step_count"     />
     </resultMap>
     <sql id="selectSamGraduationProcedureVo">
-        select procedure_id, student_id, library_cleared, finance_cleared, dormitory_cleared, card_returned, procedure_status, complete_date, status, create_by, create_time, update_by, update_time, remark from sam_graduation_procedure
+        select p.procedure_id, p.student_id, p.library_cleared, p.finance_cleared, p.dormitory_cleared,
+               p.card_returned, p.procedure_status, p.complete_date, p.status,
+               p.create_by, p.create_time, p.update_by, p.update_time, p.remark,
+               s.student_no, s.student_name, c.class_name,
+               (select count(1) from sam_procedure_item i where i.procedure_id = p.procedure_id and i.item_status = '1') as done_step_count,
+               (select count(1) from sam_procedure_step st where st.status = '0') as total_step_count
+        from sam_graduation_procedure p
+        left join sam_student s on p.student_id = s.student_id
+        left join brm_class c on s.class_id = c.class_id
     </sql>
     <select id="selectSamGraduationProcedureList" parameterType="SamGraduationProcedure" resultMap="SamGraduationProcedureResult">
         <include refid="selectSamGraduationProcedureVo"/>
         <where>
-            <if test="studentId != null"> and student_id = #{studentId}</if>
-            <if test="procedureStatus != null and procedureStatus.trim() != ''"> and procedure_status = #{procedureStatus}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            <if test="studentId != null"> and p.student_id = #{studentId}</if>
+            <if test="procedureStatus != null and procedureStatus.trim() != ''"> and p.procedure_status = #{procedureStatus}</if>
+            <if test="studentNo != null and studentNo.trim() != ''"> and s.student_no like concat('%', #{studentNo}, '%')</if>
+            <if test="studentName != null and studentName.trim() != ''"> and s.student_name like concat('%', #{studentName}, '%')</if>
+            <if test="status != null and status.trim() != ''"> and p.status = #{status}</if>
         </where>
+        order by p.procedure_status asc, p.procedure_id desc
     </select>
     <select id="selectSamGraduationProcedureByProcedureId" parameterType="Long" resultMap="SamGraduationProcedureResult">
-        <include refid="selectSamGraduationProcedureVo"/> where procedure_id = #{procedureId}
+        <include refid="selectSamGraduationProcedureVo"/> where p.procedure_id = #{procedureId}
+    </select>
+    <select id="selectByStudentId" parameterType="Long" resultMap="SamGraduationProcedureResult">
+        <include refid="selectSamGraduationProcedureVo"/> where p.student_id = #{studentId} limit 1
+    </select>
+    <!-- 为已毕业(student_status=3)且尚无手续记录的学生初始化（studentId 非空则仅该生） -->
+    <insert id="initProceduresForGraduates">
+        insert into sam_graduation_procedure (student_id, library_cleared, finance_cleared, dormitory_cleared, card_returned, procedure_status, status, create_by, create_time)
+        select s.student_id, '0', '0', '0', '0', '0', '0', #{createBy}, sysdate()
+        from sam_student s
+        where s.student_status = '3'
+        <if test="studentId != null"> and s.student_id = #{studentId}</if>
+        and not exists (select 1 from sam_graduation_procedure p where p.student_id = s.student_id)
+    </insert>
+    <select id="statOverview" resultType="java.util.HashMap">
+        select count(1) as total,
+               sum(case when procedure_status = '2' then 1 else 0 end) as completed,
+               sum(case when procedure_status = '1' then 1 else 0 end) as inProgress,
+               sum(case when procedure_status = '0' then 1 else 0 end) as notStarted
+        from sam_graduation_procedure where status = '0'
     </select>
     <insert id="insertSamGraduationProcedure" parameterType="SamGraduationProcedure" useGeneratedKeys="true" keyProperty="procedureId">
         insert into sam_graduation_procedure

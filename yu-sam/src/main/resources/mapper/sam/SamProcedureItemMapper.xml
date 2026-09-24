@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamProcedureItemMapper">
+    <resultMap type="SamProcedureItem" id="SamProcedureItemResult">
+        <result property="itemId"        column="item_id"         />
+        <result property="procedureId"   column="procedure_id"    />
+        <result property="studentId"     column="student_id"      />
+        <result property="stepId"        column="step_id"         />
+        <result property="itemStatus"    column="item_status"     />
+        <result property="checkType"     column="check_type"      />
+        <result property="checkTime"     column="check_time"      />
+        <result property="checkBy"       column="check_by"        />
+        <result property="createTime"    column="create_time"     />
+        <result property="updateTime"    column="update_time"     />
+        <result property="stepKey"       column="step_key"        />
+        <result property="stepName"      column="step_name"       />
+        <result property="requiredFlag"  column="required_flag"   />
+    </resultMap>
+
+    <select id="selectItemsByProcedureId" parameterType="Long" resultMap="SamProcedureItemResult">
+        select i.item_id, i.procedure_id, i.student_id, i.step_id, i.item_status, i.check_type,
+               i.check_time, i.check_by, i.create_time, i.update_time,
+               st.step_key, st.step_name, st.required_flag
+        from sam_procedure_item i
+        join sam_procedure_step st on i.step_id = st.step_id
+        where i.procedure_id = #{procedureId}
+        order by st.order_num asc, i.step_id asc
+    </select>
+
+    <select id="selectItemByProcedureAndStep" resultMap="SamProcedureItemResult">
+        select i.item_id, i.procedure_id, i.student_id, i.step_id, i.item_status, i.check_type,
+               i.check_time, i.check_by, i.create_time, i.update_time,
+               st.step_key, st.step_name, st.required_flag
+        from sam_procedure_item i
+        join sam_procedure_step st on i.step_id = st.step_id
+        where i.procedure_id = #{procedureId} and i.step_id = #{stepId}
+        limit 1
+    </select>
+
+    <select id="selectSamProcedureItemByItemId" parameterType="Long" resultMap="SamProcedureItemResult">
+        select i.item_id, i.procedure_id, i.student_id, i.step_id, i.item_status, i.check_type,
+               i.check_time, i.check_by, i.create_time, i.update_time,
+               st.step_key, st.step_name, st.required_flag
+        from sam_procedure_item i
+        join sam_procedure_step st on i.step_id = st.step_id
+        where i.item_id = #{itemId}
+    </select>
+
+    <insert id="insertSamProcedureItem" parameterType="SamProcedureItem" useGeneratedKeys="true" keyProperty="itemId">
+        insert into sam_procedure_item
+        (procedure_id, student_id, step_id, item_status, check_type, check_time, check_by, create_time)
+        values
+        (#{procedureId}, #{studentId}, #{stepId},
+         #{itemStatus}, #{checkType}, #{checkTime}, #{checkBy}, #{createTime})
+    </insert>
+
+    <update id="updateSamProcedureItem" parameterType="SamProcedureItem">
+        update sam_procedure_item
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="itemStatus != null and itemStatus != ''">item_status = #{itemStatus},</if>
+            <if test="checkType != null and checkType != ''">check_type = #{checkType},</if>
+            <if test="checkTime != null">check_time = #{checkTime},</if>
+            <if test="checkBy != null">check_by = #{checkBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where item_id = #{itemId}
+    </update>
+
+    <!-- upsert：按 (procedure_id, step_id) 唯一键，存在则置为已办，不存在则插入 -->
+    <insert id="upsertItemDone">
+        insert into sam_procedure_item (procedure_id, student_id, step_id, item_status, check_type, check_time, check_by, create_time)
+        values (#{procedureId}, #{studentId}, #{stepId}, '1', #{checkType}, #{checkTime}, #{checkBy}, #{checkTime})
+        on duplicate key update item_status = '1', check_type = #{checkType}, check_time = #{checkTime}, check_by = #{checkBy}, update_time = #{checkTime}
+    </insert>
+
+    <!-- 为学生已有手续记录按启用环节补齐未办明细（NOT EXISTS 幂等）；studentId 为空则处理全部 -->
+    <insert id="initItemsForProcedures">
+        insert into sam_procedure_item (procedure_id, student_id, step_id, item_status, check_type, create_time)
+        select p.procedure_id, p.student_id, st.step_id, '0', '0', sysdate()
+        from sam_graduation_procedure p
+        join sam_procedure_step st on st.status = '0'
+        <where>
+            <if test="studentId != null"> and p.student_id = #{studentId}</if>
+            and not exists (
+              select 1 from sam_procedure_item i where i.procedure_id = p.procedure_id and i.step_id = st.step_id
+            )
+        </where>
+    </insert>
+
+    <!-- 自动判定数据源：返回满足条件的学生ID。LEGACY 的 column 由 Service 白名单校验后传入 -->
+    <select id="selectAutoCheckStudentIds" resultType="java.lang.Long">
+        <choose>
+            <when test="source == 'LEGACY' or source == 'CARD'">
+                select student_id from sam_graduation_procedure
+                where <choose>
+                        <when test="source == 'CARD'">card_returned = '1'</when>
+                        <otherwise>${column} = '1'</otherwise>
+                      </choose>
+            </when>
+            <when test="source == 'CERT_PICKUP'">
+                select student_id from sam_certificate where is_issued = '1' group by student_id
+            </when>
+            <when test="source == 'GRAD_REVIEW'">
+                select student_id from sam_graduation_review where review_status = '1'
+            </when>
+            <when test="source == 'DEGREE_REVIEW'">
+                select student_id from sam_degree_review where review_status = '1'
+            </when>
+            <otherwise>
+                select student_id from sam_graduation_procedure where 1 = 0
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="selectProcedureIdsByStudents" resultType="java.util.HashMap">
+        select procedure_id as procedureId, student_id as studentId
+        from sam_graduation_procedure
+        where student_id in
+        <foreach item="sid" collection="studentIds" open="(" separator="," close=")">#{sid}</foreach>
+    </select>
+</mapper>
