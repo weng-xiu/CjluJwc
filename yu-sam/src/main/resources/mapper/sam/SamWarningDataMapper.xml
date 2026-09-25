@@ -51,7 +51,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- S6：查询学生消息推送目标（系统用户ID与姓名） -->
     <select id="selectStudentContact" resultType="java.util.HashMap">
-        select user_id as userId, student_name as studentName
+        select user_id as userId, student_name as studentName, student_no as studentNo
         from sam_student
         where student_id = #{studentId}
         limit 1

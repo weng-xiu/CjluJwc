@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamWarningAssistRecordMapper">
+    <resultMap type="SamWarningAssistRecord" id="SamWarningAssistRecordResult">
+        <id property="recordId" column="record_id"/>
+        <result property="assistId" column="assist_id"/>
+        <result property="followType" column="follow_type"/>
+        <result property="followContent" column="follow_content"/>
+        <result property="followTime" column="follow_time"/>
+        <result property="operatorId" column="operator_id"/>
+        <result property="operatorName" column="operator_name"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="selectRecordVo">
+        select record_id, assist_id, follow_type, follow_content, follow_time, operator_id, operator_name, create_by, create_time
+        from sam_warning_assist_record
+    </sql>
+
+    <insert id="insertSamWarningAssistRecord" parameterType="SamWarningAssistRecord" useGeneratedKeys="true" keyProperty="recordId">
+        insert into sam_warning_assist_record (assist_id, follow_type, follow_content, follow_time, operator_id, operator_name, create_by, create_time)
+        values (#{assistId}, #{followType}, #{followContent}, #{followTime}, #{operatorId}, #{operatorName}, #{createBy}, #{createTime})
+    </insert>
+
+    <select id="selectByAssistId" resultMap="SamWarningAssistRecordResult">
+        <include refid="selectRecordVo"/> where assist_id = #{assistId} order by follow_time desc, record_id desc
+    </select>
+
+    <delete id="deleteByAssistId">
+        delete from sam_warning_assist_record where assist_id = #{assistId}
+    </delete>
+
+    <delete id="deleteByAssistIds">
+        delete from sam_warning_assist_record where assist_id in
+        <foreach item="assistId" collection="assistIds" open="(" separator="," close=")">#{assistId}</foreach>
+    </delete>
+</mapper>

@@ -35,6 +35,12 @@
             <artifactId>velocity-engine-core</artifactId>
         </dependency>
 
+        <!-- S6 多渠道通知：邮件渠道 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- 单元测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

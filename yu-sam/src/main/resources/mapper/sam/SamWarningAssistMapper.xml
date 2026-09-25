@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamWarningAssistMapper">
+    <resultMap type="SamWarningAssist" id="SamWarningAssistResult">
+        <id property="assistId" column="assist_id"/>
+        <result property="warningId" column="warning_id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="semesterId" column="semester_id"/>
+        <result property="studentName" column="student_name"/>
+        <result property="studentNo" column="student_no"/>
+        <result property="warningType" column="warning_type"/>
+        <result property="warningLevel" column="warning_level"/>
+        <result property="helperUserId" column="helper_user_id"/>
+        <result property="helperName" column="helper_name"/>
+        <result property="assistStatus" column="assist_status"/>
+        <result property="measure" column="measure"/>
+        <result property="followCount" column="follow_count"/>
+        <result property="lastFollowTime" column="last_follow_time"/>
+        <result property="claimTime" column="claim_time"/>
+        <result property="finishTime" column="finish_time"/>
+        <result property="finishRemark" column="finish_remark"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectSamWarningAssistVo">
+        select assist_id, warning_id, student_id, semester_id, student_name, student_no, warning_type, warning_level,
+               helper_user_id, helper_name, assist_status, measure, follow_count, last_follow_time, claim_time,
+               finish_time, finish_remark, create_by, create_time, update_by, update_time, remark
+        from sam_warning_assist
+    </sql>
+
+    <select id="selectSamWarningAssistByAssistId" parameterType="Long" resultMap="SamWarningAssistResult">
+        <include refid="selectSamWarningAssistVo"/> where assist_id = #{assistId}
+    </select>
+
+    <select id="selectSamWarningAssistList" parameterType="SamWarningAssist" resultMap="SamWarningAssistResult">
+        <include refid="selectSamWarningAssistVo"/>
+        <where>
+            <if test="warningId != null"> and warning_id = #{warningId}</if>
+            <if test="studentId != null"> and student_id = #{studentId}</if>
+            <if test="semesterId != null"> and semester_id = #{semesterId}</if>
+            <if test="studentName != null and studentName.trim() != ''"> and student_name like concat('%', #{studentName}, '%')</if>
+            <if test="warningType != null and warningType != ''"> and warning_type = #{warningType}</if>
+            <if test="warningLevel != null and warningLevel != ''"> and warning_level = #{warningLevel}</if>
+            <if test="helperUserId != null"> and helper_user_id = #{helperUserId}</if>
+            <if test="assistStatus != null and assistStatus != ''"> and assist_status = #{assistStatus}</if>
+        </where>
+        order by assist_id desc
+    </select>
+
+    <select id="selectByWarningId" resultMap="SamWarningAssistResult">
+        <include refid="selectSamWarningAssistVo"/> where warning_id = #{warningId} limit 1
+    </select>
+
+    <select id="countPendingByHelper" resultType="int">
+        select count(1) from sam_warning_assist where helper_user_id = #{helperUserId} and assist_status in ('0','1')
+    </select>
+
+    <insert id="insertSamWarningAssist" parameterType="SamWarningAssist" useGeneratedKeys="true" keyProperty="assistId">
+        insert into sam_warning_assist
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="warningId != null">warning_id,</if>
+            <if test="studentId != null">student_id,</if>
+            <if test="semesterId != null">semester_id,</if>
+            <if test="studentName != null">student_name,</if>
+            <if test="studentNo != null">student_no,</if>
+            <if test="warningType != null">warning_type,</if>
+            <if test="warningLevel != null">warning_level,</if>
+            <if test="helperUserId != null">helper_user_id,</if>
+            <if test="helperName != null">helper_name,</if>
+            <if test="assistStatus != null">assist_status,</if>
+            <if test="measure != null">measure,</if>
+            <if test="followCount != null">follow_count,</if>
+            <if test="lastFollowTime != null">last_follow_time,</if>
+            <if test="claimTime != null">claim_time,</if>
+            <if test="finishTime != null">finish_time,</if>
+            <if test="finishRemark != null">finish_remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="warningId != null">#{warningId},</if>
+            <if test="studentId != null">#{studentId},</if>
+            <if test="semesterId != null">#{semesterId},</if>
+            <if test="studentName != null">#{studentName},</if>
+            <if test="studentNo != null">#{studentNo},</if>
+            <if test="warningType != null">#{warningType},</if>
+            <if test="warningLevel != null">#{warningLevel},</if>
+            <if test="helperUserId != null">#{helperUserId},</if>
+            <if test="helperName != null">#{helperName},</if>
+            <if test="assistStatus != null">#{assistStatus},</if>
+            <if test="measure != null">#{measure},</if>
+            <if test="followCount != null">#{followCount},</if>
+            <if test="lastFollowTime != null">#{lastFollowTime},</if>
+            <if test="claimTime != null">#{claimTime},</if>
+            <if test="finishTime != null">#{finishTime},</if>
+            <if test="finishRemark != null">#{finishRemark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updateSamWarningAssist" parameterType="SamWarningAssist">
+        update sam_warning_assist
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="helperUserId != null">helper_user_id = #{helperUserId},</if>
+            <if test="helperName != null">helper_name = #{helperName},</if>
+            <if test="assistStatus != null">assist_status = #{assistStatus},</if>
+            <if test="measure != null">measure = #{measure},</if>
+            <if test="followCount != null">follow_count = #{followCount},</if>
+            <if test="lastFollowTime != null">last_follow_time = #{lastFollowTime},</if>
+            <if test="claimTime != null">claim_time = #{claimTime},</if>
+            <if test="finishTime != null">finish_time = #{finishTime},</if>
+            <if test="finishRemark != null">finish_remark = #{finishRemark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where assist_id = #{assistId}
+    </update>
+
+    <delete id="deleteSamWarningAssistByAssistId" parameterType="Long">
+        delete from sam_warning_assist where assist_id = #{assistId}
+    </delete>
+
+    <delete id="deleteSamWarningAssistByAssistIds" parameterType="String">
+        delete from sam_warning_assist where assist_id in
+        <foreach item="assistId" collection="array" open="(" separator="," close=")">#{assistId}</foreach>
+    </delete>
+</mapper>

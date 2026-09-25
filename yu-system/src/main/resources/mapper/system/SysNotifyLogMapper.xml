@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.system.mapper.SysNotifyLogMapper">
+    <resultMap type="SysNotifyLog" id="SysNotifyLogResult">
+        <id property="logId" column="log_id"/>
+        <result property="channel" column="channel"/>
+        <result property="receiverId" column="receiver_id"/>
+        <result property="target" column="target"/>
+        <result property="businessType" column="business_type"/>
+        <result property="businessId" column="business_id"/>
+        <result property="title" column="title"/>
+        <result property="status" column="status"/>
+        <result property="errorMsg" column="error_msg"/>
+        <result property="sendTime" column="send_time"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="selectSysNotifyLogVo">
+        select log_id, channel, receiver_id, target, business_type, business_id, title, status, error_msg, send_time, create_time
+        from sys_notify_log
+    </sql>
+
+    <insert id="insertSysNotifyLog" parameterType="SysNotifyLog" useGeneratedKeys="true" keyProperty="logId">
+        insert into sys_notify_log (channel, receiver_id, target, business_type, business_id, title, status, error_msg, send_time, create_time)
+        values (#{channel}, #{receiverId}, #{target}, #{businessType}, #{businessId}, #{title}, #{status}, #{errorMsg}, #{sendTime}, #{createTime})
+    </insert>
+
+    <select id="selectSysNotifyLogList" parameterType="SysNotifyLog" resultMap="SysNotifyLogResult">
+        <include refid="selectSysNotifyLogVo"/>
+        <where>
+            <if test="channel != null and channel != ''"> and channel = #{channel}</if>
+            <if test="receiverId != null"> and receiver_id = #{receiverId}</if>
+            <if test="businessType != null and businessType != ''"> and business_type = #{businessType}</if>
+            <if test="businessId != null"> and business_id = #{businessId}</if>
+            <if test="status != null and status != ''"> and status = #{status}</if>
+        </where>
+        order by log_id desc
+    </select>
+
+    <select id="selectByBusiness" resultMap="SysNotifyLogResult">
+        <include refid="selectSysNotifyLogVo"/>
+        where business_type = #{businessType} and business_id = #{businessId}
+        order by log_id desc
+    </select>
+</mapper>

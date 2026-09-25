@@ -14,10 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.yu.sam.domain.SamWarning;
 import com.yu.sam.domain.SamWarningRuleConfig;
 import com.yu.sam.mapper.SamWarningDataMapper;
+import com.yu.sam.service.ISamWarningAssistService;
 import com.yu.sam.service.ISamWarningRuleConfigService;
 import com.yu.sam.service.ISamWarningService;
-import com.yu.system.domain.SysMessage;
-import com.yu.system.service.ISysMessageService;
+import com.yu.system.service.ISysNotifyService;
 
 /**
  * 学业预警生成引擎
@@ -46,9 +46,13 @@ public class AcademicWarningEngine
     @Autowired
     private com.yu.sam.mapper.SamWarningMapper samWarningMapper;
 
-    /** S6：预警生成后站内消息推送（复用 P1 消息中心） */
+    /** S6：预警生成后多渠道通知（站内信+邮件+短信，复用统一通知服务） */
     @Autowired
-    private ISysMessageService sysMessageService;
+    private ISysNotifyService sysNotifyService;
+
+    /** S6：预警生成后按级别自动派发帮扶任务 */
+    @Autowired
+    private ISamWarningAssistService samWarningAssistService;
 
     /**
      * 为指定学生生成预警。
@@ -96,60 +100,82 @@ public class AcademicWarningEngine
             samWarningService.insertSamWarning(w);
         }
 
-        // S6：生成后自动向学生推送站内预警消息（异常不影响主流程）
-        notifyStudentWarnings(studentId, warnings);
+        // S6：生成后自动向学生推送预警消息（多渠道），并按级别派发帮扶任务（异常不影响主流程）
+        postProcessWarnings(studentId, warnings);
 
         return warnings;
     }
 
     /**
-     * S6：预警生成后推送站内消息。
-     * 同一学生同一次生成合并为一条消息，取最高预警级别标注；
-     * 未关联系统账号的学生跳过（仅记日志）。
+     * S6：预警生成后处理。
+     * 1) 向学生合并推送一条多渠道消息（站内信恒发，邮件/短信按开关）；
+     * 2) 逐条按级别自动派发帮扶任务（开关与级别门限由 sys_config 控制）。
+     * 任一子处理异常均不影响预警主流程。
      */
-    private void notifyStudentWarnings(Long studentId, List<SamWarning> warnings)
+    private void postProcessWarnings(Long studentId, List<SamWarning> warnings)
     {
         if (warnings == null || warnings.isEmpty())
         {
             return;
         }
+        Map<String, Object> contact = null;
         try
         {
-            Map<String, Object> contact = samWarningDataMapper.selectStudentContact(studentId);
+            contact = samWarningDataMapper.selectStudentContact(studentId);
+        }
+        catch (Exception e)
+        {
+            log.error("查询学生联系信息失败 studentId={}", studentId, e);
+        }
+
+        // 1) 多渠道推送给学生
+        try
+        {
             Object userIdObj = contact == null ? null : contact.get("userId");
             if (userIdObj == null)
             {
                 log.info("学生[{}]未关联系统账号，跳过预警消息推送", studentId);
-                return;
             }
-            String[] levelNames = {"一般", "严重", "高危"};
-            int maxLevel = 0;
-            StringBuilder reasons = new StringBuilder();
-            for (SamWarning w : warnings)
+            else
             {
-                int lv = 0;
-                try { lv = w.getWarningLevel() == null ? 0 : Integer.parseInt(w.getWarningLevel()); } catch (Exception ignore) { }
-                if (lv > maxLevel) { maxLevel = lv; }
-                if (reasons.length() > 0) { reasons.append("\n"); }
-                reasons.append(w.getWarningReason());
+                String[] levelNames = {"一般", "严重", "高危"};
+                int maxLevel = 0;
+                StringBuilder reasons = new StringBuilder();
+                for (SamWarning w : warnings)
+                {
+                    int lv = 0;
+                    try { lv = w.getWarningLevel() == null ? 0 : Integer.parseInt(w.getWarningLevel()); } catch (Exception ignore) { }
+                    if (lv > maxLevel) { maxLevel = lv; }
+                    if (reasons.length() > 0) { reasons.append("\n"); }
+                    reasons.append(w.getWarningReason());
+                }
+                String levelName = levelNames[Math.min(maxLevel, levelNames.length - 1)];
+                String studentName = contact.get("studentName") == null ? "" : String.valueOf(contact.get("studentName"));
+                String title = "【学业预警-" + levelName + "】请及时关注自身学业情况";
+                String content = studentName + " 同学，本学期学业预警（" + levelName + "）：\n" + reasons
+                        + "\n如有疑问请联系辅导员或教务科。";
+                sysNotifyService.notifyUser(((Number) userIdObj).longValue(), "0", title, content,
+                        "warning", warnings.get(0).getWarningId(), true, true);
             }
-            String levelName = levelNames[Math.min(maxLevel, levelNames.length - 1)];
-            String studentName = contact.get("studentName") == null ? "" : String.valueOf(contact.get("studentName"));
-
-            SysMessage msg = new SysMessage();
-            msg.setReceiverId(((Number) userIdObj).longValue());
-            msg.setMsgType("0"); // 0预警
-            msg.setTitle("【学业预警-" + levelName + "】请及时关注自身学业情况");
-            msg.setContent(studentName + " 同学，本学期学业预警（" + levelName + "）：\n" + reasons
-                    + "\n如有疑问请联系辅导员或教务科。");
-            msg.setBusinessType("warning");
-            msg.setBusinessId(warnings.get(0).getWarningId());
-            msg.setCreateBy("system");
-            sysMessageService.sendMessage(msg);
         }
         catch (Exception e)
         {
             log.error("预警消息推送失败（studentId={}）", studentId, e);
+        }
+
+        // 2) 按级别自动派发帮扶任务
+        String studentName = contact == null || contact.get("studentName") == null ? "" : String.valueOf(contact.get("studentName"));
+        String studentNo = contact == null || contact.get("studentNo") == null ? "" : String.valueOf(contact.get("studentNo"));
+        for (SamWarning w : warnings)
+        {
+            try
+            {
+                samWarningAssistService.autoDispatch(w, studentName, studentNo);
+            }
+            catch (Exception e)
+            {
+                log.error("预警帮扶自动派发失败 warningId={}", w.getWarningId(), e);
+            }
         }
     }
 

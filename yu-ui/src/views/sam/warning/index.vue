@@ -57,6 +57,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['sam:warning:export']">导出</el-button></el-col>
       <el-col :span="1.5"><el-button type="primary" plain icon="el-icon-s-operation" size="mini" @click="handleGenerate" v-hasPermi="['sam:warning:generate']">手动生成预警</el-button></el-col>
       <el-col :span="1.5"><el-button type="info" plain icon="el-icon-setting" size="mini" @click="goToRuleConfig" v-hasPermi="['sam:warningRule:list']">规则配置</el-button></el-col>
+      <el-col :span="1.5"><el-button type="success" plain icon="el-icon-s-custom" size="mini" @click="goToAssist" v-hasPermi="['sam:warningAssist:list']">帮扶管理</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
@@ -224,7 +225,8 @@ export default {
     getSemesterName(semesterId) {
       return this.semesterNameMap[semesterId] || semesterId
     },
-    goToRuleConfig() { this.$router.push('/sam/warningRule') }
+    goToRuleConfig() { this.$router.push('/sam/warningRule') },
+    goToAssist() { this.$router.push('/sam/warningAssist') }
   }
 }
 </script>
