@@ -29,6 +29,12 @@
             <artifactId>yu-brm</artifactId>
         </dependency>
 
+        <!-- 打印凭证模板渲染（P4） -->
+        <dependency>
+            <groupId>org.apache.velocity</groupId>
+            <artifactId>velocity-engine-core</artifactId>
+        </dependency>
+
         <!-- 单元测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.system.mapper.SysPrintTemplateMapper">
+    
+    <resultMap type="SysPrintTemplate" id="SysPrintTemplateResult">
+        <result     property="templateId"    column="template_id"    />
+        <result     property="templateCode"  column="template_code"  />
+        <result     property="templateName"  column="template_name"  />
+        <result     property="bizType"       column="biz_type"       />
+        <result     property="content"       column="content"        />
+        <result     property="status"        column="status"         />
+        <result     property="createBy"      column="create_by"      />
+        <result     property="createTime"    column="create_time"    />
+        <result     property="updateBy"      column="update_by"      />
+        <result     property="updateTime"    column="update_time"    />
+        <result     property="remark"        column="remark"         />
+    </resultMap>
+
+    <sql id="selectSysPrintTemplateVo">
+        select template_id, template_code, template_name, biz_type, content, status, create_by, create_time, update_by, update_time, remark from sys_print_template
+    </sql>
+
+    <select id="selectSysPrintTemplateList" parameterType="SysPrintTemplate" resultMap="SysPrintTemplateResult">
+        <include refid="selectSysPrintTemplateVo"/>
+        <where>  
+            <if test="templateCode != null and templateCode != ''"> and template_code like concat('%', #{templateCode}, '%')</if>
+            <if test="templateName != null and templateName != ''"> and template_name like concat('%', #{templateName}, '%')</if>
+            <if test="bizType != null and bizType != ''"> and biz_type = #{bizType}</if>
+            <if test="status != null and status != ''"> and status = #{status}</if>
+        </where>
+        order by biz_type, template_id desc
+    </select>
+    
+    <select id="selectSysPrintTemplateByTemplateId" parameterType="Long" resultMap="SysPrintTemplateResult">
+        <include refid="selectSysPrintTemplateVo"/>
+        where template_id = #{templateId}
+    </select>
+
+    <select id="selectEnabledByBizType" parameterType="String" resultMap="SysPrintTemplateResult">
+        <include refid="selectSysPrintTemplateVo"/>
+        where biz_type = #{bizType} and status = '0'
+        order by template_id desc
+        limit 1
+    </select>
+
+    <insert id="insertSysPrintTemplate" parameterType="SysPrintTemplate" useGeneratedKeys="true" keyProperty="templateId">
+        insert into sys_print_template
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="templateCode != null and templateCode != ''">template_code,</if>
+            <if test="templateName != null and templateName != ''">template_name,</if>
+            <if test="bizType != null and bizType != ''">biz_type,</if>
+            <if test="content != null">content,</if>
+            <if test="status != null and status != ''">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="templateCode != null and templateCode != ''">#{templateCode},</if>
+            <if test="templateName != null and templateName != ''">#{templateName},</if>
+            <if test="bizType != null and bizType != ''">#{bizType},</if>
+            <if test="content != null">#{content},</if>
+            <if test="status != null and status != ''">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateSysPrintTemplate" parameterType="SysPrintTemplate">
+        update sys_print_template
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="templateCode != null and templateCode != ''">template_code = #{templateCode},</if>
+            <if test="templateName != null and templateName != ''">template_name = #{templateName},</if>
+            <if test="bizType != null and bizType != ''">biz_type = #{bizType},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where template_id = #{templateId}
+    </update>
+
+    <delete id="deleteSysPrintTemplateByTemplateId" parameterType="Long">
+        delete from sys_print_template where template_id = #{templateId}
+    </delete>
+
+    <delete id="deleteSysPrintTemplateByTemplateIds" parameterType="String">
+        delete from sys_print_template where template_id in 
+        <foreach item="templateId" collection="array" open="(" separator="," close=")">
+            #{templateId}
+        </foreach>
+    </delete>
+</mapper>

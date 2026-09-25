@@ -25,7 +25,8 @@ export const constantRoutes = [
       { path: 'home', component: () => import('@/views/public/home'), name: 'PublicHome', meta: { title: '首页', isPublic: true } },
       { path: 'column/:code', component: () => import('@/views/public/column'), name: 'PublicColumn', meta: { title: '栏目', isPublic: true } },
       { path: 'article/:id', component: () => import('@/views/public/article'), name: 'PublicArticle', meta: { title: '文章详情', isPublic: true } },
-      { path: 'search', component: () => import('@/views/public/search'), name: 'PublicSearch', meta: { title: '搜索', isPublic: true } }
+      { path: 'search', component: () => import('@/views/public/search'), name: 'PublicSearch', meta: { title: '搜索', isPublic: true } },
+      { path: 'verify', component: () => import('@/views/public/verify'), name: 'PublicVerify', meta: { title: '凭证验真', isPublic: true } }
     ]
   },
   {
@@ -65,7 +66,8 @@ export const constantRoutes = [
       { path: 'invigilation',    component: () => import('@/views/invigilation/index'),    name: 'Invigilation',    meta: { title: '监考安排',     permission: 'portal:invigilation:list' } },
       { path: 'evalResult',      component: () => import('@/views/evalResult/index'),      name: 'EvalResult',      meta: { title: '评教结果查询', permission: 'portal:evalResult:list' } },
       { path: 'adjustment',      component: () => import('@/views/adjustment/index'),      name: 'Adjustment',      meta: { title: '调停课申请',   permission: 'portal:adjustment:list' } },
-      { path: 'borrow',          component: () => import('@/views/borrow/index'),          name: 'ClassroomBorrow', meta: { title: '教室借用申请', permission: 'portal:borrow:list' } }
+      { path: 'borrow',          component: () => import('@/views/borrow/index'),          name: 'ClassroomBorrow', meta: { title: '教室借用申请', permission: 'portal:borrow:list' } },
+      { path: 'myCredential',    component: () => import('@/views/credential/index'),      name: 'MyCredential',     meta: { title: '我的凭证',     permission: 'portal:credential:list' } }
     ]
   },
   // 移动端路由

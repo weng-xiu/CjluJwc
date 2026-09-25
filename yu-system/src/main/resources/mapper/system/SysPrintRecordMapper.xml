@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.system.mapper.SysPrintRecordMapper">
+    
+    <resultMap type="SysPrintRecord" id="SysPrintRecordResult">
+        <result     property="recordId"      column="record_id"      />
+        <result     property="bizType"       column="biz_type"       />
+        <result     property="bizId"         column="biz_id"         />
+        <result     property="title"         column="title"          />
+        <result     property="serialNo"      column="serial_no"      />
+        <result     property="verifyCode"    column="verify_code"    />
+        <result     property="snapshot"      column="snapshot"       />
+        <result     property="dataHash"      column="data_hash"      />
+        <result     property="templateCode"  column="template_code"  />
+        <result     property="receiveId"     column="receive_id"     />
+        <result     property="receiveName"   column="receive_name"   />
+        <result     property="issueChannel"  column="issue_channel"  />
+        <result     property="issueBy"       column="issue_by"       />
+        <result     property="issueTime"     column="issue_time"     />
+        <result     property="status"        column="status"         />
+        <result     property="createBy"      column="create_by"      />
+        <result     property="createTime"    column="create_time"    />
+        <result     property="remark"        column="remark"         />
+    </resultMap>
+
+    <sql id="selectSysPrintRecordVo">
+        select record_id, biz_type, biz_id, title, serial_no, verify_code, snapshot, data_hash, template_code, receive_id, receive_name, issue_channel, issue_by, issue_time, status, create_by, create_time, remark from sys_print_record
+    </sql>
+
+    <select id="selectSysPrintRecordList" parameterType="SysPrintRecord" resultMap="SysPrintRecordResult">
+        <!-- 列表不返回快照大字段，避免分页查询拖全量 JSON -->
+        select record_id, biz_type, biz_id, title, serial_no, verify_code, template_code, receive_id, receive_name, issue_channel, issue_by, issue_time, status, create_by, create_time, remark
+        from sys_print_record
+        <where>  
+            <if test="bizType != null and bizType != ''"> and biz_type = #{bizType}</if>
+            <if test="bizId != null"> and biz_id = #{bizId}</if>
+            <if test="title != null and title != ''"> and title like concat('%', #{title}, '%')</if>
+            <if test="serialNo != null and serialNo != ''"> and serial_no like concat('%', #{serialNo}, '%')</if>
+            <if test="receiveId != null"> and receive_id = #{receiveId}</if>
+            <if test="receiveName != null and receiveName != ''"> and receive_name like concat('%', #{receiveName}, '%')</if>
+            <if test="issueChannel != null and issueChannel != ''"> and issue_channel = #{issueChannel}</if>
+            <if test="status != null and status != ''"> and status = #{status}</if>
+            <if test="params.beginTime != null and params.beginTime != ''"> and date_format(issue_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')</if>
+            <if test="params.endTime != null and params.endTime != ''"> and date_format(issue_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')</if>
+        </where>
+        order by record_id desc
+    </select>
+    
+    <select id="selectSysPrintRecordByRecordId" parameterType="Long" resultMap="SysPrintRecordResult">
+        <include refid="selectSysPrintRecordVo"/>
+        where record_id = #{recordId}
+    </select>
+
+    <select id="selectBySerialNo" parameterType="String" resultMap="SysPrintRecordResult">
+        <include refid="selectSysPrintRecordVo"/>
+        where serial_no = #{serialNo}
+    </select>
+
+    <insert id="insertSysPrintRecord" parameterType="SysPrintRecord" useGeneratedKeys="true" keyProperty="recordId">
+        insert into sys_print_record
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="bizType != null and bizType != ''">biz_type,</if>
+            <if test="bizId != null">biz_id,</if>
+            <if test="title != null">title,</if>
+            <if test="serialNo != null and serialNo != ''">serial_no,</if>
+            <if test="verifyCode != null and verifyCode != ''">verify_code,</if>
+            <if test="snapshot != null">snapshot,</if>
+            <if test="dataHash != null">data_hash,</if>
+            <if test="templateCode != null">template_code,</if>
+            <if test="receiveId != null">receive_id,</if>
+            <if test="receiveName != null">receive_name,</if>
+            <if test="issueChannel != null">issue_channel,</if>
+            <if test="issueBy != null">issue_by,</if>
+            <if test="issueTime != null">issue_time,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="bizType != null and bizType != ''">#{bizType},</if>
+            <if test="bizId != null">#{bizId},</if>
+            <if test="title != null">#{title},</if>
+            <if test="serialNo != null and serialNo != ''">#{serialNo},</if>
+            <if test="verifyCode != null and verifyCode != ''">#{verifyCode},</if>
+            <if test="snapshot != null">#{snapshot},</if>
+            <if test="dataHash != null">#{dataHash},</if>
+            <if test="templateCode != null">#{templateCode},</if>
+            <if test="receiveId != null">#{receiveId},</if>
+            <if test="receiveName != null">#{receiveName},</if>
+            <if test="issueChannel != null">#{issueChannel},</if>
+            <if test="issueBy != null">#{issueBy},</if>
+            <if test="issueTime != null">#{issueTime},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="revokeByRecordId" parameterType="Long">
+        update sys_print_record set status = '1' where record_id = #{recordId} and status = '0'
+    </update>
+</mapper>

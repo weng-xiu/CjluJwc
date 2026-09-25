@@ -14,6 +14,7 @@ export const portalMenuConfig = [
   { permission: 'portal:evaluation:list',     path: '/evaluation',      title: '评教入口',     icon: 'el-icon-star-on',        group: '学生服务' },
   { permission: 'portal:status:list',         path: '/studentStatus',   title: '学籍服务',     icon: 'el-icon-postcard',       group: '学生服务' },
   { permission: 'portal:graduation:list',     path: '/graduation',      title: '毕业预审',     icon: 'el-icon-s-check',        group: '学生服务' },
+  { permission: 'portal:credential:list',     path: '/myCredential',    title: '我的凭证',     icon: 'el-icon-printer',        group: '学生服务' },
   { permission: 'portal:notice:list',         path: '/notice',          title: '教务通知',     icon: 'el-icon-message-solid',  group: '学生服务' },
   // 教师端菜单
   { permission: 'portal:teacherSchedule:list', path: '/teacherSchedule', title: '个人课表',     icon: 'el-icon-date',           group: '教师服务' },
@@ -23,6 +24,7 @@ export const portalMenuConfig = [
   { permission: 'portal:evalResult:list',      path: '/evalResult',      title: '评教结果查询', icon: 'el-icon-data-line',      group: '教师服务' },
   { permission: 'portal:adjustment:list',      path: '/adjustment',      title: '调停课申请',   icon: 'el-icon-refresh',        group: '教师服务' },
   { permission: 'portal:borrow:list',          path: '/borrow',          title: '教室借用申请', icon: 'el-icon-office-building', group: '教师服务' },
+  { permission: 'portal:credential:list',      path: '/myCredential',    title: '我的凭证',     icon: 'el-icon-printer',        group: '教师服务' },
   { permission: 'portal:notice:list',          path: '/notice',          title: '教务通知',     icon: 'el-icon-message-solid',  group: '教师服务' }
 ]
 

@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.system.mapper.SysPrintDataMapper">
+
+    <!-- P4 打印与电子凭证：凭证数据装配只读查询（跨 sam/aem/tpm/brm 模块表，列 as camelCase 别名） -->
+
+    <!-- 学生基本信息（成绩单/证书/准考证页头） -->
+    <select id="selectStudentInfo" resultType="java.util.HashMap">
+        select s.student_id                                          as studentId,
+               s.student_no                                          as studentNo,
+               s.student_name                                        as studentName,
+               case s.gender when '0' then '男' when '1' then '女' else '' end        as gender,
+               date_format(s.birth_date, '%Y-%m-%d')                 as birthDate,
+               s.enrollment_year                                     as enrollmentYear,
+               s.education_level                                     as educationLevel,
+               case s.student_status
+                    when '0' then '在读' when '1' then '休学' when '2' then '退学'
+                    when '3' then '毕业' when '4' then '转出' when '5' then '保留学籍' else '' end as studentStatusText,
+               ifnull(m.major_name, '')                              as majorName,
+               ifnull(c.class_name, '')                              as className,
+               ifnull(d.dept_name, '')                               as deptName
+        from sam_student s
+        left join brm_major m on m.major_id = s.major_id
+        left join brm_class c on c.class_id = s.class_id
+        left join brm_department d on d.dept_id = s.dept_id
+        where s.student_id = #{studentId}
+    </select>
+
+    <!-- 成绩单明细行（含课程、学期、考试类型翻译） -->
+    <select id="selectTranscriptRows" resultType="java.util.HashMap">
+        select ifnull(cl.course_code, '')                            as courseCode,
+               ifnull(cl.course_name, concat('课程', g.course_id))   as courseName,
+               ifnull(cl.credit, 0)                                  as credit,
+               ifnull(cl.total_hours, 0)                             as totalHours,
+               case cl.course_type when '0' then '必修' when '1' then '选修' else ifnull(cl.course_type, '') end as courseType,
+               sem.semester_name                                     as semesterName,
+               case g.exam_type when '0' then '正考' when '1' then '补考' when '2' then '重修' else '' end as examTypeText,
+               ifnull(g.regular_score, 0)                            as regularScore,
+               ifnull(g.exam_score, 0)                               as examScore,
+               ifnull(g.total_score, 0)                              as totalScore,
+               ifnull(g.grade_point, 0)                              as gradePoint,
+               ifnull(g.grade_level, '')                             as gradeLevel,
+               case g.is_pass when '1' then '是' else '否' end        as isPassText
+        from aem_grade_record g
+        left join tpm_course_library cl on cl.course_id = g.course_id
+        left join brm_semester sem on sem.semester_id = g.semester_id
+        where g.student_id = #{studentId} and g.status = '0'
+        <if test="semesterId != null"> and g.semester_id = #{semesterId}</if>
+        order by g.semester_id, cl.course_code
+    </select>
+
+    <!-- 学期名称 -->
+    <select id="selectSemesterName" resultType="java.lang.String">
+        select semester_name from brm_semester where semester_id = #{semesterId}
+    </select>
+
+    <!-- 成绩单覆盖学期名（不限学期发放时展示范围） -->
+    <select id="selectTranscriptSemesterNames" resultType="java.lang.String">
+        select distinct sem.semester_name
+        from aem_grade_record g
+        join brm_semester sem on sem.semester_id = g.semester_id
+        where g.student_id = #{studentId} and g.status = '0'
+        <if test="semesterId != null"> and g.semester_id = #{semesterId}</if>
+        order by sem.semester_id
+    </select>
+
+    <!-- 成绩单批量发放的学生范围（有成绩记录的在读/毕业学生） -->
+    <select id="selectTranscriptStudentIds" resultType="java.lang.Long">
+        select distinct g.student_id
+        from aem_grade_record g
+        join sam_student s on s.student_id = g.student_id and s.status = '0'
+        where g.status = '0'
+        <if test="semesterId != null"> and g.semester_id = #{semesterId}</if>
+        order by g.student_id
+    </select>
+
+    <!-- 证书打印数据（sam_certificate.student_id 为内部学生ID） -->
+    <select id="selectCertificateData" resultType="java.util.HashMap">
+        select ct.cert_id                                            as certId,
+               ct.cert_number                                        as certNumber,
+               date_format(ct.cert_date, '%Y-%m-%d')                 as certDate,
+               case ct.cert_type when '0' then '毕业证书' when '1' then '学位证书' when '2' then '结业证书' else '证书' end as certTypeName,
+               ifnull(ct.education_level, ifnull(s.education_level, '')) as educationLevel,
+               ifnull(m.major_name, '')                              as majorName,
+               s.student_no                                          as studentNo,
+               s.student_name                                        as studentName,
+               case s.gender when '0' then '男' when '1' then '女' else '' end as gender,
+               date_format(s.birth_date, '%Y-%m-%d')                 as birthDate,
+               s.enrollment_year                                     as enrollmentYear
+        from sam_certificate ct
+        join sam_student s on s.student_id = ct.student_id
+        left join brm_major m on m.major_id = ct.major_id
+        where ct.cert_id = #{certId}
+    </select>
+
+    <!-- 准考证打印数据（一名考生一行：考试安排 + 考场座位） -->
+    <select id="selectExamTicketData" resultType="java.util.HashMap">
+        select st.seat_id                                            as seatId,
+               st.seat_number                                        as seatNumber,
+               st.row_number                                         as rowNumber,
+               st.col_number                                         as colNumber,
+               e.exam_name                                           as examName,
+               ifnull(cl.course_name, '')                            as courseName,
+               ifnull(cl.course_code, '')                            as courseCode,
+               date_format(e.exam_date, '%Y-%m-%d')                  as examDate,
+               e.start_time                                          as startTime,
+               e.end_time                                            as endTime,
+               ifnull(e.duration, 0)                                 as duration,
+               sem.semester_name                                     as semesterName,
+               concat(ifnull(b.building_name, ''), ifnull(cr.classroom_name, '')) as classroomName,
+               ifnull(cr.capacity, 0)                                as capacity,
+               s.student_no                                          as studentNo,
+               s.student_name                                        as studentName,
+               ifnull(m.major_name, '')                              as majorName,
+               ifnull(c.class_name, '')                              as className
+        from aem_exam_seat st
+        join aem_exam_plan e on e.exam_id = st.exam_id
+        left join tpm_course_library cl on cl.course_id = e.course_id
+        left join brm_semester sem on sem.semester_id = e.semester_id
+        left join brm_classroom cr on cr.classroom_id = st.classroom_id
+        left join brm_building b on b.building_id = cr.building_id
+        join sam_student s on s.student_id = st.student_id
+        left join brm_major m on m.major_id = s.major_id
+        left join brm_class c on c.class_id = s.class_id
+        where st.seat_id = #{seatId}
+    </select>
+
+    <!-- 考试全部座位（批量生成准考证） -->
+    <select id="selectExamSeatIds" resultType="java.lang.Long">
+        select seat_id from aem_exam_seat
+        where exam_id = #{examId} and student_id is not null and status = '0'
+        order by seat_id
+    </select>
+
+    <!-- 学生课表行（选课→开课→排课→教室） -->
+    <select id="selectScheduleRows" resultType="java.util.HashMap">
+        select ifnull(cl.course_name, concat('课程', off.course_id)) as courseName,
+               ifnull(cl.course_code, '')                            as courseCode,
+               ifnull(t.teacher_name, '')                            as teacherName,
+               concat(ifnull(b.building_name, ''), ifnull(cr.classroom_name, '')) as classroomName,
+               sc.week_day                                           as weekDay,
+               sc.start_period                                       as startPeriod,
+               sc.end_period                                         as endPeriod,
+               sc.start_week                                         as startWeek,
+               sc.end_week                                           as endWeek,
+               ifnull(cl.credit, 0)                                  as credit,
+               sem.semester_name                                     as semesterName
+        from tpm_selection_enrollment e
+        join tpm_course_offering off on off.offering_id = e.course_offering_id and off.del_flag = '0'
+        join tpm_schedule sc on sc.offering_id = off.offering_id and sc.del_flag = '0' and sc.status = '0'
+        left join tpm_course_library cl on cl.course_id = off.course_id
+        left join brm_teacher t on t.teacher_id = off.teacher_id
+        left join brm_classroom cr on cr.classroom_id = sc.classroom_id
+        left join brm_building b on b.building_id = cr.building_id
+        left join brm_semester sem on sem.semester_id = off.semester_id
+        where e.student_id = #{studentId} and e.del_flag = '0' and e.result_status = '1'
+        <if test="semesterId != null"> and off.semester_id = #{semesterId}</if>
+        order by sc.week_day, sc.start_period, cl.course_code
+    </select>
+
+    <!-- 教师课表行 -->
+    <select id="selectTeacherScheduleRows" resultType="java.util.HashMap">
+        select ifnull(cl.course_name, concat('课程', off.course_id)) as courseName,
+               ifnull(cl.course_code, '')                            as courseCode,
+               ifnull(t.teacher_name, '')                            as teacherName,
+               concat(ifnull(b.building_name, ''), ifnull(cr.classroom_name, '')) as classroomName,
+               sc.week_day                                           as weekDay,
+               sc.start_period                                       as startPeriod,
+               sc.end_period                                         as endPeriod,
+               sc.start_week                                         as startWeek,
+               sc.end_week                                           as endWeek,
+               ifnull(cl.credit, 0)                                  as credit,
+               sem.semester_name                                     as semesterName
+        from tpm_course_offering off
+        join tpm_schedule sc on sc.offering_id = off.offering_id and sc.del_flag = '0' and sc.status = '0'
+        left join tpm_course_library cl on cl.course_id = off.course_id
+        left join brm_teacher t on t.teacher_id = off.teacher_id
+        left join brm_classroom cr on cr.classroom_id = sc.classroom_id
+        left join brm_building b on b.building_id = cr.building_id
+        left join brm_semester sem on sem.semester_id = off.semester_id
+        where off.teacher_id = #{teacherId} and off.del_flag = '0'
+        <if test="semesterId != null"> and off.semester_id = #{semesterId}</if>
+        order by sc.week_day, sc.start_period, cl.course_code
+    </select>
+
+    <!-- 监考通知单打印数据 -->
+    <select id="selectInvigilationData" resultType="java.util.HashMap">
+        select iv.invigilation_id                                    as invigilationId,
+               case iv.duty_type when '0' then '主监考' when '1' then '副监考' when '2' then '巡考' else '监考' end as dutyTypeName,
+               e.exam_name                                           as examName,
+               ifnull(cl.course_name, '')                            as courseName,
+               date_format(ifnull(iv.exam_date, e.exam_date), '%Y-%m-%d') as examDate,
+               ifnull(iv.start_time, e.start_time)                   as startTime,
+               ifnull(iv.end_time, e.end_time)                       as endTime,
+               concat(ifnull(b.building_name, ''), ifnull(cr.classroom_name, '')) as classroomName,
+               ifnull(cr.capacity, 0)                                as capacity,
+               t.teacher_name                                        as teacherName,
+               t.teacher_code                                        as teacherCode,
+               ifnull(d.dept_name, '')                               as deptName,
+               sem.semester_name                                     as semesterName,
+               (select group_concat(distinct concat(t2.teacher_name, '（',
+                   case iv2.duty_type when '0' then '主' when '1' then '副' else '巡' end, '）') order by iv2.invigilation_id separator '、')
+                 from aem_exam_invigilation iv2
+                 join brm_teacher t2 on t2.teacher_id = iv2.teacher_id
+                 where iv2.exam_id = iv.exam_id and iv2.classroom_id = iv.classroom_id
+                   and iv2.status = '0' and iv2.teacher_id is not null) as partners
+        from aem_exam_invigilation iv
+        join aem_exam_plan e on e.exam_id = iv.exam_id
+        left join tpm_course_library cl on cl.course_id = e.course_id
+        left join brm_semester sem on sem.semester_id = e.semester_id
+        left join brm_classroom cr on cr.classroom_id = iv.classroom_id
+        left join brm_building b on b.building_id = cr.building_id
+        join brm_teacher t on t.teacher_id = iv.teacher_id
+        left join brm_department d on d.dept_id = t.dept_id
+        where iv.invigilation_id = #{invigilationId}
+    </select>
+
+    <!-- 归属校验：学生ID（=user_id）对应用户 -->
+    <select id="selectUserIdByStudentId" resultType="java.lang.Long">
+        select user_id from sys_user where user_id = #{studentId} and del_flag = '0'
+    </select>
+
+    <!-- 归属校验：证书 → 用户（项目约定 sam_certificate.student_id 与门户口径一致，等于 sys_user.user_id） -->
+    <select id="selectUserIdByCertId" resultType="java.lang.Long">
+        select ct.student_id
+        from sam_certificate ct
+        join sys_user u on u.user_id = ct.student_id and u.del_flag = '0'
+        where ct.cert_id = #{certId}
+    </select>
+
+    <!-- 用户 → 学生ID（项目约定 student_id == user_id，仅确认学籍档案存在） -->
+    <select id="selectStudentIdByUserId" resultType="java.lang.Long">
+        select student_id from sam_student where student_id = #{userId} limit 1
+    </select>
+
+    <!-- 归属校验：考场座位 → 学生 → 用户 -->
+    <select id="selectUserIdBySeatId" resultType="java.lang.Long">
+        select u.user_id
+        from aem_exam_seat st
+        join sys_user u on u.user_id = st.student_id and u.del_flag = '0'
+        where st.seat_id = #{seatId}
+    </select>
+
+    <!-- 归属校验：监考 → 教师 → 用户（种子数据 brm_teacher.user_id 为空时回退 teacher_id == user_id 约定） -->
+    <select id="selectUserIdByInvigilationId" resultType="java.lang.Long">
+        select u.user_id
+        from aem_exam_invigilation iv
+        join brm_teacher t on t.teacher_id = iv.teacher_id
+        join sys_user u on u.user_id = ifnull(t.user_id, t.teacher_id) and u.del_flag = '0'
+        where iv.invigilation_id = #{invigilationId}
+    </select>
+
+    <!-- 门户自助：本人考场座位列表（准考证选择源，seat.student_id 为门户用户ID口径） -->
+    <select id="selectStudentSeatList" resultType="java.util.HashMap">
+        select st.seat_id                                           as seatId,
+               e.exam_name                                          as examName,
+               ifnull(cl.course_name, '')                           as courseName,
+               ifnull(cl.course_code, '')                           as courseCode,
+               date_format(e.exam_date, '%Y-%m-%d')                 as examDate,
+               e.start_time                                         as startTime,
+               e.end_time                                           as endTime,
+               sem.semester_name                                    as semesterName,
+               concat(ifnull(b.building_name, ''), ifnull(cr.classroom_name, '')) as classroomName,
+               st.seat_number                                       as seatNumber
+        from aem_exam_seat st
+        join aem_exam_plan e on e.exam_id = st.exam_id
+        left join tpm_course_library cl on cl.course_id = e.course_id
+        left join brm_semester sem on sem.semester_id = e.semester_id
+        left join brm_classroom cr on cr.classroom_id = st.classroom_id
+        left join brm_building b on b.building_id = cr.building_id
+        where st.student_id = #{userId} and st.status = '0'
+        order by e.exam_date, st.seat_id
+    </select>
+
+    <!-- 门户自助：本人监考安排列表（监考通知单选择源） -->
+    <select id="selectTeacherInvigilationList" resultType="java.util.HashMap">
+        select iv.invigilation_id                                   as invigilationId,
+               e.exam_name                                          as examName,
+               ifnull(cl.course_name, '')                           as courseName,
+               date_format(ifnull(iv.exam_date, e.exam_date), '%Y-%m-%d') as examDate,
+               ifnull(iv.start_time, e.start_time)                  as startTime,
+               ifnull(iv.end_time, e.end_time)                      as endTime,
+               concat(ifnull(b.building_name, ''), ifnull(cr.classroom_name, '')) as classroomName,
+               case iv.duty_type when '0' then '主监考' when '1' then '副监考' when '2' then '巡考' else '监考' end as dutyTypeName,
+               sem.semester_name                                    as semesterName
+        from aem_exam_invigilation iv
+        join brm_teacher t on t.teacher_id = iv.teacher_id
+        join aem_exam_plan e on e.exam_id = iv.exam_id
+        left join tpm_course_library cl on cl.course_id = e.course_id
+        left join brm_semester sem on sem.semester_id = e.semester_id
+        left join brm_classroom cr on cr.classroom_id = iv.classroom_id
+        left join brm_building b on b.building_id = cr.building_id
+        where ifnull(t.user_id, t.teacher_id) = #{userId} and iv.status = '0'
+        order by ifnull(iv.exam_date, e.exam_date), iv.invigilation_id
+    </select>
+</mapper>

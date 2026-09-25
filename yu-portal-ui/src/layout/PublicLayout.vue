@@ -98,6 +98,7 @@ export default {
         { name: '学术动态', code: 'academic', path: '/public/column/academic' },
         { name: '通知公告', code: 'notice', path: '/public/column/notice' },
         { name: '校园看点', code: 'campus', path: '/public/column/campus' },
+        { name: '凭证验真', code: 'verify', path: '/public/verify' },
         { name: '媒体长大', code: 'media', path: '/public/column/media' },
         { name: '长大人', code: 'people', path: '/public/column/people' },
         { name: '专题专栏', code: 'topic', path: '/public/column/topic' }
