@@ -3,6 +3,7 @@ package com.yu.portal.controller;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -81,6 +82,7 @@ public class PortalBorrowController extends BaseController
     /** 提交教室借用申请：登记 + 即时启动院系->教务处两级审批（含冲突校验） */
     @PreAuthorize("@ss.hasPermi('portal:borrow:add') and @ss.hasAnyRoles('admin,teacher')")
     @Log(title = "教室借用申请", businessType = BusinessType.INSERT)
+    @Transactional(rollbackFor = Exception.class)
     @PostMapping("/apply")
     public AjaxResult apply(@RequestBody BrmClassroomBorrow borrow)
     {

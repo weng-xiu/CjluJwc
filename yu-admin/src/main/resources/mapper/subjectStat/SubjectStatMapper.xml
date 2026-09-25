@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.web.mapper.SubjectStatMapper">
+
+    <!-- P3：主题分析只读聚合查询（跨 sam/aem/brm/tpm 模块表），全部来自真实业务数据 -->
+
+    <!-- 当前学期：优先取覆盖今天的学期，无则取最新启用学期 -->
+    <select id="selectCurrentSemester" resultType="java.util.HashMap">
+        select semester_id as semesterId, semester_name as semesterName, start_date as startDate, end_date as endDate
+        from brm_semester
+        where status = '0'
+        order by (start_date &lt;= curdate() and end_date &gt;= curdate()) desc, semester_id desc
+        limit 1
+    </select>
+
+    <!-- ========== 学生结构主题 ========== -->
+
+    <!-- 学生总览：学籍总数 + 各学籍状态人数（0在读 1休学 2退学 3毕业 4转出 5保留学籍） -->
+    <select id="selectStudentOverview" resultType="java.util.HashMap">
+        select
+            count(1)                                                                       as totalCount,
+            sum(student_status = '0')                                                      as enrolledCount,
+            sum(student_status = '1')                                                      as suspendCount,
+            sum(student_status = '2')                                                      as dropoutCount,
+            sum(student_status = '3')                                                      as graduateCount,
+            sum(student_status = '4')                                                      as transferOutCount,
+            sum(student_status = '5')                                                      as keepCount
+        from sam_student
+        where status = '0'
+    </select>
+
+    <!-- 在读学生按院系分布 -->
+    <select id="selectStudentByDept" resultType="java.util.HashMap">
+        select ifnull(d.dept_name, '未分配院系') as name, count(1) as value
+        from sam_student s
+        left join brm_department d on d.dept_id = s.dept_id
+        where s.status = '0' and s.student_status = '0'
+        group by name
+        order by value desc
+    </select>
+
+    <!-- 在读学生按入学年份分布 -->
+    <select id="selectStudentByEnrollmentYear" resultType="java.util.HashMap">
+        select ifnull(enrollment_year, '未知') as name, count(1) as value
+        from sam_student
+        where status = '0' and student_status = '0'
+        group by name
+        order by name asc
+    </select>
+
+    <!-- 在读学生按性别分布（0男 1女） -->
+    <select id="selectStudentByGender" resultType="java.util.HashMap">
+        select case gender when '0' then '男' when '1' then '女' else '未知' end as name, count(1) as value
+        from sam_student
+        where status = '0' and student_status = '0'
+        group by name
+        order by value desc
+    </select>
+
+    <!-- 在读学生按培养层次分布 -->
+    <select id="selectStudentByEducationLevel" resultType="java.util.HashMap">
+        select ifnull(education_level, '未填写') as name, count(1) as value
+        from sam_student
+        where status = '0' and student_status = '0'
+        group by name
+        order by value desc
+    </select>
+
+    <!-- ========== 成绩分析主题 ========== -->
+
+    <!-- 成绩总览：记录数 + 平均分 + 平均绩点 + 及格率 + 优秀率（≥85） -->
+    <select id="selectGradeOverview" resultType="java.util.HashMap">
+        select
+            count(1)                                                    as recordCount,
+            round(avg(total_score), 1)                                  as avgScore,
+            round(avg(grade_point), 2)                                  as avgGpa,
+            round(sum(is_pass = '1') * 100 / nullif(count(1), 0), 1)    as passRate,
+            round(sum(total_score &gt;= 85) * 100 / nullif(count(1), 0), 1) as excellentRate
+        from aem_grade_record
+        where status = '0' and total_score is not null
+        <if test="semesterId != null"> and semester_id = #{semesterId}</if>
+    </select>
+
+    <!-- 总评分数段分布（优/良/中/及格/不及格） -->
+    <select id="selectGradeScoreBand" resultType="java.util.HashMap">
+        select band as name, count(1) as value from (
+            select case
+                when total_score &gt;= 90 then '优秀(≥90)'
+                when total_score &gt;= 80 then '良好(80-89)'
+                when total_score &gt;= 70 then '中等(70-79)'
+                when total_score &gt;= 60 then '及格(60-69)'
+                else '不及格(&lt;60)' end as band,
+                case
+                when total_score &gt;= 90 then 1
+                when total_score &gt;= 80 then 2
+                when total_score &gt;= 70 then 3
+                when total_score &gt;= 60 then 4
+                else 5 end as band_order
+            from aem_grade_record
+            where status = '0' and total_score is not null
+            <if test="semesterId != null"> and semester_id = #{semesterId}</if>
+        ) t
+        group by band, band_order
+        order by band_order
+    </select>
+
+    <!-- 按院系成绩聚合（经成绩→学生→院系） -->
+    <select id="selectGradeByDept" resultType="java.util.HashMap">
+        select ifnull(d.dept_name, '未分配院系') as deptName,
+               count(1)                                                   as recordCount,
+               round(avg(g.total_score), 1)                               as avgScore,
+               round(sum(g.is_pass = '1') * 100 / nullif(count(1), 0), 1) as passRate
+        from aem_grade_record g
+        join sam_student s on s.student_id = g.student_id
+        left join brm_department d on d.dept_id = s.dept_id
+        where g.status = '0' and g.total_score is not null
+        <if test="semesterId != null"> and g.semester_id = #{semesterId}</if>
+        group by deptName
+        order by avgScore desc
+    </select>
+
+    <!-- 按学期成绩趋势 -->
+    <select id="selectGradeTrend" resultType="java.util.HashMap">
+        select sm.semester_name as name,
+               round(avg(g.total_score), 1)                               as avgScore,
+               round(sum(g.is_pass = '1') * 100 / nullif(count(1), 0), 1) as passRate
+        from aem_grade_record g
+        join brm_semester sm on sm.semester_id = g.semester_id
+        where g.status = '0' and g.total_score is not null
+        group by sm.semester_id, sm.semester_name
+        order by sm.semester_id asc
+    </select>
+
+    <!-- ========== 师资分析主题 ========== -->
+
+    <!-- 教师总览：在职教师数 + 开课门次 + 班级数合计 -->
+    <select id="selectTeacherOverview" resultType="java.util.HashMap">
+        select
+            (select count(1) from brm_teacher where status = '0')                          as teacherCount,
+            (select count(1) from tpm_course_offering o where o.del_flag = '0' and o.offering_status != '2'
+             <if test="semesterId != null"> and o.semester_id = #{semesterId}</if>)        as offeringCount,
+            (select ifnull(sum(o.class_count), 0) from tpm_course_offering o where o.del_flag = '0' and o.offering_status != '2'
+             <if test="semesterId != null"> and o.semester_id = #{semesterId}</if>)        as classCount
+    </select>
+
+    <!-- 在职教师按院系分布 -->
+    <select id="selectTeacherByDept" resultType="java.util.HashMap">
+        select ifnull(d.dept_name, '未分配院系') as name, count(1) as value
+        from brm_teacher t
+        left join brm_department d on d.dept_id = t.dept_id
+        where t.status = '0'
+        group by name
+        order by value desc
+    </select>
+
+    <!-- 在职教师按职称分布 -->
+    <select id="selectTeacherByTitle" resultType="java.util.HashMap">
+        select ifnull(title, '未填写') as name, count(1) as value
+        from brm_teacher
+        where status = '0'
+        group by name
+        order by value desc
+    </select>
+
+    <!-- 在职教师按学历分布 -->
+    <select id="selectTeacherByEducation" resultType="java.util.HashMap">
+        select ifnull(education, '未填写') as name, count(1) as value
+        from brm_teacher
+        where status = '0'
+        group by name
+        order by value desc
+    </select>
+
+    <!-- 在职教师按性别分布（0男 1女 2其他） -->
+    <select id="selectTeacherByGender" resultType="java.util.HashMap">
+        select case gender when '0' then '男' when '1' then '女' when '2' then '其他' else '未知' end as name, count(1) as value
+        from brm_teacher
+        where status = '0'
+        group by name
+        order by value desc
+    </select>
+
+    <!-- 教师授课工作量 TOP N（经 offering.teacher_id = teacher.teacher_id 归口） -->
+    <select id="selectTeacherWorkloadTop" resultType="java.util.HashMap">
+        select t.teacher_name as teacherName,
+               ifnull(d.dept_name, '未分配院系') as deptName,
+               count(o.offering_id)                        as offeringCount,
+               ifnull(sum(o.class_count), 0)               as classCount,
+               ifnull(sum(o.max_students), 0)              as studentCapacity
+        from brm_teacher t
+        left join brm_department d on d.dept_id = t.dept_id
+        join tpm_course_offering o on o.teacher_id = t.teacher_id and o.del_flag = '0' and o.offering_status != '2'
+        where t.status = '0'
+        <if test="semesterId != null"> and o.semester_id = #{semesterId}</if>
+        group by t.teacher_id, t.teacher_name, deptName
+        order by offeringCount desc, classCount desc
+        limit #{limit}
+    </select>
+
+    <!-- ========== 师生数据上报导出 ========== -->
+
+    <!-- 分院系师生数据报表（学籍数/在读数/教师数/开课门次/平均及格率） -->
+    <select id="selectReportByDept" resultType="java.util.HashMap">
+        select d.dept_name as deptName,
+               (select count(1) from sam_student s where s.dept_id = d.dept_id and s.status = '0')                                as totalStudent,
+               (select count(1) from sam_student s where s.dept_id = d.dept_id and s.status = '0' and s.student_status = '0')     as enrolledStudent,
+               (select count(1) from brm_teacher t where t.dept_id = d.dept_id and t.status = '0')                                as teacherCount,
+               (select count(1) from tpm_course_offering o join brm_teacher t2 on t2.teacher_id = o.teacher_id
+                 where t2.dept_id = d.dept_id and o.del_flag = '0' and o.offering_status != '2'
+                 <if test="semesterId != null"> and o.semester_id = #{semesterId}</if>)                                           as offeringCount,
+               (select round(sum(g.is_pass = '1') * 100 / nullif(count(1), 0), 1) from aem_grade_record g
+                 join sam_student s2 on s2.student_id = g.student_id
+                 where s2.dept_id = d.dept_id and g.status = '0' and g.total_score is not null
+                 <if test="semesterId != null"> and g.semester_id = #{semesterId}</if>)                                           as avgPassRate
+        from brm_department d
+        where d.del_flag = '0' and d.status = '0'
+        order by d.order_num asc, d.dept_id asc
+    </select>
+</mapper>

@@ -52,7 +52,7 @@
       <div class="rec-reason">{{ row.reason }}</div>
       <div class="rec-meta">申请 {{ fmtDate(row.createTime) }}<template v-if="row.approveOpinion"> · 审批意见：{{ row.approveOpinion }}</template></div>
       <div class="rec-actions">
-        <el-button v-if="row.approveStatus === '0'" size="mini" type="text" @click="openTrace(row)">审批进度</el-button>
+        <el-button v-if="row.approveStatus !== '3'" size="mini" type="text" @click="openTrace(row)">审批进度</el-button>
         <el-button v-if="row.approveStatus === '0'" size="mini" type="text" style="color:#f56c6c" @click="cancelRow(row)">撤销</el-button>
       </div>
     </div>

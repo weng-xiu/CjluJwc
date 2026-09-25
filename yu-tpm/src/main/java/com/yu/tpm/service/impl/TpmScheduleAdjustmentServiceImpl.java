@@ -324,8 +324,10 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
     {
         try
         {
-            String applicant = adjustment.getApplicant() != null
-                    ? adjustment.getApplicant() : adjustment.getCreateBy();
+            // create_by 存登录用户名（可可靠解析接收人 user_id）；applicant 为展示昵称，
+            // 若优先用 applicant 会因“昵称≠用户名”解析为 null 导致结果消息静默丢失，故以 create_by 优先。
+            String applicant = adjustment.getCreateBy() != null
+                    ? adjustment.getCreateBy() : adjustment.getApplicant();
             Long receiverId = resolveUserId(applicant);
             if (receiverId == null)
             {
