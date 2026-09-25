@@ -120,4 +120,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where student_id in
         <foreach item="sid" collection="studentIds" open="(" separator="," close=")">#{sid}</foreach>
     </select>
+
+    <!-- O1：离校办结通知——按学生ID取关联的系统用户ID -->
+    <select id="selectStudentUserId" parameterType="Long" resultType="Long">
+        select user_id from sam_student where student_id = #{studentId} limit 1
+    </select>
 </mapper>

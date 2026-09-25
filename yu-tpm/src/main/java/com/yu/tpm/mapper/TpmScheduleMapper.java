@@ -36,11 +36,39 @@ public interface TpmScheduleMapper
      */
     List<StudentScheduleSlot> selectStudentScheduleSlotsBySemester(@Param("semesterId") Long semesterId);
 
+    /**
+     * 查询指定开课的学生在同窗口时段所选其他开课的排课时间槽（T5 拖拽调整的学生冲突定位查询）。
+     * 语义：选了该开课(result_status='1')的学生，在本学期其他开课中、与目标 (星期/节次/周次) 窗口
+     * 时间重叠且同星期几的课表槽，用于拖拽落点前精确判定学生/班级冲突。
+     *
+     * @param offeringId   被调整的开课ID
+     * @param semesterId   学期ID
+     * @param weekDay      目标星期几（1-7）
+     * @param startPeriod  目标开始节次
+     * @param endPeriod    目标结束节次
+     * @param startWeek    目标起始周
+     * @param endWeek      目标结束周
+     * @return 存在重叠的学生课表时间槽列表
+     */
+    List<StudentScheduleSlot> selectStudentSlotsByOfferingInWindow(@Param("offeringId") Long offeringId,
+                                                                   @Param("semesterId") Long semesterId,
+                                                                   @Param("weekDay") Integer weekDay,
+                                                                   @Param("startPeriod") Integer startPeriod,
+                                                                   @Param("endPeriod") Integer endPeriod,
+                                                                   @Param("startWeek") Integer startWeek,
+                                                                   @Param("endWeek") Integer endWeek);
+
     /** 查询某教室指定时间段的排课 */
     List<TpmSchedule> selectByClassroomAndTime(@Param("classroomId") Long classroomId,
                                                @Param("weekDay") Integer weekDay,
                                                @Param("startPeriod") Integer startPeriod,
                                                @Param("endPeriod") Integer endPeriod);
+
+    /** T5 拖拽调整：查询某教室指定时间段的排课（含课程名/教师名，用于冲突明细） */
+    List<TpmSchedule> selectByClassroomAndTimeWithInfo(@Param("classroomId") Long classroomId,
+                                                       @Param("weekDay") Integer weekDay,
+                                                       @Param("startPeriod") Integer startPeriod,
+                                                       @Param("endPeriod") Integer endPeriod);
 
     /** 查询未分配教室的排课 */
     List<TpmSchedule> selectUnassignedSchedules(@Param("semesterId") Long semesterId);

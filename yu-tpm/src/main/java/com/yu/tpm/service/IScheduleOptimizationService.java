@@ -71,4 +71,29 @@ public interface IScheduleOptimizationService
     Map<String, Object> autoScheduleTimetable(Long semesterId, boolean dryRun,
                                               Integer daysPerWeek, Integer periodsPerDay,
                                               Integer periodsPerSession, Integer totalWeeks);
+
+    /**
+     * T5 拖拽调整：检查将排课移动到目标时间段（星期/节次窗口，周次不变）是否产生冲突。
+     * 检测三类：教室占用、教师占用、学生（按选课名单精确判定），均排除自身记录。
+     *
+     * @param scheduleId  被调整的排课ID
+     * @param weekDay     目标星期几（1-7）
+     * @param startPeriod 目标开始节次
+     * @param endPeriod   目标结束节次
+     * @return 冲突列表，空表示可安全移动
+     */
+    List<ScheduleConflict> checkTargetSlotConflicts(Long scheduleId, Integer weekDay, Integer startPeriod, Integer endPeriod);
+
+    /**
+     * T5 拖拽调整：将排课移动到目标时间段并落库。
+     * 默认存在冲突即拒绝并回传冲突明细；force=true 时仅做参数合法性校验后强制移动。
+     *
+     * @param scheduleId  被调整的排课ID
+     * @param weekDay     目标星期几（1-7）
+     * @param startPeriod 目标开始节次
+     * @param endPeriod   目标结束节次
+     * @param force       是否忽略冲突强制移动
+     * @return 结果 Map：success、conflicts（冲突明细）、schedule（调整后排课）
+     */
+    Map<String, Object> applyDragAdjust(Long scheduleId, Integer weekDay, Integer startPeriod, Integer endPeriod, boolean force);
 }

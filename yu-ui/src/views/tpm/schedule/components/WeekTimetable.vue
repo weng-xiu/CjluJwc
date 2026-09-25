@@ -14,12 +14,19 @@
         <tbody>
           <tr v-for="p in periodRange" :key="p">
             <td class="tt-time-col">第 {{ p }} 节</td>
-            <td v-for="d in weekDays" :key="d" class="tt-cell">
+            <td v-for="d in weekDays" :key="d" class="tt-cell"
+                :class="{ 'tt-droppable': editable, 'tt-drop-hover': editable && hoverCell && hoverCell.d === d && hoverCell.p === p }"
+                @dragover="onDragOver(d, p, $event)"
+                @dragleave="onDragLeave(d, p)"
+                @drop="onDrop(d, p)">
               <template v-if="cellStart(d, p).schedule">
                 <div
                   class="tt-block"
                   :class="{ 'tt-conflict': isConflict(cellStart(d, p).schedule.scheduleId) }"
                   :style="{ '--hue': blockHue(cellStart(d, p).schedule) }"
+                  :draggable="editable"
+                  @dragstart="onDragStart(cellStart(d, p).schedule, $event)"
+                  @dragend="onDragEnd"
                   @click="$emit('cell-click', cellStart(d, p).schedule)"
                 >
                   <div class="tt-course">{{ cellStart(d, p).schedule.courseName || '未命名课程' }}</div>
@@ -41,7 +48,7 @@
       <div class="tt-legend">
         <span><i class="lg-dot lg-normal"></i>正常课程</span>
         <span><i class="lg-dot lg-conflict"></i>冲突课程（{{ conflictCount }} 节次命中）</span>
-        <span class="lg-tip">提示：点击课程块可查看详情</span>
+        <span class="lg-tip">{{ editable ? '提示：拖拽课程块可调整上课时间，松手后自动校验冲突' : '提示：点击课程块可查看详情' }}</span>
       </div>
     </div>
   </div>
@@ -54,11 +61,15 @@ export default {
     // 排课列表（字段：scheduleId, weekDay, startPeriod, endPeriod, startWeek, endWeek, courseName, teacherName, classroomName）
     schedules: { type: Array, default: () => [] },
     // 冲突排课 ID 集合（数组或 Set）
-    conflictIds: { type: [Array, Object], default: () => [] }
+    conflictIds: { type: [Array, Object], default: () => [] },
+    // 是否可拖拽调整（T5）
+    editable: { type: Boolean, default: false }
   },
   data() {
     return {
-      weekDays: [1, 2, 3, 4, 5, 6, 7]
+      weekDays: [1, 2, 3, 4, 5, 6, 7],
+      dragging: null,
+      hoverCell: null
     }
   },
   computed: {
@@ -110,6 +121,49 @@ export default {
       let hash = 0
       for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) % 360
       return hash
+    },
+    // ========== T5 拖拽调整 ==========
+    onDragStart(schedule, e) {
+      this.dragging = schedule
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move'
+        try { e.dataTransfer.setData('text/plain', String(schedule.scheduleId)) } catch (err) { /* ignore */ }
+      }
+    },
+    onDragOver(d, p, e) {
+      if (!this.editable || !this.dragging) return
+      e.preventDefault()
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
+      if (!this.hoverCell || this.hoverCell.d !== d || this.hoverCell.p !== p) {
+        this.hoverCell = { d, p }
+      }
+    },
+    onDragLeave(d, p) {
+      if (this.hoverCell && this.hoverCell.d === d && this.hoverCell.p === p) {
+        this.hoverCell = null
+      }
+    },
+    onDragEnd() {
+      this.dragging = null
+      this.hoverCell = null
+    },
+    onDrop(d, p) {
+      if (!this.editable) return
+      const schedule = this.dragging
+      this.hoverCell = null
+      this.dragging = null
+      if (!schedule) return
+      // 同位置不处理
+      if (Number(schedule.weekDay) === d && Number(schedule.startPeriod) === p) return
+      const span = (Number(schedule.endPeriod) || Number(schedule.startPeriod)) - Number(schedule.startPeriod)
+      const startPeriod = p
+      const endPeriod = p + span
+      // 不能超出当前网格最大节次
+      if (endPeriod > this.periodRange[this.periodRange.length - 1]) {
+        this.$emit('slot-invalid', { schedule, weekDay: d, startPeriod, endPeriod, reason: '目标时段超出课表节次范围' })
+        return
+      }
+      this.$emit('slot-drop', { schedule, weekDay: d, startPeriod, endPeriod })
     }
   }
 }
@@ -138,6 +192,13 @@ export default {
   margin-bottom: 3px;
 }
 .tt-block:hover { box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.tt-block[draggable="true"] { cursor: grab; }
+.tt-block[draggable="true"]:active { cursor: grabbing; }
+.tt-droppable { position: relative; }
+.tt-drop-hover {
+  background: #ecf5ff !important;
+  box-shadow: inset 0 0 0 2px #409eff;
+}
 .tt-course { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tt-meta { color: #606266; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tt-weeks { color: #909399; font-size: 11px; }

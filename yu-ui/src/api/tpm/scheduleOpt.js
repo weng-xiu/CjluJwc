@@ -29,3 +29,13 @@ export function autoSchedulePreview(params) {
 export function autoScheduleApply(params) {
   return request({ url: '/tpm/scheduleOpt/autoScheduleApply', method: 'post', params })
 }
+
+// T5 拖拽调整：检查将排课移动到目标星期/节次窗口是否冲突（不落库）
+export function checkSlotConflict(params) {
+  return request({ url: '/tpm/scheduleOpt/checkSlotConflict', method: 'get', params })
+}
+
+// T5 拖拽调整：将排课移动到目标星期/节次窗口并落库（force 可强制）
+export function dragAdjust(params) {
+  return request({ url: '/tpm/scheduleOpt/dragAdjust', method: 'post', params })
+}

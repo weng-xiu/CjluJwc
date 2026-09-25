@@ -29,6 +29,12 @@
             <artifactId>yu-brm</artifactId>
         </dependency>
 
+        <!-- OA模块（O1：成绩变更接入 Flowable 多级审批流程）-->
+        <dependency>
+            <groupId>com.yu</groupId>
+            <artifactId>yu-oa</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

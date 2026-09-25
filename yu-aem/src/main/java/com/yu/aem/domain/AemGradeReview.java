@@ -52,8 +52,8 @@ public class AemGradeReview extends BaseEntity
     @Excel(name = "复核类型", readConverterExp = "0=成绩修改,1=成绩复核")
     private String reviewType;
 
-    /** 审批状态（0待审 1通过 2驳回） */
-    @Excel(name = "审批状态", readConverterExp = "0=待审,1=通过,2=驳回")
+    /** 审批状态（0待审/院系初审中 1通过 2驳回 3已撤销 4待教务处终审） */
+    @Excel(name = "审批状态", readConverterExp = "0=待审,1=通过,2=驳回,3=已撤销,4=待教务处终审")
     private String approveStatus;
 
     /** 审批人 */
@@ -72,6 +72,50 @@ public class AemGradeReview extends BaseEntity
     /** 状态 */
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
+
+    /** O1：Flowable 流程实例ID（提交进流程后写入） */
+    private String procInstId;
+
+    /** O1：课程负责人初审人 */
+    private String deptApproveBy;
+
+    /** O1：课程负责人初审时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date deptApproveTime;
+
+    /** O1：课程负责人初审意见 */
+    private String deptOpinion;
+
+    /** O1：教务处终审人 */
+    private String aaApproveBy;
+
+    /** O1：教务处终审时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date aaApproveTime;
+
+    /** O1：教务处终审意见 */
+    private String aaOpinion;
+
+    public String getProcInstId() { return procInstId; }
+    public void setProcInstId(String procInstId) { this.procInstId = procInstId; }
+
+    public String getDeptApproveBy() { return deptApproveBy; }
+    public void setDeptApproveBy(String deptApproveBy) { this.deptApproveBy = deptApproveBy; }
+
+    public Date getDeptApproveTime() { return deptApproveTime; }
+    public void setDeptApproveTime(Date deptApproveTime) { this.deptApproveTime = deptApproveTime; }
+
+    public String getDeptOpinion() { return deptOpinion; }
+    public void setDeptOpinion(String deptOpinion) { this.deptOpinion = deptOpinion; }
+
+    public String getAaApproveBy() { return aaApproveBy; }
+    public void setAaApproveBy(String aaApproveBy) { this.aaApproveBy = aaApproveBy; }
+
+    public Date getAaApproveTime() { return aaApproveTime; }
+    public void setAaApproveTime(Date aaApproveTime) { this.aaApproveTime = aaApproveTime; }
+
+    public String getAaOpinion() { return aaOpinion; }
+    public void setAaOpinion(String aaOpinion) { this.aaOpinion = aaOpinion; }
 
     public Long getReviewId() { return reviewId; }
     public void setReviewId(Long reviewId) { this.reviewId = reviewId; }
@@ -134,6 +178,9 @@ public class AemGradeReview extends BaseEntity
             .append("approveTime", getApproveTime())
             .append("approveOpinion", getApproveOpinion())
             .append("status", getStatus())
+            .append("procInstId", getProcInstId())
+            .append("deptApproveBy", getDeptApproveBy())
+            .append("aaApproveBy", getAaApproveBy())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

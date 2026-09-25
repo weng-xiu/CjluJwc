@@ -1,6 +1,7 @@
 package com.yu.aem.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.yu.aem.domain.AemGradeReview;
 
 /**
@@ -23,4 +24,10 @@ public interface AemGradeReviewMapper
 
     /** 批量插入复核记录 */
     public int batchInsert(List<AemGradeReview> list);
+
+    /** O1：取课程最近一次开课的教师登录名（课程负责人初审人候选，无则返回 null） */
+    public String selectCourseTeacherLogin(@Param("courseId") Long courseId, @Param("semesterId") Long semesterId);
+
+    /** O1：按学生ID取关联的系统用户ID（用于成绩变更结果通知学生） */
+    public Long selectStudentUserId(Long studentId);
 }

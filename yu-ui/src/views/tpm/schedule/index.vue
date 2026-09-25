@@ -208,9 +208,12 @@
         <el-form-item>
           <el-checkbox v-model="weekFilter.onlyConflict" @change="applyWeekFilter">只看冲突</el-checkbox>
         </el-form-item>
+        <el-form-item v-hasPermi="['tpm:schedule:edit']">
+          <el-checkbox v-model="weekEditable">允许拖拽调整</el-checkbox>
+        </el-form-item>
       </el-form>
       <div v-loading="weekLoading">
-        <week-timetable :schedules="weekFilteredSchedules" :conflict-ids="weekConflictIds" @cell-click="handleWeekCellClick" />
+        <week-timetable :schedules="weekFilteredSchedules" :conflict-ids="weekConflictIds" :editable="weekEditable" @cell-click="handleWeekCellClick" @slot-drop="handleSlotDrop" @slot-invalid="handleSlotInvalid" />
       </div>
     </el-dialog>
 
@@ -237,7 +240,7 @@ import { listSchedule, getSchedule, delSchedule, addSchedule, updateSchedule } f
 import { listOffering } from "@/api/tpm/offering"
 import { listClassroom } from "@/api/brm/classroom"
 import { listSemester } from "@/api/brm/semester"
-import { detectConflicts, findAvailableClassrooms, autoAssignClassrooms } from "@/api/tpm/scheduleOpt"
+import { detectConflicts, findAvailableClassrooms, autoAssignClassrooms, checkSlotConflict, dragAdjust } from "@/api/tpm/scheduleOpt"
 import WeekTimetable from "./components/WeekTimetable"
 export default {
   name: "Schedule", components: { WeekTimetable }, dicts: ['sys_normal_disable', 'tpm_schedule_type'],
@@ -477,6 +480,7 @@ export default {
     /** 打开周课表视图（默认取当前查询学期或第一个学期） */
     openWeekView() {
       this.weekViewVisible = true
+      this.weekEditable = false
       this.weekFilter.viewType = 'all'
       this.weekFilter.teacherId = null
       this.weekFilter.classroomId = null
@@ -547,6 +551,42 @@ export default {
     },
     isWeekConflict(id) {
       return this.weekConflictIds.has(id)
+    },
+    /** T5：拖拽落点超出节次范围 */
+    handleSlotInvalid(payload) {
+      this.$modal.msgWarning((payload && payload.reason) || '目标时段不可用')
+    },
+    /** T5：拖拽调整落点——先校验冲突，无冲突直接保存；有冲突提示并可选择强制保存 */
+    handleSlotDrop(payload) {
+      const { schedule, weekDay, startPeriod, endPeriod } = payload
+      const targetDesc = this.weekDayLabel(weekDay) + ' 第' + startPeriod + '-' + endPeriod + '节'
+      this.$modal.loading('正在校验目标时段冲突...')
+      checkSlotConflict({ scheduleId: schedule.scheduleId, weekDay, startPeriod, endPeriod }).then(res => {
+        this.$modal.closeLoading()
+        const conflicts = (res && res.data) || []
+        if (conflicts.length === 0) {
+          return this.doDragAdjust(schedule, weekDay, startPeriod, endPeriod, false, targetDesc)
+        }
+        const detail = conflicts.slice(0, 5).map(c => c.message).join('\n')
+        const more = conflicts.length > 5 ? ('\n…共 ' + conflicts.length + ' 处冲突') : ''
+        this.$modal.confirm('目标时段【' + targetDesc + '】存在冲突：\n' + detail + more + '\n\n是否忽略冲突强制保存？').then(() => {
+          return this.doDragAdjust(schedule, weekDay, startPeriod, endPeriod, true, targetDesc)
+        }).catch(() => {})
+      }).catch(() => { this.$modal.closeLoading() })
+    },
+    /** 执行拖拽调整落库并刷新 */
+    doDragAdjust(schedule, weekDay, startPeriod, endPeriod, force, targetDesc) {
+      return dragAdjust({ scheduleId: schedule.scheduleId, weekDay, startPeriod, endPeriod, force }).then(res => {
+        const data = (res && res.data) || {}
+        if (data.success === false) {
+          this.$modal.msgError(data.message || '调整失败')
+          return
+        }
+        this.$modal.msgSuccess('已调整《' + (schedule.courseName || '课程') + '》至 ' + targetDesc)
+        this.weekDetailVisible = false
+        this.loadWeekData()
+        this.getList()
+      })
     }
   }
 }

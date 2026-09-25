@@ -1,6 +1,7 @@
 package com.yu.aem.service;
 
 import java.util.List;
+import java.util.Map;
 import com.yu.aem.domain.AemGradeReview;
 
 /**
@@ -29,4 +30,25 @@ public interface IAemGradeReviewService
      * @return 操作结果
      */
     public int approveReview(Long reviewId, boolean approved, String approveBy, String approveOpinion);
+
+    /**
+     * O1：提交复核申请并启动 Flowable 多级审批流程（课程负责人初审 → 教务处终审）
+     */
+    public int submitForApproval(Long reviewId);
+
+    /**
+     * O1：流程审批（按当前所处阶段自动路由：0院系初审 4教务处终审），
+     * 无流程实例时回退旧单级口径
+     */
+    public int approveReviewByFlow(Long reviewId, boolean approved, String opinion);
+
+    /**
+     * O1：申请人撤销审批中的复核申请
+     */
+    public int cancelByApplicant(Long reviewId, String operator);
+
+    /**
+     * O1：流程追溯（节点/意见明细）
+     */
+    public Map<String, Object> traceReview(Long reviewId);
 }

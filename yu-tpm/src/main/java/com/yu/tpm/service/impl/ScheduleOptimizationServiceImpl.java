@@ -783,4 +783,176 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
     {
         try { return SecurityUtils.getUsername(); } catch (Exception e) { return "system"; }
     }
+
+    /**
+     * T5 拖拽调整：检查将排课移动到目标星期/节次窗口（周次保持自身不变）是否产生冲突。
+     * 三类检测均复用 T2 修正后的口径：教室按占用记录+周次重叠判定，教师经开课表取 teacherId，
+     * 学生按选课名单精确判定（定位查询仅扫本开课学生，避免全学期量级开销）。
+     */
+    @Override
+    public List<ScheduleConflict> checkTargetSlotConflicts(Long scheduleId, Integer weekDay, Integer startPeriod, Integer endPeriod)
+    {
+        List<ScheduleConflict> conflicts = new ArrayList<>();
+        TpmSchedule base = scheduleMapper.selectTpmScheduleByScheduleId(scheduleId);
+        if (base == null)
+        {
+            throw new com.yu.common.exception.ServiceException("排课记录不存在: " + scheduleId);
+        }
+        validateSlotParams(weekDay, startPeriod, endPeriod);
+        // 一次性解析开课信息（课程名/教师ID/学期ID），避免多次查库
+        com.yu.tpm.domain.TpmCourseOffering offering = base.getOfferingId() != null
+                ? courseOfferingMapper.selectTpmCourseOfferingByOfferingId(base.getOfferingId()) : null;
+        String courseName = offering != null && offering.getCourseName() != null
+                ? offering.getCourseName()
+                : (base.getOfferingId() != null ? "课程ID " + base.getOfferingId() : "未知课程");
+        Long teacherId = offering != null ? offering.getTeacherId() : null;
+        Long semesterId = offering != null ? offering.getSemesterId() : null;
+
+        // 教室占用冲突：目标教室同星期节次重叠且周次重叠的其他排课（排除自身）
+        if (base.getClassroomId() != null)
+        {
+            List<TpmSchedule> roomOccupants = scheduleMapper.selectByClassroomAndTimeWithInfo(
+                    base.getClassroomId(), weekDay, startPeriod, endPeriod);
+            if (roomOccupants != null)
+            {
+                for (TpmSchedule other : roomOccupants)
+                {
+                    if (scheduleId.equals(other.getScheduleId())) { continue; }
+                    if (!TimeSlotUtils.hasWeeksOverlap(base.getStartWeek(), base.getEndWeek(),
+                            other.getStartWeek(), other.getEndWeek())) { continue; }
+                    ScheduleConflict c = new ScheduleConflict();
+                    c.setScheduleId1(scheduleId);
+                    c.setScheduleId2(other.getScheduleId());
+                    c.setConflictType(CLASSROOM_CONFLICT);
+                    c.setCourseName1(courseName);
+                    c.setCourseName2(other.getCourseName() != null ? other.getCourseName() : "该时段已排课程");
+                    c.setClassroomName(other.getClassroomName() != null ? other.getClassroomName() : ("教室ID " + base.getClassroomId()));
+                    c.setTimeDesc(formatSlot(weekDay, startPeriod, endPeriod, base.getStartWeek(), base.getEndWeek()));
+                    c.setMessage(String.format("教室冲突：%s 移至 %s 时，该教室同时段已有其他排课", courseName, formatSlot(weekDay, startPeriod, endPeriod, base.getStartWeek(), base.getEndWeek())));
+                    conflicts.add(c);
+                }
+            }
+        }
+
+        // 教师占用冲突：经开课表取任课教师，查其同时段其他排课（排除自身）
+        if (teacherId != null)
+        {
+            List<TpmSchedule> teacherOccupants = scheduleMapper.selectByTeacherAndTime(
+                    teacherId, weekDay, startPeriod, endPeriod);
+            if (teacherOccupants != null)
+            {
+                for (TpmSchedule other : teacherOccupants)
+                {
+                    if (scheduleId.equals(other.getScheduleId())) { continue; }
+                    if (!TimeSlotUtils.hasWeeksOverlap(base.getStartWeek(), base.getEndWeek(),
+                            other.getStartWeek(), other.getEndWeek())) { continue; }
+                    ScheduleConflict c = new ScheduleConflict();
+                    c.setScheduleId1(scheduleId);
+                    c.setScheduleId2(other.getScheduleId());
+                    c.setConflictType(TEACHER_CONFLICT);
+                    c.setCourseName1(courseName);
+                    c.setCourseName2(other.getCourseName() != null ? other.getCourseName() : "其他课程");
+                    c.setClassroomName(other.getClassroomName());
+                    c.setTimeDesc(formatSlot(weekDay, startPeriod, endPeriod, base.getStartWeek(), base.getEndWeek()));
+                    c.setMessage(String.format("教师冲突：%s 移至 %s 时，任课教师该时段已有《%s》",
+                            courseName, formatSlot(weekDay, startPeriod, endPeriod, base.getStartWeek(), base.getEndWeek()), c.getCourseName2()));
+                    conflicts.add(c);
+                }
+            }
+        }
+
+        // 学生/班级冲突：本开课学生在本学期其他开课的窗口重叠课表槽（SQL 已含周次过滤，按学生对去重）
+        if (semesterId != null)
+        {
+            List<StudentScheduleSlot> slots = scheduleMapper.selectStudentSlotsByOfferingInWindow(
+                    base.getOfferingId(), semesterId, weekDay, startPeriod, endPeriod,
+                    base.getStartWeek(), base.getEndWeek());
+            Set<String> reported = new HashSet<>();
+            if (slots != null)
+            {
+                for (StudentScheduleSlot s : slots)
+                {
+                    long s2 = s.getScheduleId() == null ? 0 : s.getScheduleId();
+                    if (!reported.add(CLASS_CONFLICT + ":" + scheduleId + "-" + s2)) { continue; }
+                    ScheduleConflict c = new ScheduleConflict();
+                    c.setScheduleId1(scheduleId);
+                    c.setScheduleId2(s.getScheduleId());
+                    c.setConflictType(CLASS_CONFLICT);
+                    c.setCourseName1(courseName);
+                    c.setCourseName2(s.getCourseName() != null ? s.getCourseName() : "其他课程");
+                    c.setClassroomName("学生[" + s.getStudentId() + "]");
+                    c.setTimeDesc(formatSlot(weekDay, startPeriod, endPeriod, base.getStartWeek(), base.getEndWeek()));
+                    c.setMessage(String.format("班级冲突：选了《%s》的学生在 %s 已有《%s》",
+                            courseName, formatSlot(weekDay, startPeriod, endPeriod, base.getStartWeek(), base.getEndWeek()), c.getCourseName2()));
+                    conflicts.add(c);
+                }
+            }
+        }
+        return conflicts;
+    }
+
+    /**
+     * T5 拖拽调整：将排课移动到目标星期/节次窗口并落库（保持连堂跨度与周次不变）。
+     * 非强制模式下存在冲突即拒绝，回传冲突明细供前端提示。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> applyDragAdjust(Long scheduleId, Integer weekDay, Integer startPeriod, Integer endPeriod, boolean force)
+    {
+        Map<String, Object> result = new HashMap<>();
+        TpmSchedule base = scheduleMapper.selectTpmScheduleByScheduleId(scheduleId);
+        if (base == null)
+        {
+            throw new com.yu.common.exception.ServiceException("排课记录不存在: " + scheduleId);
+        }
+        validateSlotParams(weekDay, startPeriod, endPeriod);
+
+        List<ScheduleConflict> conflicts = force ? new ArrayList<>()
+                : checkTargetSlotConflicts(scheduleId, weekDay, startPeriod, endPeriod);
+        result.put("conflicts", conflicts);
+        if (!force && !conflicts.isEmpty())
+        {
+            result.put("success", false);
+            result.put("message", "目标时段存在 " + conflicts.size() + " 处冲突，未执行调整；可选择不保存或忽略冲突强制保存");
+            return result;
+        }
+
+        TpmSchedule update = new TpmSchedule();
+        update.setScheduleId(scheduleId);
+        update.setWeekDay(weekDay);
+        update.setStartPeriod(startPeriod);
+        update.setEndPeriod(endPeriod);
+        update.setUpdateBy(safeUsername());
+        update.setUpdateTime(DateUtils.getNowDate());
+        scheduleMapper.updateTpmSchedule(update);
+        log.info("T5 拖拽调整排课 {} 至 {}（force={}）", scheduleId, formatSlot(weekDay, startPeriod, endPeriod, base.getStartWeek(), base.getEndWeek()), force);
+
+        result.put("success", true);
+        result.put("schedule", scheduleMapper.selectTpmScheduleByScheduleId(scheduleId));
+        result.put("message", force && !conflicts.isEmpty() ? "已忽略冲突强制保存" : "调整成功");
+        return result;
+    }
+
+    /** 拖拽目标时段参数合法性校验 */
+    private void validateSlotParams(Integer weekDay, Integer startPeriod, Integer endPeriod)
+    {
+        if (weekDay == null || weekDay < 1 || weekDay > 7)
+        {
+            throw new com.yu.common.exception.ServiceException("星期参数非法（1-7）: " + weekDay);
+        }
+        if (startPeriod == null || endPeriod == null || startPeriod < 1 || endPeriod < startPeriod)
+        {
+            throw new com.yu.common.exception.ServiceException("节次窗口非法: " + startPeriod + "-" + endPeriod);
+        }
+    }
+
+    /** 生成时段描述文本 */
+    private String formatSlot(Integer weekDay, Integer startPeriod, Integer endPeriod, Integer startWeek, Integer endWeek)
+    {
+        String[] weekDayNames = {"", "周一", "周二", "周三", "周四", "周五", "周六", "周日"};
+        String dayName = (weekDay != null && weekDay >= 1 && weekDay <= 7) ? weekDayNames[weekDay] : ("星期" + weekDay);
+        return String.format("%s 第%d-%d节 第%d-%d周", dayName,
+                startPeriod != null ? startPeriod : 0, endPeriod != null ? endPeriod : 0,
+                startWeek != null ? startWeek : 0, endWeek != null ? endWeek : 0);
+    }
 }

@@ -114,4 +114,32 @@ public class ScheduleOptimizationController extends BaseController
                 semesterId, false, daysPerWeek, periodsPerDay, periodsPerSession, totalWeeks);
         return success(result);
     }
+
+    /**
+     * T5 拖拽调整：检查将排课移动到目标星期/节次窗口是否冲突（不落库，仅返回冲突列表）。
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:schedule:edit')")
+    @GetMapping("/checkSlotConflict")
+    public AjaxResult checkSlotConflict(@RequestParam Long scheduleId, @RequestParam Integer weekDay,
+                                        @RequestParam Integer startPeriod, @RequestParam Integer endPeriod)
+    {
+        List<ScheduleConflict> conflicts = scheduleOptimizationService.checkTargetSlotConflicts(
+                scheduleId, weekDay, startPeriod, endPeriod);
+        return success(conflicts);
+    }
+
+    /**
+     * T5 拖拽调整：将排课移动到目标星期/节次窗口并落库（force=true 时忽略冲突强制保存）。
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:schedule:edit')")
+    @PostMapping("/dragAdjust")
+    @Log(title = "排课拖拽调整", businessType = BusinessType.UPDATE)
+    public AjaxResult dragAdjust(@RequestParam Long scheduleId, @RequestParam Integer weekDay,
+                                 @RequestParam Integer startPeriod, @RequestParam Integer endPeriod,
+                                 @RequestParam(defaultValue = "false") boolean force)
+    {
+        Map<String, Object> result = scheduleOptimizationService.applyDragAdjust(
+                scheduleId, weekDay, startPeriod, endPeriod, force);
+        return success(result);
+    }
 }

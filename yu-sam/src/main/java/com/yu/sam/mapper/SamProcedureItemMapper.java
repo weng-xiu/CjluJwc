@@ -37,4 +37,7 @@ public interface SamProcedureItemMapper
 
     /** 按学生ID批量查询其手续ID（student_id/procedure_id） */
     public List<Map<String, Object>> selectProcedureIdsByStudents(@Param("studentIds") List<Long> studentIds);
+
+    /** O1：按学生ID取关联的系统用户ID（离校办结通知） */
+    public Long selectStudentUserId(@Param("studentId") Long studentId);
 }

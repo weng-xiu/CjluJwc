@@ -10,9 +10,13 @@ import java.util.Set;
 import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.yu.system.domain.SysMessage;
+import com.yu.system.service.ISysMessageService;
 import com.yu.sam.mapper.SamGraduationProcedureMapper;
 import com.yu.sam.mapper.SamProcedureItemMapper;
 import com.yu.sam.mapper.SamProcedureStepMapper;
@@ -32,6 +36,8 @@ import com.yu.sam.service.ISamGraduationProcedureService;
 @Service
 public class SamGraduationProcedureServiceImpl implements ISamGraduationProcedureService
 {
+    private static final Logger log = LoggerFactory.getLogger(SamGraduationProcedureServiceImpl.class);
+
     /** 环节编码 -> 旧列名映射（LEGACY 自动判定的白名单列，杜绝 SQL 注入） */
     private static final Map<String, String> LEGACY_COLUMN = new HashMap<>();
     static {
@@ -49,6 +55,9 @@ public class SamGraduationProcedureServiceImpl implements ISamGraduationProcedur
 
     @Autowired
     private SamProcedureItemMapper samProcedureItemMapper;
+
+    @Autowired
+    private ISysMessageService sysMessageService;
 
     @Override
     public SamGraduationProcedure selectSamGraduationProcedureByProcedureId(Long procedureId) { return samGraduationProcedureMapper.selectSamGraduationProcedureByProcedureId(procedureId); }
@@ -177,6 +186,9 @@ public class SamGraduationProcedureServiceImpl implements ISamGraduationProcedur
      */
     private void recomputeProcedureStatus(Long procedureId, Date now)
     {
+        // 先取旧状态，用于判断“首次办结”（避免 update 后重取导致判断失效）
+        SamGraduationProcedure before = samGraduationProcedureMapper.selectSamGraduationProcedureByProcedureId(procedureId);
+        String oldStatus = before != null ? before.getProcedureStatus() : null;
         List<SamProcedureItem> items = samProcedureItemMapper.selectItemsByProcedureId(procedureId);
         Set<String> doneKeys = new HashSet<>();
         boolean anyDone = false;
@@ -218,6 +230,43 @@ public class SamGraduationProcedureServiceImpl implements ISamGraduationProcedur
         upd.setCardReturned(doneKeys.contains("CARD") ? "1" : "0");
         upd.setUpdateTime(now);
         samGraduationProcedureMapper.updateSamGraduationProcedure(upd);
+
+        // O1：首次办结（旧状态非 2 -> 新状态 2）时向学生推送离校完成通知，异常不阻断主流程
+        if ("2".equals(status) && !"2".equals(oldStatus))
+        {
+            notifyCompletion(procedureId);
+        }
+    }
+
+    /** O1：离校手续全部办结后通知关联学生 */
+    private void notifyCompletion(Long procedureId)
+    {
+        try
+        {
+            SamGraduationProcedure proc = samGraduationProcedureMapper.selectSamGraduationProcedureByProcedureId(procedureId);
+            if (proc == null || proc.getStudentId() == null)
+            {
+                return;
+            }
+            Long studentUserId = samProcedureItemMapper.selectStudentUserId(proc.getStudentId());
+            if (studentUserId == null)
+            {
+                return;
+            }
+            SysMessage msg = new SysMessage();
+            msg.setReceiverId(studentUserId);
+            msg.setMsgType("0");
+            msg.setTitle("离校手续已办结");
+            msg.setContent("您的毕业离校手续已全部办理完成，可正常离校。如有疑问请联系教务处。");
+            msg.setBusinessType("graduationProcedure");
+            msg.setBusinessId(procedureId);
+            msg.setCreateBy(StringUtils.isNotEmpty(proc.getUpdateBy()) ? proc.getUpdateBy() : "system");
+            sysMessageService.sendMessage(msg);
+        }
+        catch (Exception e)
+        {
+            log.error("离校办结通知推送失败（procedureId={}）", procedureId, e);
+        }
     }
 
     private Long toLong(Object v)

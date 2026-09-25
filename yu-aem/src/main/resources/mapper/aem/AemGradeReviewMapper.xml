@@ -17,6 +17,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="approveTime"    column="approve_time"     />
         <result property="approveOpinion" column="approve_opinion"  />
         <result property="status"         column="status"           />
+        <result property="procInstId"     column="proc_inst_id"     />
+        <result property="deptApproveBy"  column="dept_approve_by"  />
+        <result property="deptApproveTime" column="dept_approve_time" />
+        <result property="deptOpinion"    column="dept_opinion"     />
+        <result property="aaApproveBy"    column="aa_approve_by"    />
+        <result property="aaApproveTime"  column="aa_approve_time"  />
+        <result property="aaOpinion"      column="aa_opinion"       />
         <result property="createBy"       column="create_by"        />
         <result property="createTime"     column="create_time"      />
         <result property="updateBy"       column="update_by"        />
@@ -24,7 +31,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"         column="remark"           />
     </resultMap>
     <sql id="selectAemGradeReviewVo">
-        select review_id, grade_id, student_id, course_id, original_score, new_score, review_reason, review_type, approve_status, approve_by, approve_time, approve_opinion, status, create_by, create_time, update_by, update_time, remark from aem_grade_review
+        select review_id, grade_id, student_id, course_id, original_score, new_score, review_reason, review_type, approve_status, approve_by, approve_time, approve_opinion, status, proc_inst_id, dept_approve_by, dept_approve_time, dept_opinion, aa_approve_by, aa_approve_time, aa_opinion, create_by, create_time, update_by, update_time, remark from aem_grade_review
     </sql>
     <select id="selectAemGradeReviewList" parameterType="AemGradeReview" resultMap="AemGradeReviewResult">
         <include refid="selectAemGradeReviewVo"/>
@@ -54,6 +61,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="approveTime != null">approve_time,</if>
             <if test="approveOpinion != null">approve_opinion,</if>
             <if test="status != null">status,</if>
+            <if test="procInstId != null">proc_inst_id,</if>
+            <if test="deptApproveBy != null">dept_approve_by,</if>
+            <if test="deptApproveTime != null">dept_approve_time,</if>
+            <if test="deptOpinion != null">dept_opinion,</if>
+            <if test="aaApproveBy != null">aa_approve_by,</if>
+            <if test="aaApproveTime != null">aa_approve_time,</if>
+            <if test="aaOpinion != null">aa_opinion,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="remark != null">remark,</if>
@@ -71,6 +85,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="approveTime != null">#{approveTime},</if>
             <if test="approveOpinion != null">#{approveOpinion},</if>
             <if test="status != null">#{status},</if>
+            <if test="procInstId != null">#{procInstId},</if>
+            <if test="deptApproveBy != null">#{deptApproveBy},</if>
+            <if test="deptApproveTime != null">#{deptApproveTime},</if>
+            <if test="deptOpinion != null">#{deptOpinion},</if>
+            <if test="aaApproveBy != null">#{aaApproveBy},</if>
+            <if test="aaApproveTime != null">#{aaApproveTime},</if>
+            <if test="aaOpinion != null">#{aaOpinion},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="remark != null">#{remark},</if>
@@ -91,6 +112,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="approveTime != null">approve_time = #{approveTime},</if>
             <if test="approveOpinion != null">approve_opinion = #{approveOpinion},</if>
             <if test="status != null">status = #{status},</if>
+            <if test="procInstId != null">proc_inst_id = #{procInstId},</if>
+            <if test="deptApproveBy != null">dept_approve_by = #{deptApproveBy},</if>
+            <if test="deptApproveTime != null">dept_approve_time = #{deptApproveTime},</if>
+            <if test="deptOpinion != null">dept_opinion = #{deptOpinion},</if>
+            <if test="aaApproveBy != null">aa_approve_by = #{aaApproveBy},</if>
+            <if test="aaApproveTime != null">aa_approve_time = #{aaApproveTime},</if>
+            <if test="aaOpinion != null">aa_opinion = #{aaOpinion},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="remark != null">remark = #{remark},</if>
@@ -116,4 +144,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             (#{item.gradeId}, #{item.studentId}, #{item.courseId}, #{item.originalScore}, #{item.newScore}, #{item.reviewReason}, #{item.reviewType}, #{item.approveStatus}, #{item.approveBy}, #{item.approveTime}, #{item.approveOpinion}, #{item.status}, #{item.createTime})
         </foreach>
     </insert>
+
+    <!-- O1：取课程最近一次开课的教师登录名（经 brm_teacher.user_id 关联 sys_user，作为课程负责人初审人候选） -->
+    <select id="selectCourseTeacherLogin" resultType="String">
+        select u.user_name
+        from tpm_course_offering o
+        join brm_teacher t on t.teacher_id = o.teacher_id
+        join sys_user u on u.user_id = t.user_id
+        where o.course_id = #{courseId} and o.del_flag = '0'
+          and o.teacher_id is not null
+          <if test="semesterId != null">and o.semester_id = #{semesterId}</if>
+        order by o.semester_id desc, o.offering_id desc
+        limit 1
+    </select>
+
+    <!-- O1：按学生ID取关联的系统用户ID（成绩变更结果通知学生） -->
+    <select id="selectStudentUserId" parameterType="Long" resultType="Long">
+        select user_id from sam_student where student_id = #{studentId} limit 1
+    </select>
 </mapper>

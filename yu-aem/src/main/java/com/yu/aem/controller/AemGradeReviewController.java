@@ -86,15 +86,49 @@ public class AemGradeReviewController extends BaseController
     }
 
     /**
-     * 审批成绩复核（通过/驳回）。通过后回写新成绩、置已复核并触发GPA重算。
+     * 审批成绩复核（通过/驳回）。已接入流程的申请走多级审批，
+     * 终审通过后回写新成绩、置已复核并触发GPA重算。
      */
-    @PreAuthorize("@ss.hasPermi('aem:gradeReview:edit')")
+    @PreAuthorize("@ss.hasPermi('aem:gradeReview:audit')")
     @Log(title = "成绩复核审批", businessType = BusinessType.UPDATE)
     @PostMapping("/approve/{reviewId}")
     public AjaxResult approve(@PathVariable Long reviewId,
                               @org.springframework.web.bind.annotation.RequestParam boolean approved,
                               @org.springframework.web.bind.annotation.RequestParam(required = false) String opinion)
     {
-        return toAjax(aemGradeReviewService.approveReview(reviewId, approved, getUsername(), opinion));
+        return toAjax(aemGradeReviewService.approveReviewByFlow(reviewId, approved, opinion));
+    }
+
+    /**
+     * O1：提交复核申请，启动 Flowable 多级审批流程（课程负责人初审 → 教务处终审）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeReview:submit')")
+    @Log(title = "成绩复核-提交流程", businessType = BusinessType.UPDATE)
+    @PostMapping("/submit/{reviewId}")
+    public AjaxResult submit(@PathVariable Long reviewId)
+    {
+        return toAjax(aemGradeReviewService.submitForApproval(reviewId));
+    }
+
+    /**
+     * O1：申请人撤销审批中的申请（同步取消流程实例并办结待办）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeReview:submit')")
+    @Log(title = "成绩复核-撤销", businessType = BusinessType.UPDATE)
+    @PostMapping("/cancel/{reviewId}")
+    public AjaxResult cancel(@PathVariable Long reviewId)
+    {
+        return toAjax(aemGradeReviewService.cancelByApplicant(reviewId, getUsername()));
+    }
+
+    /**
+     * O1：审批流程追溯（节点/意见明细）
+     */
+    @PreAuthorize("@ss.hasPermi('aem:gradeReview:query')")
+    @GetMapping("/trace/{reviewId}")
+    public AjaxResult trace(@PathVariable Long reviewId)
+    {
+        java.util.Map<String, Object> detail = aemGradeReviewService.traceReview(reviewId);
+        return detail == null ? AjaxResult.error("该申请尚未进入审批流程") : success(detail);
     }
 }

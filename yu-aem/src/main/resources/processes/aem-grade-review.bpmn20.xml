@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             targetNamespace="http://www.flowable.org/processdef">
+
+    <process id="aem-grade-review-flow" name="成绩变更审批流程" isExecutable="true">
+        <startEvent id="start" name="提交申请"/>
+        <sequenceFlow id="flow1" sourceRef="start" targetRef="dept-approval"/>
+
+        <userTask id="dept-approval" name="课程负责人初审" flowable:assignee="${deptApprover}"/>
+        <sequenceFlow id="flow2" sourceRef="dept-approval" targetRef="dept-gateway"/>
+
+        <exclusiveGateway id="dept-gateway" name="初审网关"/>
+        <sequenceFlow id="flow3" sourceRef="dept-gateway" targetRef="aa-approval">
+            <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="flow4" sourceRef="dept-gateway" targetRef="end-rejected">
+            <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
+        </sequenceFlow>
+
+        <userTask id="aa-approval" name="教务处终审" flowable:assignee="${aaApprover}"/>
+        <sequenceFlow id="flow5" sourceRef="aa-approval" targetRef="aa-gateway"/>
+
+        <exclusiveGateway id="aa-gateway" name="终审网关"/>
+        <sequenceFlow id="flow6" sourceRef="aa-gateway" targetRef="end-approved">
+            <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow id="flow7" sourceRef="aa-gateway" targetRef="end-rejected">
+            <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
+        </sequenceFlow>
+
+        <endEvent id="end-approved" name="审批通过"/>
+        <endEvent id="end-rejected" name="审批驳回"/>
+    </process>
+</definitions>

@@ -196,6 +196,26 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by e.student_id, s.week_day, s.start_period
     </select>
 
+    <!-- T5 拖拽调整：查询选了指定开课的学生，在本学期其他开课中与目标窗口时间重叠的课表槽 -->
+    <select id="selectStudentSlotsByOfferingInWindow" resultMap="StudentScheduleSlotResult">
+        select distinct e.student_id as student_id, o.offering_id as offering_id, s.schedule_id as schedule_id,
+               s.week_day, s.start_period, s.end_period, s.start_week, s.end_week,
+               cl.course_name as course_name
+        from tpm_selection_enrollment e
+        inner join tpm_selection_enrollment e2 on e2.student_id = e.student_id
+        inner join tpm_course_offering o on e2.course_offering_id = o.offering_id
+        inner join tpm_schedule s on s.offering_id = o.offering_id
+        left join tpm_course_library cl on o.course_id = cl.course_id
+        where e.del_flag = '0' and e2.del_flag = '0' and o.del_flag = '0' and s.del_flag = '0'
+          and e.result_status = '1' and e2.result_status = '1' and s.status = '0'
+          and e.course_offering_id = #{offeringId}
+          and o.semester_id = #{semesterId}
+          and o.offering_id != #{offeringId}
+          and s.week_day = #{weekDay}
+          and not (s.end_period &lt; #{startPeriod} or s.start_period &gt; #{endPeriod})
+          and not (s.end_week &lt; #{startWeek} or s.start_week &gt; #{endWeek})
+    </select>
+
     <!-- 查询某教室指定时间段的排课（用于冲突检测） -->
     <select id="selectByClassroomAndTime" resultMap="TpmScheduleResult">
         <include refid="selectTpmScheduleVo"/>
@@ -203,6 +223,25 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           and classroom_id = #{classroomId}
           and week_day = #{weekDay}
           and not (end_period &lt; #{startPeriod} or start_period &gt; #{endPeriod})
+    </select>
+
+    <!-- T5 拖拽调整：查询某教室指定时间段排课（含课程名/教师名，用于冲突明细描述） -->
+    <select id="selectByClassroomAndTimeWithInfo" resultMap="TpmScheduleWithInfoResult">
+        select s.schedule_id, s.offering_id, s.classroom_id, s.week_day, s.start_period, s.end_period,
+               s.start_week, s.end_week, s.schedule_type, s.status, s.del_flag,
+               cl.course_name as course_name,
+               t.teacher_name as teacher_name,
+               cr.classroom_name as classroom_name,
+               o.teacher_id as teacher_id
+        from tpm_schedule s
+        inner join tpm_course_offering o on s.offering_id = o.offering_id
+        left join tpm_course_library cl on o.course_id = cl.course_id
+        left join brm_teacher t on o.teacher_id = t.teacher_id
+        left join brm_classroom cr on s.classroom_id = cr.classroom_id
+        where s.del_flag = '0' and o.del_flag = '0'
+          and s.classroom_id = #{classroomId}
+          and s.week_day = #{weekDay}
+          and not (s.end_period &lt; #{startPeriod} or s.start_period &gt; #{endPeriod})
     </select>
 
     <!-- 查询某教师指定星期几和节次有重叠的排课（用于教师冲突校验） -->
