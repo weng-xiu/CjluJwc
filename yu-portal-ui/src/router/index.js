@@ -93,7 +93,12 @@ export const constantRoutes = [
     children: [
       { path: 'exam', component: () => import('@/views/mobile/exam.vue'), name: 'MobileExam', meta: { title: '考试安排', isMobile: true } },
       { path: 'invigilation', component: () => import('@/views/mobile/invigilation.vue'), name: 'MobileInvigilation', meta: { title: '我的监考', isMobile: true } },
-      { path: 'evaluation', component: () => import('@/views/mobile/evaluation.vue'), name: 'MobileEvaluation', meta: { title: '教学评价', isMobile: true } }
+      { path: 'evaluation', component: () => import('@/views/mobile/evaluation.vue'), name: 'MobileEvaluation', meta: { title: '教学评价', isMobile: true } },
+      // P5 移动端办事：异动申请/教室借用/调停课（含审批）/消息待办
+      { path: 'studentStatus', component: () => import('@/views/mobile/studentStatus.vue'), name: 'MobileStudentStatus', meta: { title: '学籍服务', isMobile: true } },
+      { path: 'borrow', component: () => import('@/views/mobile/borrow.vue'), name: 'MobileBorrow', meta: { title: '教室借用', isMobile: true } },
+      { path: 'adjustment', component: () => import('@/views/mobile/adjustment.vue'), name: 'MobileAdjustment', meta: { title: '调停课', isMobile: true } },
+      { path: 'messages', component: () => import('@/views/mobile/messages.vue'), name: 'MobileMessages', meta: { title: '消息待办', isMobile: true } }
     ]
   }
 ]

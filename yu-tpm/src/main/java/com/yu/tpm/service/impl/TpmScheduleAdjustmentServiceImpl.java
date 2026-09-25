@@ -15,6 +15,7 @@ import com.yu.system.service.ISysUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.tpm.domain.TpmSchedule;
@@ -49,6 +50,10 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
     @Autowired
     private ISysUserService sysUserService;
 
+    /** 调停课审批人（可配置，默认 admin） */
+    @Value("${tpm.adjust.approver:admin}")
+    private String adjustApprover;
+
     @Override
     public TpmScheduleAdjustment selectTpmScheduleAdjustmentByAdjustId(Long adjustId)
     {
@@ -72,7 +77,40 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
         {
             tpmScheduleAdjustment.setApproveStatus("0");
         }
-        return tpmScheduleAdjustmentMapper.insertTpmScheduleAdjustment(tpmScheduleAdjustment);
+        int rows = tpmScheduleAdjustmentMapper.insertTpmScheduleAdjustment(tpmScheduleAdjustment);
+        // P6：新申请待审——向审批人推送待办与消息（异常不阻断主流程）
+        if ("0".equals(tpmScheduleAdjustment.getApproveStatus()))
+        {
+            notifyApprovalTodo(tpmScheduleAdjustment);
+        }
+        return rows;
+    }
+
+    @Transactional
+    @Override
+    public int cancelByApplicant(Long adjustId, String operator)
+    {
+        TpmScheduleAdjustment adjustment = tpmScheduleAdjustmentMapper
+                .selectTpmScheduleAdjustmentByAdjustId(adjustId);
+        if (adjustment == null)
+        {
+            throw new ServiceException("调停课申请不存在");
+        }
+        if (!"0".equals(adjustment.getApproveStatus()))
+        {
+            throw new ServiceException("仅待审的申请可撤销");
+        }
+        TpmScheduleAdjustment update = new TpmScheduleAdjustment();
+        update.setAdjustId(adjustId);
+        update.setApproveStatus("3"); // 0待审 1通过 2驳回 3已撤销
+        update.setApproveBy(operator);
+        update.setApproveTime(new Date());
+        update.setApproveComment("申请人撤销");
+        update.setUpdateTime(new Date());
+        int rows = tpmScheduleAdjustmentMapper.updateTpmScheduleAdjustment(update);
+        // P6：撤销后办结相关待办
+        completeAdjustTodos(adjustId);
+        return rows;
     }
 
     @Transactional
@@ -241,6 +279,43 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
         {
             log.warn("解析用户[{}]失败：{}", userName, e.getMessage());
             return null;
+        }
+    }
+
+    /** 向审批人推送调停课待办+消息（P6：申请提交即产生待办） */
+    private void notifyApprovalTodo(TpmScheduleAdjustment adjustment)
+    {
+        try
+        {
+            Long receiverId = resolveUserId(adjustApprover);
+            if (receiverId == null)
+            {
+                return;
+            }
+            String title = "调停课申请待审批（编号" + adjustment.getAdjustId() + "）";
+            SysTodo todo = new SysTodo();
+            todo.setReceiverId(receiverId);
+            todo.setTodoType("1");
+            todo.setTitle(title);
+            todo.setBusinessType("scheduleAdjust");
+            todo.setBusinessId(adjustment.getAdjustId());
+            todo.setCreateBy(SecurityUtils.getUsername());
+            sysTodoService.createTodo(todo);
+
+            SysMessage msg = new SysMessage();
+            msg.setReceiverId(receiverId);
+            msg.setMsgType("1");
+            msg.setTitle(title);
+            msg.setContent("您有一条调停课申请待审批，排课ID=" + adjustment.getScheduleId()
+                    + "，类型=" + adjustment.getAdjustType());
+            msg.setBusinessType("scheduleAdjust");
+            msg.setBusinessId(adjustment.getAdjustId());
+            msg.setCreateBy(SecurityUtils.getUsername());
+            sysMessageService.sendMessage(msg);
+        }
+        catch (Exception e)
+        {
+            log.error("调停课待办推送失败（adjustId={}）", adjustment.getAdjustId(), e);
         }
     }
 

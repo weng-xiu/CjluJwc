@@ -7,10 +7,10 @@
       </div>
       <div class="user-info">
         <div class="user-name">{{ userName }}</div>
-        <div class="user-id">{{ studentId || '学生' }}</div>
+        <div class="user-id">{{ userSub || '师生门户' }}</div>
       </div>
       <div class="user-role">
-        <el-tag size="mini" type="info">学生</el-tag>
+        <el-tag size="mini" type="info">{{ roleText }}</el-tag>
       </div>
     </div>
 
@@ -66,6 +66,33 @@
         </div>
         <span class="grid-label">学业预警</span>
       </div>
+      <!-- P5 办事入口（按角色展示） -->
+      <div v-if="isStudent" class="grid-item" @click="$router.push('/m/studentStatus')">
+        <div class="grid-icon icon-status">
+          <i class="el-icon-postcard"></i>
+        </div>
+        <span class="grid-label">学籍服务</span>
+      </div>
+      <div v-if="isTeacher" class="grid-item" @click="$router.push('/m/adjustment')">
+        <div class="grid-icon icon-adjust">
+          <i class="el-icon-sort"></i>
+          <span v-if="pendingTodo > 0" class="grid-badge">{{ pendingTodo }}</span>
+        </div>
+        <span class="grid-label">调停课</span>
+      </div>
+      <div class="grid-item" @click="$router.push('/m/borrow')">
+        <div class="grid-icon icon-borrow">
+          <i class="el-icon-office-building"></i>
+        </div>
+        <span class="grid-label">教室借用</span>
+      </div>
+      <div class="grid-item" @click="$router.push('/m/messages')">
+        <div class="grid-icon icon-msg">
+          <i class="el-icon-bell"></i>
+          <span v-if="unreadMsg > 0" class="grid-badge">{{ unreadMsg > 99 ? '99+' : unreadMsg }}</span>
+        </div>
+        <span class="grid-label">消息待办</span>
+      </div>
     </div>
 
     <!-- 快捷信息 -->
@@ -96,28 +123,49 @@
 
 <script>
 import { getMySchedule, getWarningStatistics } from '@/api/mobile'
+import { getUnreadCount, getPendingCount } from '@/api/portal/msg'
 
 export default {
   name: 'MobileHome',
   data() {
     return {
       warningCount: 0,
-      todaySchedule: []
+      todaySchedule: [],
+      unreadMsg: 0,
+      pendingTodo: 0
     }
   },
   computed: {
+    roles() {
+      return this.$store.state.user.roles || []
+    },
+    isStudent() {
+      return this.roles.includes('student') || !this.roles.includes('teacher')
+    },
+    isTeacher() {
+      return this.roles.includes('teacher')
+    },
+    roleText() {
+      if (this.roles.includes('admin')) return '管理员'
+      return this.isTeacher ? '教师' : '学生'
+    },
     userName() {
       return this.$store.state.user.nickName || this.$store.state.user.name || '用户'
     },
-    studentId() {
-      return this.$store.state.user.studentId || this.$store.state.user.userName || ''
+    userSub() {
+      return this.$store.state.user.userName || ''
     }
   },
   mounted() {
     this.loadWarningCount()
     this.loadTodaySchedule()
+    this.loadMsgCounts()
   },
   methods: {
+    loadMsgCounts() {
+      getUnreadCount().then(r => { this.unreadMsg = r.data || 0 }).catch(() => {})
+      getPendingCount().then(r => { this.pendingTodo = r.data || 0 }).catch(() => {})
+    },
     loadWarningCount() {
       getWarningStatistics().then(r => {
         // 未解除预警数作为提醒角标；无则回退到总数
@@ -222,6 +270,10 @@ export default {
 .icon-evaluation { background: linear-gradient(135deg, #e67e22, #f0b27a); }
 .icon-selection { background: linear-gradient(135deg, #e6a23c, #f0c78a); }
 .icon-warning { background: linear-gradient(135deg, #f56c6c, #f89898); }
+.icon-status { background: linear-gradient(135deg, #16a085, #1abc9c); }
+.icon-adjust { background: linear-gradient(135deg, #2c3e50, #4a6491); }
+.icon-borrow { background: linear-gradient(135deg, #d35400, #e67e22); }
+.icon-msg { background: linear-gradient(135deg, #8e44ad, #c39bd3); }
 .grid-badge {
   position: absolute;
   top: -4px;

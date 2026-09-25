@@ -3,7 +3,7 @@
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="学生ID" prop="studentId"><el-input v-model="queryParams.studentId" placeholder="请输入学生ID" clearable/></el-form-item>
       <el-form-item label="异动类型" prop="changeType"><el-select v-model="queryParams.changeType" placeholder="请选择" clearable><el-option label="休学" value="0"/><el-option label="复学" value="1"/><el-option label="转学" value="2"/><el-option label="退学" value="3"/></el-select></el-form-item>
-      <el-form-item label="审批状态" prop="approveStatus"><el-select v-model="queryParams.approveStatus" placeholder="请选择" clearable><el-option label="待审" value="0"/><el-option label="通过" value="1"/><el-option label="驳回" value="2"/></el-select></el-form-item>
+      <el-form-item label="审批状态" prop="approveStatus"><el-select v-model="queryParams.approveStatus" placeholder="请选择" clearable><el-option label="待审" value="0"/><el-option label="通过" value="1"/><el-option label="驳回" value="2"/><el-option label="已撤销" value="3"/></el-select></el-form-item>
       <el-form-item><el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button><el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
     <el-row :gutter="10" class="mb8">
@@ -18,7 +18,7 @@
       <el-table-column label="学生ID" align="center" prop="studentId" />
       <el-table-column label="异动类型" align="center" prop="changeType"><template slot-scope="scope"><dict-tag :options="[{dictValue:'0',dictLabel:'休学'},{dictValue:'1',dictLabel:'复学'},{dictValue:'2',dictLabel:'转学'},{dictValue:'3',dictLabel:'退学'}]" :value="scope.row.changeType"/></template></el-table-column>
       <el-table-column label="异动日期" align="center" prop="changeDate" width="180"><template slot-scope="scope"><span>{{ parseTime(scope.row.changeDate, '{y}-{m}-{d}') }}</span></template></el-table-column>
-      <el-table-column label="审批状态" align="center" prop="approveStatus"><template slot-scope="scope"><dict-tag :options="[{dictValue:'0',dictLabel:'待审'},{dictValue:'1',dictLabel:'通过'},{dictValue:'2',dictLabel:'驳回'}]" :value="scope.row.approveStatus"/></template></el-table-column>
+      <el-table-column label="审批状态" align="center" prop="approveStatus"><template slot-scope="scope"><dict-tag :options="[{dictValue:'0',dictLabel:'待审',listClass:'warning'},{dictValue:'1',dictLabel:'通过',listClass:'success'},{dictValue:'2',dictLabel:'驳回',listClass:'danger'},{dictValue:'3',dictLabel:'已撤销',listClass:'info'}]" :value="scope.row.approveStatus"/></template></el-table-column>
       <el-table-column label="流程" align="center" width="90"><template slot-scope="scope"><el-tag v-if="scope.row.procInstId" size="mini" type="warning">审批中</el-tag><el-tag v-else size="mini" type="info">未提交</el-tag></template></el-table-column>
       <el-table-column label="审批人" align="center" prop="approveBy" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="240">

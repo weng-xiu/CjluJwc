@@ -86,10 +86,11 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
     {
         if (samStatusChange.getStudentId() != null)
         {
+            // P6：重复提交校验改走不受数据权限影响的查询
             SamStatusChange query = new SamStatusChange();
             query.setStudentId(samStatusChange.getStudentId());
             query.setApproveStatus("0");
-            List<SamStatusChange> pendingList = samStatusChangeMapper.selectSamStatusChangeList(query);
+            List<SamStatusChange> pendingList = samStatusChangeMapper.selectMyStatusChangeList(query);
             if (pendingList != null && !pendingList.isEmpty())
             {
                 throw new ServiceException("该学生已有处理中的学籍异动申请，不允许重复提交");
@@ -97,6 +98,11 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
         }
         samStatusChange.setCreateTime(DateUtils.getNowDate());
         samStatusChange.setApproveStatus("0");
+        // P6：创建人兜底为当前登录用户（门户审批结果消息与本人查询依赖 create_by）
+        if (samStatusChange.getCreateBy() == null)
+        {
+            samStatusChange.setCreateBy(SecurityUtils.getUsername());
+        }
         return samStatusChangeMapper.insertSamStatusChange(samStatusChange);
     }
 
@@ -268,6 +274,71 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
         notifyApplicant(change, "学籍异动申请被驳回", "您的学籍异动申请（编号" + changeId + "）已被驳回。意见：" + (comment != null ? comment : "无"));
         completeStatusChangeTodos(changeId);
         return 1;
+    }
+
+    @Override
+    public List<SamStatusChange> selectMyStatusChangeList(SamStatusChange samStatusChange)
+    {
+        return samStatusChangeMapper.selectMyStatusChangeList(samStatusChange);
+    }
+
+    @Override
+    public boolean hasPendingChange(Long studentId)
+    {
+        SamStatusChange query = new SamStatusChange();
+        query.setStudentId(studentId);
+        query.setApproveStatus("0");
+        List<SamStatusChange> pending = samStatusChangeMapper.selectMyStatusChangeList(query);
+        return pending != null && !pending.isEmpty();
+    }
+
+    @Override
+    @Transactional
+    public int cancelByApplicant(Long changeId, String operator)
+    {
+        SamStatusChange change = samStatusChangeMapper.selectSamStatusChangeByChangeId(changeId);
+        if (change == null)
+        {
+            throw new ServiceException("异动记录不存在");
+        }
+        if (!"0".equals(change.getApproveStatus()))
+        {
+            throw new ServiceException("仅审批中的申请可撤销");
+        }
+        // 撤销Flowable流程实例（异常不阻断撤销落库）
+        if (change.getProcInstId() != null)
+        {
+            try
+            {
+                oaWorkflowService.cancelProcessInstance(change.getProcInstId(), "申请人撤销");
+            }
+            catch (Exception e)
+            {
+                log.warn("撤销流程实例失败（changeId={}）：{}", changeId, e.getMessage());
+            }
+            updateProcessInstanceStatus(change.getProcInstId(), "3");
+        }
+        SamStatusChange update = new SamStatusChange();
+        update.setChangeId(changeId);
+        update.setApproveStatus("3"); // 0待审 1通过 2驳回 3已撤销
+        update.setApproveBy(operator);
+        update.setApproveTime(DateUtils.getNowDate());
+        update.setApproveOpinion("申请人撤销");
+        update.setUpdateTime(DateUtils.getNowDate());
+        int rows = samStatusChangeMapper.updateSamStatusChange(update);
+        completeStatusChangeTodos(changeId);
+        return rows;
+    }
+
+    @Override
+    public Map<String, Object> traceChange(Long changeId)
+    {
+        SamStatusChange change = samStatusChangeMapper.selectSamStatusChangeByChangeId(changeId);
+        if (change == null || change.getProcInstId() == null)
+        {
+            return null;
+        }
+        return oaWorkflowService.getProcessInstanceDetail(change.getProcInstId());
     }
 
     // ========== 私有方法 ==========

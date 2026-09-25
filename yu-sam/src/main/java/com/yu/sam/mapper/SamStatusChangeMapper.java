@@ -13,6 +13,10 @@ public interface SamStatusChangeMapper
 {
     public SamStatusChange selectSamStatusChangeByChangeId(Long changeId);
     public List<SamStatusChange> selectSamStatusChangeList(SamStatusChange samStatusChange);
+
+    /** P6：门户端本人异动记录查询（不走数据权限过滤） */
+    public List<SamStatusChange> selectMyStatusChangeList(SamStatusChange samStatusChange);
+
     public int insertSamStatusChange(SamStatusChange samStatusChange);
     public int updateSamStatusChange(SamStatusChange samStatusChange);
     public int deleteSamStatusChangeByChangeId(Long changeId);

@@ -63,6 +63,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="approveStatus != null and approveStatus.trim() != ''"> and a.approve_status = #{approveStatus}</if>
             <if test="status != null and status.trim() != ''"> and a.status = #{status}</if>
             <if test="courseName != null and courseName.trim() != ''"> and cl.course_name like concat('%', #{courseName}, '%')</if>
+            <!-- P6：门户本人申请精确过滤（applicant 为模糊检索字段不可复用） -->
+            <if test="createByExact != null and createByExact.trim() != ''"> and a.create_by = #{createByExact}</if>
         </where>
         order by a.create_time desc
     </select>

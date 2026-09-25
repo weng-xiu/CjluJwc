@@ -33,4 +33,12 @@ public interface ITpmScheduleAdjustmentService
      * @param approveComment 审批意见
      */
     public void reject(Long adjustId, String approveComment);
+
+    /**
+     * P6：申请人撤销本人待审的调停课申请
+     *
+     * @param adjustId 调停课申请ID
+     * @param operator 操作人用户名
+     */
+    public int cancelByApplicant(Long adjustId, String operator);
 }

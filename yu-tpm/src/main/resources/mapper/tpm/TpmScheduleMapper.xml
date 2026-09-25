@@ -58,6 +58,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="semesterId != null"> and o.semester_id = #{semesterId}</if>
             <if test="scheduleType != null and scheduleType.trim() != ''"> and s.schedule_type = #{scheduleType}</if>
             <if test="status != null and status.trim() != ''"> and s.status = #{status}</if>
+            <!-- P6：按任课教师过滤（门户本人课表/调停课选课源） -->
+            <if test="teacherId != null"> and o.teacher_id = #{teacherId}</if>
         </where>
         order by s.week_day, s.start_period
     </select>

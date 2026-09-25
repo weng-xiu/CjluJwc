@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.page.TableDataInfo;
+import com.yu.common.utils.SecurityUtils;
 import com.yu.tpm.domain.TpmCourseOffering;
 import com.yu.tpm.service.ITpmCourseOfferingService;
 
@@ -24,11 +25,15 @@ public class PortalTeachingTaskController extends BaseController
     @Autowired
     private ITpmCourseOfferingService tpmCourseOfferingService;
 
-    /** 教师端：教学任务查询 */
+    /** 教师端：教学任务查询（P6：强制绑定登录教师，避免看到他人任务） */
     @PreAuthorize("@ss.hasPermi('portal:teachingTask:list') and @ss.hasAnyRoles('admin,teacher')")
     @GetMapping("/list")
     public TableDataInfo list(TpmCourseOffering tpmCourseOffering)
     {
+        if (!SecurityUtils.isAdmin(getUserId()))
+        {
+            tpmCourseOffering.setTeacherId(getUserId());
+        }
         startPage();
         List<TpmCourseOffering> list = tpmCourseOfferingService.selectTpmCourseOfferingList(tpmCourseOffering);
         return getDataTable(list);

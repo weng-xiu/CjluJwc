@@ -12,6 +12,10 @@ import com.yu.sam.domain.SamStudent;
 public interface SamStudentMapper 
 {
     public SamStudent selectSamStudentByStudentId(Long studentId);
+
+    /** P6：门户端按登录用户ID查本人学籍（含院系/专业/班级名称，不走数据权限过滤） */
+    public SamStudent selectSamStudentByUserId(Long userId);
+
     public List<SamStudent> selectSamStudentList(SamStudent samStudent);
     public int insertSamStudent(SamStudent samStudent);
     public int updateSamStudent(SamStudent samStudent);

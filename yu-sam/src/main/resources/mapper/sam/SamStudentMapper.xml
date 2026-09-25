@@ -22,7 +22,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="createTime"        column="create_time"        />
         <result property="updateBy"          column="update_by"         />
         <result property="updateTime"        column="update_time"        />
-        <result property="remark"            column="remark"             />
+        <result property="remark"          column="remark"            />
+    </resultMap>
+    <!-- P6 门户本人学籍：在基础字段上补充院系/专业/班级名称展示字段 -->
+    <resultMap type="SamStudent" id="SamStudentPortalInfoResult" extends="SamStudentResult">
+        <result property="deptName"  column="dept_name"   />
+        <result property="majorName" column="major_name"  />
+        <result property="className" column="class_name"  />
     </resultMap>
     <sql id="selectSamStudentVo">
         select student_id, student_no, student_name, gender, birth_date, id_card, major_id, dept_id, class_id, enrollment_year, education_level, student_status, status, create_by, create_time, update_by, update_time, remark from sam_student
@@ -46,6 +52,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
     <select id="selectSamStudentByStudentId" parameterType="Long" resultMap="SamStudentResult">
         <include refid="selectSamStudentVo"/> where student_id = #{studentId}
+    </select>
+    <!-- P6：门户端按登录用户ID查本人学籍（不走数据权限过滤，附院系/专业/班级名称） -->
+    <select id="selectSamStudentByUserId" parameterType="Long" resultMap="SamStudentPortalInfoResult">
+        select s.student_id, s.student_no, s.student_name, s.gender, s.birth_date, s.id_card,
+               s.major_id, s.user_id, s.dept_id, s.class_id, s.enrollment_year, s.education_level,
+               s.student_status, s.status, s.create_by, s.create_time, s.update_by, s.update_time, s.remark,
+               d.dept_name as dept_name, m.major_name as major_name, c.class_name as class_name
+        from sam_student s
+        left join brm_department d on s.dept_id = d.dept_id
+        left join brm_major m on s.major_id = m.major_id
+        left join brm_class c on s.class_id = c.class_id
+        where s.user_id = #{userId} limit 1
     </select>
     <insert id="insertSamStudent" parameterType="SamStudent" useGeneratedKeys="true" keyProperty="studentId">
         insert into sam_student

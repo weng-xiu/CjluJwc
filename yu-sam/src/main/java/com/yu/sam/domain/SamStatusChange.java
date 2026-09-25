@@ -77,6 +77,9 @@ public class SamStatusChange extends BaseEntity
     /** 流程实例ID（关联Flowable） */
     private String procInstId;
 
+    /** 创建人精确检索（P6 门户本人过滤，不映射数据库列） */
+    private String createByExact;
+
     public Long getChangeId() { return changeId; }
     public void setChangeId(Long changeId) { this.changeId = changeId; }
 
@@ -122,6 +125,9 @@ public class SamStatusChange extends BaseEntity
 
     public String getProcInstId() { return procInstId; }
     public void setProcInstId(String procInstId) { this.procInstId = procInstId; }
+
+    public String getCreateByExact() { return createByExact; }
+    public void setCreateByExact(String createByExact) { this.createByExact = createByExact; }
 
     @Override
     public String toString() {

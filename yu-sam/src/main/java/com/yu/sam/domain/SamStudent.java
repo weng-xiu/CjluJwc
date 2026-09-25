@@ -77,6 +77,17 @@ public class SamStudent extends BaseEntity
     @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
+    // ===== 以下为门户本人学籍展示用关联字段，不映射数据库列 =====
+
+    /** 院系名称（关联查询） */
+    private String deptName;
+
+    /** 专业名称（关联查询） */
+    private String majorName;
+
+    /** 班级名称（关联查询） */
+    private String className;
+
     public Long getStudentId() { return studentId; }
     public void setStudentId(Long studentId) { this.studentId = studentId; }
 
@@ -125,6 +136,15 @@ public class SamStudent extends BaseEntity
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getDeptName() { return deptName; }
+    public void setDeptName(String deptName) { this.deptName = deptName; }
+
+    public String getMajorName() { return majorName; }
+    public void setMajorName(String majorName) { this.majorName = majorName; }
+
+    public String getClassName() { return className; }
+    public void setClassName(String className) { this.className = className; }
 
     @Override
     public String toString() {

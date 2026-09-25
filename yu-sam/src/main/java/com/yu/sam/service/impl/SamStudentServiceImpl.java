@@ -41,6 +41,12 @@ public class SamStudentServiceImpl implements ISamStudentService
     }
 
     @Override
+    public SamStudent selectSamStudentByUserId(Long userId)
+    {
+        return samStudentMapper.selectSamStudentByUserId(userId);
+    }
+
+    @Override
     @DataScope(deptAlias = "d", userAlias = "s")
     public List<SamStudent> selectSamStudentList(SamStudent samStudent)
     {

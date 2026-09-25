@@ -1,6 +1,7 @@
 package com.yu.sam.service;
 
 import java.util.List;
+import java.util.Map;
 import com.yu.sam.domain.SamStatusChange;
 
 public interface ISamStatusChangeService 
@@ -26,4 +27,24 @@ public interface ISamStatusChangeService
      * 驳回异动申请
      */
     public int rejectChange(Long changeId, String taskId, String comment);
+
+    /**
+     * P6：门户端本人异动记录查询（不走数据权限过滤）
+     */
+    public List<SamStatusChange> selectMyStatusChangeList(SamStatusChange samStatusChange);
+
+    /**
+     * P6：该学生是否已有审批中的异动申请（不受数据权限影响）
+     */
+    public boolean hasPendingChange(Long studentId);
+
+    /**
+     * P6：申请人撤销尚在审批中的异动申请（含流程实例撤销）
+     */
+    public int cancelByApplicant(Long changeId, String operator);
+
+    /**
+     * P6：审批进度追溯（Flowable 历史任务链，未进入流程返回 null）
+     */
+    public Map<String, Object> traceChange(Long changeId);
 }

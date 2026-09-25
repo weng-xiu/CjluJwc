@@ -110,6 +110,9 @@ public class TpmScheduleAdjustment extends BaseEntity
     /** 新教室名称（关联查询） */
     private String newClassName;
 
+    /** 创建人精确检索（P6 门户本人过滤，不映射数据库列） */
+    private String createByExact;
+
     public Long getAdjustId() { return adjustId; }
     public void setAdjustId(Long adjustId) { this.adjustId = adjustId; }
 
@@ -183,6 +186,9 @@ public class TpmScheduleAdjustment extends BaseEntity
 
     public String getNewClassName() { return newClassName; }
     public void setNewClassName(String newClassName) { this.newClassName = newClassName; }
+
+    public String getCreateByExact() { return createByExact; }
+    public void setCreateByExact(String createByExact) { this.createByExact = createByExact; }
 
     @Override
     public String toString() {
