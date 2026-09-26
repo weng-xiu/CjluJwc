@@ -31,6 +31,9 @@ import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.core.page.TableDataInfo;
 import com.yu.common.enums.BusinessType;
 import com.yu.common.utils.SecurityUtils;
+import com.yu.oa.workflow.domain.OaCountersignItem;
+import com.yu.oa.workflow.service.IOaCountersignService;
+import com.yu.oa.workflow.service.IOaProcessDiagramService;
 import com.yu.oa.workflow.service.IOaWorkflowService;
 
 /**
@@ -45,6 +48,12 @@ public class OaWorkflowController extends BaseController
 {
     @Autowired
     private IOaWorkflowService oaWorkflowService;
+
+    @Autowired
+    private IOaCountersignService oaCountersignService;
+
+    @Autowired
+    private IOaProcessDiagramService oaProcessDiagramService;
 
     /**
      * 上传并部署 BPMN 流程文件
@@ -248,6 +257,129 @@ public class OaWorkflowController extends BaseController
     }
 
     /**
+     * 获取流程图渲染数据（节点/连线/当前进度，服务端自动布局）
+     */
+    @PreAuthorize("@ss.hasAnyPermi('oa:instance:query,oa:instance:list,oa:task:list')")
+    @GetMapping("/diagram")
+    public AjaxResult diagram(@RequestParam("processInstanceId") String processInstanceId)
+    {
+        Object diagram = oaProcessDiagramService.buildDiagram(processInstanceId);
+        if (diagram == null)
+        {
+            return error("流程实例不存在或已被删除");
+        }
+        return success(diagram);
+    }
+
+    /**
+     * 加签：mode 0 前加签（意见未齐不可提交）/ 1 后加签（不阻塞本人提交）
+     */
+    @PreAuthorize("@ss.hasPermi('oa:task:coSign')")
+    @Log(title = "待办任务", businessType = BusinessType.UPDATE)
+    @PostMapping("/task/addSign/{taskId}")
+    public AjaxResult addSign(@PathVariable("taskId") String taskId,
+                             @RequestBody Map<String, Object> params)
+    {
+        String mode = params.get("mode") == null ? "0" : String.valueOf(params.get("mode"));
+        String reason = params.get("reason") == null ? null : String.valueOf(params.get("reason"));
+        Long batchId = oaCountersignService.addSign(taskId, SecurityUtils.getUsername(), mode,
+                extractHandlers(params), reason);
+        return AjaxResult.success("加签发起成功", batchId);
+    }
+
+    /**
+     * 会签：多人并行表决，rule ALL 全部同意 / ANY 一人同意即定论
+     */
+    @PreAuthorize("@ss.hasPermi('oa:task:coSign')")
+    @Log(title = "待办任务", businessType = BusinessType.UPDATE)
+    @PostMapping("/task/counterSign/{taskId}")
+    public AjaxResult counterSign(@PathVariable("taskId") String taskId,
+                                 @RequestBody Map<String, Object> params)
+    {
+        String rule = params.get("rule") == null ? "ALL" : String.valueOf(params.get("rule"));
+        String reason = params.get("reason") == null ? null : String.valueOf(params.get("reason"));
+        Long batchId = oaCountersignService.counterSign(taskId, SecurityUtils.getUsername(),
+                extractHandlers(params), rule, reason);
+        return AjaxResult.success("会签发起成功", batchId);
+    }
+
+    /**
+     * 委托代办：任务移交他人办理，原办理人保留为 owner
+     */
+    @PreAuthorize("@ss.hasPermi('oa:task:coSign')")
+    @Log(title = "待办任务", businessType = BusinessType.UPDATE)
+    @PostMapping("/task/delegate/{taskId}")
+    public AjaxResult delegate(@PathVariable("taskId") String taskId,
+                              @RequestBody Map<String, String> params)
+    {
+        Long batchId = oaCountersignService.delegate(taskId, SecurityUtils.getUsername(),
+                params.get("handler"), params.get("reason"));
+        return AjaxResult.success("委托成功", batchId);
+    }
+
+    /**
+     * 收回委托
+     */
+    @PreAuthorize("@ss.hasPermi('oa:task:coSign')")
+    @Log(title = "待办任务", businessType = BusinessType.UPDATE)
+    @PostMapping("/task/delegate/reclaim/{taskId}")
+    public AjaxResult reclaimDelegate(@PathVariable("taskId") String taskId,
+                                     @RequestBody(required = false) Map<String, String> params)
+    {
+        oaCountersignService.reclaimDelegate(taskId, SecurityUtils.getUsername(),
+                params == null ? null : params.get("reason"));
+        return success();
+    }
+
+    /**
+     * 提交加签/会签意见
+     */
+    @PreAuthorize("@ss.hasPermi('oa:task:list')")
+    @Log(title = "待办任务", businessType = BusinessType.UPDATE)
+    @PostMapping("/task/opinion/{itemId}")
+    public AjaxResult submitOpinion(@PathVariable("itemId") Long itemId,
+                                   @RequestBody Map<String, Object> params)
+    {
+        Object agree = params.get("agree");
+        boolean approved = agree != null && Boolean.parseBoolean(String.valueOf(agree));
+        String opinion = params.get("opinion") == null ? null : String.valueOf(params.get("opinion"));
+        oaCountersignService.submitOpinion(itemId, SecurityUtils.getUsername(), approved, opinion);
+        return success();
+    }
+
+    /**
+     * 我的加签/会签待办
+     */
+    @PreAuthorize("@ss.hasPermi('oa:task:list')")
+    @GetMapping("/task/opinion/my")
+    public TableDataInfo myOpinionTodo()
+    {
+        startPage();
+        List<OaCountersignItem> list = oaCountersignService.listMyPending(SecurityUtils.getUsername());
+        return getDataTable(list);
+    }
+
+    /**
+     * 可选协同办理人（仅展示最小字段，避开 system:user:list 权限依赖）
+     */
+    @PreAuthorize("@ss.hasPermi('oa:task:list')")
+    @GetMapping("/task/opinion/users")
+    public AjaxResult handlerOptions()
+    {
+        return success(oaCountersignService.listHandlerOptions());
+    }
+
+    /**
+     * 按流程实例查询加签/会签/委托留痕
+     */
+    @PreAuthorize("@ss.hasAnyPermi('oa:instance:query,oa:task:list')")
+    @GetMapping("/task/opinion/list")
+    public AjaxResult opinionList(@RequestParam("processInstanceId") String processInstanceId)
+    {
+        return success(oaCountersignService.listByProcessInstance(processInstanceId));
+    }
+
+    /**
      * 新增流程定义（BPMN XML 字符串方式）
      */
     @PreAuthorize("@ss.hasPermi('oa:definition:deploy')")
@@ -264,6 +396,41 @@ public class OaWorkflowController extends BaseController
         Deployment deployment = oaWorkflowService.deployProcess(processName, bpmnXml);
         // 避免 success(String) 重载：部署ID应放入 data 而非 msg
         return AjaxResult.success("新增流程定义成功", deployment.getId());
+    }
+
+    /**
+     * 从请求体中取协同办理人列表（兼容 handlers 数组与 handler 逗号分隔字符串）
+     */
+    @SuppressWarnings("unchecked")
+    private List<String> extractHandlers(Map<String, Object> params)
+    {
+        List<String> handlers = new ArrayList<>();
+        Object raw = params.get("handlers");
+        if (raw == null)
+        {
+            raw = params.get("handler");
+        }
+        if (raw instanceof List)
+        {
+            for (Object item : (List<Object>) raw)
+            {
+                if (item != null)
+                {
+                    handlers.add(String.valueOf(item));
+                }
+            }
+        }
+        else if (raw != null)
+        {
+            for (String item : String.valueOf(raw).split(","))
+            {
+                if (!item.trim().isEmpty())
+                {
+                    handlers.add(item.trim());
+                }
+            }
+        }
+        return handlers;
     }
 
     /**

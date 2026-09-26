@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.web.mapper.StatusReportMapper">
+    <resultMap type="com.yu.web.domain.StatusReportField" id="StatusReportFieldResult">
+        <result property="fieldId"     column="field_id"     />
+        <result property="reportType"  column="report_type"  />
+        <result property="stdCode"     column="std_code"     />
+        <result property="stdName"     column="std_name"     />
+        <result property="sourceExpr"  column="source_expr"  />
+        <result property="convertRule" column="convert_rule" />
+        <result property="dataType"    column="data_type"    />
+        <result property="required"    column="required"     />
+        <result property="orderNum"    column="order_num"    />
+    </resultMap>
+    <resultMap type="com.yu.web.domain.StatusReportBatch" id="StatusReportBatchResult">
+        <result property="batchId"       column="batch_id"        />
+        <result property="reportType"    column="report_type"     />
+        <result property="reportYear"    column="report_year"     />
+        <result property="reportName"    column="report_name"     />
+        <result property="scopeDeptId"   column="scope_dept_id"   />
+        <result property="scopeDeptName" column="scope_dept_name" />
+        <result property="rowCount"      column="row_count"       />
+        <result property="batchStatus"   column="batch_status"    />
+        <result property="genTime"       column="gen_time"        />
+        <result property="exportTime"    column="export_time"     />
+        <result property="submitTime"    column="submit_time"     />
+        <result property="remark"        column="remark"          />
+        <result property="createBy"      column="create_by"       />
+        <result property="createTime"    column="create_time"     />
+        <result property="updateBy"      column="update_by"       />
+        <result property="updateTime"    column="update_time"     />
+    </resultMap>
+
+    <select id="selectFieldList" resultMap="StatusReportFieldResult">
+        select field_id, report_type, std_code, std_name, source_expr, convert_rule, data_type, required, order_num
+        from sys_status_report_field
+        <where>
+            <if test="reportType != null and reportType != ''"> and report_type = #{reportType}</if>
+        </where>
+        order by report_type asc, order_num asc
+    </select>
+
+    <!-- 01 学生基本信息：性别/学历层次/学籍状态按状态数据值域在 SQL 内转换 -->
+    <select id="selectStudentReport" resultType="com.yu.web.domain.StatusStudentVo">
+        select s.student_no as xh,
+               s.student_name as xm,
+               case s.gender when '0' then '1' when '1' then '2' else '9' end as xbdm,
+               date_format(s.birth_date, '%Y-%m-%d') as csrq,
+               s.id_card as gmsfhm,
+               d.dept_name as szyx,
+               m.major_name as zymc,
+               c.class_name as bjmc,
+               regexp_replace(ifnull(s.enrollment_year, ''), '[^0-9]', '') as rxnj,
+               case when s.education_level like '%博士%' then '10'
+                    when s.education_level like '%硕士%' then '20'
+                    when s.education_level like '%本科%' then '30'
+                    else '90' end as xlccdm,
+               case s.student_status when '0' then '01' when '1' then '03' when '2' then '05'
+                                     when '3' then '09' when '4' then '10' when '5' then '02'
+                                     else '01' end as xjztdm,
+               4 as zxnx
+        from sam_student s
+        left join brm_department d on s.dept_id = d.dept_id
+        left join brm_major m on s.major_id = m.major_id
+        left join brm_class c on s.class_id = c.class_id
+        <where>
+            and s.status = '0'
+            <if test="deptId != null and deptId > 0"> and s.dept_id = #{deptId}</if>
+            <!-- 年度口径：在读类学籍按“入学年份不晚于上报年度”纳入；
+                 毕业学籍按四年制推算（入学年份 + 4 = 上报年度）纳入当届毕后数据 -->
+            <if test="reportYear != null and reportYear != ''">
+                and (
+                    (s.student_status in ('0', '1', '5')
+                        and regexp_replace(ifnull(s.enrollment_year, ''), '[^0-9]', '') &lt;= #{reportYear})
+                    or (s.student_status = '3'
+                        and cast(nullif(regexp_replace(ifnull(s.enrollment_year, ''), '[^0-9]', ''), '') as unsigned) + 4 = cast(#{reportYear} as unsigned))
+                )
+            </if>
+        </where>
+        order by s.student_no asc
+    </select>
+
+    <!-- 02 课程基本信息：课程性质与考核方式转换为状态数据代码 -->
+    <select id="selectCourseReport" resultType="com.yu.web.domain.StatusCourseVo">
+        select cl.course_code as kch,
+               cl.course_name as kcm,
+               cl.course_name_en as kcmcyw,
+               cast(cl.credit as char) as xf,
+               ifnull(cl.total_hours, ifnull(cl.theory_hours, 0) + ifnull(cl.practice_hours, 0)) as zxs,
+               ifnull(cl.theory_hours, 0) as llxs,
+               ifnull(cl.practice_hours, 0) as sjxs,
+               case when cl.course_type like '%必修%' then '1'
+                    when cl.course_type like '%公选%' then '3'
+                    when cl.course_type like '%选修%' then '2'
+                    else '9' end as kcxzdm,
+               cl.course_category as kclb,
+               case when cl.assessment_method like '%考试%' then '1'
+                    when cl.assessment_method like '%考查%' then '2'
+                    else '9' end as kskfms,
+               ifnull(d.dept_name, '教务处') as ssyx
+        from tpm_course_library cl
+        left join tpm_training_plan p on cl.plan_id = p.plan_id
+        left join brm_department d on p.dept_id = d.dept_id
+        <where>
+            and cl.status = '0' and ifnull(cl.del_flag, '0') = '0'
+            <if test="deptId != null and deptId > 0"> and p.dept_id = #{deptId}</if>
+        </where>
+        order by cl.course_code asc
+    </select>
+
+    <!-- 03 成绩信息：仅正常状态成绩，年度按学期所属学年匹配 -->
+    <select id="selectGradeReport" resultType="com.yu.web.domain.StatusGradeVo">
+        select s.student_no as xh,
+               s.student_name as xm,
+               cl.course_code as kch,
+               cl.course_name as kcm,
+               cast(cl.credit as char) as xf,
+               cast(g.total_score as char) as cj,
+               cast(g.grade_point as char) as jd,
+               g.grade_level as cjdj,
+               case when g.is_pass = '1' then 'Y' else 'N' end as jgdm,
+               case g.exam_type when '0' then '1' when '1' then '2' when '2' then '3' else '1' end as kclx,
+               sm.semester_name as xqmc,
+               d.dept_name as szyx
+        from aem_grade_record g
+        left join sam_student s on g.student_id = s.student_id
+        left join tpm_course_library cl on g.course_id = cl.course_id
+        left join brm_semester sm on g.semester_id = sm.semester_id
+        left join brm_academic_year ay on sm.academic_year_id = ay.year_id
+        left join brm_department d on s.dept_id = d.dept_id
+        <where>
+            and g.status = '0'
+            <if test="deptId != null and deptId > 0"> and s.dept_id = #{deptId}</if>
+            <if test="reportYear != null and reportYear != ''">
+                and (ay.year_name = #{reportYear} or sm.semester_name like concat(#{reportYear}, '%'))
+            </if>
+        </where>
+        order by s.student_no asc, cl.course_code asc
+    </select>
+
+    <!-- 04 教师基本信息：不做在职过滤，由 SFJS 字段标识在职状态 -->
+    <select id="selectTeacherReport" resultType="com.yu.web.domain.StatusTeacherVo">
+        select t.teacher_code as jsgh,
+               t.teacher_name as xm,
+               case t.gender when '0' then '1' when '1' then '2' else '9' end as xbdm,
+               ifnull(d.dept_name, '') as ssyx,
+               t.title as zcdm,
+               t.education as xldm,
+               t.phone as lxdh,
+               t.email as dzyx,
+               case when ifnull(t.status, '0') = '0' then 'Y' else 'N' end as sfjs
+        from brm_teacher t
+        left join brm_department d on t.dept_id = d.dept_id
+        <where>
+            <if test="deptId != null and deptId > 0"> and t.dept_id = #{deptId}</if>
+        </where>
+        order by t.teacher_code asc
+    </select>
+
+    <select id="selectDeptNameById" parameterType="java.lang.Long" resultType="java.lang.String">
+        select dept_name from brm_department where dept_id = #{deptId}
+    </select>
+
+    <!-- 上报范围下拉选项（自含查询，避免依赖 brm 模块菜单权限造成 403） -->
+    <select id="selectDeptOptions" resultType="java.util.HashMap">
+        select dept_id as deptId, dept_name as deptName from brm_department
+        where ifnull(status, '0') = '0' order by dept_id asc
+    </select>
+
+    <sql id="selectBatchVo">
+        select batch_id, report_type, report_year, report_name, scope_dept_id, scope_dept_name,
+               row_count, batch_status, gen_time, export_time, submit_time, remark,
+               create_by, create_time, update_by, update_time
+        from sys_status_report_batch
+    </sql>
+    <select id="selectBatchList" parameterType="com.yu.web.domain.StatusReportBatch" resultMap="StatusReportBatchResult">
+        <include refid="selectBatchVo"/>
+        <where>
+            <if test="reportType != null and reportType != ''"> and report_type = #{reportType}</if>
+            <if test="reportYear != null and reportYear != ''"> and report_year = #{reportYear}</if>
+            <if test="batchStatus != null and batchStatus != ''"> and batch_status = #{batchStatus}</if>
+            <if test="reportName != null and reportName != ''"> and report_name like concat('%', #{reportName}, '%')</if>
+        </where>
+        order by batch_id desc
+    </select>
+    <select id="selectBatchById" parameterType="java.lang.Long" resultMap="StatusReportBatchResult">
+        <include refid="selectBatchVo"/> where batch_id = #{batchId}
+    </select>
+    <insert id="insertBatch" parameterType="com.yu.web.domain.StatusReportBatch" useGeneratedKeys="true" keyProperty="batchId">
+        insert into sys_status_report_batch
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="reportType != null and reportType != ''">report_type,</if>
+            <if test="reportYear != null and reportYear != ''">report_year,</if>
+            <if test="reportName != null">report_name,</if>
+            <if test="scopeDeptId != null">scope_dept_id,</if>
+            <if test="scopeDeptName != null">scope_dept_name,</if>
+            <if test="rowCount != null">row_count,</if>
+            <if test="batchStatus != null">batch_status,</if>
+            <if test="genTime != null">gen_time,</if>
+            <if test="exportTime != null">export_time,</if>
+            <if test="submitTime != null">submit_time,</if>
+            <if test="remark != null">remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="reportType != null and reportType != ''">#{reportType},</if>
+            <if test="reportYear != null and reportYear != ''">#{reportYear},</if>
+            <if test="reportName != null">#{reportName},</if>
+            <if test="scopeDeptId != null">#{scopeDeptId},</if>
+            <if test="scopeDeptName != null">#{scopeDeptName},</if>
+            <if test="rowCount != null">#{rowCount},</if>
+            <if test="batchStatus != null">#{batchStatus},</if>
+            <if test="genTime != null">#{genTime},</if>
+            <if test="exportTime != null">#{exportTime},</if>
+            <if test="submitTime != null">#{submitTime},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+    <update id="updateBatch" parameterType="com.yu.web.domain.StatusReportBatch">
+        update sys_status_report_batch
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="reportType != null and reportType != ''">report_type = #{reportType},</if>
+            <if test="reportYear != null and reportYear != ''">report_year = #{reportYear},</if>
+            <if test="reportName != null">report_name = #{reportName},</if>
+            <if test="scopeDeptId != null">scope_dept_id = #{scopeDeptId},</if>
+            <if test="scopeDeptName != null">scope_dept_name = #{scopeDeptName},</if>
+            <if test="rowCount != null">row_count = #{rowCount},</if>
+            <if test="batchStatus != null and batchStatus != ''">batch_status = #{batchStatus},</if>
+            <if test="genTime != null">gen_time = #{genTime},</if>
+            <if test="exportTime != null">export_time = #{exportTime},</if>
+            <if test="submitTime != null">submit_time = #{submitTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where batch_id = #{batchId}
+    </update>
+    <delete id="deleteBatchById" parameterType="java.lang.Long">
+        delete from sys_status_report_batch where batch_id = #{batchId}
+    </delete>
+</mapper>

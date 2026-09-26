@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.oa.workflow.mapper.OaCountersignMapper">
+    <resultMap type="OaCountersignBatch" id="OaCountersignBatchResult">
+        <result property="batchId"               column="batch_id"    />
+        <result property="taskId"                column="task_id"     />
+        <result property="processInstanceId"     column="proc_inst_id"/>
+        <result property="processDefinitionName" column="process_name"/>
+        <result property="nodeId"                column="node_id"     />
+        <result property="nodeName"              column="node_name"   />
+        <result property="mode"                  column="sign_mode"   />
+        <result property="rule"                  column="sign_rule"   />
+        <result property="initiator"             column="initiator"   />
+        <result property="totalCount"            column="total_count" />
+        <result property="doneCount"             column="done_count"  />
+        <result property="agreeCount"            column="agree_count" />
+        <result property="disagreeCount"         column="disagree_count" />
+        <result property="status"                column="status"      />
+        <result property="releaseTime"           column="release_time"/>
+        <result property="createBy"              column="create_by"   />
+        <result property="createTime"            column="create_time" />
+        <result property="updateBy"              column="update_by"   />
+        <result property="updateTime"            column="update_time" />
+        <result property="remark"                column="remark"      />
+    </resultMap>
+    <resultMap type="OaCountersignItem" id="OaCountersignItemResult">
+        <result property="itemId"                column="item_id"     />
+        <result property="batchId"               column="batch_id"    />
+        <result property="taskId"                column="task_id"     />
+        <result property="processInstanceId"     column="proc_inst_id"/>
+        <result property="handler"               column="handler"     />
+        <result property="handlerName"           column="handler_name"/>
+        <result property="vote"                  column="vote"        />
+        <result property="opinion"               column="opinion"     />
+        <result property="status"                column="status"      />
+        <result property="handleTime"            column="handle_time" />
+        <result property="createBy"              column="create_by"   />
+        <result property="createTime"            column="create_time" />
+        <result property="batchMode"             column="sign_mode"   />
+        <result property="nodeName"              column="node_name"   />
+        <result property="processDefinitionName" column="process_name"/>
+        <result property="batchStatus"           column="batch_status"/>
+    </resultMap>
+
+    <sql id="selectBatchVo">
+        select batch_id, task_id, proc_inst_id, process_name, node_id, node_name, sign_mode, sign_rule,
+               initiator, total_count, done_count, agree_count, disagree_count,
+               status, release_time, create_by, create_time, update_by, update_time, remark
+        from oa_countersign_batch
+    </sql>
+    <!-- 明细联批次：协同待办与追溯需要展示动作类型、节点与流程名称 -->
+    <sql id="selectItemJoinVo">
+        select i.item_id, i.batch_id, i.task_id, i.proc_inst_id, i.handler, i.handler_name, i.vote, i.opinion,
+               i.status, i.handle_time, i.create_by, i.create_time,
+               b.sign_mode, b.node_name, b.process_name, b.status as batch_status
+        from oa_countersign_item i
+        inner join oa_countersign_batch b on b.batch_id = i.batch_id
+    </sql>
+
+    <select id="selectBatchById" parameterType="Long" resultMap="OaCountersignBatchResult">
+        <include refid="selectBatchVo"/> where batch_id = #{batchId}
+    </select>
+    <select id="selectActiveBatchByTaskId" parameterType="String" resultMap="OaCountersignBatchResult">
+        <include refid="selectBatchVo"/> where task_id = #{taskId} and status = '0' order by batch_id asc
+    </select>
+
+    <insert id="insertBatch" parameterType="OaCountersignBatch" useGeneratedKeys="true" keyProperty="batchId">
+        insert into oa_countersign_batch
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="taskId != null">task_id,</if>
+            <if test="processInstanceId != null">proc_inst_id,</if>
+            <if test="processDefinitionName != null">process_name,</if>
+            <if test="nodeId != null">node_id,</if>
+            <if test="nodeName != null">node_name,</if>
+            <if test="mode != null">sign_mode,</if>
+            <if test="rule != null">sign_rule,</if>
+            <if test="initiator != null">initiator,</if>
+            <if test="totalCount != null">total_count,</if>
+            <if test="doneCount != null">done_count,</if>
+            <if test="agreeCount != null">agree_count,</if>
+            <if test="disagreeCount != null">disagree_count,</if>
+            <if test="status != null">status,</if>
+            <if test="releaseTime != null">release_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="taskId != null">#{taskId},</if>
+            <if test="processInstanceId != null">#{processInstanceId},</if>
+            <if test="processDefinitionName != null">#{processDefinitionName},</if>
+            <if test="nodeId != null">#{nodeId},</if>
+            <if test="nodeName != null">#{nodeName},</if>
+            <if test="mode != null">#{mode},</if>
+            <if test="rule != null">#{rule},</if>
+            <if test="initiator != null">#{initiator},</if>
+            <if test="totalCount != null">#{totalCount},</if>
+            <if test="doneCount != null">#{doneCount},</if>
+            <if test="agreeCount != null">#{agreeCount},</if>
+            <if test="disagreeCount != null">#{disagreeCount},</if>
+            <if test="status != null">#{status},</if>
+            <if test="releaseTime != null">#{releaseTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updateBatch" parameterType="OaCountersignBatch">
+        update oa_countersign_batch
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="doneCount != null">done_count = #{doneCount},</if>
+            <if test="agreeCount != null">agree_count = #{agreeCount},</if>
+            <if test="disagreeCount != null">disagree_count = #{disagreeCount},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="releaseTime != null">release_time = #{releaseTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where batch_id = #{batchId}
+    </update>
+
+    <update id="cancelBatchByProcessInstanceId" parameterType="String">
+        update oa_countersign_batch set status = '2', update_time = now()
+        where proc_inst_id = #{processInstanceId} and status = '0'
+    </update>
+
+    <insert id="insertItem" parameterType="OaCountersignItem" useGeneratedKeys="true" keyProperty="itemId">
+        insert into oa_countersign_item
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="batchId != null">batch_id,</if>
+            <if test="taskId != null">task_id,</if>
+            <if test="processInstanceId != null">proc_inst_id,</if>
+            <if test="handler != null">handler,</if>
+            <if test="handlerName != null">handler_name,</if>
+            <if test="vote != null">vote,</if>
+            <if test="opinion != null">opinion,</if>
+            <if test="status != null">status,</if>
+            <if test="handleTime != null">handle_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="batchId != null">#{batchId},</if>
+            <if test="taskId != null">#{taskId},</if>
+            <if test="processInstanceId != null">#{processInstanceId},</if>
+            <if test="handler != null">#{handler},</if>
+            <if test="handlerName != null">#{handlerName},</if>
+            <if test="vote != null">#{vote},</if>
+            <if test="opinion != null">#{opinion},</if>
+            <if test="status != null">#{status},</if>
+            <if test="handleTime != null">#{handleTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <select id="selectItemById" parameterType="Long" resultMap="OaCountersignItemResult">
+        <include refid="selectItemJoinVo"/> where i.item_id = #{itemId}
+    </select>
+
+    <update id="updateItem" parameterType="OaCountersignItem">
+        update oa_countersign_item
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="vote != null">vote = #{vote},</if>
+            <if test="opinion != null">opinion = #{opinion},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="handleTime != null">handle_time = #{handleTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where item_id = #{itemId}
+    </update>
+
+    <select id="selectItemsByBatchId" parameterType="Long" resultMap="OaCountersignItemResult">
+        select item_id, batch_id, task_id, proc_inst_id, handler, handler_name, vote, opinion, status,
+               handle_time, create_by, create_time
+        from oa_countersign_item where batch_id = #{batchId} order by item_id asc
+    </select>
+
+    <select id="countPendingItemsByBatchId" parameterType="Long" resultType="int">
+        select count(1) from oa_countersign_item where batch_id = #{batchId} and status = '0'
+    </select>
+
+    <select id="countPendingByTaskAndMode" resultType="int">
+        select count(1) from oa_countersign_item i
+        inner join oa_countersign_batch b on b.batch_id = i.batch_id
+        where i.task_id = #{taskId} and i.status = '0' and b.sign_mode = #{mode}
+    </select>
+
+    <select id="selectPendingItemsByHandler" parameterType="String" resultMap="OaCountersignItemResult">
+        <include refid="selectItemJoinVo"/>
+        where i.handler = #{handler} and i.status = '0' and b.status = '0'
+        order by i.create_time desc
+    </select>
+
+    <select id="selectItemsByTaskId" parameterType="String" resultMap="OaCountersignItemResult">
+        <include refid="selectItemJoinVo"/> where i.task_id = #{taskId} order by i.item_id asc
+    </select>
+
+    <select id="selectItemsByProcessInstanceId" parameterType="String" resultMap="OaCountersignItemResult">
+        <include refid="selectItemJoinVo"/> where i.proc_inst_id = #{processInstanceId} order by i.item_id asc
+    </select>
+
+    <!-- 全局关闭了下划线转驼峰，Map 结果需显式别名 -->
+    <select id="selectHandlerOptions" resultType="java.util.HashMap">
+        select u.user_id as userId, u.user_name as userName, u.nick_name as nickName,
+               d.dept_name as deptName
+        from sys_user u
+        left join sys_dept d on d.dept_id = u.dept_id
+        where u.del_flag = '0' and u.status = '0'
+        order by u.user_id asc
+        limit 300
+    </select>
+</mapper>

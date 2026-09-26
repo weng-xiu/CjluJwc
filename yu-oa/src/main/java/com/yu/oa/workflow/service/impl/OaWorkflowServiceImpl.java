@@ -33,6 +33,7 @@ import com.yu.oa.domain.OaProcessInstance;
 import com.yu.oa.domain.OaTaskRecord;
 import com.yu.oa.mapper.OaProcessInstanceMapper;
 import com.yu.oa.mapper.OaTaskRecordMapper;
+import com.yu.oa.workflow.service.IOaCountersignService;
 import com.yu.oa.workflow.service.IOaWorkflowService;
 
 /**
@@ -61,6 +62,9 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
 
     @Autowired
     private OaTaskRecordMapper oaTaskRecordMapper;
+
+    @Autowired
+    private IOaCountersignService oaCountersignService;
 
     @Override
     @Transactional
@@ -172,6 +176,8 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
             taskList.add(t);
         }
         detail.put("tasks", taskList);
+        // O1 协同留痕：加签/会签/委托意见随流程详情一并返回，供各业务追溯页展示
+        detail.put("countersigns", oaCountersignService.listByProcessInstance(processInstanceId));
         return detail;
     }
 
@@ -214,6 +220,8 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
         {
             throw new RuntimeException("当前任务不存在或无权处理");
         }
+        // 前加签/会签意见未齐时拒绝提交，保证协同结论先于节点办结
+        oaCountersignService.assertGatePassed(taskId);
         if (comment != null && !comment.trim().isEmpty())
         {
             taskService.addComment(taskId, task.getProcessInstanceId(), comment);
@@ -223,6 +231,7 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
             taskService.setVariablesLocal(taskId, variables);
         }
         taskService.complete(taskId, variables);
+        oaCountersignService.afterTaskCompleted(taskId, assignee);
     }
 
     @Override
@@ -234,14 +243,18 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
         {
             throw new RuntimeException("当前任务不存在或无权处理");
         }
+        oaCountersignService.assertGatePassed(taskId);
         // 简单实现：通过设置 rejected 变量，由 BPMN 条件分支决定回退路径
         taskService.setVariable(taskId, "rejected", true);
         taskService.setVariable(taskId, "rejectComment", comment);
+        // 已接入的四个流程均按 ${approved == false} 判断驳回分支，否则排他网关无可选出线
+        taskService.setVariable(taskId, "approved", false);
         if (comment != null && !comment.trim().isEmpty())
         {
             taskService.addComment(taskId, task.getProcessInstanceId(), "驳回：" + comment);
         }
         taskService.complete(taskId);
+        oaCountersignService.afterTaskCompleted(taskId, assignee);
     }
 
     @Override
@@ -265,6 +278,8 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
     public void cancelProcessInstance(String processInstanceId, String reason)
     {
         runtimeService.deleteProcessInstance(processInstanceId, reason);
+        // 实例终止后同步作废进行中的加签/会签/委托批次
+        oaCountersignService.cancelByProcessInstance(processInstanceId);
     }
 
     @Override

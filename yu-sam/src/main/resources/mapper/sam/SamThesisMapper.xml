@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamThesisMapper">
+    <resultMap type="SamThesis" id="SamThesisResult">
+        <result property="thesisId"      column="thesis_id"      />
+        <result property="planYear"      column="plan_year"      />
+        <result property="studentId"     column="student_id"     />
+        <result property="studentNo"     column="student_no"     />
+        <result property="studentName"   column="student_name"   />
+        <result property="deptName"      column="dept_name"      />
+        <result property="majorName"     column="major_name"     />
+        <result property="className"     column="class_name"     />
+        <result property="topicId"       column="topic_id"       />
+        <result property="topicName"     column="topic_name"     />
+        <result property="advisor"       column="advisor"        />
+        <result property="advisorName"   column="advisor_name"   />
+        <result property="currentStage"  column="current_stage"  />
+        <result property="stageStatus"   column="stage_status"   />
+        <result property="checkRate"     column="check_rate"     />
+        <result property="checkPass"     column="check_pass"     />
+        <result property="defenseScore"  column="defense_score"  />
+        <result property="totalScore"    column="total_score"    />
+        <result property="gradeLevel"    column="grade_level"    />
+        <result property="isQualified"   column="is_qualified"   />
+        <result property="sampleStatus"  column="sample_status"  />
+        <result property="archiveTime"   column="archive_time"   />
+        <result property="status"        column="status"         />
+        <result property="remark"        column="remark"         />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+    <!-- 学号/姓名/院系/专业/班级由 sam_student 及其基础表联查带出 -->
+    <sql id="selectSamThesisVo">
+        select t.thesis_id, t.plan_year, t.student_id, t.topic_id, t.topic_name, t.advisor, t.advisor_name,
+               t.current_stage, t.stage_status, t.check_rate, t.check_pass, t.defense_score, t.total_score,
+               t.grade_level, t.is_qualified, t.sample_status, t.archive_time, t.status, t.remark,
+               t.create_by, t.create_time, t.update_by, t.update_time,
+               s.student_no, s.student_name, d.dept_name, m.major_name, c.class_name
+        from sam_thesis t
+        left join sam_student s on t.student_id = s.student_id
+        left join brm_department d on s.dept_id = d.dept_id
+        left join brm_major m on s.major_id = m.major_id
+        left join brm_class c on s.class_id = c.class_id
+    </sql>
+    <sql id="thesisWhereClause">
+        <if test="planYear != null and planYear.trim() != ''"> and t.plan_year = #{planYear}</if>
+        <if test="studentId != null"> and t.student_id = #{studentId}</if>
+        <if test="studentNo != null and studentNo.trim() != ''"> and s.student_no like concat('%', #{studentNo}, '%')</if>
+        <if test="studentName != null and studentName.trim() != ''"> and s.student_name like concat('%', #{studentName}, '%')</if>
+        <if test="deptName != null and deptName.trim() != ''"> and d.dept_name like concat('%', #{deptName}, '%')</if>
+        <if test="topicId != null"> and t.topic_id = #{topicId}</if>
+        <if test="topicName != null and topicName.trim() != ''"> and t.topic_name like concat('%', #{topicName}, '%')</if>
+        <if test="advisor != null and advisor.trim() != ''"> and t.advisor = #{advisor}</if>
+        <if test="currentStage != null and currentStage.trim() != ''"> and t.current_stage = #{currentStage}</if>
+        <if test="stageStatus != null and stageStatus.trim() != ''"> and t.stage_status = #{stageStatus}</if>
+        <if test="isQualified != null and isQualified.trim() != ''"> and t.is_qualified = #{isQualified}</if>
+        <if test="sampleStatus != null and sampleStatus.trim() != ''"> and t.sample_status = #{sampleStatus}</if>
+        <if test="status != null and status.trim() != ''"> and t.status = #{status}</if>
+    </sql>
+    <select id="selectSamThesisList" parameterType="SamThesis" resultMap="SamThesisResult">
+        <include refid="selectSamThesisVo"/>
+        <where>
+            <include refid="thesisWhereClause"/>
+        </where>
+        order by t.plan_year desc, t.thesis_id desc
+    </select>
+    <select id="selectSamThesisByThesisId" parameterType="Long" resultMap="SamThesisResult">
+        <include refid="selectSamThesisVo"/> where t.thesis_id = #{thesisId}
+    </select>
+    <select id="selectByStudentAndYear" resultMap="SamThesisResult">
+        <include refid="selectSamThesisVo"/> where t.student_id = #{studentId} and t.plan_year = #{planYear}
+    </select>
+    <!-- 学位审核取用：该生最近一届论文档案（按届别倒序取一条） -->
+    <select id="selectLatestByStudentId" parameterType="Long" resultMap="SamThesisResult">
+        <include refid="selectSamThesisVo"/> where t.student_id = #{studentId} and t.status = '0'
+        order by t.plan_year desc, t.thesis_id desc limit 1
+    </select>
+    <select id="countByTopicId" parameterType="Long" resultType="int">
+        select count(1) from sam_thesis where topic_id = #{topicId}
+    </select>
+    <!-- 环节进度看板：列名显式驼峰别名（全局未开启下划线转驼峰） -->
+    <select id="statByStage" parameterType="SamThesis" resultType="java.util.HashMap">
+        select t.current_stage as stage, count(1) as total,
+               sum(case when t.stage_status = '1' then 1 else 0 end) as pendingAuditCount,
+               sum(case when t.stage_status = '3' then 1 else 0 end) as rejectedCount,
+               sum(case when t.is_qualified = '1' then 1 else 0 end) as qualifiedCount
+        from sam_thesis t
+        left join sam_student s on t.student_id = s.student_id
+        left join brm_department d on s.dept_id = d.dept_id
+        left join brm_major m on s.major_id = m.major_id
+        left join brm_class c on s.class_id = c.class_id
+        <where>
+            and t.status = '0'
+            <if test="planYear != null and planYear.trim() != ''"> and t.plan_year = #{planYear}</if>
+            <if test="advisor != null and advisor.trim() != ''"> and t.advisor = #{advisor}</if>
+            <if test="deptName != null and deptName.trim() != ''"> and d.dept_name like concat('%', #{deptName}, '%')</if>
+        </where>
+        group by t.current_stage
+        order by t.current_stage asc
+    </select>
+    <select id="statSummary" parameterType="SamThesis" resultType="java.util.HashMap">
+        select count(1) as total,
+               sum(case when t.stage_status = '1' then 1 else 0 end) as pendingAuditCount,
+               sum(case when t.stage_status = '3' then 1 else 0 end) as rejectedCount,
+               sum(case when t.archive_time is not null then 1 else 0 end) as archivedCount,
+               sum(case when t.is_qualified = '1' then 1 else 0 end) as qualifiedCount,
+               sum(case when t.check_pass = '0' then 1 else 0 end) as checkFailedCount,
+               sum(case when t.sample_status = '3' then 1 else 0 end) as sampleFailedCount,
+               round(avg(t.total_score), 2) as avgScore
+        from sam_thesis t
+        left join sam_student s on t.student_id = s.student_id
+        left join brm_department d on s.dept_id = d.dept_id
+        <where>
+            and t.status = '0'
+            <if test="planYear != null and planYear.trim() != ''"> and t.plan_year = #{planYear}</if>
+            <if test="advisor != null and advisor.trim() != ''"> and t.advisor = #{advisor}</if>
+            <if test="deptName != null and deptName.trim() != ''"> and d.dept_name like concat('%', #{deptName}, '%')</if>
+        </where>
+    </select>
+    <insert id="insertSamThesis" parameterType="SamThesis" useGeneratedKeys="true" keyProperty="thesisId">
+        insert into sam_thesis
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="planYear != null and planYear != ''">plan_year,</if>
+            <if test="studentId != null">student_id,</if>
+            <if test="topicId != null">topic_id,</if>
+            <if test="topicName != null">topic_name,</if>
+            <if test="advisor != null">advisor,</if>
+            <if test="advisorName != null">advisor_name,</if>
+            <if test="currentStage != null">current_stage,</if>
+            <if test="stageStatus != null">stage_status,</if>
+            <if test="checkRate != null">check_rate,</if>
+            <if test="checkPass != null">check_pass,</if>
+            <if test="defenseScore != null">defense_score,</if>
+            <if test="totalScore != null">total_score,</if>
+            <if test="gradeLevel != null">grade_level,</if>
+            <if test="isQualified != null">is_qualified,</if>
+            <if test="sampleStatus != null">sample_status,</if>
+            <if test="archiveTime != null">archive_time,</if>
+            <if test="status != null">status,</if>
+            <if test="remark != null">remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="planYear != null and planYear != ''">#{planYear},</if>
+            <if test="studentId != null">#{studentId},</if>
+            <if test="topicId != null">#{topicId},</if>
+            <if test="topicName != null">#{topicName},</if>
+            <if test="advisor != null">#{advisor},</if>
+            <if test="advisorName != null">#{advisorName},</if>
+            <if test="currentStage != null">#{currentStage},</if>
+            <if test="stageStatus != null">#{stageStatus},</if>
+            <if test="checkRate != null">#{checkRate},</if>
+            <if test="checkPass != null">#{checkPass},</if>
+            <if test="defenseScore != null">#{defenseScore},</if>
+            <if test="totalScore != null">#{totalScore},</if>
+            <if test="gradeLevel != null">#{gradeLevel},</if>
+            <if test="isQualified != null">#{isQualified},</if>
+            <if test="sampleStatus != null">#{sampleStatus},</if>
+            <if test="archiveTime != null">#{archiveTime},</if>
+            <if test="status != null">#{status},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+    <update id="updateSamThesis" parameterType="SamThesis">
+        update sam_thesis
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="planYear != null and planYear != ''">plan_year = #{planYear},</if>
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="topicId != null">topic_id = #{topicId},</if>
+            <if test="topicName != null">topic_name = #{topicName},</if>
+            <if test="advisor != null">advisor = #{advisor},</if>
+            <if test="advisorName != null">advisor_name = #{advisorName},</if>
+            <if test="currentStage != null">current_stage = #{currentStage},</if>
+            <if test="stageStatus != null">stage_status = #{stageStatus},</if>
+            <if test="checkRate != null">check_rate = #{checkRate},</if>
+            <if test="checkPass != null">check_pass = #{checkPass},</if>
+            <if test="defenseScore != null">defense_score = #{defenseScore},</if>
+            <if test="totalScore != null">total_score = #{totalScore},</if>
+            <if test="gradeLevel != null">grade_level = #{gradeLevel},</if>
+            <if test="isQualified != null">is_qualified = #{isQualified},</if>
+            <if test="sampleStatus != null">sample_status = #{sampleStatus},</if>
+            <if test="archiveTime != null">archive_time = #{archiveTime},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where thesis_id = #{thesisId}
+    </update>
+    <delete id="deleteSamThesisByThesisId" parameterType="Long">
+        delete from sam_thesis where thesis_id = #{thesisId}
+    </delete>
+    <delete id="deleteSamThesisByThesisIds" parameterType="String">
+        delete from sam_thesis where thesis_id in
+        <foreach item="thesisId" collection="array" open="(" separator="," close=")">#{thesisId}</foreach>
+    </delete>
+</mapper>

@@ -58,3 +58,48 @@ export function rejectTask(taskId, data) {
 export function transferTask(taskId, data) {
   return request({ url: '/oa/workflow/task/transfer/' + taskId, method: 'post', data: data })
 }
+
+// 获取流程图渲染数据（节点/连线/进度）
+export function getProcessDiagram(processInstanceId) {
+  return request({ url: '/oa/workflow/diagram', method: 'get', params: { processInstanceId } })
+}
+
+// 加签（mode：0前加签 1后加签）
+export function addSignTask(taskId, data) {
+  return request({ url: '/oa/workflow/task/addSign/' + taskId, method: 'post', data: data })
+}
+
+// 会签（rule：ALL全部同意 ANY一人同意即定论）
+export function counterSignTask(taskId, data) {
+  return request({ url: '/oa/workflow/task/counterSign/' + taskId, method: 'post', data: data })
+}
+
+// 委托代办
+export function delegateTask(taskId, data) {
+  return request({ url: '/oa/workflow/task/delegate/' + taskId, method: 'post', data: data })
+}
+
+// 收回委托
+export function reclaimDelegateTask(taskId, data) {
+  return request({ url: '/oa/workflow/task/delegate/reclaim/' + taskId, method: 'post', data: data })
+}
+
+// 提交加签/会签意见
+export function submitOpinion(itemId, data) {
+  return request({ url: '/oa/workflow/task/opinion/' + itemId, method: 'post', data: data })
+}
+
+// 我的加签/会签待办
+export function listMyOpinion(query) {
+  return request({ url: '/oa/workflow/task/opinion/my', method: 'get', params: query })
+}
+
+// 协同留痕（按流程实例）
+export function listOpinionByInstance(processInstanceId) {
+  return request({ url: '/oa/workflow/task/opinion/list', method: 'get', params: { processInstanceId } })
+}
+
+// 可选协同办理人
+export function listCoSignUsers() {
+  return request({ url: '/oa/workflow/task/opinion/users', method: 'get' })
+}

@@ -67,7 +67,9 @@ export const constantRoutes = [
       { path: 'evalResult',      component: () => import('@/views/evalResult/index'),      name: 'EvalResult',      meta: { title: '评教结果查询', permission: 'portal:evalResult:list' } },
       { path: 'adjustment',      component: () => import('@/views/adjustment/index'),      name: 'Adjustment',      meta: { title: '调停课申请',   permission: 'portal:adjustment:list' } },
       { path: 'borrow',          component: () => import('@/views/borrow/index'),          name: 'ClassroomBorrow', meta: { title: '教室借用申请', permission: 'portal:borrow:list' } },
-      { path: 'myCredential',    component: () => import('@/views/credential/index'),      name: 'MyCredential',     meta: { title: '我的凭证',     permission: 'portal:credential:list' } }
+      { path: 'myCredential',    component: () => import('@/views/credential/index'),      name: 'MyCredential',     meta: { title: '我的凭证',     permission: 'portal:credential:list' } },
+      // Phase32 毕业论文（设计）全过程：学生选题/提交与教师指导审核共用页面，按角色展示不同页签
+      { path: 'thesis',          component: () => import('@/views/thesis/index'),           name: 'PortalThesis',     meta: { title: '毕业论文',     permission: 'portal:thesis:list' } }
     ]
   },
   // 移动端路由

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamThesisProcessMapper">
+    <resultMap type="SamThesisProcess" id="SamThesisProcessResult">
+        <result property="processId"     column="process_id"     />
+        <result property="thesisId"      column="thesis_id"      />
+        <result property="stage"         column="stage"          />
+        <result property="action"        column="action"         />
+        <result property="title"         column="title"          />
+        <result property="content"       column="content"        />
+        <result property="attachment"    column="attachment"     />
+        <result property="result"        column="result"         />
+        <result property="score"         column="score"          />
+        <result property="opinion"       column="opinion"        />
+        <result property="operator"      column="operator"       />
+        <result property="operatorName"  column="operator_name"  />
+        <result property="operateTime"   column="operate_time"   />
+        <result property="topicName"     column="topic_name"     />
+        <result property="studentName"   column="student_name"   />
+        <result property="studentNo"     column="student_no"     />
+        <result property="remark"        column="remark"         />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+    <sql id="selectSamThesisProcessVo">
+        select p.process_id, p.thesis_id, p.stage, p.action, p.title, p.content, p.attachment, p.result,
+               p.score, p.opinion, p.operator, p.operator_name, p.operate_time, p.remark,
+               p.create_by, p.create_time, p.update_by, p.update_time,
+               t.topic_name, s.student_no, s.student_name
+        from sam_thesis_process p
+        left join sam_thesis t on p.thesis_id = t.thesis_id
+        left join sam_student s on t.student_id = s.student_id
+    </sql>
+    <select id="selectSamThesisProcessList" parameterType="SamThesisProcess" resultMap="SamThesisProcessResult">
+        <include refid="selectSamThesisProcessVo"/>
+        <where>
+            <if test="thesisId != null"> and p.thesis_id = #{thesisId}</if>
+            <if test="stage != null and stage.trim() != ''"> and p.stage = #{stage}</if>
+            <if test="action != null and action.trim() != ''"> and p.action = #{action}</if>
+            <if test="operator != null and operator.trim() != ''"> and p.operator = #{operator}</if>
+        </where>
+        order by p.operate_time desc, p.process_id desc
+    </select>
+    <select id="selectSamThesisProcessByProcessId" parameterType="Long" resultMap="SamThesisProcessResult">
+        <include refid="selectSamThesisProcessVo"/> where p.process_id = #{processId}
+    </select>
+    <!-- 详情页过程轴：按环节与时间正序 -->
+    <select id="selectByThesisId" parameterType="Long" resultMap="SamThesisProcessResult">
+        <include refid="selectSamThesisProcessVo"/> where p.thesis_id = #{thesisId}
+        order by p.stage asc, p.operate_time asc, p.process_id asc
+    </select>
+    <insert id="insertSamThesisProcess" parameterType="SamThesisProcess" useGeneratedKeys="true" keyProperty="processId">
+        insert into sam_thesis_process
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="thesisId != null">thesis_id,</if>
+            <if test="stage != null and stage != ''">stage,</if>
+            <if test="action != null and action != ''">action,</if>
+            <if test="title != null">title,</if>
+            <if test="content != null">content,</if>
+            <if test="attachment != null">attachment,</if>
+            <if test="result != null">result,</if>
+            <if test="score != null">score,</if>
+            <if test="opinion != null">opinion,</if>
+            <if test="operator != null">operator,</if>
+            <if test="operatorName != null">operator_name,</if>
+            <if test="operateTime != null">operate_time,</if>
+            <if test="remark != null">remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="thesisId != null">#{thesisId},</if>
+            <if test="stage != null and stage != ''">#{stage},</if>
+            <if test="action != null and action != ''">#{action},</if>
+            <if test="title != null">#{title},</if>
+            <if test="content != null">#{content},</if>
+            <if test="attachment != null">#{attachment},</if>
+            <if test="result != null">#{result},</if>
+            <if test="score != null">#{score},</if>
+            <if test="opinion != null">#{opinion},</if>
+            <if test="operator != null">#{operator},</if>
+            <if test="operatorName != null">#{operatorName},</if>
+            <if test="operateTime != null">#{operateTime},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+    <update id="updateSamThesisProcess" parameterType="SamThesisProcess">
+        update sam_thesis_process
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="title != null">title = #{title},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="attachment != null">attachment = #{attachment},</if>
+            <if test="result != null">result = #{result},</if>
+            <if test="score != null">score = #{score},</if>
+            <if test="opinion != null">opinion = #{opinion},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where process_id = #{processId}
+    </update>
+    <delete id="deleteByThesisIds">
+        delete from sam_thesis_process where thesis_id in
+        <foreach item="thesisId" collection="thesisIds" open="(" separator="," close=")">#{thesisId}</foreach>
+    </delete>
+</mapper>

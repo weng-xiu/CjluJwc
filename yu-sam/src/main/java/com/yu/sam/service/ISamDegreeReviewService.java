@@ -23,6 +23,15 @@ public interface ISamDegreeReviewService
     public SamDegreeReview autoReview(Long studentId);
 
     /**
+     * 试算学位审核结果（只读、不落库）
+     * 供学生端预审与论文模块查看分项差距使用
+     *
+     * @param studentId 学生ID
+     * @return 审核结果（未持久化）
+     */
+    public SamDegreeReview simulateReview(Long studentId);
+
+    /**
      * 批量自动审核学位资格
      *
      * @param studentIds 学生ID列表
