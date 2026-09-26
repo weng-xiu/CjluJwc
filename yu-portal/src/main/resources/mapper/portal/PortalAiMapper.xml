@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.portal.mapper.PortalAiMapper">
+
+    <!-- 学生档案：学籍 + 专业 + 班级 + 院系 -->
+    <select id="selectStudentProfile" parameterType="java.lang.Long" resultType="java.util.HashMap">
+        select s.student_id as studentId, s.student_no as studentNo, s.student_name as studentName,
+               s.gender as gender, s.major_id as majorId, ifnull(m.major_name, '') as majorName,
+               s.class_id as classId, ifnull(c.class_name, '') as className,
+               s.dept_id as deptId, ifnull(d.dept_name, '') as deptName,
+               s.enrollment_year as enrollmentYear, s.education_level as educationLevel,
+               s.student_status as studentStatus, s.user_id as userId
+        from sam_student s
+        left join brm_major m on m.major_id = s.major_id
+        left join brm_class c on c.class_id = s.class_id
+        left join brm_department d on d.dept_id = s.dept_id
+        where s.student_id = #{studentId}
+    </select>
+
+    <!-- 已发布培养方案：同专业多版时取方案年份最新 -->
+    <select id="selectPublishedPlan" parameterType="java.lang.Long" resultType="java.util.HashMap">
+        select p.plan_id as planId, p.plan_name as planName, p.major_id as majorId,
+               p.total_credits as totalCredits, p.plan_year as planYear,
+               p.education_level as educationLevel, p.version as version
+        from tpm_training_plan p
+        where p.major_id = #{majorId} and p.publish_status = '1' and p.status = '0' and p.del_flag = '0'
+        order by p.plan_year desc, p.plan_id desc
+        limit 1
+    </select>
+
+    <!-- 课程库信息（批量） -->
+    <select id="selectCourseInfoByIds" resultType="java.util.HashMap">
+        select cl.course_id as courseId, cl.course_code as courseCode, cl.course_name as courseName,
+               cl.credit as credit, cl.course_type as courseType, cl.course_category as courseCategory,
+               cl.semester_order as semesterOrder, cl.plan_id as planId, cl.assessment_method as assessmentMethod
+        from tpm_course_library cl
+        where cl.status = '0' and cl.del_flag = '0'
+          and cl.course_id in
+        <foreach item="courseId" collection="courseIds" open="(" separator="," close=")">
+            #{courseId}
+        </foreach>
+    </select>
+
+    <!-- 培养方案学分模块要求 + 该模块课程门数 -->
+    <select id="selectPlanModuleRequire" parameterType="java.lang.Long" resultType="java.util.HashMap">
+        select cs.credit_type as creditType, cs.credit_type_name as creditTypeName,
+               cs.required_credit as requiredCredit, cs.min_credit as minCredit,
+               (select count(1) from tpm_course_library sub
+                 where sub.plan_id = cs.plan_id and sub.course_category = cs.credit_type
+                   and sub.status = '0' and sub.del_flag = '0') as courseCount
+        from tpm_credit_structure cs
+        where cs.plan_id = #{planId} and cs.status = '0' and cs.del_flag = '0'
+        order by cs.struct_id
+    </select>
+
+    <!-- 学生已通过成绩按课程类别折算学分 -->
+    <select id="selectStudentEarnedByCategory" parameterType="java.lang.Long" resultType="java.util.HashMap">
+        select ifnull(cl.course_category, 'UNCATEGORIZED') as creditType,
+               ifnull(sum(cl.credit), 0) as earnedCredit, count(1) as passedCount
+        from aem_grade_record g
+        join tpm_course_library cl on cl.course_id = g.course_id
+        where g.student_id = #{studentId} and g.status = '0' and g.is_pass = '1'
+        group by ifnull(cl.course_category, 'UNCATEGORIZED')
+    </select>
+
+    <!-- 学生成绩总览（仅统计有效成绩记录） -->
+    <select id="selectStudentGradeSummary" parameterType="java.lang.Long" resultType="java.util.HashMap">
+        select count(1) as courseCount,
+               round(avg(g.total_score), 2) as avgScore,
+               round(sum(case when g.grade_point is not null and g.total_score is not null then g.grade_point * ifnull(cl.credit,0) else 0 end)
+                     / nullif(sum(case when g.grade_point is not null and g.total_score is not null then ifnull(cl.credit,0) else 0 end), 0), 2) as gpa,
+               sum(case when g.is_pass = '0' then 1 else 0 end) as failCount,
+               round(sum(case when g.is_pass = '1' then ifnull(cl.credit, 0) else 0 end), 2) as earnedCredit
+        from aem_grade_record g
+        left join tpm_course_library cl on cl.course_id = g.course_id
+        where g.student_id = #{studentId} and g.status = '0'
+    </select>
+
+    <!-- 同专业同年级基准：先按人聚合再取平均，避免成绩条数多的学生拉偏基准；
+         不附加账号状态过滤，以已发生的成绩记录为口径（账号停用不影响历史成绩事实） -->
+    <select id="selectPeerGradeSummary" resultType="java.util.HashMap">
+        select count(1) as peerCount, round(avg(t.avg_score), 2) as peerAvgScore, round(avg(t.gpa), 2) as peerAvgGpa
+        from (
+            select g.student_id, round(avg(g.total_score), 2) as avg_score,
+                   round(sum(case when g.grade_point is not null then g.grade_point * ifnull(cl.credit,0) else 0 end)
+                         / nullif(sum(case when g.grade_point is not null then ifnull(cl.credit,0) else 0 end), 0), 2) as gpa
+            from aem_grade_record g
+            join sam_student s on s.student_id = g.student_id
+            left join tpm_course_library cl on cl.course_id = g.course_id
+            where g.status = '0'
+              and s.major_id = #{majorId}
+              <if test="enrollmentYear != null"> and s.enrollment_year = #{enrollmentYear}</if>
+            group by g.student_id
+        ) t
+    </select>
+
+    <!-- 最近成绩明细 -->
+    <select id="selectRecentGrades" resultType="java.util.HashMap">
+        select g.grade_id as gradeId, g.course_id as courseId, cl.course_name as courseName,
+               cl.course_category as courseCategory, ifnull(cl.credit, 0) as credit,
+               g.total_score as totalScore, g.grade_point as gradePoint, g.grade_level as gradeLevel,
+               g.is_pass as isPass, g.semester_id as semesterId, ifnull(smm.semester_name, '') as semesterName,
+               g.submit_status as submitStatus, g.create_time as createTime
+        from aem_grade_record g
+        left join tpm_course_library cl on cl.course_id = g.course_id
+        left join brm_semester smm on smm.semester_id = g.semester_id
+        where g.student_id = #{studentId} and g.status = '0'
+        order by g.semester_id desc, g.course_id desc
+        limit #{limit}
+    </select>
+
+    <!-- 各类别成绩表现 -->
+    <select id="selectCategoryScoreStat" parameterType="java.lang.Long" resultType="java.util.HashMap">
+        select ifnull(cl.course_category, 'UNCATEGORIZED') as creditType,
+               count(1) as courseCount, round(avg(g.total_score), 2) as avgScore,
+               round(sum(ifnull(cl.credit, 0)), 2) as totalCredit,
+               round(sum(case when g.is_pass = '1' then ifnull(cl.credit, 0) else 0 end), 2) as earnedCredit
+        from aem_grade_record g
+        join tpm_course_library cl on cl.course_id = g.course_id
+        where g.student_id = #{studentId} and g.status = '0'
+        group by ifnull(cl.course_category, 'UNCATEGORIZED')
+        order by avgScore desc
+    </select>
+
+    <!-- 学业预警概况 -->
+    <select id="selectStudentWarningSummary" parameterType="java.lang.Long" resultType="java.util.HashMap">
+        select count(1) as total,
+               sum(case when ifnull(w.is_resolved, '0') = '0' then 1 else 0 end) as unresolved,
+               max(w.warning_level) as maxLevel
+        from sam_warning w
+        where w.student_id = #{studentId}
+    </select>
+
+    <!-- 学业预警明细 -->
+    <select id="selectStudentWarnings" parameterType="java.lang.Long" resultType="java.util.HashMap">
+        select w.warning_id as warningId, w.warning_type as warningType, w.warning_level as warningLevel,
+               w.warning_reason as warningReason, w.warning_date as warningDate,
+               ifnull(w.is_resolved, '0') as isResolved, smm.semester_name as semesterName
+        from sam_warning w
+        left join brm_semester smm on smm.semester_id = w.semester_id
+        where w.student_id = #{studentId}
+        order by w.warning_date desc, w.warning_id desc
+        limit 10
+    </select>
+
+    <!-- 已修读学期数与最近学期 -->
+    <select id="selectStudentSemesterProgress" parameterType="java.lang.Long" resultType="java.util.HashMap">
+        select count(distinct g.semester_id) as studiedSemesters,
+               max(ifnull(smm.semester_order, 0)) as lastSemesterOrder,
+               max(g.semester_id) as lastSemesterId
+        from aem_grade_record g
+        left join brm_semester smm on smm.semester_id = g.semester_id
+        where g.student_id = #{studentId} and g.status = '0'
+    </select>
+
+    <!-- 候选课程评教得分 -->
+    <select id="selectCourseEvalStat" resultType="java.util.HashMap">
+        select e.course_id as courseId, count(1) as evalCount, round(avg(e.total_score), 2) as avgScore
+        from aem_evaluation_result e
+        where e.status = '0' and e.course_id is not null and e.total_score is not null
+          and e.course_id in
+        <foreach item="courseId" collection="courseIds" open="(" separator="," close=")">
+            #{courseId}
+        </foreach>
+        group by e.course_id
+    </select>
+
+    <!-- 全校评教均分基准 -->
+    <select id="selectEvalGlobalAvg" resultType="java.util.HashMap">
+        select round(avg(e.total_score), 2) as globalAvgScore, count(1) as globalCount
+        from aem_evaluation_result e
+        where e.status = '0' and e.course_id is not null and e.total_score is not null
+    </select>
+</mapper>

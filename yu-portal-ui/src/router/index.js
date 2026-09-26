@@ -69,7 +69,11 @@ export const constantRoutes = [
       { path: 'borrow',          component: () => import('@/views/borrow/index'),          name: 'ClassroomBorrow', meta: { title: '教室借用申请', permission: 'portal:borrow:list' } },
       { path: 'myCredential',    component: () => import('@/views/credential/index'),      name: 'MyCredential',     meta: { title: '我的凭证',     permission: 'portal:credential:list' } },
       // Phase32 毕业论文（设计）全过程：学生选题/提交与教师指导审核共用页面，按角色展示不同页签
-      { path: 'thesis',          component: () => import('@/views/thesis/index'),           name: 'PortalThesis',     meta: { title: '毕业论文',     permission: 'portal:thesis:list' } }
+      { path: 'thesis',          component: () => import('@/views/thesis/index'),           name: 'PortalThesis',     meta: { title: '毕业论文',     permission: 'portal:thesis:list' } },
+      // Phase34 AI 应用试点：政策问答对师生开放，选课推荐与学业画像依赖学籍成绩数据，仅学生可见
+      { path: 'aiChat',          component: () => import('@/views/aiChat/index'),          name: 'PortalAiChat',      meta: { title: '智能问答',     permission: 'portal:ai:chat' } },
+      { path: 'aiRecommend',     component: () => import('@/views/aiRecommend/index'),     name: 'PortalAiRecommend', meta: { title: '选课推荐',     permission: 'portal:ai:recommend' } },
+      { path: 'aiProfile',       component: () => import('@/views/aiProfile/index'),       name: 'PortalAiPortrait',  meta: { title: '学业画像',     permission: 'portal:ai:portrait' } }
     ]
   },
   // 移动端路由

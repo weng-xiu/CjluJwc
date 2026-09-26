@@ -17,6 +17,10 @@ export const portalMenuConfig = [
   { permission: 'portal:thesis:list',         path: '/thesis',          title: '毕业论文',      icon: 'el-icon-collection',      group: '学生服务' },
   { permission: 'portal:credential:list',     path: '/myCredential',    title: '我的凭证',     icon: 'el-icon-printer',        group: '学生服务' },
   { permission: 'portal:notice:list',         path: '/notice',          title: '教务通知',     icon: 'el-icon-message-solid',  group: '学生服务' },
+  // Phase34 AI 应用试点（推荐与画像需要学籍成绩数据，仅学生角色分配）
+  { permission: 'portal:ai:chat',             path: '/aiChat',          title: '智能问答',     icon: 'el-icon-chat-dot-round', group: '学生服务' },
+  { permission: 'portal:ai:recommend',        path: '/aiRecommend',     title: '选课推荐',     icon: 'el-icon-magic-stick',    group: '学生服务' },
+  { permission: 'portal:ai:portrait',         path: '/aiProfile',       title: '学业画像',     icon: 'el-icon-data-analysis',  group: '学生服务' },
   // 教师端菜单
   { permission: 'portal:teacherSchedule:list', path: '/teacherSchedule', title: '个人课表',     icon: 'el-icon-date',           group: '教师服务' },
   { permission: 'portal:gradeEntry:list',      path: '/gradeEntry',      title: '成绩录入',     icon: 'el-icon-edit',           group: '教师服务' },
@@ -27,7 +31,9 @@ export const portalMenuConfig = [
   { permission: 'portal:borrow:list',          path: '/borrow',          title: '教室借用申请', icon: 'el-icon-office-building', group: '教师服务' },
   { permission: 'portal:thesis:audit',         path: '/thesis',          title: '毕业论文指导', icon: 'el-icon-collection',      group: '教师服务' },
   { permission: 'portal:credential:list',      path: '/myCredential',    title: '我的凭证',     icon: 'el-icon-printer',        group: '教师服务' },
-  { permission: 'portal:notice:list',          path: '/notice',          title: '教务通知',     icon: 'el-icon-message-solid',  group: '教师服务' }
+  { permission: 'portal:notice:list',          path: '/notice',          title: '教务通知',     icon: 'el-icon-message-solid',  group: '教师服务' },
+  // Phase34 AI 应用试点：教师可用同一政策问答口径答疑
+  { permission: 'portal:ai:chat',              path: '/aiChat',          title: '智能问答',     icon: 'el-icon-chat-dot-round', group: '教师服务' }
 ]
 
 const ALL_PERMISSION = '*:*:*'
