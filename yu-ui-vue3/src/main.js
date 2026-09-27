@@ -26,6 +26,9 @@ import Pagination from '@/components/Pagination'
 import RightToolbar from '@/components/RightToolbar'
 import DictTag from '@/components/DictTag'
 import ParentView from '@/components/ParentView'
+import Editor from '@/components/Editor'
+import TreePanel from '@/components/TreePanel'
+import ExcelImportDialog from '@/components/ExcelImportDialog'
 
 const app = createApp(App)
 
@@ -59,6 +62,9 @@ app.component('Pagination', Pagination)
 app.component('RightToolbar', RightToolbar)
 app.component('SvgIcon', SvgIcon)
 app.component('ParentView', ParentView)
+app.component('Editor', Editor)
+app.component('TreePanel', TreePanel)
+app.component('ExcelImportDialog', ExcelImportDialog)
 
 import './permission' // 路由守卫
 
