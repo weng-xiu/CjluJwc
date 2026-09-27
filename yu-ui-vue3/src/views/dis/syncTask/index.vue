@@ -1,0 +1,120 @@
+<template>
+  <div class="app-container">
+    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
+      <el-form-item label="任务名称" prop="taskName"><el-input v-model="queryParams.taskName" placeholder="请输入任务名称" clearable @keyup.enter="handleQuery"/></el-form-item>
+      <el-form-item label="状态" prop="status"><el-select v-model="queryParams.status" placeholder="请选择状态" clearable><el-option v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.label" :value="dict.value"/></el-select></el-form-item>
+      <el-form-item><el-button type="primary" icon="Search" size="small" @click="handleQuery">搜索</el-button><el-button icon="Refresh" size="small" @click="resetQuery">重置</el-button></el-form-item>
+    </el-form>
+    <el-row :gutter="10" class="mb8">
+      <el-col :span="1.5"><el-button type="primary" plain icon="Plus" size="small" @click="handleAdd" v-hasPermi="['dis:syncTask:add']">新增</el-button></el-col>
+      <el-col :span="1.5"><el-button type="success" plain icon="Edit" size="small" :disabled="single" @click="handleUpdate" v-hasPermi="['dis:syncTask:edit']">修改</el-button></el-col>
+      <el-col :span="1.5"><el-button type="danger" plain icon="Delete" size="small" :disabled="multiple" @click="handleDelete" v-hasPermi="['dis:syncTask:remove']">删除</el-button></el-col>
+      <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['dis:syncTask:export']">导出</el-button></el-col>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
+    </el-row>
+    <el-table v-loading="loading" :data="taskList" @selection-change="handleSelectionChange">
+      <el-table-column type="selection" width="55" align="center" />
+      <el-table-column label="任务名称" align="center" prop="taskName" />
+      <el-table-column label="任务编码" align="center" prop="taskCode" />
+      <el-table-column label="系统ID" align="center" prop="systemId" width="80" />
+      <el-table-column label="接口ID" align="center" prop="interfaceId" width="80" />
+      <el-table-column label="Cron表达式" align="center" prop="cronExpression" />
+      <el-table-column label="同步模式" align="center" prop="syncMode" width="80"><template #default="scope"><span>{{ scope.row.syncMode === '1' ? '增量' : '全量' }}</span></template></el-table-column>
+      <el-table-column label="增量水位" align="center" prop="lastWatermark" width="160"><template #default="scope"><span>{{ parseTime(scope.row.lastWatermark) || '—' }}</span></template></el-table-column>
+      <el-table-column label="上次执行时间" align="center" prop="lastExecuteTime" width="160"><template #default="scope"><span>{{ parseTime(scope.row.lastExecuteTime) }}</span></template></el-table-column>
+      <el-table-column label="执行次数" align="center" prop="executeCount" width="80" />
+      <el-table-column label="失败次数" align="center" prop="failCount" width="80" />
+      <el-table-column label="状态" align="center" prop="status" width="80"><template #default="scope"><dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/></template></el-table-column>
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+        <template #default="scope">
+          <el-button link size="small" icon="VideoPlay" @click="handleExecute(scope.row)" v-hasPermi="['dis:syncTask:execute']">执行</el-button>
+          <el-button link size="small" icon="Refresh" @click="handleRepush(scope.row)" v-hasPermi="['dis:syncTask:repush']">重推</el-button>
+          <el-button link size="small" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['dis:syncTask:edit']">修改</el-button>
+          <el-button link size="small" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['dis:syncTask:remove']">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
+    <el-dialog :title="title" v-model="open" width="550px" append-to-body>
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="任务名称" prop="taskName"><el-input v-model="form.taskName" placeholder="请输入任务名称" /></el-form-item>
+        <el-form-item label="任务编码" prop="taskCode"><el-input v-model="form.taskCode" placeholder="请输入任务编码" /></el-form-item>
+        <el-form-item label="外部系统" prop="systemId"><el-input-number v-model="form.systemId" placeholder="请输入系统ID" :min="1" /></el-form-item>
+        <el-form-item label="接口ID"><el-input-number v-model="form.interfaceId" placeholder="请输入接口ID" :min="1" /></el-form-item>
+        <el-form-item label="Cron表达式"><el-input v-model="form.cronExpression" placeholder="请输入Cron表达式" /></el-form-item>
+        <el-form-item label="同步模式"><el-radio-group v-model="form.syncMode"><el-radio value="0">全量</el-radio><el-radio value="1">增量（水位线）</el-radio></el-radio-group></el-form-item>
+        <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :value="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      </template>
+    </el-dialog>
+    <!-- D1：同步执行结果 -->
+    <el-dialog title="同步执行结果" v-model="execOpen" width="520px" append-to-body>
+      <el-result v-if="execResult" :icon="execResult.success ? 'success' : 'warning'" :title="execResult.success ? '执行成功' : '执行未完全成功'" :sub-title="execResult.message">
+        <template #extra>
+          <el-descriptions :column="2" size="small" border>
+            <el-descriptions-item label="调用成功">{{ execResult.callSuccess ? '是' : '否' }}</el-descriptions-item>
+            <el-descriptions-item label="HTTP状态码">{{ execResult.statusCode }}</el-descriptions-item>
+            <el-descriptions-item label="尝试次数">{{ execResult.attempts }}</el-descriptions-item>
+            <el-descriptions-item label="耗时(ms)">{{ execResult.elapsedMs }}</el-descriptions-item>
+            <el-descriptions-item label="落库行数">{{ execResult.persistedRows }}</el-descriptions-item>
+            <el-descriptions-item label="落库表">{{ (execResult.tables || []).join(', ') || '—' }}</el-descriptions-item>
+            <el-descriptions-item label="批次号" :span="2">{{ execResult.batchNo }}</el-descriptions-item>
+          </el-descriptions>
+          <div v-if="execResult.persistError" style="color:#E6A23C;margin-top:8px">落库异常：{{ execResult.persistError }}</div>
+        </template>
+      </el-result>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="execOpen = false">确 定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+<script>
+import { listSyncTask, getSyncTask, delSyncTask, addSyncTask, updateSyncTask, executeSyncTask, repushSyncTask } from "@/api/dis/syncTask"
+export default {
+  name: "DisSyncTask", dicts: ['sys_normal_disable'],
+  data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, taskList: [], title: "", open: false,
+    execOpen: false, execResult: null,
+    queryParams: { pageNum: 1, pageSize: 10, taskName: null, status: null },
+    form: {}, rules: { taskName: [{ required: true, message: "任务名称不能为空", trigger: "blur" }], systemId: [{ required: true, message: "外部系统不能为空", trigger: "blur" }] } }
+  },
+  created() { this.getList() },
+  methods: {
+    getList() { this.loading = true; listSyncTask(this.queryParams).then(response => { this.taskList = response.rows; this.total = response.total; this.loading = false }) },
+    cancel() { this.open = false; this.reset() },
+    reset() { this.form = { taskId: null, taskName: null, taskCode: null, systemId: null, interfaceId: null, cronExpression: null, syncMode: "0", status: "0" }; this.resetForm("form") },
+    handleQuery() { this.queryParams.pageNum = 1; this.getList() },
+    resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
+    handleSelectionChange(selection) { this.ids = selection.map(item => item.taskId); this.single = selection.length !== 1; this.multiple = !selection.length },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加同步任务" },
+    handleUpdate(row) { this.reset(); const taskId = row.taskId || this.ids; getSyncTask(taskId).then(response => { this.form = response.data; this.open = true; this.title = "修改同步任务" }) },
+    submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.taskId != null) { updateSyncTask(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addSyncTask(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
+    handleDelete(row) { const taskIds = row.taskId || this.ids; this.$modal.confirm('是否确认删除同步任务编号为"' + taskIds + '"的数据项？').then(function() { return delSyncTask(taskIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
+    handleExport() { this.download('dis/task/export', { ...this.queryParams }, `syncTask_${new Date().getTime()}.xlsx`) },
+    /** D1：执行同步任务 */
+    handleExecute(row) {
+      this.$modal.confirm('是否立即执行同步任务「' + row.taskName + '」（调用—解析—落库—留痕）？').then(() => {
+        return executeSyncTask(row.taskId);
+      }).then(response => {
+        this.execResult = response.data;
+        this.execOpen = true;
+        this.getList();
+      }).catch(() => {});
+    },
+    /** D2：人工重推（失败补偿同步） */
+    handleRepush(row) {
+      this.$modal.confirm('是否人工重推同步任务「' + row.taskName + '」？将以批次留痕方式重新执行一次补偿同步。').then(() => {
+        return repushSyncTask(row.taskId);
+      }).then(response => {
+        this.execResult = response.data;
+        this.execOpen = true;
+        this.getList();
+      }).catch(() => {});
+    }
+  }
+}
+</script>
