@@ -65,6 +65,9 @@ temp_*
 /logs/
 /doc/
 /screenshots/
+/.vscode/
+/yu-portal-ui-vue3/node_modules/
+/yu-ui-vue3/node_modules/
 
 ######################################################################
 # Database migration artifacts (contain data, do NOT commit)

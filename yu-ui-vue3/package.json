@@ -1,0 +1,34 @@
+{
+  "name": "yu-ui-vue3",
+  "version": "1.0.0",
+  "description": "长江大学教务处管理端 - Vue3 迁移工程（方案三：并行新目录重建 + 按业务域搬迁，原 yu-ui Vue2 不受影响）",
+  "author": "cjlu",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build:prod": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "2.3.1",
+    "axios": "1.7.7",
+    "element-plus": "2.8.4",
+    "file-saver": "2.0.5",
+    "js-cookie": "3.0.5",
+    "jsencrypt": "3.0.0-rc.1",
+    "nprogress": "0.2.0",
+    "vue": "3.5.12",
+    "vue-router": "4.4.5",
+    "vuex": "4.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "5.1.4",
+    "sass": "1.79.5",
+    "vite": "5.4.9"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
