@@ -65,7 +65,11 @@ export default {
         }
       },
       created() {
-        const types = this.$options.dicts
+        let types = this.$options.dicts
+        // 支持函数式 dicts（如 MasterDetailPanel 依据 columns 动态收集字典类型）
+        if (typeof types === 'function') {
+          types = types.call(this)
+        }
         if (Array.isArray(types) && types.length) {
           types.forEach((type) => {
             this.dict.type[type] = []
