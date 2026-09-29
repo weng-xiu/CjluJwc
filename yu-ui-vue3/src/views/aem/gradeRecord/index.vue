@@ -19,7 +19,9 @@
       <el-col :span="1.5"><el-button type="danger" plain icon="Unlock" size="small" :disabled="multiple" @click="handleUnlock" v-hasPermi="['aem:gradeRecord:unlock']">解锁</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
-    <el-table ref="gradeRecordTable" v-loading="loading" :data="gradeRecordList" @selection-change="handleSelectionChange" :row-key="getRowKey" @expand-change="handleExpandChange">
+    <!-- U3 状态反馈接入：首屏骨架占位，检索后空结果给统一空态引导 -->
+    <app-skeleton :loading="loading && !gradeRecordList.length" :rows="8">
+      <el-table ref="gradeRecordTable" v-loading="loading" :data="gradeRecordList" @selection-change="handleSelectionChange" :row-key="getRowKey" @expand-change="handleExpandChange">
       <el-table-column type="expand">
         <template #default="props">
           <master-detail-panel
@@ -58,6 +60,8 @@
         </template>
       </el-table-column>
     </el-table>
+      <app-empty v-if="!loading && !gradeRecordList.length" description="暂无成绩记录，可调整查询条件或通过「导入」批量录入成绩" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" v-model="open" width="650px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">

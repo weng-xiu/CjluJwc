@@ -35,6 +35,8 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['tpm:enroll:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <!-- U3 状态反馈接入：首屏骨架占位，检索后空结果给统一空态引导 -->
+    <app-skeleton :loading="loading && !enrollList.length" :rows="6">
     <el-table v-loading="loading" :data="enrollList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学生" align="center" prop="studentName" width="160">
@@ -67,6 +69,8 @@
         </template>
       </el-table-column>
     </el-table>
+      <app-empty v-if="!loading && !enrollList.length" description="暂无选课名单，可调整查询条件，或在选课轮次中执行抽签生成名单" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增/修改对话框 -->

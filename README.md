@@ -51,12 +51,14 @@
 | `yu-dis` | 数据对接与共享：外部系统接口、同步任务、交换日志 |
 | `yu-portal` | 师生互动服务门户后端（含门户移动端接口） |
 | `yu-oa` | 办公自动化：Flowable 工作流、公文、会议、通知公告、日程 |
-| `yu-ui` | 管理端前端（Vue 2） |
-| `yu-portal-ui` | 门户端前端（Vue 2，含移动端 H5） |
+| `yu-ui-vue3` | 管理端前端（**Vue 3，日常开发入口**） |
+| `yu-portal-ui-vue3` | 门户端前端（**Vue 3，日常开发入口**，含移动端 H5） |
+| `yu-ui` | 管理端前端（Vue 2，**已归档停用**，源码保留作回退基线） |
+| `yu-portal-ui` | 门户端前端（Vue 2，**已归档停用**，源码保留作回退基线） |
 
 ## 核心业务功能
 
-### 后台管理端（yu-ui）
+### 后台管理端（yu-ui-vue3）
 
 | 领域 | 功能 |
 |---|---|
@@ -68,7 +70,7 @@
 | 数据对接与共享 | 外部系统登记、接口配置、同步任务、数据交换日志 |
 | 系统管理 | 用户（含教师/学生账号批量同步）、角色、部门、岗位、字典、菜单、参数、日志、定时任务、代码生成、缓存/服务器监控 |
 
-### 师生互动服务门户（yu-portal-ui，端口 81）
+### 师生互动服务门户（yu-portal-ui-vue3，端口 81）
 
 | 角色 | 功能 |
 |---|---|
@@ -84,7 +86,7 @@
 | Maven | 3.8+ | 已配置阿里云镜像仓库 |
 | MySQL | 8.x | 库名注意：配置文件默认 `yu-CjluJwc`，本机实际为全小写 `yu-cjlujwc`（详见下文） |
 | Redis | 5.x+ | 默认 `127.0.0.1:6379` 无密码；仓库 `bin/redis/` 内置 Windows 版可直接启动 |
-| Node.js | **16 LTS（推荐）** | `package.json` 声明 `>=8.9`，但 @vue/cli 4 / webpack 4 在 Node 17+ 会报 `ERR_OSSL_EVP_UNSUPPORTED`，需设置 `NODE_OPTIONS=--openssl-legacy-provider` 或改用 Node 16 |
+| Node.js | **18+（推荐）** | Vue3 工程（`yu-ui-vue3`/`yu-portal-ui-vue3`，Vite）需 Node 18+；仅当回退构建已归档的 Vue2 工程（@vue/cli 4 / webpack 4）时才需 Node 16 或 `NODE_OPTIONS=--openssl-legacy-provider` |
 | npm | 8+ | 两个前端工程各自独立安装依赖 |
 
 ## 端口说明
@@ -94,8 +96,8 @@
 | 后端 yu-admin | 8080 | `http://localhost:8080`，管理端与门户端共用同一后端 |
 | Swagger 接口文档 | 8080 | `http://localhost:8080/swagger-ui.html` |
 | Druid 监控控制台 | 8080 | `http://localhost:8080/druid`（账号 `ruoyi` / `123456`） |
-| 管理端前端 yu-ui | 80 | `http://localhost`（被占用时可设 `port` 环境变量） |
-| 门户端前端 yu-portal-ui | 81 | `http://localhost:81`，移动端入口 `http://localhost:81/mobile` |
+| 管理端前端 yu-ui-vue3 | 82 | `http://localhost:82`（Vue3 日常入口；原 Vue2 `yu-ui` 80 端口已归档停用） |
+| 门户端前端 yu-portal-ui-vue3 | 81 | `http://localhost:81`，移动端入口 `http://localhost:81/mobile` |
 | MySQL | 3306 | — |
 | Redis | 6379 | — |
 
@@ -209,35 +211,37 @@ ry.bat        # 菜单式：启动/停止/重启/状态（需在 jar 所在目�
 
 两个前端工程独立启动，默认将 `/dev-api` 前缀请求代理至 `http://localhost:8080`，**请先启动后端**。
 
+> ✅ **日常开发入口为 Vue3 工程**（`yu-ui-vue3` / `yu-portal-ui-vue3`，Vite 启动、无 OpenSSL 兼容问题）。原 Vue2 工程 `yu-ui`、`yu-portal-ui` 已**归档停用**（仅冻结标注，源码完整保留作回退基线，见各自 README），不再作为新功能开发入口。
+
 ```bash
-# 管理端（默认端口 80，标题：长江大学教务处）
-cd yu-ui
+# 管理端（Vue3，默认端口 82，标题：长江大学教务处）
+cd yu-ui-vue3
 npm install
 npm run dev
 
-# 门户端（默认端口 81，标题：师生互动服务门户）
-cd yu-portal-ui
+# 门户端（Vue3，默认端口 81，标题：师生互动服务门户）
+cd yu-portal-ui-vue3
 npm install
 npm run dev
 ```
 
-- 端口被占用时：`$env:port=8081; npm run dev`，或修改对应 `vue.config.js` 中 `port`。
-- Node 17+ 报 OpenSSL 错误时：`$env:NODE_OPTIONS="--openssl-legacy-provider"`。
+- 端口被占用时：修改对应 `vite.config.js` 中 `server.port`。
 
 ### 6. 登录与默认账号
 
 | 入口 | 地址 | 默认账号 |
 |---|---|---|
-| 管理端 | `http://localhost` | `admin` / `admin123` |
-| 门户端 | `http://localhost:81` | `admin` / `admin123` |
+| 管理端（Vue3） | `http://localhost:82` | `admin` / `admin123` |
+| 门户端（Vue3） | `http://localhost:81` | `admin` / `admin123` |
 
 > 登录页已默认填充上述凭证（含记住密码）。连续输错密码 5 次会锁定 10 分钟（锁定计数存于 Redis，误锁时可清除对应 Redis 键）。
 
 ### 7. 前端构建（生产）
 
 ```bash
-cd yu-ui          && npm run build:prod    # 产物 yu-ui/dist
-cd yu-portal-ui   && npm run build:prod    # 产物 yu-portal-ui/dist
+cd yu-ui-vue3         && npm run build:prod    # 产物 yu-ui-vue3/dist（日常入口）
+cd yu-portal-ui-vue3  && npm run build:prod    # 产物 yu-portal-ui-vue3/dist（日常入口）
+# 已归档 Vue2 工程（yu-ui / yu-portal-ui）仅作回退基线，一般无需构建
 ```
 
 ## 常见问题排查
@@ -269,8 +273,10 @@ CjluJwc/
 ├── yu-dis/            # 数据对接与共享
 ├── yu-portal/         # 门户后端（含移动端接口）
 ├── yu-oa/             # 办公自动化（Flowable 工作流）
-├── yu-ui/             # 管理端前端（端口 80）
-├── yu-portal-ui/      # 门户端前端（端口 81，/mobile 为移动端）
+├── yu-ui-vue3/        # 管理端前端 Vue3（端口 82，日常入口）
+├── yu-portal-ui-vue3/ # 门户端前端 Vue3（端口 81，/mobile 为移动端，日常入口）
+├── yu-ui/             # 管理端前端 Vue2（已归档停用，源码保留作回退基线）
+├── yu-portal-ui/      # 门户端前端 Vue2（已归档停用，源码保留作回退基线）
 ├── sql/               # 数据库脚本（基础建库、模块脚本、phase* 增量升级、备份）
 ├── bin/               # 运维脚本与内置 Redis（redis/、db-export/import.ps1、启动脚本）
 ├── build-temp/        # Maven 构建输出目录（各模块 jar）

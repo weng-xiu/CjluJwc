@@ -10,10 +10,10 @@ Start-Process -FilePath $java `
   -RedirectStandardOutput "$root\output\backend-out.log" `
   -RedirectStandardError "$root\output\backend-err.log"
 
-# Frontend yu-ui dev server (port 80)
-Start-Process -FilePath "node" `
-  -ArgumentList "$root\yu-ui\node_modules\@vue\cli-service\bin\vue-cli-service.js", "dev" `
-  -WorkingDirectory "$root\yu-ui" -WindowStyle Hidden `
+# Frontend yu-ui-vue3 dev server (port 82; U6: Vue2 yu-ui archived, entry switched to Vue3)
+Start-Process -FilePath "cmd.exe" `
+  -ArgumentList '/c', 'npm run dev' `
+  -WorkingDirectory "$root\yu-ui-vue3" -WindowStyle Hidden `
   -RedirectStandardOutput "$root\output\frontend-out.log" `
   -RedirectStandardError "$root\output\frontend-err.log"
 

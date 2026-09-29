@@ -16,6 +16,14 @@ function applyDark(dark) {
   document.documentElement.classList.toggle('dark', dark)
 }
 
+/**
+ * 主题变更全局通知（U4 图表联动挂点）：utils/chartTheme.js 监听该事件
+ * 对已注册的 echarts 实例做主题重建；window 派发无订阅者时为空操作，不影响本工具。
+ */
+export function notifyThemeChanged() {
+  window.dispatchEvent(new CustomEvent('app-theme-change'))
+}
+
 /** 应用启动时按已存偏好初始化（main.js mount 前调用，避免首屏闪白）。 */
 export function initDarkMode() {
   applyDark(isDarkEnabled())
@@ -26,5 +34,6 @@ export function toggleDarkMode(force) {
   const dark = typeof force === 'boolean' ? force : !isDarkEnabled()
   localStorage.setItem(STORAGE_KEY, String(dark))
   applyDark(dark)
+  notifyThemeChanged()
   return dark
 }

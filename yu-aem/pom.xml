@@ -35,6 +35,20 @@
             <artifactId>yu-oa</artifactId>
         </dependency>
 
+        <!-- 单元测试（JUnit5 + Mockito + MockMvc，Q1 第四批接口层测试）-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- MockMvc standalone 需 DispatcherServlet：webmvc 仅测试期使用（运行期由 yu-admin 聚合提供）-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>

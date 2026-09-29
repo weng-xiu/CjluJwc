@@ -13,6 +13,8 @@ import '@/assets/styles/index.scss'
 import '@/assets/styles/ruoyi.scss'
 import '@/assets/icons' // 构建 svg 雪碧图
 import { initDarkMode } from '@/utils/theme'
+import { applyThemeColor, getStoredThemeColor } from '@/utils/uiTheme'
+import { setupChartTheme } from '@/utils/chartTheme'
 
 import App from './App.vue'
 import store from './store'
@@ -83,4 +85,6 @@ app.component('AppBatchProgress', AppBatchProgress)
 import './permission' // 路由守卫
 
 initDarkMode() // U1 按已存偏好初始化暗色，挂载前执行避免首屏闪白
+applyThemeColor(getStoredThemeColor(), false) // U1 主题色：先应用本地偏好（机构值登录后对齐）
+setupChartTheme() // U4 echarts 随暗色/主题色联动
 app.mount('#app')

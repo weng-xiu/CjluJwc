@@ -6,6 +6,7 @@ import 'nprogress/nprogress.css'
 import { getToken } from '@/utils/auth'
 import { isPathMatch } from '@/utils/validate'
 import { isRelogin } from '@/utils/request'
+import { syncThemeColorFromConfig } from '@/utils/uiTheme'
 
 NProgress.configure({ showSpinner: false })
 
@@ -34,6 +35,7 @@ router.beforeEach((to, from, next) => {
         isRelogin.show = true
         store.dispatch('GetInfo').then(() => {
           isRelogin.show = false
+          syncThemeColorFromConfig() // U1 登录后对齐机构主题色（sys.ui.themeColor，静默失败不阻塞）
           store.dispatch('GenerateRoutes').then(accessRoutes => {
             // Vue Router 4：逐条 addRoute（无 addRoutes）
             accessRoutes.forEach(route => {

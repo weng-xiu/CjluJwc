@@ -1,6 +1,6 @@
 # CjluJwc CI 回归门禁（Q2）
 # 两阶段策略：先 install -DskipTests 安装上游模块，再仅跑受控模块测试，
-# 避免 -am 连带执行无关模块存量用例。受控模块：yu-tpm（排课/抽签/冲突/规则 + MockMvc 接口层）、yu-sam（学位/毕业审核）。
+# 避免 -am 连带执行无关模块存量用例。受控模块：yu-tpm（排课/抽签/冲突/规则 + MockMvc 接口层）、yu-sam（学位/毕业审核）、yu-aem（成绩记录接口层）。
 name: CI
 
 on:
@@ -22,13 +22,16 @@ jobs:
           cache: maven
 
       - name: Install upstream modules (skip tests)
-        run: mvn -B -pl yu-tpm,yu-sam -am install -DskipTests
+        run: mvn -B -pl yu-tpm,yu-sam,yu-aem -am install -DskipTests
 
       - name: Run yu-tpm tests (schedule / selection / MockMvc)
         run: mvn -B -o -pl yu-tpm test
 
       - name: Run yu-sam tests (degree / graduation review)
         run: mvn -B -o -pl yu-sam test
+
+      - name: Run yu-aem tests (grade record MockMvc contract)
+        run: mvn -B -o -pl yu-aem test
 
       - name: Upload surefire reports on failure
         if: failure()
