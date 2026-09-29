@@ -106,8 +106,9 @@ spring:
 token:
   # 令牌自定义标识
   header: Authorization
-  # 令牌密钥
-  secret: abcdefghijklmnopqrstuvwxyz
+  # 令牌密钥（Q4 安全加固：改为环境变量注入，禁止明文入库；
+  # 未设置时 TokenService 启动会生成一次性随机密钥并告警，生产/多实例务必设置 TOKEN_SECRET）
+  secret: ${TOKEN_SECRET:}
   # 令牌有效期（默认30分钟）
   expireTime: 30
 

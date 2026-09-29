@@ -1,0 +1,56 @@
+# CjluJwc CI 回归门禁（Q2）
+# 两阶段策略：先 install -DskipTests 安装上游模块，再仅跑受控模块测试，
+# 避免 -am 连带执行无关模块存量用例。受控模块：yu-tpm（排课/抽签/冲突/规则 + MockMvc 接口层）、yu-sam（学位/毕业审核）。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Install upstream modules (skip tests)
+        run: mvn -B -pl yu-tpm,yu-sam -am install -DskipTests
+
+      - name: Run yu-tpm tests (schedule / selection / MockMvc)
+        run: mvn -B -o -pl yu-tpm test
+
+      - name: Run yu-sam tests (degree / graduation review)
+        run: mvn -B -o -pl yu-sam test
+
+      - name: Upload surefire reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: build-temp/*/surefire-reports/
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: npm
+          cache-dependency-path: yu-ui-vue3/package-lock.json
+
+      - name: Build yu-ui-vue3 (prod)
+        working-directory: yu-ui-vue3
+        run: |
+          npm install
+          npm run build:prod

@@ -47,9 +47,9 @@ spring:
                 # 设置白名单，不填则允许所有访问
                 allow:
                 url-pattern: /druid/*
-                # 控制台管理用户名和密码
-                login-username: ruoyi
-                login-password: 123456
+                # 控制台管理用户名和密码（Q4 安全加固：支持环境变量覆盖，生产请注入强口令或关闭 statViewServlet）
+                login-username: ${DRUID_LOGIN_USERNAME:ruoyi}
+                login-password: ${DRUID_LOGIN_PASSWORD:123456}
             filter:
                 stat:
                     enabled: true

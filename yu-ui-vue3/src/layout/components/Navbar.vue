@@ -5,6 +5,11 @@
 
     <div class="right-menu">
       <template v-if="device !== 'mobile'">
+        <el-tooltip :content="isDark ? '切换亮色' : '切换暗色'" effect="dark" placement="bottom">
+          <div class="right-menu-item hover-effect theme-toggle" @click="toggleTheme">
+            <el-icon><Sunny v-if="isDark" /><Moon v-else /></el-icon>
+          </div>
+        </el-tooltip>
         <el-tooltip content="布局设置" effect="dark" placement="bottom">
           <div class="right-menu-item hover-effect setting-entry" @click="$emit('setLayout')">
             <el-icon><Setting /></el-icon>
@@ -42,15 +47,17 @@
 import { mapState } from 'vuex'
 import Breadcrumb from '@/components/Breadcrumb'
 import Hamburger from '@/components/Hamburger'
-import { Setting, CaretBottom } from '@element-plus/icons-vue'
+import { Setting, CaretBottom, Sunny, Moon } from '@element-plus/icons-vue'
+import { isDarkEnabled, toggleDarkMode } from '@/utils/theme'
 
 export default {
   name: 'Navbar',
-  components: { Breadcrumb, Hamburger, Setting, CaretBottom },
+  components: { Breadcrumb, Hamburger, Setting, CaretBottom, Sunny, Moon },
   emits: ['setLayout'],
   data() {
     return {
-      setting: true
+      setting: true,
+      isDark: isDarkEnabled()
     }
   },
   computed: {
@@ -68,6 +75,9 @@ export default {
   methods: {
     toggleSideBar() {
       this.$store.dispatch('app/toggleSideBar')
+    },
+    toggleTheme() {
+      this.isDark = toggleDarkMode()
     },
     lockScreen() {
       const currentPath = this.$route.fullPath

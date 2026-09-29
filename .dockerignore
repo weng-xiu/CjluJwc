@@ -1,0 +1,21 @@
+# 构建后端镜像时排除的目录/文件（避免上下文膨胀与宿主机产物污染）
+.git
+.github
+.vscode
+.mybatis
+build-temp
+logs
+output
+screenshots
+doc
+软件设计文档
+node_modules
+yu-ui
+yu-ui-vue3/node_modules
+yu-ui-vue3/dist
+yu-portal-ui
+yu-portal-ui-vue3/node_modules
+yu-portal-ui-vue3/dist
+.env
+*.md
+sql/备份/*.bak

@@ -234,4 +234,24 @@ export default {
   font-size: 12px;
   letter-spacing: 1px;
 }
+
+/* U1 暗色模式：登录页品牌渐变与卡片随主题切换（令牌化，避免硬编码白底错位） */
+html.dark {
+  .login {
+    background: linear-gradient(135deg, #0b1a26 0%, #0d2838 55%, #103a52 100%);
+  }
+  .login-card {
+    background: var(--dt-bg-container);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  }
+  .login-header .school-name .name-cn {
+    color: var(--dt-color-primary);
+  }
+  .login-header .school-name .name-en {
+    color: var(--dt-text-secondary);
+  }
+  .login-header .auth-title {
+    color: var(--dt-text-regular);
+  }
+}
 </style>

@@ -72,3 +72,8 @@ temp_*
 ######################################################################
 # Database migration artifacts (contain data, do NOT commit)
 bin/db-backup/
+
+######################################################################
+# 容器化/CI 本地密钥（禁止入库，仅提交 .env.example）
+.env
+!/.env.example

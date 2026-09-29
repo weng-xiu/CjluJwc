@@ -1,0 +1,130 @@
+/**
+ * U1 设计令牌（Design Token）—— 长江大学教务管理系统 · 管理端 yu-ui-vue3
+ *
+ * 约定：
+ * - 全站颜色/间距/字号/圆角/阴影一律引用本文件令牌（--dt-* 变量），业务页不得硬编码色值；
+ * - --dt-* 与 Element Plus 运行时变量（--el-*）成对映射，暗色模式仅需在 html.dark 下重映射，
+ *   Element Plus 组件（表格/卡片/弹窗等）经 element-plus 官方 dark css-vars 自动换肤；
+ * - 布局自有样式（navbar/卡片等硬编码白底）在暗色段集中覆盖，保证一键切换无样式错位。
+ *
+ * 本文件为新增令牌层，不修改 variables.scss / element-theme.scss / ruoyi.scss（源码保护红线）。
+ */
+
+:root {
+  /* ---------- 品牌色（长江大学主色，与 element-theme.scss 保持一致） ---------- */
+  --dt-color-primary: #007ab8;
+  --dt-color-success: #13ce66;
+  --dt-color-warning: #ffba00;
+  --dt-color-danger: #ff4949;
+
+  /* ---------- 文本 ---------- */
+  --dt-text-primary: #303133;
+  --dt-text-regular: #606266;
+  --dt-text-secondary: #909399;
+  --dt-text-placeholder: #a8abb2;
+
+  /* ---------- 边框 / 填充 ---------- */
+  --dt-border-color: #dcdfe6;
+  --dt-border-color-light: #e4e7ed;
+  --dt-fill-light: #f5f7fa;
+  --dt-bg-page: #f0f2f5;         /* 内容区底色 */
+  --dt-bg-container: #ffffff;    /* 卡片/面板表面 */
+
+  /* ---------- 阴影 ---------- */
+  --dt-shadow-light: 0 1px 4px rgba(0, 21, 41, 0.08);
+  --dt-shadow-medium: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
+
+  /* ---------- 间距梯度 ---------- */
+  --dt-spacing-xs: 4px;
+  --dt-spacing-sm: 8px;
+  --dt-spacing-md: 16px;
+  --dt-spacing-lg: 24px;
+  --dt-spacing-xl: 32px;
+  --dt-page-padding: 20px;       /* .app-container 内边距 */
+
+  /* ---------- 字号 ---------- */
+  --dt-font-size-xs: 12px;
+  --dt-font-size-sm: 13px;
+  --dt-font-size-base: 14px;
+  --dt-font-size-lg: 16px;
+  --dt-font-size-xl: 20px;
+
+  /* ---------- 圆角 ---------- */
+  --dt-radius-sm: 2px;
+  --dt-radius-base: 4px;
+  --dt-radius-lg: 8px;
+
+  /* ---------- 布局尺寸 ---------- */
+  --dt-navbar-height: 50px;
+  --dt-sidebar-width: 200px;
+}
+
+/* =====================================================================
+ * 暗色模式：html.dark
+ * Element Plus 官方 dark css-vars 负责组件换肤；此处负责：
+ * 1) --dt-* 令牌重映射；2) 项目自有硬编码亮色表面集中覆盖。
+ * ===================================================================== */
+html.dark {
+  /* ---------- 文本 ---------- */
+  --dt-text-primary: #e5eaf3;
+  --dt-text-regular: #cfd3dc;
+  --dt-text-secondary: #a3a6ad;
+  --dt-text-placeholder: #8d9095;
+
+  /* ---------- 边框 / 填充 ---------- */
+  --dt-border-color: #414243;
+  --dt-border-color-light: #363637;
+  --dt-fill-light: #262727;
+  --dt-bg-page: #141414;
+  --dt-bg-container: #1d1e1f;
+
+  /* ---------- 阴影（暗色下加深） ---------- */
+  --dt-shadow-light: 0 1px 4px rgba(0, 0, 0, 0.4);
+  --dt-shadow-medium: 0 2px 12px 0 rgba(0, 0, 0, 0.5);
+
+  /* ---------- 布局自有表面 ---------- */
+  body {
+    background-color: var(--dt-bg-page);
+    color: var(--dt-text-primary);
+  }
+
+  .navbar {
+    background: var(--dt-bg-container);
+    box-shadow: var(--dt-shadow-light);
+
+    .hamburger-container:hover,
+    .right-menu .right-menu-item.hover-effect:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .right-menu .right-menu-item {
+      color: var(--dt-text-regular);
+    }
+
+    .avatar-wrapper .user-name {
+      color: var(--dt-text-secondary);
+    }
+  }
+
+  /* 内容区卡片/表格容器（ruoyi.scss 中硬编码 #fff 的高频表面） */
+  .app-main section,
+  .app-container .el-card,
+  .pagination-container {
+    background-color: var(--dt-bg-container);
+  }
+
+  .app-container {
+    color: var(--dt-text-primary);
+  }
+
+  /* 搜索区显隐背景 */
+  .el-form-item__label {
+    color: var(--dt-text-regular);
+  }
+
+  /* aside 说明块（index.scss 硬编码浅底） */
+  aside {
+    background: var(--dt-fill-light);
+    color: var(--dt-text-regular);
+  }
+}

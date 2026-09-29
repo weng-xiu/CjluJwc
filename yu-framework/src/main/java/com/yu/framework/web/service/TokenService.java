@@ -1,5 +1,6 @@
 package com.yu.framework.web.service;
 
+import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import jakarta.annotation.PostConstruct;
 import com.yu.common.constant.CacheConstants;
 import com.yu.common.constant.Constants;
 import com.yu.common.core.domain.model.LoginUser;
@@ -54,6 +56,31 @@ public class TokenService
 
     @Autowired
     private RedisCache redisCache;
+
+    /**
+     * Q4 安全加固：令牌密钥启动校验。
+     * 密钥不再明文写入配置文件（application.yml 的 token.secret 改为 ${TOKEN_SECRET:} 环境变量注入）。
+     * 若未注入则生成一次性强随机密钥，保证本地/单机可运行；但重启后旧 token 失效、多实例无法互验，
+     * 因此生产与多实例部署必须显式设置 TOKEN_SECRET 环境变量。
+     */
+    @PostConstruct
+    public void init()
+    {
+        if (StringUtils.isEmpty(secret))
+        {
+            secret = generateRandomSecret();
+            log.warn("未检测到 token.secret（TOKEN_SECRET 环境变量），已生成一次性随机密钥用于本地运行。"
+                    + "生产/多实例部署请务必设置 TOKEN_SECRET，否则重启将使全部令牌失效。");
+        }
+    }
+
+    /** 生成 64 字节（HS512 建议 >= 64 字节）安全随机密钥，Base64 编码。 */
+    private String generateRandomSecret()
+    {
+        byte[] bytes = new byte[64];
+        new SecureRandom().nextBytes(bytes);
+        return java.util.Base64.getEncoder().encodeToString(bytes);
+    }
 
     /**
      * 获取用户身份信息
