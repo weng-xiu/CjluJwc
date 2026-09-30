@@ -49,6 +49,8 @@
           <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
         </el-row>
 
+        <!-- U3 状态反馈接入：首屏骨架占位，检索后空结果给统一空态引导 -->
+        <app-skeleton :loading="loading && !userList?.length" :rows="6">
         <el-table v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="50" align="center" />
           <el-table-column label="用户编号" align="center" key="userId" prop="userId" v-if="columns.userId.visible" />
@@ -101,6 +103,8 @@
             </template>
           </el-table-column>
         </el-table>
+          <app-empty v-if="!loading && !userList?.length" description="暂无用户数据，可调整查询条件、切换页签，或点击「新增」创建用户" />
+        </app-skeleton>
         <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
       </div>
     </div>

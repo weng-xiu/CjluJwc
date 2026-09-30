@@ -36,6 +36,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <!-- U3 状态反馈接入：首屏骨架占位，检索后空结果给统一空态引导 -->
+    <app-skeleton :loading="loading && !noticeList.length" :rows="6">
     <el-table v-loading="loading" :data="noticeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="公告ID" align="center" prop="noticeId" width="80" />
@@ -82,6 +84,8 @@
         </template>
       </el-table-column>
     </el-table>
+      <app-empty v-if="!loading && !noticeList.length" description="暂无公告数据，可调整查询条件或点击「新增」发布公告" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
