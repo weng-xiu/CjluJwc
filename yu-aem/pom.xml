@@ -11,6 +11,11 @@
 
     <artifactId>yu-aem</artifactId>
 
+    <properties>
+        <!-- JaCoCo 行覆盖率防回归棘轮（当前实测 ~2.0%，下限保守取 0.01） -->
+        <jacoco.line.minimum>0.01</jacoco.line.minimum>
+    </properties>
+
     <description>
         考核与评价管理模块
     </description>

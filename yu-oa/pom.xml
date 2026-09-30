@@ -11,6 +11,11 @@
 
     <artifactId>yu-oa</artifactId>
 
+    <properties>
+        <!-- JaCoCo 行覆盖率防回归棘轮（当前实测 ~8.0%，下限保守取 0.07） -->
+        <jacoco.line.minimum>0.07</jacoco.line.minimum>
+    </properties>
+
     <description>
         办公自动化模块
     </description>

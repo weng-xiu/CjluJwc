@@ -1,6 +1,7 @@
-# CjluJwc CI 回归门禁（Q2）
+# CjluJwc CI 回归门禁（Q2 + Q1 覆盖率棘轮）
 # 两阶段策略：先 install -DskipTests 安装上游模块，再仅跑受控模块测试，
-# 避免 -am 连带执行无关模块存量用例。受控模块：yu-tpm（排课/抽签/冲突/规则 + MockMvc 接口层）、yu-sam（学位/毕业审核）、yu-aem（成绩记录接口层）、yu-oa（工作流接口层）。
+# 避免 -am 连带执行无关模块存量用例。受控模块：yu-tpm（排课/抽签/冲突/规则 + MockMvc 接口层）、yu-sam（学位/毕业审核）、yu-aem（成绩记录接口层）、yu-oa（工作流接口层）、yu-portal（门户成绩/选课/课表/预警接口层）、yu-admin（系统管理用户/公告接口层）。
+# 各受控模块 test 阶段绑定 jacoco prepare-agent/report/check：低于行覆盖率下限（防回归棘轮，见各模块 pom 的 jacoco.line.minimum）即拦截回归。
 name: CI
 
 on:
@@ -22,7 +23,7 @@ jobs:
           cache: maven
 
       - name: Install upstream modules (skip tests)
-        run: mvn -B -pl yu-tpm,yu-sam,yu-aem,yu-oa -am install -DskipTests
+        run: mvn -B -pl yu-tpm,yu-sam,yu-aem,yu-oa,yu-portal,yu-admin -am install -DskipTests
 
       - name: Run yu-tpm tests (schedule / selection / MockMvc)
         run: mvn -B -o -pl yu-tpm test
@@ -36,12 +37,25 @@ jobs:
       - name: Run yu-oa tests (workflow MockMvc contract)
         run: mvn -B -o -pl yu-oa test
 
+      - name: Run yu-portal tests (portal grade/selection/schedule/warning MockMvc contract)
+        run: mvn -B -o -pl yu-portal test
+
+      - name: Run yu-admin tests (system user/notice MockMvc contract)
+        run: mvn -B -o -pl yu-admin test
+
       - name: Upload surefire reports on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: surefire-reports
           path: build-temp/*/surefire-reports/
+
+      - name: Upload JaCoCo coverage reports (baseline tracking)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage
+          path: build-temp/*/site/jacoco/
 
   frontend-build:
     runs-on: ubuntu-latest

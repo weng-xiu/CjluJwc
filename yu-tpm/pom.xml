@@ -11,6 +11,11 @@
 
     <artifactId>yu-tpm</artifactId>
 
+    <properties>
+        <!-- JaCoCo 行覆盖率防回归棘轮（当前实测 ~31.6%，下限保守取 0.28） -->
+        <jacoco.line.minimum>0.28</jacoco.line.minimum>
+    </properties>
+
     <description>
         培养过程管理模块
     </description>

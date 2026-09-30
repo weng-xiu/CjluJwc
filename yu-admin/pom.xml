@@ -11,6 +11,11 @@
     <packaging>jar</packaging>
     <artifactId>yu-admin</artifactId>
 
+    <properties>
+        <!-- JaCoCo 行覆盖率防回归棘轮（仅统计 yu-admin 自有 com.yu.web 代码，当前实测 ~7.9%，下限保守取 0.06） -->
+        <jacoco.line.minimum>0.06</jacoco.line.minimum>
+    </properties>
+
     <description>
         web服务入口
     </description>
@@ -94,6 +99,13 @@
         <dependency>
             <groupId>com.yu</groupId>
             <artifactId>yu-oa</artifactId>
+        </dependency>
+
+        <!-- 单元测试（JUnit5 + Mockito + MockMvc，Q1 第七批系统管理接口层测试；webmvc 由 yu-framework 传递提供）-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

@@ -11,6 +11,11 @@
 
     <artifactId>yu-portal</artifactId>
 
+    <properties>
+        <!-- JaCoCo 行覆盖率防回归棘轮（当前实测 ~7.3%，下限保守取 0.06） -->
+        <jacoco.line.minimum>0.06</jacoco.line.minimum>
+    </properties>
+
     <description>
         师生互动服务门户模块，整合BRM/TPM/AEM/SAM/DIS数据，提供学生/教师前台服务入口
     </description>
@@ -51,6 +56,20 @@
         <dependency>
             <groupId>com.yu</groupId>
             <artifactId>yu-dis</artifactId>
+        </dependency>
+
+        <!-- 单元测试（JUnit5 + Mockito + MockMvc，Q1 第六批门户接口层测试）-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- MockMvc standalone 需 DispatcherServlet：webmvc 仅测试期使用（运行期由 yu-admin 聚合提供）-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

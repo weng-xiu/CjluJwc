@@ -11,6 +11,11 @@
 
     <artifactId>yu-sam</artifactId>
 
+    <properties>
+        <!-- JaCoCo 行覆盖率防回归棘轮（当前实测 ~9.1%，下限保守取 0.08） -->
+        <jacoco.line.minimum>0.08</jacoco.line.minimum>
+    </properties>
+
     <description>
         学籍与学位管理模块
     </description>
