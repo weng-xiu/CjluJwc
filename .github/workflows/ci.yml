@@ -1,6 +1,6 @@
 # CjluJwc CI 回归门禁（Q2 + Q1 覆盖率棘轮）
 # 两阶段策略：先 install -DskipTests 安装上游模块，再仅跑受控模块测试，
-# 避免 -am 连带执行无关模块存量用例。受控模块：yu-tpm（排课/抽签/冲突/规则 + MockMvc 接口层）、yu-sam（学位/毕业审核）、yu-aem（成绩记录接口层）、yu-oa（工作流接口层）、yu-portal（门户成绩/选课/课表/预警接口层）、yu-admin（系统管理用户/公告/角色/菜单/部门接口层）。
+# 避免 -am 连带执行无关模块存量用例。受控模块：yu-tpm（排课/抽签/冲突/规则 + MockMvc 接口层）、yu-sam（学位/毕业审核）、yu-aem（成绩记录接口层）、yu-oa（工作流接口层）、yu-portal（门户成绩/选课/课表/预警接口层）、yu-admin（系统管理用户/公告/角色/菜单/部门 + 字典类型/岗位/参数配置接口层）。
 # 各受控模块 test 阶段绑定 jacoco prepare-agent/report/check：低于行覆盖率下限（防回归棘轮，见各模块 pom 的 jacoco.line.minimum）即拦截回归。
 name: CI
 
@@ -40,7 +40,7 @@ jobs:
       - name: Run yu-portal tests (portal grade/selection/schedule/warning MockMvc contract)
         run: mvn -B -o -pl yu-portal test
 
-      - name: Run yu-admin tests (system user/notice/role/menu/dept MockMvc contract)
+      - name: Run yu-admin tests (system user/notice/role/menu/dept/dictType/post/config MockMvc contract)
         run: mvn -B -o -pl yu-admin test
 
       - name: Upload surefire reports on failure

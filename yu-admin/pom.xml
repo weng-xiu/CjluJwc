@@ -12,8 +12,8 @@
     <artifactId>yu-admin</artifactId>
 
     <properties>
-        <!-- JaCoCo 行覆盖率防回归棘轮（仅统计 yu-admin 自有 com.yu.web 代码，Q1⑨批后实测 ~17.7%，下限保守取 0.15） -->
-        <jacoco.line.minimum>0.15</jacoco.line.minimum>
+        <!-- JaCoCo 行覆盖率防回归棘轮（仅统计 yu-admin 自有 com.yu.web 代码，Q1⑩批后实测 ~22.5%，下限保守取 0.20） -->
+        <jacoco.line.minimum>0.20</jacoco.line.minimum>
     </properties>
 
     <description>
