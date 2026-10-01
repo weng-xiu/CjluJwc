@@ -97,7 +97,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="roleList" @selection-change="handleSelectionChange">
+    <app-skeleton :loading="loading && !roleList.length" :rows="6">
+        <el-table v-loading="loading" :data="roleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="角色编号" prop="roleId" width="120" />
       <el-table-column label="角色名称" prop="roleName" :show-overflow-tooltip="true" width="150" />
@@ -152,6 +153,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !roleList.length" description="暂无角色数据，可调整查询条件或点击「新增」创建角色" />
+    </app-skeleton>
 
     <pagination
       v-show="total>0"

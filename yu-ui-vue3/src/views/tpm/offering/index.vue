@@ -32,6 +32,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="MagicStick" size="small" @click="handleBatchGenerate" v-hasPermi="['tpm:offering:add']">批量生成</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+<app-skeleton :loading="loading && !offeringList.length" :rows="6">
     <el-table v-loading="loading" :data="offeringList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学期" align="center" prop="semesterName" :show-overflow-tooltip="true" />
@@ -62,6 +63,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !offeringList.length" description="暂无开课任务，可调整查询条件，或点击「批量生成」从培养方案生成开课" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" v-model="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">

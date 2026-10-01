@@ -15,7 +15,8 @@
       <el-col :span="1.5"><el-tooltip content="点击左侧箭头展开可维护座位编排与监考安排" placement="top"><span class="tips-text">点击行首箭头维护明细</span></el-tooltip></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
-    <el-table ref="examPlanTable" v-loading="loading" :data="examPlanList" @selection-change="handleSelectionChange" :row-key="getRowKey" @expand-change="handleExpandChange">
+    <app-skeleton :loading="loading && !examPlanList.length" :rows="6">
+        <el-table ref="examPlanTable" v-loading="loading" :data="examPlanList" @selection-change="handleSelectionChange" :row-key="getRowKey" @expand-change="handleExpandChange">
       <el-table-column type="expand">
         <template #default="props">
           <el-tabs v-model="activeTab[props.row.examId]" type="card" class="detail-tabs">
@@ -72,6 +73,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !examPlanList.length" description="暂无考试计划，可调整查询条件或点击「新增」创建考试安排" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" v-model="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
