@@ -12,12 +12,12 @@
           <el-col :xs="12" :sm="8" :md="4"><div class="stat-card"><div class="stat-label">转出/保留</div><div class="stat-value">{{ (st.overview.transferOutCount||0) + (st.overview.keepCount||0) }}</div></div></el-col>
         </el-row>
         <el-row :gutter="12">
-          <el-col :xs="24" :md="12"><el-card shadow="never"><template #header><span>在读学生按院系分布</span></template><div ref="stDeptChart" class="chart" v-loading="stLoading"></div></el-card></el-col>
-          <el-col :xs="24" :md="12"><el-card shadow="never"><template #header><span>在读学生按入学年份分布</span></template><div ref="stYearChart" class="chart" v-loading="stLoading"></div></el-card></el-col>
+          <el-col :xs="24" :md="12"><el-card shadow="never"><template #header><span>在读学生按院系分布</span></template><base-chart :option="opts.stDeptChart" :loading="stLoading" height="300px" /></el-card></el-col>
+          <el-col :xs="24" :md="12"><el-card shadow="never"><template #header><span>在读学生按入学年份分布</span></template><base-chart :option="opts.stYearChart" :loading="stLoading" height="300px" /></el-card></el-col>
         </el-row>
         <el-row :gutter="12" style="margin-top:12px">
-          <el-col :xs="24" :md="12"><el-card shadow="never"><template #header><span>在读学生性别构成</span></template><div ref="stGenderChart" class="chart" v-loading="stLoading"></div></el-card></el-col>
-          <el-col :xs="24" :md="12"><el-card shadow="never"><template #header><span>在读学生培养层次</span></template><div ref="stEduChart" class="chart" v-loading="stLoading"></div></el-card></el-col>
+          <el-col :xs="24" :md="12"><el-card shadow="never"><template #header><span>在读学生性别构成</span></template><base-chart :option="opts.stGenderChart" :loading="stLoading" height="300px" /></el-card></el-col>
+          <el-col :xs="24" :md="12"><el-card shadow="never"><template #header><span>在读学生培养层次</span></template><base-chart :option="opts.stEduChart" :loading="stLoading" height="300px" /></el-card></el-col>
         </el-row>
       </el-tab-pane>
 
@@ -35,8 +35,8 @@
           <el-col :xs="12" :sm="8" :md="5"><div class="stat-card pass"><div class="stat-label">优秀率(≥85)</div><div class="stat-value">{{ gr.overview.excellentRate || 0 }}%</div></div></el-col>
         </el-row>
         <el-row :gutter="12">
-          <el-col :xs="24" :md="10"><el-card shadow="never"><template #header><span>总评分数段分布</span></template><div ref="grBandChart" class="chart" v-loading="grLoading"></div></el-card></el-col>
-          <el-col :xs="24" :md="14"><el-card shadow="never"><template #header><span>学期成绩趋势</span></template><div ref="grTrendChart" class="chart" v-loading="grLoading"></div></el-card></el-col>
+          <el-col :xs="24" :md="10"><el-card shadow="never"><template #header><span>总评分数段分布</span></template><base-chart :option="opts.grBandChart" :loading="grLoading" height="300px" /></el-card></el-col>
+          <el-col :xs="24" :md="14"><el-card shadow="never"><template #header><span>学期成绩趋势</span></template><base-chart :option="opts.grTrendChart" :loading="grLoading" height="300px" /></el-card></el-col>
         </el-row>
         <el-card shadow="never" style="margin-top:12px"><template #header><span>按院系成绩聚合</span></template>
           <el-table :data="gr.byDept" size="small" max-height="360" v-loading="grLoading">
@@ -65,9 +65,9 @@
           <el-col :xs="12" :sm="8" :md="8"><div class="stat-card"><div class="stat-label">授课班级数</div><div class="stat-value">{{ te.overview.classCount || 0 }}</div></div></el-col>
         </el-row>
         <el-row :gutter="12">
-          <el-col :xs="24" :md="8"><el-card shadow="never"><template #header><span>教师按院系分布</span></template><div ref="teDeptChart" class="chart" v-loading="teLoading"></div></el-card></el-col>
-          <el-col :xs="24" :md="8"><el-card shadow="never"><template #header><span>教师职称结构</span></template><div ref="teTitleChart" class="chart" v-loading="teLoading"></div></el-card></el-col>
-          <el-col :xs="24" :md="8"><el-card shadow="never"><template #header><span>教师学历结构</span></template><div ref="teEduChart" class="chart" v-loading="teLoading"></div></el-card></el-col>
+          <el-col :xs="24" :md="8"><el-card shadow="never"><template #header><span>教师按院系分布</span></template><base-chart :option="opts.teDeptChart" :loading="teLoading" height="300px" /></el-card></el-col>
+          <el-col :xs="24" :md="8"><el-card shadow="never"><template #header><span>教师职称结构</span></template><base-chart :option="opts.teTitleChart" :loading="teLoading" height="300px" /></el-card></el-col>
+          <el-col :xs="24" :md="8"><el-card shadow="never"><template #header><span>教师学历结构</span></template><base-chart :option="opts.teEduChart" :loading="teLoading" height="300px" /></el-card></el-col>
         </el-row>
         <el-card shadow="never" style="margin-top:12px"><template #header><span>教师授课工作量 TOP10</span></template>
           <el-table :data="te.workloadTop" size="small" max-height="360" v-loading="teLoading">
@@ -87,8 +87,6 @@
 <script>
 // Vue2→Vue3 迁移：el-card <div slot="header"> → <template #header>；slot-scope → #default；
 // beforeDestroy → beforeUnmount；el-icon-* → 图标组件名；@keyup.enter.native → @keyup.enter；size mini → small。
-// echarts 5 用法与 Vue2 一致（init/setOption/resize/dispose）。统计分析业务逻辑不变。
-import * as echarts from 'echarts'
 import { studentStructure, gradeAnalysis, teacherStructure } from '@/api/system/subjectStat'
 
 const PIE_COLORS = ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399', '#36cfc9', '#b37feb']
@@ -103,65 +101,44 @@ export default {
       te: { overview: {}, workloadTop: [] }, teLoading: false, teLoaded: false,
       gradeQuery: { semesterId: null },
       teacherQuery: { semesterId: null },
-      charts: {}
+      opts: {}
     }
   },
   mounted() {
     this.loadStudent()
-    window.addEventListener('resize', this.resizeAll)
-  },
-  beforeUnmount() {
-    window.removeEventListener('resize', this.resizeAll)
-    Object.values(this.charts).forEach(c => c && c.dispose())
   },
   methods: {
     onTabChange() {
       if (this.activeTab === 'student' && !this.stLoaded) this.loadStudent()
       else if (this.activeTab === 'grade' && !this.grLoaded) this.loadGrade()
       else if (this.activeTab === 'teacher' && !this.teLoaded) this.loadTeacher()
-      this.$nextTick(this.resizeAll)
     },
-    chart(refName) {
-      const el = this.$refs[refName]
-      if (!el) return null
-      if (!this.charts[refName]) this.charts[refName] = echarts.init(el)
-      return this.charts[refName]
-    },
-    resizeAll() { Object.values(this.charts).forEach(c => c && c.resize()) },
     rateTag(rate) {
       const r = Number(rate) || 0
       return r >= 90 ? 'success' : r >= 75 ? 'primary' : r >= 60 ? 'warning' : 'danger'
     },
     pie(refName, data, title) {
-      this.$nextTick(() => {
-        const c = this.chart(refName)
-        if (!c) return
-        c.setOption({
-          color: PIE_COLORS,
-          tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-          legend: { bottom: 0, type: 'scroll' },
-          series: [{ name: title, type: 'pie', radius: ['42%', '66%'], center: ['50%', '45%'],
-            data: (data || []).map(i => ({ name: i.name, value: Number(i.value) || 0 })), label: { formatter: '{b}\n{c}' } }]
-        }, true)
-      })
+      this.opts[refName] = {
+        color: PIE_COLORS,
+        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+        legend: { bottom: 0, type: 'scroll' },
+        series: [{ name: title, type: 'pie', radius: ['42%', '66%'], center: ['50%', '45%'],
+          data: (data || []).map(i => ({ name: i.name, value: Number(i.value) || 0 })), label: { formatter: '{b}\n{c}' } }]
+      }
     },
     bar(refName, data, color, horizontal) {
-      this.$nextTick(() => {
-        const c = this.chart(refName)
-        if (!c) return
-        const names = (data || []).map(i => i.name)
-        const vals = (data || []).map(i => Number(i.value) || 0)
-        const cat = { type: 'category', data: names, axisLabel: { interval: 0, rotate: horizontal ? 0 : 30 } }
-        const val = { type: 'value', minInterval: 1 }
-        c.setOption({
-          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-          grid: { left: 60, right: 20, top: 20, bottom: horizontal ? 30 : 60 },
-          xAxis: horizontal ? val : cat,
-          yAxis: horizontal ? cat : { type: 'category', data: names },
-          series: [{ type: 'bar', data: vals, itemStyle: { color: color || '#409eff' }, barMaxWidth: 40,
-            label: { show: true, position: horizontal ? 'right' : 'top' } }]
-        }, true)
-      })
+      const names = (data || []).map(i => i.name)
+      const vals = (data || []).map(i => Number(i.value) || 0)
+      const cat = { type: 'category', data: names, axisLabel: { interval: 0, rotate: horizontal ? 0 : 30 } }
+      const val = { type: 'value', minInterval: 1 }
+      this.opts[refName] = {
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        grid: { left: 60, right: 20, top: 20, bottom: horizontal ? 30 : 60 },
+        xAxis: horizontal ? val : cat,
+        yAxis: horizontal ? cat : { type: 'category', data: names },
+        series: [{ type: 'bar', data: vals, itemStyle: { color: color || '#409eff' }, barMaxWidth: 40,
+          label: { show: true, position: horizontal ? 'right' : 'top' } }]
+      }
     },
     // ===== 学生结构 =====
     loadStudent() {
@@ -188,23 +165,19 @@ export default {
       }).finally(() => { this.grLoading = false })
     },
     renderTrend(trend) {
-      this.$nextTick(() => {
-        const c = this.chart('grTrendChart')
-        if (!c) return
-        const names = trend.map(i => i.name)
-        const avg = trend.map(i => Number(i.avgScore) || 0)
-        const pass = trend.map(i => Number(i.passRate) || 0)
-        c.setOption({
-          tooltip: { trigger: 'axis' }, legend: { data: ['平均分', '及格率'], bottom: 0 },
-          grid: { left: 45, right: 45, top: 30, bottom: 45 },
-          xAxis: { type: 'category', data: names },
-          yAxis: [{ type: 'value', name: '平均分', min: 0, max: 100 }, { type: 'value', name: '及格率%', min: 0, max: 100 }],
-          series: [
-            { name: '平均分', type: 'line', smooth: true, data: avg, itemStyle: { color: '#409eff' } },
-            { name: '及格率', type: 'bar', yAxisIndex: 1, data: pass, itemStyle: { color: '#67c23a' }, barWidth: '40%' }
-          ]
-        }, true)
-      })
+      const names = trend.map(i => i.name)
+      const avg = trend.map(i => Number(i.avgScore) || 0)
+      const pass = trend.map(i => Number(i.passRate) || 0)
+      this.opts.grTrendChart = {
+        tooltip: { trigger: 'axis' }, legend: { data: ['平均分', '及格率'], bottom: 0 },
+        grid: { left: 45, right: 45, top: 30, bottom: 45 },
+        xAxis: { type: 'category', data: names },
+        yAxis: [{ type: 'value', name: '平均分', min: 0, max: 100 }, { type: 'value', name: '及格率%', min: 0, max: 100 }],
+        series: [
+          { name: '平均分', type: 'line', smooth: true, data: avg, itemStyle: { color: '#409eff' } },
+          { name: '及格率', type: 'bar', yAxisIndex: 1, data: pass, itemStyle: { color: '#67c23a' }, barWidth: '40%' }
+        ]
+      }
     },
     // ===== 师资分析 =====
     loadTeacher() {

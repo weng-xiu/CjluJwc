@@ -9,12 +9,14 @@ import 'element-plus/theme-chalk/dark/css-vars.css'
 
 import '@/assets/styles/element-theme.scss'
 import '@/assets/styles/tokens.scss' // U1 设计令牌（--dt-*，含暗色重映射）
+import '@/assets/styles/responsive.scss' // U2 响应式三档断点（≥1920/1367–1919/≤1366）
 import '@/assets/styles/index.scss'
 import '@/assets/styles/ruoyi.scss'
 import '@/assets/icons' // 构建 svg 雪碧图
 import { initDarkMode } from '@/utils/theme'
 import { applyThemeColor, getStoredThemeColor } from '@/utils/uiTheme'
 import { setupChartTheme } from '@/utils/chartTheme'
+import responsive from '@/utils/responsive' // U2 响应式屏幕（$screen 断点）
 
 import App from './App.vue'
 import store from './store'
@@ -40,6 +42,7 @@ import AppSkeleton from '@/components/AppSkeleton'
 import AppEmpty from '@/components/AppEmpty'
 import AppErrorState from '@/components/AppErrorState'
 import AppBatchProgress from '@/components/AppBatchProgress'
+import BaseChart from '@/components/BaseChart' // U4 echarts 统一封装
 
 const app = createApp(App)
 
@@ -54,6 +57,7 @@ app.use(store)
 app.use(router)
 app.use(directive)
 app.use(plugins)
+app.use(responsive) // U2 挂载 $screen（isNarrow/isWide/isMobile）
 DictData.install(app)
 
 // 全局方法挂载（对应 Vue.prototype.xxx）
@@ -81,6 +85,8 @@ app.component('AppSkeleton', AppSkeleton)
 app.component('AppEmpty', AppEmpty)
 app.component('AppErrorState', AppErrorState)
 app.component('AppBatchProgress', AppBatchProgress)
+// U4 echarts 统一封装组件（主题/resize/空态自适应，全局可用）
+app.component('BaseChart', BaseChart)
 
 import './permission' // 路由守卫
 

@@ -46,19 +46,19 @@
       </el-table-column>
       <el-table-column label="课程" align="center" prop="courseName" min-width="140" show-overflow-tooltip />
       <el-table-column label="所属轮次" align="center" prop="roundName" min-width="120" show-overflow-tooltip />
-      <el-table-column label="选课时间" align="center" prop="selectTime" width="160">
+      <el-table-column label="选课时间" align="center" prop="selectTime" v-if="!$screen.isNarrow" width="160">
         <template #default="scope"><span>{{ parseTime(scope.row.selectTime) }}</span></template>
       </el-table-column>
       <el-table-column label="抽签结果" align="center" prop="lotteryResult" width="100">
         <template #default="scope"><dict-tag :options="dict.type.tpm_lottery_result" :value="scope.row.lotteryResult"/></template>
       </el-table-column>
-      <el-table-column label="候补排名" align="center" prop="waitlistRank" width="90">
+      <el-table-column label="候补排名" align="center" prop="waitlistRank" v-if="!$screen.isNarrow" width="90">
         <template #default="scope"><span>{{ scope.row.waitlistRank == null ? '-' : scope.row.waitlistRank }}</span></template>
       </el-table-column>
       <el-table-column label="结果状态" align="center" prop="resultStatus" width="100">
         <template #default="scope"><dict-tag :options="dict.type.tpm_enroll_result" :value="scope.row.resultStatus"/></template>
       </el-table-column>
-      <el-table-column label="退课时间" align="center" prop="dropTime" width="160">
+      <el-table-column label="退课时间" align="center" prop="dropTime" v-if="!$screen.isNarrow" width="160">
         <template #default="scope"><span>{{ parseTime(scope.row.dropTime) }}</span></template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="180">

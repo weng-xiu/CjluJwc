@@ -21,9 +21,9 @@
       <el-table-column label="教师工号" align="center" prop="teacherCode" />
       <el-table-column label="教师姓名" align="center" prop="teacherName" />
       <el-table-column label="所属院系" align="center" prop="deptId" />
-      <el-table-column label="性别" align="center" prop="gender"><template #default="scope"><dict-tag :options="dict.type.sys_user_sex" :value="scope.row.gender"/></template></el-table-column>
+      <el-table-column label="性别" align="center" prop="gender" v-if="!$screen.isNarrow"><template #default="scope"><dict-tag :options="dict.type.sys_user_sex" :value="scope.row.gender"/></template></el-table-column>
       <el-table-column label="职称" align="center" prop="title" />
-      <el-table-column label="联系电话" align="center" prop="phone" />
+      <el-table-column label="联系电话" align="center" prop="phone" v-if="!$screen.isNarrow" />
       <el-table-column label="状态" align="center" prop="status"><template #default="scope"><dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/></template></el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">

@@ -103,7 +103,7 @@
       <el-table-column label="角色编号" prop="roleId" width="120" />
       <el-table-column label="角色名称" prop="roleName" :show-overflow-tooltip="true" width="150" />
       <el-table-column label="权限字符" prop="roleKey" :show-overflow-tooltip="true" width="150" />
-      <el-table-column label="显示顺序" prop="roleSort" width="100" />
+      <el-table-column label="显示顺序" prop="roleSort" v-if="!$screen.isNarrow" width="100" />
       <el-table-column label="状态" align="center" width="100">
         <template #default="scope">
           <el-switch
@@ -114,7 +114,7 @@
           ></el-switch>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="180">
+      <el-table-column label="创建时间" align="center" prop="createTime" v-if="!$screen.isNarrow" width="180">
         <template #default="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>

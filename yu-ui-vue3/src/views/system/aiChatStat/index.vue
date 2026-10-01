@@ -49,7 +49,7 @@
       <el-col :xs="24" :md="10">
         <el-card shadow="never">
           <template #header><span>回答来源分布</span><span class="card-tip">大模型未接入时全部由本地抽取作答</span></template>
-          <div ref="sourceChart" class="chart" v-loading="statLoading"></div>
+          <base-chart :option="opts.sourceChart" :loading="statLoading" height="300px" />
         </el-card>
       </el-col>
       <el-col :xs="24" :md="14">
@@ -62,7 +62,7 @@
               <el-option :value="30" label="近30日" />
             </el-select>
           </template>
-          <div ref="trendChart" class="chart" v-loading="statLoading"></div>
+          <base-chart :option="opts.trendChart" :loading="statLoading" height="300px" />
         </el-card>
       </el-col>
     </el-row>
@@ -182,8 +182,7 @@
 // :visible.sync → v-model；pagination .sync → v-model:page/limit；
 // value-format yyyy-MM-dd → YYYY-MM-DD；el-icon-* → 图标组件名；type="text" → link；
 // size mini → small；beforeDestroy → beforeUnmount；@keyup.enter.native → @keyup.enter。
-// echarts 5 用法与 Vue2 一致；AI 问答效果统计业务逻辑不变。
-import * as echarts from 'echarts'
+// AI 问答效果统计业务逻辑不变（图表已迁至 BaseChart）。
 import { listAiChat, getAiChat, getAiChatStat } from '@/api/system/aiChat'
 
 const SOURCE_LABEL = { LLM: '大模型生成', EXTRACT: '本地抽取', NONE: '未命中', ERROR: '调用失败', UNKNOWN: '未知' }
@@ -215,7 +214,7 @@ export default {
       sceneStat: [],
       hotKnowledge: [],
       unmatched: [],
-      charts: {},
+      opts: {},
       detailOpen: false,
       detail: {}
     }
@@ -230,11 +229,6 @@ export default {
   mounted() {
     this.getList()
     this.loadStat()
-    window.addEventListener('resize', this.resizeAll)
-  },
-  beforeUnmount() {
-    window.removeEventListener('resize', this.resizeAll)
-    Object.values(this.charts).forEach(c => c && c.dispose())
   },
   methods: {
     sceneText(scene) {
@@ -275,52 +269,37 @@ export default {
         this.renderTrend(d.trend || [])
       }).finally(() => { this.statLoading = false })
     },
-    chart(refName) {
-      const el = this.$refs[refName]
-      if (!el) return null
-      if (!this.charts[refName]) this.charts[refName] = echarts.init(el)
-      return this.charts[refName]
-    },
-    resizeAll() { Object.values(this.charts).forEach(c => c && c.resize()) },
     renderSource(list) {
-      this.$nextTick(() => {
-        const c = this.chart('sourceChart')
-        if (!c) return
-        const data = list.map(i => ({
-          name: SOURCE_LABEL[i.answerSource] || i.answerSource,
-          value: Number(i.total) || 0,
-          itemStyle: { color: SOURCE_COLOR[i.answerSource] || undefined }
-        }))
-        c.setOption({
-          tooltip: { trigger: 'item', formatter: '{b}: {c} 问 ({d}%)' },
-          legend: { bottom: 0, type: 'scroll' },
-          series: [{
-            type: 'pie', radius: ['42%', '66%'], center: ['50%', '45%'],
-            data: data.length ? data : [{ name: '暂无数据', value: 0 }],
-            label: { formatter: '{b}\n{c}' }
-          }]
-        }, true)
-      })
+      const data = list.map(i => ({
+        name: SOURCE_LABEL[i.answerSource] || i.answerSource,
+        value: Number(i.total) || 0,
+        itemStyle: { color: SOURCE_COLOR[i.answerSource] || undefined }
+      }))
+      this.opts.sourceChart = {
+        tooltip: { trigger: 'item', formatter: '{b}: {c} 问 ({d}%)' },
+        legend: { bottom: 0, type: 'scroll' },
+        series: [{
+          type: 'pie', radius: ['42%', '66%'], center: ['50%', '45%'],
+          data: data.length ? data : [{ name: '暂无数据', value: 0 }],
+          label: { formatter: '{b}\n{c}' }
+        }]
+      }
     },
     renderTrend(list) {
-      this.$nextTick(() => {
-        const c = this.chart('trendChart')
-        if (!c) return
-        const names = list.map(i => i.statDate)
-        const totals = list.map(i => Number(i.total) || 0)
-        const hits = list.map(i => Number(i.hitTotal) || 0)
-        c.setOption({
-          tooltip: { trigger: 'axis' },
-          legend: { data: ['提问数', '有效回答'], bottom: 0 },
-          grid: { left: 45, right: 25, top: 25, bottom: 45 },
-          xAxis: { type: 'category', data: names, axisLabel: { rotate: names.length > 16 ? 45 : 0 } },
-          yAxis: { type: 'value', minInterval: 1 },
-          series: [
-            { name: '提问数', type: 'bar', data: totals, itemStyle: { color: '#409eff' }, barMaxWidth: 24 },
-            { name: '有效回答', type: 'line', smooth: true, data: hits, itemStyle: { color: '#67c23a' } }
-          ]
-        }, true)
-      })
+      const names = list.map(i => i.statDate)
+      const totals = list.map(i => Number(i.total) || 0)
+      const hits = list.map(i => Number(i.hitTotal) || 0)
+      this.opts.trendChart = {
+        tooltip: { trigger: 'axis' },
+        legend: { data: ['提问数', '有效回答'], bottom: 0 },
+        grid: { left: 45, right: 25, top: 25, bottom: 45 },
+        xAxis: { type: 'category', data: names, axisLabel: { rotate: names.length > 16 ? 45 : 0 } },
+        yAxis: { type: 'value', minInterval: 1 },
+        series: [
+          { name: '提问数', type: 'bar', data: totals, itemStyle: { color: '#409eff' }, barMaxWidth: 24 },
+          { name: '有效回答', type: 'line', smooth: true, data: hits, itemStyle: { color: '#67c23a' } }
+        ]
+      }
     },
     handleQuery() {
       this.queryParams.pageNum = 1

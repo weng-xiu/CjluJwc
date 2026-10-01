@@ -26,7 +26,7 @@
       <el-col :xs="24" :md="12">
         <el-card shadow="never">
           <template #header><span>分数段分布</span></template>
-          <div ref="distChart" style="height:300px" v-loading="chartLoading"></div>
+          <base-chart :option="distOption" :loading="chartLoading" height="300px" empty-text="暂无分数段分布数据" />
         </el-card>
       </el-col>
       <el-col :xs="24" :md="12">
@@ -87,7 +87,7 @@
           </el-table>
         </el-tab-pane>
         <el-tab-pane label="历史趋势" name="trend">
-          <div ref="trendChart" style="height:320px" v-loading="a7.trendLoading"></div>
+          <base-chart :option="trendOption" :loading="a7.trendLoading" height="320px" empty-text="暂无历史趋势数据" />
         </el-tab-pane>
       </el-tabs>
     </el-card>
@@ -114,7 +114,6 @@
   </div>
 </template>
 <script>
-import * as echarts from 'echarts'
 import { listGradeStatistics, aggregateGrade, aggregateSemester as aggSemester, scoreDistribution, semesterOverview, courseRanking, statByClass, statByTeacher, statByMajor, gradeTrend } from "@/api/aem/gradeStatistics"
 export default {
   name: "GradeStatistics",
@@ -126,21 +125,15 @@ export default {
       analysis: { semesterId: null, courseId: null },
       overview: {}, overviewLoading: false,
       chartLoading: false, rankLoading: false, rankingList: [],
-      chart: null,
+      distOption: {},
       // A7：多维分析
       a7Tab: "class",
       a7: { classList: [], teacherList: [], majorList: [], trendList: [],
         classLoading: false, teacherLoading: false, majorLoading: false, trendLoading: false, loaded: false },
-      trendChart: null
+      trendOption: {}
     }
   },
   created() { this.getList() },
-  mounted() { window.addEventListener('resize', this.resizeChart); window.addEventListener('resize', this.resizeTrendChart) },
-  beforeUnmount() {
-    window.removeEventListener('resize', this.resizeChart); window.removeEventListener('resize', this.resizeTrendChart)
-    if (this.chart) { this.chart.dispose(); this.chart = null }
-    if (this.trendChart) { this.trendChart.dispose(); this.trendChart = null }
-  },
   methods: {
     getList() {
       this.loading = true
@@ -172,25 +165,20 @@ export default {
       }).finally(() => { this.chartLoading = false })
     },
     renderChart(data) {
-      this.$nextTick(() => {
-        if (!this.$refs.distChart) return
-        if (!this.chart) { this.chart = echarts.init(this.$refs.distChart) }
-        this.chart.setOption({
-          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-          grid: { left: 40, right: 20, top: 30, bottom: 30 },
-          xAxis: { type: 'category', data: data.map(i => i.name), axisLabel: { interval: 0, fontSize: 11 } },
-          yAxis: { type: 'value', minInterval: 1 },
-          series: [{
-            type: 'bar', barWidth: '50%', data: data.map(i => i.value),
-            itemStyle: {
-              color: (p) => ['#f56c6c', '#e6a23c', '#909399', '#409eff', '#67c23a'][p.dataIndex]
-            },
-            label: { show: true, position: 'top' }
-          }]
-        }, true)
-      })
+      this.distOption = {
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        grid: { left: 40, right: 20, top: 30, bottom: 30 },
+        xAxis: { type: 'category', data: data.map(i => i.name), axisLabel: { interval: 0, fontSize: 11 } },
+        yAxis: { type: 'value', minInterval: 1 },
+        series: [{
+          type: 'bar', barWidth: '50%', data: data.map(i => i.value),
+          itemStyle: {
+            color: (p) => ['#f56c6c', '#e6a23c', '#909399', '#409eff', '#67c23a'][p.dataIndex]
+          },
+          label: { show: true, position: 'top' }
+        }]
+      }
     },
-    resizeChart() { this.chart && this.chart.resize() },
     loadRanking() {
       this.rankLoading = true
       courseRanking({ courseId: this.analysis.courseId, semesterId: this.analysis.semesterId, pageNum: 1, pageSize: 50 })
@@ -222,28 +210,23 @@ export default {
       }
     },
     renderTrendChart() {
-      this.$nextTick(() => {
-        if (!this.$refs.trendChart) return
-        if (!this.trendChart) { this.trendChart = echarts.init(this.$refs.trendChart) }
-        const list = this.a7.trendList || []
-        this.trendChart.setOption({
-          tooltip: { trigger: 'axis' },
-          legend: { data: ['平均分', '通过率(%)', '优秀率(%)'] },
-          grid: { left: 40, right: 40, top: 40, bottom: 30 },
-          xAxis: { type: 'category', data: list.map(i => i.semesterName || ('学期' + i.semesterId)) },
-          yAxis: [
-            { type: 'value', name: '分数' },
-            { type: 'value', name: '百分比(%)', max: 100 }
-          ],
-          series: [
-            { name: '平均分', type: 'line', data: list.map(i => Number(i.avgScore) || 0), label: { show: true } },
-            { name: '通过率(%)', type: 'line', yAxisIndex: 1, data: list.map(i => Number(i.passRate) || 0) },
-            { name: '优秀率(%)', type: 'line', yAxisIndex: 1, data: list.map(i => Number(i.excellentRate) || 0) }
-          ]
-        }, true)
-      })
+      const list = this.a7.trendList || []
+      this.trendOption = {
+        tooltip: { trigger: 'axis' },
+        legend: { data: ['平均分', '通过率(%)', '优秀率(%)'] },
+        grid: { left: 40, right: 40, top: 40, bottom: 30 },
+        xAxis: { type: 'category', data: list.map(i => i.semesterName || ('学期' + i.semesterId)) },
+        yAxis: [
+          { type: 'value', name: '分数' },
+          { type: 'value', name: '百分比(%)', max: 100 }
+        ],
+        series: [
+          { name: '平均分', type: 'line', data: list.map(i => Number(i.avgScore) || 0), label: { show: true } },
+          { name: '通过率(%)', type: 'line', yAxisIndex: 1, data: list.map(i => Number(i.passRate) || 0) },
+          { name: '优秀率(%)', type: 'line', yAxisIndex: 1, data: list.map(i => Number(i.excellentRate) || 0) }
+        ]
+      }
     },
-    resizeTrendChart() { this.trendChart && this.trendChart.resize() },
     aggregateSemester() {
       if (!this.analysis.semesterId) { this.$modal.msgWarning("请先输入学期ID"); return }
       this.$modal.confirm('确认对学期[' + this.analysis.semesterId + ']所有课程重新聚合统计？').then(() => {

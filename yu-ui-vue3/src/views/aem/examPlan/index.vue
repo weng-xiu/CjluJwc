@@ -53,14 +53,14 @@
       </el-table-column>
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="考试名称" align="center" prop="examName" :show-overflow-tooltip="true" />
-      <el-table-column label="学期ID" align="center" prop="semesterId" width="80" />
+      <el-table-column label="学期ID" align="center" prop="semesterId" v-if="!$screen.isNarrow" width="80" />
       <el-table-column label="考试类型" align="center" prop="examType" width="100"><template #default="scope"><dict-tag :options="dict.type.aem_exam_type" :value="scope.row.examType"/></template></el-table-column>
-      <el-table-column label="课程ID" align="center" prop="courseId" width="80" />
+      <el-table-column label="课程ID" align="center" prop="courseId" v-if="!$screen.isNarrow" width="80" />
       <el-table-column label="考试日期" align="center" prop="examDate" width="120"><template #default="scope"><span>{{ parseTime(scope.row.examDate, '{y}-{m}-{d}') }}</span></template></el-table-column>
-      <el-table-column label="开始时间" align="center" prop="startTime" width="90" />
-      <el-table-column label="结束时间" align="center" prop="endTime" width="90" />
-      <el-table-column label="考试时长(分)" align="center" prop="duration" width="100" />
-      <el-table-column label="考生人数" align="center" prop="totalStudents" width="80" />
+      <el-table-column label="开始时间" align="center" prop="startTime" v-if="!$screen.isNarrow" width="90" />
+      <el-table-column label="结束时间" align="center" prop="endTime" v-if="!$screen.isNarrow" width="90" />
+      <el-table-column label="考试时长(分)" align="center" prop="duration" v-if="!$screen.isNarrow" width="100" />
+      <el-table-column label="考生人数" align="center" prop="totalStudents" v-if="!$screen.isNarrow" width="80" />
       <el-table-column label="安排状态" align="center" prop="planStatus" width="90"><template #default="scope"><dict-tag :options="dict.type.aem_plan_status" :value="scope.row.planStatus"/></template></el-table-column>
       <el-table-column label="操作" align="center" width="360" class-name="small-padding fixed-width">
         <template #default="scope">

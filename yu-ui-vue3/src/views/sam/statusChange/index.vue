@@ -21,7 +21,7 @@
       <el-table-column label="异动日期" align="center" prop="changeDate" width="180"><template #default="scope"><span>{{ parseTime(scope.row.changeDate, '{y}-{m}-{d}') }}</span></template></el-table-column>
       <el-table-column label="审批状态" align="center" prop="approveStatus"><template #default="scope"><dict-tag :options="[{dictValue:'0',dictLabel:'待审',listClass:'warning'},{dictValue:'1',dictLabel:'通过',listClass:'success'},{dictValue:'2',dictLabel:'驳回',listClass:'danger'},{dictValue:'3',dictLabel:'已撤销',listClass:'info'}]" :value="scope.row.approveStatus"/></template></el-table-column>
       <el-table-column label="流程" align="center" width="90"><template #default="scope"><el-tag v-if="scope.row.procInstId" size="small" type="warning">审批中</el-tag><el-tag v-else size="small" type="info">未提交</el-tag></template></el-table-column>
-      <el-table-column label="审批人" align="center" prop="approveBy" />
+      <el-table-column label="审批人" align="center" prop="approveBy" v-if="!$screen.isNarrow" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="240">
         <template #default="scope">
           <el-button v-if="!scope.row.procInstId && scope.row.approveStatus === '0'" size="small" link icon="Promotion" @click="handleSubmit(scope.row)" v-hasPermi="['sam:statusChange:edit']">提交审批</el-button>

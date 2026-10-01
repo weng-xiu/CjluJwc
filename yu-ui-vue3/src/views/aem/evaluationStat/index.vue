@@ -22,10 +22,10 @@
     <!-- 分布 + 趋势 -->
     <el-row :gutter="12" style="margin-top:8px">
       <el-col :xs="24" :md="10">
-        <el-card shadow="never"><template #header><span>评分分布</span></template><div ref="distChart" style="height:300px" v-loading="distLoading"></div></el-card>
+        <el-card shadow="never"><template #header><span>评分分布</span></template><base-chart :option="distOption" :loading="distLoading" height="300px" empty-text="暂无评分分布数据" /></el-card>
       </el-col>
       <el-col :xs="24" :md="14">
-        <el-card shadow="never"><template #header><span>月度趋势</span></template><div ref="trendChart" style="height:300px" v-loading="trendLoading"></div></el-card>
+        <el-card shadow="never"><template #header><span>月度趋势</span></template><base-chart :option="trendOption" :loading="trendLoading" height="300px" empty-text="暂无月度趋势数据" /></el-card>
       </el-col>
     </el-row>
 
@@ -73,7 +73,7 @@
       <el-col :xs="24" :md="12">
         <el-card shadow="never">
           <template #header><span>评语关键词分析（共 {{ commentCount }} 条评语）</span></template>
-          <div ref="wordChart" style="height:320px" v-loading="wordLoading"></div>
+          <base-chart :option="wordOption" :loading="wordLoading" height="320px" empty-text="暂无评语关键词" />
         </el-card>
       </el-col>
     </el-row>
@@ -81,7 +81,6 @@
 </template>
 
 <script>
-import * as echarts from 'echarts'
 import { evalOverview, evalByCourse, evalByTeacher, evalByClass, evalTrend, evalCommentAnalysis } from "@/api/aem/evaluationStat"
 export default {
   name: "EvaluationStat",
@@ -94,13 +93,8 @@ export default {
       classList: [], classLoading: false,
       trendList: [], trendLoading: false,
       commentCount: 0, wordLoading: false,
-      distChart: null, trendChart: null, wordChart: null
+      distOption: {}, trendOption: {}, wordOption: {}
     }
-  },
-  mounted() { window.addEventListener('resize', this.resizeCharts) },
-  beforeUnmount() {
-    window.removeEventListener('resize', this.resizeCharts)
-    ;[this.distChart, this.trendChart, this.wordChart].forEach(c => c && c.dispose())
   },
   methods: {
     loadAll() {
@@ -127,16 +121,12 @@ export default {
         { name: '及格(60-69)', value: Number(dist.passCount) || 0 },
         { name: '待改进(<60)', value: Number(dist.needsCount) || 0 }
       ]
-      this.$nextTick(() => {
-        if (!this.$refs.distChart) return
-        if (!this.distChart) this.distChart = echarts.init(this.$refs.distChart)
-        this.distChart.setOption({
-          tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-          legend: { bottom: 0, type: 'scroll' },
-          color: ['#67c23a', '#409eff', '#909399', '#e6a23c', '#f56c6c'],
-          series: [{ type: 'pie', radius: ['40%', '65%'], center: ['50%', '45%'], data, label: { formatter: '{b}\n{c}' } }]
-        }, true)
-      })
+      this.distOption = {
+        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+        legend: { bottom: 0, type: 'scroll' },
+        color: ['#67c23a', '#409eff', '#909399', '#e6a23c', '#f56c6c'],
+        series: [{ type: 'pie', radius: ['40%', '65%'], center: ['50%', '45%'], data, label: { formatter: '{b}\n{c}' } }]
+      }
     },
     loadCourse() {
       this.courseLoading = true
@@ -161,21 +151,17 @@ export default {
       const months = this.trendList.map(i => i.month)
       const avgs = this.trendList.map(i => Number(i.avgScore) || 0)
       const counts = this.trendList.map(i => Number(i.totalCount) || 0)
-      this.$nextTick(() => {
-        if (!this.$refs.trendChart) return
-        if (!this.trendChart) this.trendChart = echarts.init(this.$refs.trendChart)
-        this.trendChart.setOption({
-          tooltip: { trigger: 'axis' },
-          legend: { data: ['平均分', '人次'], bottom: 0 },
-          grid: { left: 40, right: 40, top: 30, bottom: 40 },
-          xAxis: { type: 'category', data: months },
-          yAxis: [{ type: 'value', name: '平均分', min: 0, max: 100 }, { type: 'value', name: '人次', minInterval: 1 }],
-          series: [
-            { name: '平均分', type: 'line', smooth: true, data: avgs, itemStyle: { color: '#409eff' } },
-            { name: '人次', type: 'bar', yAxisIndex: 1, data: counts, itemStyle: { color: '#67c23a' }, barWidth: '40%' }
-          ]
-        }, true)
-      })
+      this.trendOption = {
+        tooltip: { trigger: 'axis' },
+        legend: { data: ['平均分', '人次'], bottom: 0 },
+        grid: { left: 40, right: 40, top: 30, bottom: 40 },
+        xAxis: { type: 'category', data: months },
+        yAxis: [{ type: 'value', name: '平均分', min: 0, max: 100 }, { type: 'value', name: '人次', minInterval: 1 }],
+        series: [
+          { name: '平均分', type: 'line', smooth: true, data: avgs, itemStyle: { color: '#409eff' } },
+          { name: '人次', type: 'bar', yAxisIndex: 1, data: counts, itemStyle: { color: '#67c23a' }, barWidth: '40%' }
+        ]
+      }
     },
     loadComment() {
       this.wordLoading = true
@@ -189,23 +175,18 @@ export default {
       const items = []
       positive.slice(0, 8).forEach(w => items.push({ name: w.word, value: w.count, cat: 0 }))
       improve.slice(0, 8).forEach(w => items.push({ name: w.word, value: w.count, cat: 1 }))
-      this.$nextTick(() => {
-        if (!this.$refs.wordChart) return
-        if (!this.wordChart) this.wordChart = echarts.init(this.$refs.wordChart)
-        this.wordChart.setOption({
-          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-          legend: { data: ['正面', '待改进'], bottom: 0 },
-          grid: { left: 60, right: 20, top: 20, bottom: 40 },
-          xAxis: { type: 'value', minInterval: 1 },
-          yAxis: { type: 'category', data: items.map(i => i.name) },
-          series: [{
-            type: 'bar', data: items.map(i => ({ value: i.value, itemStyle: { color: i.cat === 0 ? '#67c23a' : '#e6a23c' } })),
-            label: { show: true, position: 'right' }
-          }]
-        }, true)
-      })
-    },
-    resizeCharts() { [this.distChart, this.trendChart, this.wordChart].forEach(c => c && c.resize()) }
+      this.wordOption = {
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        legend: { data: ['正面', '待改进'], bottom: 0 },
+        grid: { left: 60, right: 20, top: 20, bottom: 40 },
+        xAxis: { type: 'value', minInterval: 1 },
+        yAxis: { type: 'category', data: items.map(i => i.name) },
+        series: [{
+          type: 'bar', data: items.map(i => ({ value: i.value, itemStyle: { color: i.cat === 0 ? '#67c23a' : '#e6a23c' } })),
+          label: { show: true, position: 'right' }
+        }]
+      }
+    }
   }
 }
 </script>

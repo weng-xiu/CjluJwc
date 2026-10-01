@@ -22,7 +22,7 @@
     <!-- 教室利用率图表 -->
     <el-row :gutter="12" style="margin-top:8px">
       <el-col :span="24">
-        <el-card shadow="never"><template #header><span>教室周课时占用 TOP15</span></template><div ref="utilChart" style="height:320px" v-loading="utilLoading"></div></el-card>
+        <el-card shadow="never"><template #header><span>教室周课时占用 TOP15</span></template><base-chart :option="utilOption" :loading="utilLoading" height="320px" empty-text="暂无教室利用率数据" /></el-card>
       </el-col>
     </el-row>
 
@@ -77,7 +77,6 @@
 // Vue3 迁移：el-icon-* → 图标组件名；@keyup.enter.native → @keyup.enter；beforeDestroy → beforeUnmount；
 // el-card <div slot="header"> → <template #header>；el-tab-pane <span slot="label"> → <template #label>；
 // slot-scope → #default；el-tag size mini → small。echarts 用法与 Vue2 一致。业务逻辑与 Vue2 保持一致。
-import * as echarts from 'echarts'
 import { resourceOverview, classroomUtilization, teacherWorkload, maintenanceDue } from "@/api/brm/resourceStat"
 export default {
   name: "ResourceStat",
@@ -87,12 +86,10 @@ export default {
       classroom: {}, equipment: {}, teacher: {},
       overviewLoading: false, utilLoading: false, workLoading: false, dueLoading: false,
       utilList: [], workloadList: [], dueList: [],
-      utilChart: null
+      utilOption: {}
     }
   },
   created() { this.loadAll() },
-  mounted() { window.addEventListener('resize', this.resizeChart) },
-  beforeUnmount() { window.removeEventListener('resize', this.resizeChart); if (this.utilChart) this.utilChart.dispose() },
   methods: {
     loadAll() {
       this.loadOverview()
@@ -120,21 +117,17 @@ export default {
       const top = this.utilList.slice(0, 15)
       const names = top.map(i => i.classroomName)
       const rates = top.map(i => Number(i.utilizationRate) || 0)
-      this.$nextTick(() => {
-        if (!this.$refs.utilChart) return
-        if (!this.utilChart) this.utilChart = echarts.init(this.$refs.utilChart)
-        this.utilChart.setOption({
-          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}: {c}%' },
-          grid: { left: 90, right: 30, top: 20, bottom: 30 },
-          xAxis: { type: 'value', name: '利用率(%)', max: 100 },
-          yAxis: { type: 'category', data: names, axisLabel: { fontSize: 11 } },
-          series: [{
-            type: 'bar', data: rates, barWidth: '60%',
-            itemStyle: { color: p => p.value >= 60 ? '#67c23a' : (p.value >= 30 ? '#409eff' : '#e6a23c') },
-            label: { show: true, position: 'right', formatter: '{c}%' }
-          }]
-        }, true)
-      })
+      this.utilOption = {
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}: {c}%' },
+        grid: { left: 90, right: 30, top: 20, bottom: 30 },
+        xAxis: { type: 'value', name: '利用率(%)', max: 100 },
+        yAxis: { type: 'category', data: names, axisLabel: { fontSize: 11 } },
+        series: [{
+          type: 'bar', data: rates, barWidth: '60%',
+          itemStyle: { color: p => p.value >= 60 ? '#67c23a' : (p.value >= 30 ? '#409eff' : '#e6a23c') },
+          label: { show: true, position: 'right', formatter: '{c}%' }
+        }]
+      }
     },
     loadWorkload() {
       this.workLoading = true
@@ -144,8 +137,7 @@ export default {
       this.dueLoading = true
       maintenanceDue().then(res => { this.dueList = res.data || [] }).finally(() => { this.dueLoading = false })
     },
-    rateTag(r) { return r >= 60 ? 'success' : (r >= 30 ? '' : 'warning') },
-    resizeChart() { this.utilChart && this.utilChart.resize() }
+    rateTag(r) { return r >= 60 ? 'success' : (r >= 30 ? '' : 'warning') }
   }
 }
 </script>

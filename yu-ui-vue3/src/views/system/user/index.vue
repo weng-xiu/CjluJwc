@@ -61,7 +61,7 @@
           </el-table-column>
           <el-table-column label="用户昵称" align="center" key="nickName" prop="nickName" v-if="columns.nickName.visible" :show-overflow-tooltip="true" />
           <el-table-column label="部门" align="center" key="deptName" prop="dept.deptName" v-if="columns.deptName.visible" :show-overflow-tooltip="true" />
-          <el-table-column label="手机号码" align="center" key="phonenumber" prop="phonenumber" v-if="columns.phonenumber.visible" width="120" />
+          <el-table-column label="手机号码" align="center" key="phonenumber" prop="phonenumber" v-if="columns.phonenumber.visible && !$screen.isNarrow" width="120" />
           <el-table-column label="状态" align="center" key="status" v-if="columns.status.visible">
             <template #default="scope">
               <el-switch v-model="scope.row.status" :loading="statusLoadingMap[scope.row.userId]" active-value="0" inactive-value="1" @change="handleStatusChange(scope.row)"></el-switch>
@@ -72,14 +72,14 @@
               <dict-tag :options="dict.type.sys_user_category" :value="scope.row.userCategory" />
             </template>
           </el-table-column>
-          <el-table-column label="账号状态" align="center" prop="accountStatus" width="100">
+          <el-table-column label="账号状态" align="center" prop="accountStatus" v-if="!$screen.isNarrow" width="100">
             <template #default="scope">
               <span>{{ scope.row.accountStatus }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="教师工号" align="center" key="teacherCode" prop="teacherCode" v-if="columns.teacherCode.visible" width="120" />
-          <el-table-column label="职称" align="center" key="title" prop="title" v-if="columns.title.visible" width="100" />
-          <el-table-column label="创建时间" align="center" prop="createTime" v-if="columns.createTime.visible" width="160">
+          <el-table-column label="教师工号" align="center" key="teacherCode" prop="teacherCode" v-if="columns.teacherCode.visible && !$screen.isNarrow" width="120" />
+          <el-table-column label="职称" align="center" key="title" prop="title" v-if="columns.title.visible && !$screen.isNarrow" width="100" />
+          <el-table-column label="创建时间" align="center" prop="createTime" v-if="columns.createTime.visible && !$screen.isNarrow" width="160">
             <template #default="scope">
               <span>{{ parseTime(scope.row.createTime) }}</span>
             </template>

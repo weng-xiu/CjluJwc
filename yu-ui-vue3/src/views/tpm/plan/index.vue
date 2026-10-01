@@ -34,13 +34,13 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="方案名称" align="center" prop="planName" :show-overflow-tooltip="true" />
       <el-table-column label="所属专业" align="center" prop="majorName" />
-      <el-table-column label="所属院系" align="center" prop="deptName" />
-      <el-table-column label="学历层次" align="center" prop="educationLevel" />
+      <el-table-column label="所属院系" align="center" prop="deptName" v-if="!$screen.isNarrow" />
+      <el-table-column label="学历层次" align="center" prop="educationLevel" v-if="!$screen.isNarrow" />
       <el-table-column label="方案年份" align="center" prop="planYear" width="90" />
       <el-table-column label="总学分" align="center" prop="totalCredits" width="80" />
       <el-table-column label="发布状态" align="center" prop="publishStatus" width="90"><template #default="scope"><dict-tag :options="dict.type.tpm_plan_publish_status" :value="scope.row.publishStatus"/></template></el-table-column>
-      <el-table-column label="发布日期" align="center" prop="publishDate" width="110"><template #default="scope"><span>{{ parseTime(scope.row.publishDate, '{y}-{m}-{d}') }}</span></template></el-table-column>
-      <el-table-column label="版本号" align="center" prop="version" width="80" />
+      <el-table-column label="发布日期" align="center" prop="publishDate" v-if="!$screen.isNarrow" width="110"><template #default="scope"><span>{{ parseTime(scope.row.publishDate, '{y}-{m}-{d}') }}</span></template></el-table-column>
+      <el-table-column label="版本号" align="center" prop="version" v-if="!$screen.isNarrow" width="80" />
       <el-table-column label="状态" align="center" prop="status" width="80"><template #default="scope"><dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/></template></el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="260">
         <template #default="scope">

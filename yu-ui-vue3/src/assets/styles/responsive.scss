@@ -1,0 +1,113 @@
+/**
+ * U2 响应式与多端适配 —— 长江大学教务管理系统 · 管理端 yu-ui-vue3
+ *
+ * 范围（P1 决策）：仅覆盖管理端；门户 PC 流式化与 1920×1080 大屏后置。
+ * 三档断点：≥1920（4K/大屏） / 1367–1919（标准笔记本·默认） / ≤1366（窄屏）。
+ * 验收口径：1366 笔记本与 4K 大屏均无横向溢出。
+ *
+ * 本文件为新增响应式层，不修改 index.scss / ruoyi.scss / sidebar.scss / tokens.scss（源码保护红线）。
+ * 色值/间距一律复用 U1 设计令牌（--dt-*），随暗色模式联动。
+ */
+
+/* ---------- 断点令牌（可被 JS 读取，与 ResizeHandler 保持同一阈值） ---------- */
+:root {
+  --u2-bp-narrow: 1366px;   /* ≤1366 窄屏：收紧内边距、搜索表单换行、侧栏自动收起 */
+  --u2-bp-wide: 1920px;     /* ≥1920 大屏：内容区居中限宽，避免超宽行拉散 */
+  --u2-content-max: 1800px; /* 大屏内容最大宽度 */
+}
+
+/* =====================================================================
+ * 全局横向溢出防护：确保布局容器不因内部宽元素撑破视口
+ * ===================================================================== */
+.app-wrapper {
+  overflow-x: hidden;
+}
+.app-main {
+  max-width: 100vw;
+}
+
+/* =====================================================================
+ * 档一：≥1920 —— 4K / 大屏
+ * 内容区居中限宽 + 适度放大留白，长行不至于横向拉散；无横向溢出。
+ * ===================================================================== */
+@media screen and (min-width: 1920px) {
+  .app-main > section.app-container,
+  .app-main .app-container {
+    max-width: var(--u2-content-max);
+    margin-left: auto;
+    margin-right: auto;
+  }
+  /* 大屏字号/间距微增，提升远距离可读性 */
+  .app-container {
+    padding: var(--dt-spacing-xl) var(--dt-spacing-lg);
+  }
+}
+
+/* =====================================================================
+ * 档二：1367–1919 —— 标准笔记本（默认布局，无需覆盖）
+ * ===================================================================== */
+
+/* =====================================================================
+ * 档三：≤1366 —— 窄屏
+ * 收紧内边距、搜索区行内项换行、弹窗宽度收敛，消除横向溢出。
+ * ===================================================================== */
+@media screen and (max-width: 1366px) {
+  .app-container {
+    padding: var(--dt-spacing-md);
+  }
+  .app-main {
+    padding: var(--dt-spacing-md);
+  }
+  .fixed-header + .app-main {
+    padding-top: 50px;
+  }
+  .hasTagsView .fixed-header + .app-main {
+    padding-top: 84px;
+  }
+
+  /* 搜索表单：行内项换行，避免多输入框把页面撑出横向滚动条 */
+  .el-form--inline {
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: var(--dt-spacing-sm);
+  }
+  .el-form--inline .el-form-item {
+    margin-right: var(--dt-spacing-md);
+  }
+
+  /* 弹窗宽度收敛为视口自适应，避免超出窄屏 */
+  .el-dialog:not(.is-fullscreen) {
+    width: min(640px, 92vw) !important;
+  }
+
+  /* 分页组件在窄屏可换行 */
+  .pagination-container {
+    .el-pagination {
+      flex-wrap: wrap;
+      row-gap: var(--dt-spacing-sm);
+    }
+  }
+
+  /* 卡片内横向滚动容器（如工具栏按钮组）允许换行 */
+  .el-card__body > .el-row {
+    flex-wrap: wrap;
+  }
+}
+
+/* =====================================================================
+ * 通用自适应显隐工具类
+ * 供业务页 el-table-column（class-name）/ 工具栏 / 说明块按需挂载，
+ * 实现窄屏隐藏次要信息、大屏才展示的辅助内容。
+ *   .u2-hide-narrow：≤1366 隐藏（次要列/次要操作）
+ *   .u2-hide-mid   ：≤1919 隐藏（仅大屏展示的补充内容）
+ * ===================================================================== */
+@media screen and (max-width: 1366px) {
+  .u2-hide-narrow {
+    display: none !important;
+  }
+}
+@media screen and (max-width: 1919px) {
+  .u2-hide-mid {
+    display: none !important;
+  }
+}

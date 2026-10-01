@@ -47,7 +47,7 @@
         <el-card>
           <template #header><span><el-icon><PieChart/></el-icon> 命令统计</span></template>
           <div class="el-table el-table--enable-row-hover el-table--medium">
-            <div ref="commandstats" style="height: 420px" />
+            <base-chart :option="cmdOption" theme="macarons" :empty="false" height="420px" />
           </div>
         </el-card>
       </el-col>
@@ -56,7 +56,7 @@
         <el-card>
           <template #header><span><el-icon><Odometer/></el-icon> 内存信息</span></template>
           <div class="el-table el-table--enable-row-hover el-table--medium">
-            <div ref="usedmemory" style="height: 420px" />
+            <base-chart :option="memOption" theme="macarons" :empty="false" height="420px" />
           </div>
         </el-card>
       </el-col>
@@ -66,18 +66,17 @@
 
 <script>
 // Vue2→Vue3 迁移：<div slot="header"> → <template #header>；el-icon-* 字体类 → el-icon 图标组件
-// （Monitor/PieChart/Odometer 已在 main.js 全局注册）。echarts 5 用法不变。
+// （Monitor/PieChart/Odometer 已在 main.js 全局注册）。图表已迁至 BaseChart。
 import { getCache } from "@/api/monitor/cache"
-import * as echarts from "echarts"
 
 export default {
   name: "Cache",
   data() {
     return {
-      // 统计命令信息
-      commandstats: null,
-      // 使用内存
-      usedmemory: null,
+      // 统计命令信息图表 option
+      cmdOption: {},
+      // 使用内存图表 option
+      memOption: {},
       // cache信息
       cache: []
     }
@@ -93,8 +92,7 @@ export default {
         this.cache = response.data
         this.$modal.closeLoading()
 
-        this.commandstats = echarts.init(this.$refs.commandstats, "macarons")
-        this.commandstats.setOption({
+        this.cmdOption = {
           tooltip: {
             trigger: "item",
             formatter: "{a} <br/>{b} : {c} ({d}%)",
@@ -111,9 +109,8 @@ export default {
               animationDuration: 1000,
             }
           ]
-        })
-        this.usedmemory = echarts.init(this.$refs.usedmemory, "macarons")
-        this.usedmemory.setOption({
+        }
+        this.memOption = {
           tooltip: {
             formatter: "{b} <br/>{a} : " + this.cache.info.used_memory_human,
           },
@@ -134,11 +131,7 @@ export default {
               ]
             }
           ]
-        })
-        window.addEventListener("resize", () => {
-          this.commandstats.resize()
-          this.usedmemory.resize()
-        })
+        }
       })
     },
     // 打开加载层

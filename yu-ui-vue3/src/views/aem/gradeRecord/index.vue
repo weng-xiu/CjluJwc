@@ -42,15 +42,15 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学生ID" align="center" prop="studentId" />
       <el-table-column label="课程ID" align="center" prop="courseId" />
-      <el-table-column label="学期ID" align="center" prop="semesterId" />
+      <el-table-column label="学期ID" align="center" prop="semesterId" v-if="!$screen.isNarrow" />
       <el-table-column label="考试类型" align="center" prop="examType"><template #default="scope"><dict-tag :options="dict.type.aem_grade_exam_type" :value="scope.row.examType"/></template></el-table-column>
-      <el-table-column label="平时成绩" align="center" prop="regularScore" />
-      <el-table-column label="考试成绩" align="center" prop="examScore" />
+      <el-table-column label="平时成绩" align="center" prop="regularScore" v-if="!$screen.isNarrow" />
+      <el-table-column label="考试成绩" align="center" prop="examScore" v-if="!$screen.isNarrow" />
       <el-table-column label="总成绩" align="center" prop="totalScore" />
       <el-table-column label="绩点" align="center" prop="gradePoint" />
       <el-table-column label="等级" align="center" prop="gradeLevel"><template #default="scope"><dict-tag :options="dict.type.aem_grade_level" :value="scope.row.gradeLevel"/></template></el-table-column>
       <el-table-column label="是否通过" align="center" prop="isPass"><template #default="scope"><dict-tag :options="dict.type.aem_is_pass" :value="scope.row.isPass"/></template></el-table-column>
-      <el-table-column label="是否已复核" align="center" prop="isReviewed"><template #default="scope"><dict-tag :options="dict.type.aem_is_reviewed" :value="scope.row.isReviewed"/></template></el-table-column>
+      <el-table-column label="是否已复核" align="center" prop="isReviewed" v-if="!$screen.isNarrow"><template #default="scope"><dict-tag :options="dict.type.aem_is_reviewed" :value="scope.row.isReviewed"/></template></el-table-column>
       <el-table-column label="提交状态" align="center" prop="submitStatus"><template #default="scope"><el-tag :type="submitStatusTag(scope.row.submitStatus)" size="small">{{ submitStatusText(scope.row.submitStatus) }}</el-tag></template></el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">

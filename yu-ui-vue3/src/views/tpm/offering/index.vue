@@ -42,16 +42,16 @@
         </template>
       </el-table-column>
       <el-table-column label="教师" align="center" prop="teacherName" width="100" />
-      <el-table-column label="校区" align="center" prop="campusName" width="120" />
-      <el-table-column label="教学班数" align="center" prop="classCount" width="90" />
+      <el-table-column label="校区" align="center" prop="campusName" v-if="!$screen.isNarrow" width="120" />
+      <el-table-column label="教学班数" align="center" prop="classCount" v-if="!$screen.isNarrow" width="90" />
       <el-table-column label="容量上限" align="center" prop="maxStudents" width="90" />
       <el-table-column label="开课状态" align="center" prop="offeringStatus" width="100">
         <template #default="scope">
           <dict-tag :options="dict.type.tpm_offering_status" :value="scope.row.offeringStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="状态" align="center" prop="status" width="80"><template #default="scope"><dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/></template></el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="160">
+      <el-table-column label="状态" align="center" prop="status" v-if="!$screen.isNarrow" width="80"><template #default="scope"><dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/></template></el-table-column>
+      <el-table-column label="创建时间" align="center" prop="createTime" v-if="!$screen.isNarrow" width="160">
         <template #default="scope"><span>{{ parseTime(scope.row.createTime) }}</span></template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="240">
