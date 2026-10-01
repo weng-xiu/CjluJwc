@@ -5,8 +5,9 @@
     >
       <app-link v-if="onlyOneChild.meta" :to="resolvePath(onlyOneChild.path, onlyOneChild.query)">
         <el-menu-item :index="resolvePath(onlyOneChild.path)" :class="{ 'submenu-title-noDropdown': !isNest }">
-          <el-icon v-if="onlyOneChild.meta.icon || (item.meta && item.meta.icon)">
-            <svg-icon :icon-class="onlyOneChild.meta.icon || (item.meta && item.meta.icon)" />
+          <!-- '#' 为数据库菜单图标占位符，需过滤避免生成无效的 #icon-# 引用 -->
+          <el-icon v-if="validIcon(onlyOneChild.meta.icon) || validIcon(item.meta && item.meta.icon)">
+            <svg-icon :icon-class="validIcon(onlyOneChild.meta.icon) || validIcon(item.meta && item.meta.icon)" />
           </el-icon>
           <template #title>
             <span class="menu-title" :title="onlyOneChild.meta.title">{{ onlyOneChild.meta.title }}</span>
@@ -17,8 +18,8 @@
 
     <el-sub-menu v-else ref="subMenu" :index="resolvePath(item.path)" teleported>
       <template v-if="item.meta" #title>
-        <el-icon v-if="item.meta.icon">
-          <svg-icon :icon-class="item.meta.icon" />
+        <el-icon v-if="validIcon(item.meta.icon)">
+          <svg-icon :icon-class="validIcon(item.meta.icon)" />
         </el-icon>
         <span class="menu-title" :title="item.meta.title">{{ item.meta.title }}</span>
       </template>
@@ -77,6 +78,10 @@ export default {
     return {}
   },
   methods: {
+    // 过滤空值与 '#' 占位符，返回可用于 svg-icon 的图标名（无有效图标时返回 ''）
+    validIcon(icon) {
+      return icon && icon !== '#' ? icon : ''
+    },
     hasOneShowingChild(children = [], parent) {
       if (!children) {
         children = []

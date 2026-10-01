@@ -68,7 +68,7 @@
     >
       <el-table-column prop="menuName" label="菜单名称" :show-overflow-tooltip="true" width="220">
         <template #default="scope">
-          <svg-icon v-if="scope.row.icon" :icon-class="scope.row.icon" />
+          <svg-icon v-if="scope.row.icon && scope.row.icon !== '#'" :icon-class="scope.row.icon" />
           <span class="ml5">{{ scope.row.menuName }}</span>
         </template>
       </el-table-column>
