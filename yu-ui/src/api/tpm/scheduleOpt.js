@@ -30,6 +30,11 @@ export function autoScheduleApply(params) {
   return request({ url: '/tpm/scheduleOpt/autoScheduleApply', method: 'post', params })
 }
 
+// 多策略排课方案对比（F2-1，dryRun 打分排名，不落库）
+export function comparePlans(params) {
+  return request({ url: '/tpm/scheduleOpt/comparePlans', method: 'post', params })
+}
+
 // T5 拖拽调整：检查将排课移动到目标星期/节次窗口是否冲突（不落库）
 export function checkSlotConflict(params) {
   return request({ url: '/tpm/scheduleOpt/checkSlotConflict', method: 'get', params })

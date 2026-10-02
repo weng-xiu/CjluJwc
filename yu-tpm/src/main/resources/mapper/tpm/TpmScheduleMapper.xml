@@ -310,4 +310,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where c.status = '0'
         order by c.capacity asc
     </select>
+
+    <!-- F2-1：查询某学期所有教师禁排时间片（含 semester_id 为 null 的全学期通用禁排），供排课引擎硬约束屏蔽 -->
+    <select id="selectForbiddenSlotsBySemester" resultType="com.yu.tpm.domain.dto.ForbiddenSlot">
+        select f.teacher_id    as teacherId,
+               f.week_day      as weekDay,
+               f.start_period  as startPeriod,
+               f.end_period    as endPeriod
+        from tpm_teacher_forbidden f
+        where f.status = '0' and (f.del_flag is null or f.del_flag = '0')
+          and (f.semester_id = #{semesterId} or f.semester_id is null)
+    </select>
 </mapper>

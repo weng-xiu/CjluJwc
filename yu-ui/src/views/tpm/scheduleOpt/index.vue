@@ -10,6 +10,7 @@
           <el-button type="primary" icon="el-icon-search" size="small" @click="handleDetect">检测冲突</el-button>
           <el-button type="success" icon="el-icon-magic-stick" size="small" :loading="assigning" @click="handleAutoAssign">一键分配教室</el-button>
           <el-button type="warning" icon="el-icon-alarm-clock" size="small" @click="openAutoSchedule">时间片自动排课</el-button>
+          <el-button type="info" icon="el-icon-sort" size="small" @click="openCompare">多方案对比</el-button>
         </div>
       </div>
 
@@ -94,6 +95,7 @@
         <el-form-item label="每天节数"><el-input-number v-model="asParam.periodsPerDay" :min="1" :max="20" controls-position="right" style="width:100px" /></el-form-item>
         <el-form-item label="连堂节数"><el-input-number v-model="asParam.periodsPerSession" :min="1" :max="20" controls-position="right" style="width:100px" /></el-form-item>
         <el-form-item label="学期周数"><el-input-number v-model="asParam.totalWeeks" :min="1" :max="60" controls-position="right" style="width:110px" /></el-form-item>
+        <el-form-item label="排课策略"><el-select v-model="asParam.strategy" style="width:230px"><el-option v-for="(name, key) in strategyMeta" :key="key" :label="key + ' — ' + name" :value="key" /></el-select></el-form-item>
         <el-form-item><el-button type="primary" icon="el-icon-view" :loading="asLoading" @click="runPreview">预览排课</el-button></el-form-item>
       </el-form>
 
@@ -130,11 +132,36 @@
         <el-button type="primary" icon="el-icon-check" :loading="asApplying" :disabled="!asResult || !(asResult.items && asResult.items.length)" @click="runApply">确认落库</el-button>
       </div>
     </el-dialog>
+
+    <!-- F2-1 多策略方案对比对话框 -->
+    <el-dialog title="多策略排课方案对比（F2-1）" :visible.sync="csVisible" width="900px" append-to-body>
+      <el-alert title="对同一学期分别采用多种候选排序策略试算（仅预览不落库），按「方案分=成功×100−失败×80+软约束加分」排名，推荐得分最高者；可择一策略后一键落库。" type="info" :closable="false" show-icon style="margin-bottom:12px" />
+      <el-descriptions v-if="csResult" :column="1" border size="small" style="margin-bottom:12px">
+        <el-descriptions-item label="推荐策略"><el-tag type="success" size="mini">{{ csResult.bestStrategy }}</el-tag></el-descriptions-item>
+        <el-descriptions-item label="对比结论">{{ csResult.message }}</el-descriptions-item>
+      </el-descriptions>
+      <el-table v-loading="csLoading" :data="csPlans" border size="small">
+        <el-table-column label="排名" prop="rank" width="60" align="center">
+          <template slot-scope="scope"><el-tag v-if="scope.row.rank === 1" type="success" size="mini">1</el-tag><span v-else>{{ scope.row.rank }}</span></template>
+        </el-table-column>
+        <el-table-column label="策略" prop="strategy" width="130"/>
+        <el-table-column label="策略说明" prop="strategyName" min-width="200" show-overflow-tooltip/>
+        <el-table-column label="成功编排" prop="scheduledOfferings" width="90" align="center"/>
+        <el-table-column label="失败" prop="failedOfferings" width="70" align="center"/>
+        <el-table-column label="生成课次" prop="totalSessions" width="90" align="center"/>
+        <el-table-column label="软约束分" prop="softScore" width="90" align="center"/>
+        <el-table-column label="方案分" prop="score" width="90" align="center"><template slot-scope="scope"><span style="font-weight:bold">{{ scope.row.score }}</span></template></el-table-column>
+        <el-table-column label="操作" width="120" align="center">
+          <template slot-scope="scope"><el-button type="text" icon="el-icon-check" @click="applyStrategy(scope.row.strategy)">采用此策略</el-button></template>
+        </el-table-column>
+      </el-table>
+      <div slot="footer"><el-button @click="csVisible = false">关 闭</el-button></div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { detectConflicts, findAvailableClassrooms, autoAssignClassrooms, autoSchedulePreview, autoScheduleApply } from '@/api/tpm/scheduleOpt'
+import { detectConflicts, findAvailableClassrooms, autoAssignClassrooms, autoSchedulePreview, autoScheduleApply, comparePlans } from '@/api/tpm/scheduleOpt'
 import { listSemester } from '@/api/brm/semester'
 
 export default {
@@ -156,7 +183,16 @@ export default {
       asLoading: false,
       asApplying: false,
       asResult: null,
-      asParam: { daysPerWeek: 5, periodsPerDay: 8, periodsPerSession: 2, totalWeeks: 16 }
+      asParam: { daysPerWeek: 5, periodsPerDay: 8, periodsPerSession: 2, totalWeeks: 16, strategy: 'capacity' },
+      // F2-1 多方案对比
+      csVisible: false,
+      csLoading: false,
+      csResult: null,
+      strategyMeta: {
+        capacity: '容量降序（默认）',
+        constrainedFirst: '受限优先',
+        hoursDesc: '学时降序'
+      }
     }
   },
   computed: {
@@ -166,6 +202,9 @@ export default {
     },
     asFailRows() {
       return (this.asResult && this.asResult.failReasons) || []
+    },
+    csPlans() {
+      return (this.csResult && this.csResult.plans) || []
     }
   },
   created() {
@@ -210,6 +249,25 @@ export default {
       if (!this.semesterId) { this.$message.warning('请选择学期'); return }
       this.asResult = null
       this.asVisible = true
+    },
+    openCompare() {
+      if (!this.semesterId) { this.$message.warning('请选择学期'); return }
+      this.csResult = null
+      this.csVisible = true
+      this.runCompare()
+    },
+    runCompare() {
+      this.csLoading = true
+      comparePlans({ semesterId: this.semesterId, ...this.asParam }).then(res => {
+        this.csResult = res.data || {}
+      }).finally(() => { this.csLoading = false })
+    },
+    applyStrategy(strategy) {
+      this.asParam.strategy = strategy
+      this.csVisible = false
+      this.asResult = null
+      this.asVisible = true
+      this.$message.info('已选择策略【' + strategy + '】，点击「预览排课」查看该策略方案')
     },
     runPreview() {
       if (!this.semesterId) { this.$message.warning('请选择学期'); return }

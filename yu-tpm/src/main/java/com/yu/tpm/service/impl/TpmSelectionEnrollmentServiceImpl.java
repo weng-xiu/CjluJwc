@@ -397,6 +397,17 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
     @Override
     public AjaxResult enrollWithValidation(Long studentId, Long courseOfferingId, Long roundId)
     {
+        // 保持既有口径：无志愿优先级
+        return enrollWithValidation(studentId, courseOfferingId, roundId, null);
+    }
+
+    /**
+     * F2-2：带志愿优先级的选课。priority 为志愿序号（1=第一志愿，越小越优先），
+     * 供轮次采用 weighted 抽签模式时按志愿权重中签；为空则等同普通选课。
+     */
+    @Override
+    public AjaxResult enrollWithValidation(Long studentId, Long courseOfferingId, Long roundId, Integer priority)
+    {
         // 0. 校验轮次状态
         TpmSelectionRound round = tpmSelectionRoundMapper.selectTpmSelectionRoundByRoundId(roundId);
         if (round == null)
@@ -466,6 +477,10 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
             enrollment.setSelectTime(new Date());
             enrollment.setResultStatus("1"); // 选中
             enrollment.setLotteryResult("0"); // 未抽签
+            if (priority != null && priority > 0)
+            {
+                enrollment.setPriority(priority); // F2-2 志愿优先级
+            }
             enrollment.setCreateTime(DateUtils.getNowDate());
             tpmSelectionEnrollmentMapper.insertTpmSelectionEnrollment(enrollment);
 
@@ -597,6 +612,18 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
             }
             int maxCapacity = offering.getMaxStudents();
 
+            // F2-2 弹性扩容：超容量且开启弹性时，按步长扩容至上限（不超过实际超出人数），缓解热门课容量紧张
+            if (isElasticEnabled(offering) && enrollments.size() > maxCapacity)
+            {
+                int added = computeElasticAdd(offering, enrollments.size() - maxCapacity);
+                if (added > 0)
+                {
+                    maxCapacity += added;
+                    offering.setMaxStudents(maxCapacity);
+                    tpmCourseOfferingMapper.updateTpmCourseOffering(offering);
+                }
+            }
+
             // 如果未超容量，全部中签
             if (enrollments.size() <= maxCapacity)
             {
@@ -612,8 +639,17 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
                 continue;
             }
 
-            // 超容量，执行确定性随机抽签：用 seed+offeringId 派生随机序列，同种子同结果可复现、可审计
-            Collections.shuffle(enrollments, new java.util.Random(effectiveSeed + offeringId));
+            // 超容量，执行确定性抽签：
+            //  - weighted 模式（F2-2）：先按志愿优先级排序，同志愿内用 seed 派生随机序列，优先级高者优先中签
+            //  - random/默认（T6）：整体用 seed+offeringId 派生随机序列公平洗牌，同种子同结果可复现、可审计
+            if ("weighted".equals(round.getLotteryMode()))
+            {
+                orderForWeightedLottery(enrollments, effectiveSeed, offeringId);
+            }
+            else
+            {
+                Collections.shuffle(enrollments, new java.util.Random(effectiveSeed + offeringId));
+            }
             lotteryCount++;
 
             int admitted = 0;
@@ -667,6 +703,65 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         result.put("message", String.format("抽签完成：涉及%d门课程，中签%d人，落选%d人（候补已按序入列，随机种子=%d，可用于结果复现审计）",
                 lotteryCount, successCount, failCount, effectiveSeed));
         return result;
+    }
+
+    /**
+     * F2-2：判断开课是否开启弹性扩容（elastic_enabled='1'）。
+     */
+    private boolean isElasticEnabled(TpmCourseOffering offering)
+    {
+        return offering != null && "1".equals(offering.getElasticEnabled());
+    }
+
+    /**
+     * F2-2：计算弹性扩容增量。按步长逐步扩容，不超过扩容上限（elastic_max），且不超过实际超出人数（excess）。
+     * 缺省：步长 5，上限为原容量上浮 50%（未显式配置 elastic_max 时）。
+     *
+     * @param offering 开课
+     * @param excess   超出原容量的人数
+     * @return 可扩容的人数增量（>=0）
+     */
+    private int computeElasticAdd(TpmCourseOffering offering, int excess)
+    {
+        if (excess <= 0) { return 0; }
+        int base = offering.getMaxStudents() != null ? offering.getMaxStudents() : 0;
+        int step = offering.getElasticStep() != null && offering.getElasticStep() > 0 ? offering.getElasticStep() : 5;
+        int ceiling = offering.getElasticMax() != null && offering.getElasticMax() > base
+                ? offering.getElasticMax()
+                : base + base / 2; // 未配置上限时默认允许上浮 50%
+        int room = Math.max(0, ceiling - base);
+        int byStep = (excess + step - 1) / step * step; // 按步长向上取整
+        return Math.max(0, Math.min(Math.min(byStep, room), excess));
+    }
+
+    /**
+     * F2-2：志愿优先级权重抽签排序。先按 priority 升序（数值小=志愿优先级高，null 视为最低），
+     * 同一优先级子区间内用 seed 派生的确定性随机序列洗牌，保证同志愿公平且结果可复现。
+     * 直接对传入列表原地重排。
+     */
+    private void orderForWeightedLottery(List<TpmSelectionEnrollment> enrollments, long seed, Long offeringId)
+    {
+        final long baseSeed = seed + (offeringId == null ? 0L : offeringId);
+        enrollments.sort((a, b) -> Integer.compare(priorityKey(a), priorityKey(b)));
+        int i = 0;
+        java.util.Random rnd = new java.util.Random(baseSeed);
+        while (i < enrollments.size())
+        {
+            int j = i;
+            int pi = priorityKey(enrollments.get(i));
+            while (j < enrollments.size() && priorityKey(enrollments.get(j)) == pi) { j++; }
+            if (j - i > 1)
+            {
+                Collections.shuffle(enrollments.subList(i, j), new java.util.Random(rnd.nextLong()));
+            }
+            i = j;
+        }
+    }
+
+    /** 志愿优先级键：null 视为最低优先级（排最后） */
+    private int priorityKey(TpmSelectionEnrollment e)
+    {
+        return e.getPriority() == null ? Integer.MAX_VALUE : e.getPriority();
     }
 
     /**
@@ -774,5 +869,125 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         }
 
         return AjaxResult.success("退课成功");
+    }
+
+    /**
+     * F2-2 退改选窗口：将学生已选课程改选为另一开课（保持选课门数不变）。
+     * 仅当轮次开放退改选（allow_drop_adjust='1'）且当前时间处于 [dropAdjustStart, dropAdjustEnd] 窗口内时允许；
+     * 全程复用既有冲突检测与 Redis 容量并发控制，改选失败则回滚至原课程。
+     *
+     * @param enrollId      原选课记录ID
+     * @param newOfferingId 目标开课ID
+     * @return 操作结果
+     */
+    @Transactional
+    @Override
+    public AjaxResult swapCourse(Long enrollId, Long newOfferingId)
+    {
+        TpmSelectionEnrollment enrollment = tpmSelectionEnrollmentMapper.selectTpmSelectionEnrollmentByEnrollId(enrollId);
+        if (enrollment == null)
+        {
+            return AjaxResult.error("选课记录不存在");
+        }
+        if (!"1".equals(enrollment.getResultStatus()))
+        {
+            return AjaxResult.error("当前选课记录状态不允许改选");
+        }
+        if (newOfferingId == null || newOfferingId.equals(enrollment.getCourseOfferingId()))
+        {
+            return AjaxResult.error("请选择与原课程不同的目标课程");
+        }
+        TpmSelectionRound round = tpmSelectionRoundMapper.selectTpmSelectionRoundByRoundId(enrollment.getRoundId());
+        if (round == null)
+        {
+            return AjaxResult.error("选课轮次不存在");
+        }
+        // 退改选窗口校验
+        AjaxResult windowCheck = checkDropAdjustWindow(round);
+        if (windowCheck != null)
+        {
+            return windowCheck;
+        }
+
+        Long oldOfferingId = enrollment.getCourseOfferingId();
+        Long studentId = enrollment.getStudentId();
+        Long roundId = enrollment.getRoundId();
+
+        // 1. 释放原课程容量（先占位，改选失败再回滚）
+        selectionCacheManager.incrementCapacity(oldOfferingId);
+
+        // 2. 新课程冲突检测（此时原记录仍为选中，需排除自身对旧课的占用——旧课已释放容量但记录未改，故只校验时间/规则冲突）
+        List<ConflictWarning> conflicts = checkSelectionConflicts(studentId, newOfferingId, roundId);
+        if (!conflicts.isEmpty())
+        {
+            selectionCacheManager.decrementCapacity(oldOfferingId); // 回滚容量
+            StringBuilder msg = new StringBuilder("改选失败，新课程存在以下冲突：");
+            for (ConflictWarning w : conflicts) { msg.append(w.getMessage()).append("；"); }
+            return AjaxResult.error(msg.toString());
+        }
+
+        // 3. 确保新课程容量缓存存在并扣减
+        if (selectionCacheManager.getCapacity(newOfferingId) == null)
+        {
+            TpmCourseOffering offering = tpmCourseOfferingMapper.selectTpmCourseOfferingByOfferingId(newOfferingId);
+            if (offering == null || offering.getMaxStudents() == null)
+            {
+                selectionCacheManager.decrementCapacity(oldOfferingId);
+                return AjaxResult.error("目标课程信息异常");
+            }
+            int currentCount = tpmSelectionEnrollmentMapper.selectCountByOffering(newOfferingId);
+            selectionCacheManager.setCapacity(newOfferingId, offering.getMaxStudents() - currentCount);
+        }
+        Long remaining = selectionCacheManager.decrementCapacity(newOfferingId);
+        if (remaining < 0)
+        {
+            selectionCacheManager.incrementCapacity(newOfferingId);
+            selectionCacheManager.decrementCapacity(oldOfferingId); // 回滚原课程容量
+            return AjaxResult.error("目标课程已满，改选失败");
+        }
+
+        try
+        {
+            // 4. 原地改指向目标开课，重置为未抽签选中
+            enrollment.setCourseOfferingId(newOfferingId);
+            enrollment.setResultStatus("1");
+            enrollment.setLotteryResult("0");
+            enrollment.setWaitlistRank(null);
+            enrollment.setDropTime(null);
+            enrollment.setSelectTime(new Date());
+            enrollment.setUpdateTime(DateUtils.getNowDate());
+            tpmSelectionEnrollmentMapper.updateTpmSelectionEnrollment(enrollment);
+
+            selectionCacheManager.clearStudentCache(studentId, roundId);
+            return AjaxResult.success("改选成功");
+        }
+        catch (Exception e)
+        {
+            selectionCacheManager.incrementCapacity(newOfferingId); // 回滚新课程扣减
+            selectionCacheManager.decrementCapacity(oldOfferingId); // 还原原课程占用
+            throw e;
+        }
+    }
+
+    /**
+     * 退改选窗口校验：返回 null 表示允许；否则返回错误结果。
+     * 需轮次开放退改选（allow_drop_adjust='1'），且当前时间落在窗口区间（未配置起止则不限制时间）。
+     */
+    private AjaxResult checkDropAdjustWindow(TpmSelectionRound round)
+    {
+        if (!"1".equals(round.getAllowDropAdjust()))
+        {
+            return AjaxResult.error("本轮次未开放退改选窗口");
+        }
+        Date now = new Date();
+        if (round.getDropAdjustStart() != null && now.before(round.getDropAdjustStart()))
+        {
+            return AjaxResult.error("退改选窗口尚未开始");
+        }
+        if (round.getDropAdjustEnd() != null && now.after(round.getDropAdjustEnd()))
+        {
+            return AjaxResult.error("退改选窗口已结束");
+        }
+        return null;
     }
 }

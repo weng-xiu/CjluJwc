@@ -51,6 +51,10 @@ public class TpmSelectionEnrollment extends BaseEntity
     @Excel(name = "候补排名")
     private Integer waitlistRank;
 
+    /** F2-2：志愿优先级（1为第一志愿，数值越小优先级越高；空表示未填报志愿权重） */
+    @Excel(name = "志愿优先级")
+    private Integer priority;
+
     /** 退课时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Excel(name = "退课时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
@@ -105,6 +109,9 @@ public class TpmSelectionEnrollment extends BaseEntity
 
     public Integer getWaitlistRank() { return waitlistRank; }
     public void setWaitlistRank(Integer waitlistRank) { this.waitlistRank = waitlistRank; }
+
+    public Integer getPriority() { return priority; }
+    public void setPriority(Integer priority) { this.priority = priority; }
 
     public Date getDropTime() { return dropTime; }
     public void setDropTime(Date dropTime) { this.dropTime = dropTime; }

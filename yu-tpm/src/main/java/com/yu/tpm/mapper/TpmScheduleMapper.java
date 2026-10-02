@@ -112,4 +112,13 @@ public interface TpmScheduleMapper
      * @return 可排课教室列表
      */
     java.util.List<com.yu.tpm.domain.dto.SchedulableClassroom> selectSchedulableClassrooms();
+
+    /**
+     * F2-1 自动排课增强：查询某学期所有教师禁排时间片（tpm_teacher_forbidden），
+     * 作为排课引擎的硬约束屏蔽对应 (星期×节次) 网格。无记录时返回空列表。
+     *
+     * @param semesterId 学期ID
+     * @return 禁排时间片列表
+     */
+    java.util.List<com.yu.tpm.domain.dto.ForbiddenSlot> selectForbiddenSlotsBySemester(@Param("semesterId") Long semesterId);
 }

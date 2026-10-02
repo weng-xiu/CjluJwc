@@ -73,6 +73,27 @@ public interface IScheduleOptimizationService
                                               Integer periodsPerSession, Integer totalWeeks);
 
     /**
+     * F2-1 自动排课增强：带排序策略的时间片自动排课。
+     * 在原 T1 基础上新增：① 教师禁排时间片（tpm_teacher_forbidden）纳入硬约束；
+     * ② 候选排序策略（capacity=容量降序/默认、constrainedFirst=受限优先、hoursDesc=学时降序）。
+     *
+     * @param strategy 候选排序策略（null 等价于 "capacity"，保持 T1 原有行为）
+     */
+    Map<String, Object> autoScheduleTimetable(Long semesterId, boolean dryRun,
+                                              Integer daysPerWeek, Integer periodsPerDay,
+                                              Integer periodsPerSession, Integer totalWeeks, String strategy);
+
+    /**
+     * F2-1 多方案对比：以不同排序策略在内存中各试排一轮（不落库），
+     * 输出每个方案的编排数/失败数/会话数/软约束评分与排名，供人工择优后按选中策略落库。
+     *
+     * @return plans（方案列表，按方案分降序）、strategyMeta（策略说明）、message
+     */
+    Map<String, Object> compareSchedulePlans(Long semesterId,
+                                             Integer daysPerWeek, Integer periodsPerDay,
+                                             Integer periodsPerSession, Integer totalWeeks);
+
+    /**
      * T5 拖拽调整：检查将排课移动到目标时间段（星期/节次窗口，周次不变）是否产生冲突。
      * 检测三类：教室占用、教师占用、学生（按选课名单精确判定），均排除自身记录。
      *

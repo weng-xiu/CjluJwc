@@ -105,6 +105,17 @@
             <el-form-item label="容量上限" prop="maxStudents"><el-input-number v-model="form.maxStudents" :min="1" :max="1000" controls-position="right" style="width:100%" /></el-form-item>
           </el-col>
         </el-row>
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="弹性扩容"><el-switch v-model="form.elasticEnabled" active-value="1" inactive-value="0"/></el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item v-if="form.elasticEnabled === '1'" label="扩容上限" prop="elasticMax"><el-input-number v-model="form.elasticMax" :min="0" :max="2000" controls-position="right" placeholder="为空取默认上限" style="width:100%" /></el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item v-if="form.elasticEnabled === '1'" label="单次步长" prop="elasticStep"><el-input-number v-model="form.elasticStep" :min="1" :max="100" controls-position="right" placeholder="默认5" style="width:100%" /></el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="开课状态" prop="offeringStatus">
           <el-radio-group v-model="form.offeringStatus">
             <el-radio v-for="dict in dict.type.tpm_offering_status" :key="dict.value" :label="dict.value">{{ dict.label }}</el-radio>
@@ -175,7 +186,7 @@ export default {
     },
     getList() { this.loading = true; listOffering(this.queryParams).then(response => { this.offeringList = response.rows; this.total = response.total; this.loading = false }) },
     cancel() { this.open = false; this.reset() },
-    reset() { this.form = { offeringId: null, semesterId: null, courseId: null, teacherId: null, campusId: null, classCount: 1, maxStudents: 30, offeringStatus: "0", status: "0" }; this.resetForm("form") },
+    reset() { this.form = { offeringId: null, semesterId: null, courseId: null, teacherId: null, campusId: null, classCount: 1, maxStudents: 30, elasticEnabled: "0", elasticMax: null, elasticStep: null, offeringStatus: "0", status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.offeringId); this.single = selection.length !== 1; this.multiple = !selection.length },

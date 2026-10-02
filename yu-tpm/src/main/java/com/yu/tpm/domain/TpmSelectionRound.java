@@ -67,6 +67,24 @@ public class TpmSelectionRound extends BaseEntity
     @Excel(name = "抽签时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date lotteryTime;
 
+    /** F2-2 抽签模式（random=公平随机[默认]，weighted=志愿优先级权重） */
+    @Excel(name = "抽签模式", readConverterExp = "random=公平随机,weighted=志愿权重")
+    private String lotteryMode;
+
+    /** F2-2 是否开放退改选窗口（0否 1是） */
+    @Excel(name = "退改选窗口", readConverterExp = "0=关闭,1=开放")
+    private String allowDropAdjust;
+
+    /** F2-2 退改选窗口开始时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Excel(name = "退改选开始", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
+    private Date dropAdjustStart;
+
+    /** F2-2 退改选窗口结束时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Excel(name = "退改选结束", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
+    private Date dropAdjustEnd;
+
     /** 删除标志（0代表存在 2代表删除） */
     private String delFlag;
 
@@ -111,6 +129,18 @@ public class TpmSelectionRound extends BaseEntity
 
     public Date getLotteryTime() { return lotteryTime; }
     public void setLotteryTime(Date lotteryTime) { this.lotteryTime = lotteryTime; }
+
+    public String getLotteryMode() { return lotteryMode; }
+    public void setLotteryMode(String lotteryMode) { this.lotteryMode = lotteryMode; }
+
+    public String getAllowDropAdjust() { return allowDropAdjust; }
+    public void setAllowDropAdjust(String allowDropAdjust) { this.allowDropAdjust = allowDropAdjust; }
+
+    public Date getDropAdjustStart() { return dropAdjustStart; }
+    public void setDropAdjustStart(Date dropAdjustStart) { this.dropAdjustStart = dropAdjustStart; }
+
+    public Date getDropAdjustEnd() { return dropAdjustEnd; }
+    public void setDropAdjustEnd(Date dropAdjustEnd) { this.dropAdjustEnd = dropAdjustEnd; }
 
     public String getDelFlag() { return delFlag; }
     public void setDelFlag(String delFlag) { this.delFlag = delFlag; }

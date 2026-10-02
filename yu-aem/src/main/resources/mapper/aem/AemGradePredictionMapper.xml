@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.aem.mapper.AemGradePredictionMapper">
+
+    <!-- 学生逐学期成绩序列（升序）：平均成绩、平均绩点、已获学分（通过课程学分之和）、修读门数、不及格门数 -->
+    <select id="selectStudentSemesterSeries" resultType="java.util.Map">
+        select r.semester_id as semesterId,
+               sm.semester_name as semesterName,
+               count(1) as courseCount,
+               coalesce(round(avg(r.total_score),2),0) as avgScore,
+               coalesce(round(avg(r.grade_point),2),0) as avgGpa,
+               coalesce(sum(case when r.total_score &gt;= 60 then ifnull(cl.credit,0) else 0 end),0) as creditEarned,
+               sum(case when r.total_score &lt; 60 then 1 else 0 end) as failCount
+        from aem_grade_record r
+        left join brm_semester sm on sm.semester_id = r.semester_id
+        left join tpm_course_library cl on cl.course_id = r.course_id
+        where r.student_id = #{studentId} and r.total_score is not null and r.status = '0'
+        group by r.semester_id, sm.semester_name
+        order by r.semester_id asc
+    </select>
+
+    <!-- 学生基本信息 -->
+    <select id="selectStudentBase" resultType="java.util.Map">
+        select s.student_id as studentId,
+               s.student_no as studentNo,
+               s.student_name as studentName,
+               s.enrollment_year as enrollmentYear,
+               cl.class_name as className,
+               mj.major_name as majorName
+        from sam_student s
+        left join brm_class cl on cl.class_id = s.class_id
+        left join brm_major mj on mj.major_id = s.major_id
+        where s.student_id = #{studentId}
+    </select>
+
+    <!-- 课程难度画像（semesterId 可选） -->
+    <select id="selectCourseDifficulty" resultType="java.util.Map">
+        select cl.course_id as courseId,
+               cl.course_code as courseCode,
+               cl.course_name as courseName,
+               cl.credit as credit,
+               cl.course_category as courseCategory,
+               count(1) as takeCount,
+               coalesce(round(avg(r.total_score),2),0) as avgScore,
+               coalesce(round(avg(r.grade_point),2),0) as avgGpa,
+               coalesce(round(sum(case when r.total_score &gt;= 60 then 1 else 0 end)/count(1)*100,2),0) as passRate,
+               coalesce(round(sum(case when r.total_score &gt;= 90 then 1 else 0 end)/count(1)*100,2),0) as excellentRate,
+               sum(case when r.total_score &lt; 60 then 1 else 0 end) as failCount
+        from aem_grade_record r
+        join tpm_course_library cl on cl.course_id = r.course_id
+        where r.total_score is not null and r.status = '0'
+        <if test="semesterId != null"> and r.semester_id = #{semesterId}</if>
+        group by cl.course_id, cl.course_code, cl.course_name, cl.credit, cl.course_category
+        having count(1) &gt;= 1
+        order by avgScore asc
+    </select>
+
+    <!-- 班级风险看板基础（指定学期内有成绩学生聚合，可按班级过滤） -->
+    <select id="selectStudentRiskBase" resultType="java.util.Map">
+        select s.student_id as studentId,
+               s.student_no as studentNo,
+               s.student_name as studentName,
+               cl.class_name as className,
+               count(1) as courseCount,
+               coalesce(round(avg(r.total_score),2),0) as avgScore,
+               coalesce(round(avg(r.grade_point),2),0) as avgGpa,
+               sum(case when r.total_score &lt; 60 then 1 else 0 end) as failCount
+        from aem_grade_record r
+        join sam_student s on s.student_id = r.student_id
+        left join brm_class cl on cl.class_id = s.class_id
+        where r.semester_id = #{semesterId} and r.total_score is not null and r.status = '0'
+        <if test="classId != null"> and s.class_id = #{classId}</if>
+        group by s.student_id, s.student_no, s.student_name, cl.class_name
+        order by failCount desc, avgScore asc
+    </select>
+
+    <!-- 单学生全学期累计概览 -->
+    <select id="selectStudentOverall" resultType="java.util.Map">
+        select coalesce(round(avg(r.total_score),2),0) as avgScore,
+               coalesce(round(avg(r.grade_point),2),0) as avgGpa,
+               sum(case when r.total_score &lt; 60 then 1 else 0 end) as failCount,
+               coalesce(sum(case when r.total_score &gt;= 60 then ifnull(cl.credit,0) else 0 end),0) as creditEarned,
+               count(distinct r.semester_id) as semesterCount
+        from aem_grade_record r
+        left join tpm_course_library cl on cl.course_id = r.course_id
+        where r.student_id = #{studentId} and r.total_score is not null and r.status = '0'
+    </select>
+</mapper>

@@ -71,6 +71,19 @@
         <el-form-item label="开始时间" prop="startTime"><el-date-picker clearable v-model="form.startTime" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" placeholder="请选择开始时间" style="width:100%" /></el-form-item>
         <el-form-item label="结束时间" prop="endTime"><el-date-picker clearable v-model="form.endTime" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" placeholder="请选择结束时间" style="width:100%" /></el-form-item>
         <el-form-item label="最多选课门数" prop="maxCoursesPerStudent"><el-input-number v-model="form.maxCoursesPerStudent" :min="0" controls-position="right" placeholder="请输入最多选课门数" /></el-form-item>
+        <el-form-item label="抽签方式" prop="lotteryMode">
+          <el-select v-model="form.lotteryMode" placeholder="请选择抽签方式" style="width:100%">
+            <el-option v-for="dict in dict.type.tpm_lottery_mode" :key="dict.value" :label="dict.label" :value="dict.value"/>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="开放退改选" prop="allowDropAdjust">
+          <el-radio-group v-model="form.allowDropAdjust">
+            <el-radio label="0">关闭</el-radio>
+            <el-radio label="1">开启</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="form.allowDropAdjust === '1'" label="退改选开始" prop="dropAdjustStart"><el-date-picker clearable v-model="form.dropAdjustStart" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" placeholder="请选择退改选开始时间" style="width:100%" /></el-form-item>
+        <el-form-item v-if="form.allowDropAdjust === '1'" label="退改选结束" prop="dropAdjustEnd"><el-date-picker clearable v-model="form.dropAdjustEnd" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" placeholder="请选择退改选结束时间" style="width:100%" /></el-form-item>
         <el-form-item label="轮次状态" prop="roundStatus">
           <el-radio-group v-model="form.roundStatus">
             <el-radio v-for="dict in dict.type.tpm_round_status" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio>
@@ -92,7 +105,7 @@ import { listSemester } from "@/api/brm/semester"
 
 export default {
   name: "Round",
-  dicts: ['sys_normal_disable', 'tpm_round_status'],
+  dicts: ['sys_normal_disable', 'tpm_round_status', 'tpm_lottery_mode'],
   data() {
     const checkEndTime = (rule, value, callback) => {
       if (this.form.startTime && this.form.endTime && this.form.endTime <= this.form.startTime) {
@@ -130,7 +143,7 @@ export default {
     },
     cancel() { this.open = false; this.reset() },
     reset() {
-      this.form = { roundId: null, semesterId: null, roundName: null, roundOrder: 0, startTime: null, endTime: null, maxCoursesPerStudent: 10, roundStatus: "0", status: "0" }
+      this.form = { roundId: null, semesterId: null, roundName: null, roundOrder: 0, startTime: null, endTime: null, maxCoursesPerStudent: 10, roundStatus: "0", status: "0", lotteryMode: "random", allowDropAdjust: "0", dropAdjustStart: null, dropAdjustEnd: null }
       this.resetForm("form")
     },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

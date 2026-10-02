@@ -44,6 +44,9 @@
       </el-table-column>
       <el-table-column label="课程" align="center" prop="courseName" min-width="140" show-overflow-tooltip />
       <el-table-column label="所属轮次" align="center" prop="roundName" min-width="120" show-overflow-tooltip />
+      <el-table-column label="志愿优先级" align="center" prop="priority" width="100">
+        <template slot-scope="scope"><span>{{ scope.row.priority == null ? '-' : scope.row.priority }}</span></template>
+      </el-table-column>
       <el-table-column label="选课时间" align="center" prop="selectTime" width="160">
         <template slot-scope="scope"><span>{{ parseTime(scope.row.selectTime) }}</span></template>
       </el-table-column>
@@ -62,6 +65,7 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="180">
         <template slot-scope="scope">
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['tpm:enroll:edit']">修改</el-button>
+          <el-button v-if="scope.row.resultStatus === '1'" size="mini" type="text" icon="el-icon-refresh-left" @click="handleSwap(scope.row)" v-hasPermi="['tpm:selection:enroll']">改选</el-button>
           <el-button v-if="scope.row.resultStatus === '1'" size="mini" type="text" icon="el-icon-back" @click="handleDrop(scope.row)" v-hasPermi="['tpm:enroll:edit']">退课</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['tpm:enroll:remove']">删除</el-button>
         </template>
@@ -88,6 +92,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="选课时间" prop="selectTime"><el-date-picker clearable v-model="form.selectTime" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" placeholder="请选择选课时间" style="width:100%" /></el-form-item>
+        <el-form-item label="志愿优先级" prop="priority"><el-input-number v-model="form.priority" :min="0" :max="99" controls-position="right" placeholder="1 为最高优先级，留空/0 为未填写志愿" style="width:100%" /></el-form-item>
         <el-form-item label="抽签结果" prop="lotteryResult">
           <el-select v-model="form.lotteryResult" placeholder="请选择抽签结果" style="width:100%">
             <el-option v-for="dict in dict.type.tpm_lottery_result" :key="dict.value" :label="dict.label" :value="dict.value"/>
@@ -119,10 +124,26 @@
         <el-button @click="lotteryOpen = false">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- F2-2 退改选对话框 -->
+    <el-dialog title="改选课程" :visible.sync="swapOpen" width="460px" append-to-body>
+      <el-form label-width="90px">
+        <el-form-item label="当前课程"><span>{{ swapRow.courseName }}</span></el-form-item>
+        <el-form-item label="目标开课">
+          <el-select v-model="swapNewOfferingId" placeholder="请选择要改选到的开课" filterable style="width:100%">
+            <el-option v-for="item in offeringOptions" :key="item.offeringId" :label="item.courseName + '-' + (item.teacherName || '')" :value="item.offeringId"/>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" :disabled="!swapNewOfferingId" @click="submitSwap">确认改选</el-button>
+        <el-button @click="swapOpen = false">取 消</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 <script>
-import { listEnroll, getEnroll, delEnroll, addEnroll, updateEnroll, runLottery, promoteWaitlist, dropCourse } from "@/api/tpm/enroll"
+import { listEnroll, getEnroll, delEnroll, addEnroll, updateEnroll, runLottery, promoteWaitlist, dropCourse, swapCourse } from "@/api/tpm/enroll"
 import { listRound } from "@/api/tpm/round"
 import { listOffering } from "@/api/tpm/offering"
 import { listStudent } from "@/api/sam/student"
@@ -136,6 +157,7 @@ export default {
       enrollList: [], roundOptions: [], studentOptions: [], offeringOptions: [],
       title: "", open: false,
       lotteryOpen: false, lotteryRoundId: null, lotterySeed: null,
+      swapOpen: false, swapRow: {}, swapNewOfferingId: null,
       queryParams: { pageNum: 1, pageSize: 10, roundId: null, studentId: null, resultStatus: null, lotteryResult: null },
       form: {},
       rules: {
@@ -162,7 +184,7 @@ export default {
     },
     cancel() { this.open = false; this.reset() },
     reset() {
-      this.form = { enrollId: null, roundId: null, studentId: null, courseOfferingId: null, selectTime: null, lotteryResult: "0", resultStatus: "1", dropTime: null }
+      this.form = { enrollId: null, roundId: null, studentId: null, courseOfferingId: null, selectTime: null, priority: null, lotteryResult: "0", resultStatus: "1", dropTime: null }
       this.resetForm("form")
     },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
@@ -191,6 +213,19 @@ export default {
     },
     handleDrop(row) {
       this.$modal.confirm('是否确认退课？退课后将回补课程容量。').then(() => dropCourse(row.enrollId)).then(() => { this.$modal.msgSuccess("退课成功"); this.getList() }).catch(() => {})
+    },
+    handleSwap(row) {
+      this.swapRow = row
+      this.swapNewOfferingId = null
+      this.swapOpen = true
+    },
+    submitSwap() {
+      if (!this.swapNewOfferingId) { this.$modal.msgWarning("请选择目标开课"); return }
+      swapCourse(this.swapRow.enrollId, this.swapNewOfferingId).then(res => {
+        this.swapOpen = false
+        this.$modal.msgSuccess((res && res.msg) || "改选成功")
+        this.getList()
+      })
     },
     handleLottery() { this.lotteryRoundId = null; this.lotterySeed = null; this.lotteryOpen = true },
     submitLottery() {

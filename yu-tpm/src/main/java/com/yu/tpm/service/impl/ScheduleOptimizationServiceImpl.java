@@ -447,7 +447,18 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
                                                      Integer daysPerWeek, Integer periodsPerDay,
                                                      Integer periodsPerSession, Integer totalWeeks)
     {
+        // 保持 T1 原口径：默认容量降序策略
+        return autoScheduleTimetable(semesterId, dryRun, daysPerWeek, periodsPerDay, periodsPerSession, totalWeeks, "capacity");
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> autoScheduleTimetable(Long semesterId, boolean dryRun,
+                                                     Integer daysPerWeek, Integer periodsPerDay,
+                                                     Integer periodsPerSession, Integer totalWeeks, String strategy)
+    {
         Map<String, Object> result = new HashMap<>();
+        result.put("strategy", strategy != null ? strategy : "capacity");
         int days = clamp(daysPerWeek != null ? daysPerWeek : cfgDaysPerWeek, 1, 7);
         int ppd = clamp(periodsPerDay != null ? periodsPerDay : cfgPeriodsPerDay, 1, 20);
         int pps = clamp(periodsPerSession != null ? periodsPerSession : cfgPeriodsPerSession, 1, ppd);
@@ -509,6 +520,45 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
                     markOccupied(teacherGrid.computeIfAbsent(s.getTeacherId(), k -> newGrid(days, ppd)), day, sp, ep);
                 }
             }
+        }
+
+        // F2-1：教师禁排时间片纳入硬约束——将禁排 (星期×节次) 预置到教师占用网格（无记录/查询为空时行为与 T1 一致）
+        List<com.yu.tpm.domain.dto.ForbiddenSlot> forbiddenSlots = scheduleMapper.selectForbiddenSlotsBySemester(semesterId);
+        if (forbiddenSlots != null && !forbiddenSlots.isEmpty())
+        {
+            for (com.yu.tpm.domain.dto.ForbiddenSlot fs : forbiddenSlots)
+            {
+                if (fs.getTeacherId() == null || fs.getWeekDay() == null
+                        || fs.getStartPeriod() == null || fs.getEndPeriod() == null) { continue; }
+                int day = fs.getWeekDay();
+                if (day < 1 || day > days) { continue; }
+                int sp = Math.max(1, fs.getStartPeriod());
+                int ep = Math.min(ppd, fs.getEndPeriod());
+                markOccupied(teacherGrid.computeIfAbsent(fs.getTeacherId(), k -> newGrid(days, ppd)), day, sp, ep);
+            }
+        }
+
+        // F2-1：候选排序策略（capacity 保持 SQL 原序即容量降序；受限优先/学时降序在内存重排）
+        if ("constrainedFirst".equals(strategy))
+        {
+            candidates.sort((x, y) ->
+            {
+                boolean lx = x.getPracticeHours() != null && x.getPracticeHours() > 0;
+                boolean ly = y.getPracticeHours() != null && y.getPracticeHours() > 0;
+                if (lx != ly) { return lx ? -1 : 1; }
+                int cx = x.getMaxStudents() != null ? x.getMaxStudents() : defaultCapacity;
+                int cy = y.getMaxStudents() != null ? y.getMaxStudents() : defaultCapacity;
+                return Integer.compare(cy, cx);
+            });
+        }
+        else if ("hoursDesc".equals(strategy))
+        {
+            candidates.sort((x, y) ->
+            {
+                int hx = x.getTotalHours() != null ? x.getTotalHours() : 0;
+                int hy = y.getTotalHours() != null ? y.getTotalHours() : 0;
+                return Integer.compare(hy, hx);
+            });
         }
 
         Map<Long, int[]> teacherDayLoad = new HashMap<>();
@@ -638,6 +688,89 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
         log.info("T1自动排课：学期={} 候选={} 成功={} 会话={} 失败={} dryRun={}",
                 semesterId, candidates.size(), scheduledOfferings, items.size(), failedOfferings, dryRun);
         return result;
+    }
+
+    /**
+     * F2-1 多方案对比：对候选排序策略各跑一轮内存试排（dryRun=true 不落库），
+     * 依据编排数/失败数/软约束命中计算方案分并排名，供人工择优后按选中策略落库。
+     * 复用已测试覆盖的 autoScheduleTimetable，不改动其内部逻辑，纯增量。
+     */
+    @Override
+    public Map<String, Object> compareSchedulePlans(Long semesterId,
+                                                    Integer daysPerWeek, Integer periodsPerDay,
+                                                    Integer periodsPerSession, Integer totalWeeks)
+    {
+        Map<String, Object> result = new HashMap<>();
+        String[] strategyKeys = {"capacity", "constrainedFirst", "hoursDesc"};
+        Map<String, String> strategyMeta = new java.util.LinkedHashMap<>();
+        strategyMeta.put("capacity", "容量降序（默认，优先保障大班/热门课资源）");
+        strategyMeta.put("constrainedFirst", "受限优先（实践/实验室课先行占位，缓解稀缺教室）");
+        strategyMeta.put("hoursDesc", "学时降序（总学时大的课程优先铺开，均衡周负载）");
+
+        List<Map<String, Object>> plans = new ArrayList<>();
+        for (String key : strategyKeys)
+        {
+            Map<String, Object> run = autoScheduleTimetable(semesterId, true,
+                    daysPerWeek, periodsPerDay, periodsPerSession, totalWeeks, key);
+            int scheduled = toInt(run.get("scheduledOfferings"));
+            int failed = toInt(run.get("failedOfferings"));
+            int sessions = toInt(run.get("totalSessions"));
+            int softScore = countSoftHits(run.get("items"));
+            // 方案分：编排成功权重最高，失败重罚，软约束命中作加分（不改变可行性优先级）
+            int score = scheduled * 100 - failed * 80 + softScore;
+
+            Map<String, Object> plan = new java.util.LinkedHashMap<>();
+            plan.put("strategy", key);
+            plan.put("strategyName", strategyMeta.get(key));
+            plan.put("scheduledOfferings", scheduled);
+            plan.put("failedOfferings", failed);
+            plan.put("totalSessions", sessions);
+            plan.put("softScore", softScore);
+            plan.put("score", score);
+            plan.put("failReasons", run.get("failReasons"));
+            plans.add(plan);
+        }
+        // 按方案分降序排名
+        plans.sort((a, b) -> Integer.compare(toInt(b.get("score")), toInt(a.get("score"))));
+        for (int i = 0; i < plans.size(); i++)
+        {
+            plans.get(i).put("rank", i + 1);
+        }
+
+        result.put("plans", plans);
+        result.put("strategyMeta", strategyMeta);
+        result.put("bestStrategy", plans.isEmpty() ? "capacity" : plans.get(0).get("strategy"));
+        result.put("message", plans.isEmpty() ? "无可用方案" :
+                String.format("已对比%d个策略方案，推荐【%s】（方案分%s）",
+                        plans.size(), plans.get(0).get("strategy"), plans.get(0).get("score")));
+        log.info("F2-1 多方案对比：学期={} 方案数={} 推荐={}",
+                semesterId, plans.size(), result.get("bestStrategy"));
+        return result;
+    }
+
+    /** 方案对象安全取整 */
+    private int toInt(Object v)
+    {
+        if (v instanceof Number) { return ((Number) v).intValue(); }
+        return 0;
+    }
+
+    /** 统计某方案试排明细中软约束命中数（实验/机房匹配 +3，同校区 +2，同楼宇 +1） */
+    @SuppressWarnings("unchecked")
+    private int countSoftHits(Object itemsObj)
+    {
+        int hit = 0;
+        if (!(itemsObj instanceof List)) { return hit; }
+        for (Object o : (List<Object>) itemsObj)
+        {
+            if (!(o instanceof AutoScheduleItem)) { continue; }
+            String note = ((AutoScheduleItem) o).getNote();
+            if (note == null) { continue; }
+            if (note.contains("实验/机房匹配")) { hit += 3; }
+            if (note.contains("同校区")) { hit += 2; }
+            if (note.contains("同楼宇")) { hit += 1; }
+        }
+        return hit;
     }
 
     // ================= T1 自动排课辅助方法 =================

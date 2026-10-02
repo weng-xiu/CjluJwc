@@ -53,6 +53,13 @@ public interface ITpmSelectionEnrollmentService
     public AjaxResult enrollWithValidation(Long studentId, Long courseOfferingId, Long roundId);
 
     /**
+     * F2-2：带志愿优先级的选课（供 weighted 抽签模式按志愿权重中签）。
+     *
+     * @param priority 志愿序号（1=第一志愿，越小越优先；空为普通选课）
+     */
+    public AjaxResult enrollWithValidation(Long studentId, Long courseOfferingId, Long roundId, Integer priority);
+
+    /**
      * 执行抽签（超容量课程公平抽签）
      *
      * @param roundId 轮次ID
@@ -84,4 +91,13 @@ public interface ITpmSelectionEnrollmentService
      * @return 操作结果
      */
     public AjaxResult dropCourse(Long enrollId);
+
+    /**
+     * F2-2 退改选窗口：在轮次开放的退改选窗口内，将已选课程改选为另一开课（保持门数不变）。
+     *
+     * @param enrollId      原选课记录ID
+     * @param newOfferingId 目标开课ID
+     * @return 操作结果
+     */
+    public AjaxResult swapCourse(Long enrollId, Long newOfferingId);
 }

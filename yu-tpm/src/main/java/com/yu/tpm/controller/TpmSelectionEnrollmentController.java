@@ -126,8 +126,22 @@ public class TpmSelectionEnrollmentController extends BaseController
     @Log(title = "带验证选课", businessType = BusinessType.INSERT)
     public AjaxResult enrollWithValidation(@RequestBody TpmSelectionEnrollment enrollment)
     {
+        // F2-2：支持携带志愿优先级（priority），供轮次 weighted 抽签模式按志愿权重中签
         return tpmSelectionEnrollmentService
-                .enrollWithValidation(enrollment.getStudentId(), enrollment.getCourseOfferingId(), enrollment.getRoundId());
+                .enrollWithValidation(enrollment.getStudentId(), enrollment.getCourseOfferingId(),
+                        enrollment.getRoundId(), enrollment.getPriority());
+    }
+
+    /**
+     * F2-2 退改选窗口：将已选课程改选为另一开课（需轮次开放退改选且在窗口时间内）。
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:selection:enroll')")
+    @RateLimiter(time = 60, count = 30, limitType = LimitType.IP)
+    @PostMapping("/swap")
+    @Log(title = "选课退改选", businessType = BusinessType.UPDATE)
+    public AjaxResult swapCourse(@RequestParam Long enrollId, @RequestParam Long newOfferingId)
+    {
+        return tpmSelectionEnrollmentService.swapCourse(enrollId, newOfferingId);
     }
 
     /**

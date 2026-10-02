@@ -95,15 +95,20 @@ public class ScheduleOptimizationController extends BaseController
                                           @RequestParam(required = false) Integer daysPerWeek,
                                           @RequestParam(required = false) Integer periodsPerDay,
                                           @RequestParam(required = false) Integer periodsPerSession,
-                                          @RequestParam(required = false) Integer totalWeeks)
+                                          @RequestParam(required = false) Integer totalWeeks,
+                                          @RequestParam(required = false) String strategy)
     {
-        Map<String, Object> result = scheduleOptimizationService.autoScheduleTimetable(
-                semesterId, true, daysPerWeek, periodsPerDay, periodsPerSession, totalWeeks);
+        Map<String, Object> result = strategy == null || strategy.isEmpty()
+                ? scheduleOptimizationService.autoScheduleTimetable(
+                        semesterId, true, daysPerWeek, periodsPerDay, periodsPerSession, totalWeeks)
+                : scheduleOptimizationService.autoScheduleTimetable(
+                        semesterId, true, daysPerWeek, periodsPerDay, periodsPerSession, totalWeeks, strategy);
         return success(result);
     }
 
     /**
      * 时间片自动排课落库（T1）：按预览算法生成排课并写入（schedule_type=auto），可在排课管理中人工调整。
+     * F2-1：新增可选 strategy 参数（capacity/constrainedFirst/hoursDesc），缺省保持 T1 原口径。
      */
     @PreAuthorize("@ss.hasPermi('tpm:schedule:autoAssign')")
     // V4.0 §7.3/A1：排课落库属重写操作，限 5 次/分，避免并发重算互相踩脚
@@ -114,10 +119,31 @@ public class ScheduleOptimizationController extends BaseController
                                         @RequestParam(required = false) Integer daysPerWeek,
                                         @RequestParam(required = false) Integer periodsPerDay,
                                         @RequestParam(required = false) Integer periodsPerSession,
-                                        @RequestParam(required = false) Integer totalWeeks)
+                                        @RequestParam(required = false) Integer totalWeeks,
+                                        @RequestParam(required = false) String strategy)
     {
-        Map<String, Object> result = scheduleOptimizationService.autoScheduleTimetable(
-                semesterId, false, daysPerWeek, periodsPerDay, periodsPerSession, totalWeeks);
+        Map<String, Object> result = strategy == null || strategy.isEmpty()
+                ? scheduleOptimizationService.autoScheduleTimetable(
+                        semesterId, false, daysPerWeek, periodsPerDay, periodsPerSession, totalWeeks)
+                : scheduleOptimizationService.autoScheduleTimetable(
+                        semesterId, false, daysPerWeek, periodsPerDay, periodsPerSession, totalWeeks, strategy);
+        return success(result);
+    }
+
+    /**
+     * F2-1 多方案对比：以不同排序策略各内存试排一轮（不落库），返回各方案评分与排名供择优。
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:schedule:autoAssign')")
+    @RateLimiter(time = 60, count = 20)
+    @PostMapping("/comparePlans")
+    public AjaxResult comparePlans(@RequestParam Long semesterId,
+                                   @RequestParam(required = false) Integer daysPerWeek,
+                                   @RequestParam(required = false) Integer periodsPerDay,
+                                   @RequestParam(required = false) Integer periodsPerSession,
+                                   @RequestParam(required = false) Integer totalWeeks)
+    {
+        Map<String, Object> result = scheduleOptimizationService.compareSchedulePlans(
+                semesterId, daysPerWeek, periodsPerDay, periodsPerSession, totalWeeks);
         return success(result);
     }
 

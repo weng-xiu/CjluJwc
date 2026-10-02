@@ -15,6 +15,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="status"               column="status"                  />
         <result property="lotterySeed"          column="lottery_seed"            />
         <result property="lotteryTime"          column="lottery_time"            />
+        <result property="lotteryMode"          column="lottery_mode"            />
+        <result property="allowDropAdjust"      column="allow_drop_adjust"       />
+        <result property="dropAdjustStart"      column="drop_adjust_start"       />
+        <result property="dropAdjustEnd"        column="drop_adjust_end"         />
         <result property="delFlag"              column="del_flag"                />
         <result property="createBy"             column="create_by"               />
         <result property="createTime"           column="create_time"             />
@@ -24,7 +28,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="semesterName"         column="semester_name"           />
     </resultMap>
     <sql id="selectTpmSelectionRoundVo">
-        select r.round_id, r.semester_id, r.round_name, r.round_order, r.start_time, r.end_time, r.max_courses_per_student, r.round_status, r.status, r.lottery_seed, r.lottery_time, r.del_flag, r.create_by, r.create_time, r.update_by, r.update_time, r.remark,
+        select r.round_id, r.semester_id, r.round_name, r.round_order, r.start_time, r.end_time, r.max_courses_per_student, r.round_status, r.status, r.lottery_seed, r.lottery_time, r.lottery_mode, r.allow_drop_adjust, r.drop_adjust_start, r.drop_adjust_end, r.del_flag, r.create_by, r.create_time, r.update_by, r.update_time, r.remark,
         s.semester_name as semester_name
         from tpm_selection_round r
         left join brm_semester s on r.semester_id = s.semester_id
@@ -54,6 +58,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="maxCoursesPerStudent != null">max_courses_per_student,</if>
             <if test="roundStatus != null">round_status,</if>
             <if test="status != null">status,</if>
+            <if test="lotteryMode != null">lottery_mode,</if>
+            <if test="allowDropAdjust != null">allow_drop_adjust,</if>
+            <if test="dropAdjustStart != null">drop_adjust_start,</if>
+            <if test="dropAdjustEnd != null">drop_adjust_end,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="remark != null">remark,</if>
@@ -68,6 +76,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="maxCoursesPerStudent != null">#{maxCoursesPerStudent},</if>
             <if test="roundStatus != null">#{roundStatus},</if>
             <if test="status != null">#{status},</if>
+            <if test="lotteryMode != null">#{lotteryMode},</if>
+            <if test="allowDropAdjust != null">#{allowDropAdjust},</if>
+            <if test="dropAdjustStart != null">#{dropAdjustStart},</if>
+            <if test="dropAdjustEnd != null">#{dropAdjustEnd},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="remark != null">#{remark},</if>
@@ -87,6 +99,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="status != null">status = #{status},</if>
             <if test="lotterySeed != null">lottery_seed = #{lotterySeed},</if>
             <if test="lotteryTime != null">lottery_time = #{lotteryTime},</if>
+            <if test="lotteryMode != null">lottery_mode = #{lotteryMode},</if>
+            <if test="allowDropAdjust != null">allow_drop_adjust = #{allowDropAdjust},</if>
+            <if test="dropAdjustStart != null">drop_adjust_start = #{dropAdjustStart},</if>
+            <if test="dropAdjustEnd != null">drop_adjust_end = #{dropAdjustEnd},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="remark != null">remark = #{remark},</if>

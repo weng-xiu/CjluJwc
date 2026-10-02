@@ -26,9 +26,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="campusName"     column="campus_name"      />
         <result property="credit"         column="credit"           />
         <result property="enrolledCount"  column="enrolled_count"   />
+        <result property="elasticEnabled" column="elastic_enabled"  />
+        <result property="elasticMax"     column="elastic_max"      />
+        <result property="elasticStep"    column="elastic_step"     />
     </resultMap>
     <sql id="selectTpmCourseOfferingVo">
-        select offering_id, semester_id, course_id, teacher_id, campus_id, class_count, max_students, offering_status, status, del_flag, create_by, create_time, update_by, update_time, remark from tpm_course_offering
+        select offering_id, semester_id, course_id, teacher_id, campus_id, class_count, max_students, offering_status, status, del_flag, elastic_enabled, elastic_max, elastic_step, create_by, create_time, update_by, update_time, remark from tpm_course_offering
     </sql>
     <!-- V4.0 §6.1/N7：附带课程学分（与 ForPortal 口径对齐）并支持按课程名称筛选 -->
     <select id="selectTpmCourseOfferingList" parameterType="TpmCourseOffering" resultMap="TpmCourseOfferingResult">
@@ -109,6 +112,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="maxStudents != null">max_students,</if>
             <if test="offeringStatus != null">offering_status,</if>
             <if test="status != null">status,</if>
+            <if test="elasticEnabled != null">elastic_enabled,</if>
+            <if test="elasticMax != null">elastic_max,</if>
+            <if test="elasticStep != null">elastic_step,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="remark != null">remark,</if>
@@ -122,6 +128,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="maxStudents != null">#{maxStudents},</if>
             <if test="offeringStatus != null">#{offeringStatus},</if>
             <if test="status != null">#{status},</if>
+            <if test="elasticEnabled != null">#{elasticEnabled},</if>
+            <if test="elasticMax != null">#{elasticMax},</if>
+            <if test="elasticStep != null">#{elasticStep},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="remark != null">#{remark},</if>
@@ -138,6 +147,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="maxStudents != null">max_students = #{maxStudents},</if>
             <if test="offeringStatus != null">offering_status = #{offeringStatus},</if>
             <if test="status != null">status = #{status},</if>
+            <if test="elasticEnabled != null">elastic_enabled = #{elasticEnabled},</if>
+            <if test="elasticMax != null">elastic_max = #{elasticMax},</if>
+            <if test="elasticStep != null">elastic_step = #{elasticStep},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="remark != null">remark = #{remark},</if>

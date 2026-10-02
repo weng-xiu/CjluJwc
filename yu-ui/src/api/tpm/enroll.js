@@ -54,3 +54,8 @@ export function promoteWaitlist(offeringId) {
 export function dropCourse(enrollId) {
   return request({ url: '/tpm/enroll/drop/' + enrollId, method: 'post' })
 }
+
+// F2-2 退改选：将已选课程改选为另一开课（需轮次开放退改选且在窗口内）
+export function swapCourse(enrollId, newOfferingId) {
+  return request({ url: '/tpm/enroll/swap', method: 'post', params: { enrollId, newOfferingId } })
+}

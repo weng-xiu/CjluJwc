@@ -77,6 +77,18 @@ public class TpmCourseOffering extends BaseEntity
     /** 已选人数（子查询统计有效选课记录，供门户选课卡片展示） */
     private Integer enrolledCount;
 
+    /** F2-2 弹性扩容开关（0关闭 1开启）：抽签超容量时按步长自动扩容至上限 */
+    @Excel(name = "弹性扩容", readConverterExp = "0=关闭,1=开启")
+    private String elasticEnabled;
+
+    /** F2-2 弹性扩容上限人数 */
+    @Excel(name = "扩容上限")
+    private Integer elasticMax;
+
+    /** F2-2 弹性扩容步长人数 */
+    @Excel(name = "扩容步长")
+    private Integer elasticStep;
+
     public Long getOfferingId() { return offeringId; }
     public void setOfferingId(Long offeringId) { this.offeringId = offeringId; }
 
@@ -129,6 +141,15 @@ public class TpmCourseOffering extends BaseEntity
 
     public Integer getEnrolledCount() { return enrolledCount; }
     public void setEnrolledCount(Integer enrolledCount) { this.enrolledCount = enrolledCount; }
+
+    public String getElasticEnabled() { return elasticEnabled; }
+    public void setElasticEnabled(String elasticEnabled) { this.elasticEnabled = elasticEnabled; }
+
+    public Integer getElasticMax() { return elasticMax; }
+    public void setElasticMax(Integer elasticMax) { this.elasticMax = elasticMax; }
+
+    public Integer getElasticStep() { return elasticStep; }
+    public void setElasticStep(Integer elasticStep) { this.elasticStep = elasticStep; }
 
     @Override
     public String toString() {
