@@ -11,6 +11,11 @@
 
     <artifactId>yu-brm</artifactId>
 
+    <properties>
+        <!-- JaCoCo 行覆盖率防回归棘轮（Q1 第十六批收口 brm 长尾12控制器接口层：学年/楼栋/校区/教室借用/教室类型/设备/设备维护/专业/资源统计/学期/教师任职/教师资格，实测 ~25.4%，下限取 0.23）-->
+        <jacoco.line.minimum>0.23</jacoco.line.minimum>
+    </properties>
+
     <description>
         基础与资源管理模块
     </description>
@@ -21,6 +26,20 @@
         <dependency>
             <groupId>com.yu</groupId>
             <artifactId>yu-common</artifactId>
+        </dependency>
+
+        <!-- 单元测试（JUnit5 + Mockito + MockMvc，Q1 第十四批接口层测试）-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- MockMvc standalone 需 DispatcherServlet：webmvc 仅测试期使用（运行期由 yu-admin 聚合提供）-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

@@ -11,6 +11,11 @@
 
     <artifactId>yu-dis</artifactId>
 
+    <properties>
+        <!-- JaCoCo 行覆盖率防回归棘轮（Q1 第十六批收口 dis 数据交换日志接口层，实测 ~28.9%，下限取 0.27）-->
+        <jacoco.line.minimum>0.27</jacoco.line.minimum>
+    </properties>
+
     <description>
         数据对接与共享模块
     </description>
@@ -33,6 +38,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- MockMvc standalone 需 DispatcherServlet：webmvc 仅测试期使用（运行期由 yu-admin 聚合提供）-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
             <scope>test</scope>
         </dependency>
 
