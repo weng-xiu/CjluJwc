@@ -120,7 +120,7 @@
 
     <!-- 模板测试渲染对话框 -->
     <el-dialog title="模板测试渲染（示例数据）" v-model="previewOpen" width="900px" append-to-body>
-      <iframe :srcdoc="previewHtml" style="width: 100%; height: 560px; border: 1px solid #e4e7ed;"></iframe>
+      <iframe :srcdoc="previewHtml" style="width: 100%; height: 560px; border: 1px solid var(--dt-border-color-light);"></iframe>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="previewOpen = false">关 闭</el-button>

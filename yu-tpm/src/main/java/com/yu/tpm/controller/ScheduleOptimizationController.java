@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.yu.common.annotation.Log;
+import com.yu.common.annotation.RateLimiter;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.enums.BusinessType;
@@ -73,6 +74,8 @@ public class ScheduleOptimizationController extends BaseController
      * 自动分配教室
      */
     @PreAuthorize("@ss.hasPermi('tpm:schedule:autoAssign')")
+    // V4.0 §7.3/A1：排课计算重（全局串行防护），同类重活限 5 次/分
+    @RateLimiter(time = 60, count = 5)
     @PostMapping("/autoAssign")
     @Log(title = "自动分配教室", businessType = BusinessType.UPDATE)
     public AjaxResult autoAssign(@RequestParam Long semesterId)
@@ -86,6 +89,7 @@ public class ScheduleOptimizationController extends BaseController
      * 周课时/节次/周数等参数可选，缺省取系统配置。
      */
     @PreAuthorize("@ss.hasPermi('tpm:schedule:autoAssign')")
+    @RateLimiter(time = 60, count = 20)
     @PostMapping("/autoSchedulePreview")
     public AjaxResult autoSchedulePreview(@RequestParam Long semesterId,
                                           @RequestParam(required = false) Integer daysPerWeek,
@@ -102,6 +106,8 @@ public class ScheduleOptimizationController extends BaseController
      * 时间片自动排课落库（T1）：按预览算法生成排课并写入（schedule_type=auto），可在排课管理中人工调整。
      */
     @PreAuthorize("@ss.hasPermi('tpm:schedule:autoAssign')")
+    // V4.0 §7.3/A1：排课落库属重写操作，限 5 次/分，避免并发重算互相踩脚
+    @RateLimiter(time = 60, count = 5)
     @PostMapping("/autoScheduleApply")
     @Log(title = "时间片自动排课", businessType = BusinessType.INSERT)
     public AjaxResult autoScheduleApply(@RequestParam Long semesterId,

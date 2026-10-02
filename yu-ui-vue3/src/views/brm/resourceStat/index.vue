@@ -63,7 +63,7 @@
           <el-table-column label="最近维保" prop="lastRepairDate" width="130" align="center"/>
           <el-table-column label="距今(天)" width="100" align="center">
             <template #default="scope">
-              <span v-if="scope.row.daysSince == null" style="color:#f56c6c">从未维保</span>
+              <span v-if="scope.row.daysSince == null" style="color:var(--el-color-danger)">从未维保</span>
               <el-tag v-else :type="scope.row.daysSince >= 365 ? 'danger' : 'warning'" size="small">{{ scope.row.daysSince }}</el-tag>
             </template>
           </el-table-column>
@@ -143,9 +143,9 @@ export default {
 </script>
 
 <style scoped>
-.stat-cards .stat-card { background:#f5f7fa;border-radius:6px;padding:12px;text-align:center;margin-bottom:12px; }
-.stat-cards .stat-card.pass { background:#f0f9eb; }
-.stat-cards .stat-card.warn { background:#fdf6ec; }
-.stat-label { color:#909399;font-size:13px; }
-.stat-value { font-size:20px;font-weight:600;color:#303133;margin-top:6px; }
+.stat-cards .stat-card { background:var(--dt-fill-light);border-radius:6px;padding:12px;text-align:center;margin-bottom:12px; }
+.stat-cards .stat-card.pass { background:var(--el-color-success-light-9); }
+.stat-cards .stat-card.warn { background:var(--el-color-warning-light-9); }
+.stat-label { color:var(--dt-text-secondary);font-size:13px; }
+.stat-value { font-size:20px;font-weight:600;color:var(--dt-text-primary);margin-top:6px; }
 </style>

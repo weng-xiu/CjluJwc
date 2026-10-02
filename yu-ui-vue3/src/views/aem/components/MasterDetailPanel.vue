@@ -41,7 +41,7 @@
       <el-table-column label="操作" width="130" align="center">
         <template #default="scope">
           <el-button size="small" link icon="Edit" @click="handleEdit(scope.row)" v-hasPermi="perms.edit">修改</el-button>
-          <el-button size="small" link icon="Delete" style="color:#f56c6c" @click="handleDelete(scope.row)" v-hasPermi="perms.remove">删除</el-button>
+          <el-button size="small" link icon="Delete" style="color:var(--el-color-danger)" @click="handleDelete(scope.row)" v-hasPermi="perms.remove">删除</el-button>
         </template>
       </el-table-column>
       <template #empty>
@@ -241,7 +241,7 @@ export default {
 <style scoped>
 .master-detail-panel {
   padding: 10px 12px;
-  background: #fafbfc;
+  background: var(--dt-fill-light);
 }
 .panel-header {
   display: flex;
@@ -251,14 +251,14 @@ export default {
 }
 .panel-title {
   font-weight: 600;
-  color: #303133;
+  color: var(--dt-text-primary);
   font-size: 13px;
 }
 .panel-title .el-tag {
   margin-left: 8px;
 }
 .empty-tip {
-  color: #909399;
+  color: var(--dt-text-secondary);
   font-size: 12px;
   padding: 16px 0;
 }
@@ -270,12 +270,12 @@ export default {
 <style>
 /* 数据变更高亮（全局，避免 scoped 对子表格行类名不生效） */
 .el-table .row-changed-highlight td {
-  background-color: #fdf6ec !important;
+  background-color: var(--el-color-warning-light-9) !important;
   animation: row-flash 2.5s ease-out;
 }
 @keyframes row-flash {
-  0%   { background-color: #e6f7ff; }
-  40%  { background-color: #fdf6ec; }
-  100% { background-color: #fdf6ec; }
+  0%   { background-color: var(--el-color-primary-light-9); }
+  40%  { background-color: var(--el-color-warning-light-9); }
+  100% { background-color: var(--el-color-warning-light-9); }
 }
 </style>

@@ -95,8 +95,8 @@
 | 服务 | 端口 | 地址 / 说明 |
 |---|---|---|
 | 后端 yu-admin | 8080 | `http://localhost:8080`，管理端与门户端共用同一后端 |
-| Swagger 接口文档 | 8080 | `http://localhost:8080/swagger-ui.html` |
-| Druid 监控控制台 | 8080 | `http://localhost:8080/druid`（账号 `ruoyi` / `123456`） |
+| Swagger 接口文档 | 8080 | `http://localhost:8080/swagger-ui.html`（**仅 `dev` profile 开放**，`prod` 下 springdoc 与 Security 放行一并关闭） |
+| Druid 监控控制台 | 8080 | `http://localhost:8080/druid`（**基线关闭**，仅 `dev` profile 开启；账号口令由 `DRUID_LOGIN_USERNAME` / `DRUID_LOGIN_PASSWORD` 注入，不再内置弱口令） |
 | 管理端前端 yu-ui | 80 | `http://localhost:80`（**Vue2 日常开发入口**） |
 | 管理端前端 yu-ui-vue3 | 82 | `http://localhost:82`（Vue3 额外开发版本） |
 | 门户端前端 yu-portal-ui | 81 | `http://localhost:81`（**Vue2 日常开发入口**），移动端入口 `/mobile` |
@@ -150,24 +150,53 @@ net start Redis
 
 导入后校验：`SHOW TABLES` 应不少于 163 张表，`SELECT menu_name FROM sys_menu LIMIT 5` 中文无乱码。
 
+**方式三：Flyway 自动基线与增量（推荐用于新库 / CI）**
+
+方式二需要人工记住 70+ 脚本的执行顺序，且无版本记录。现已引入 Flyway：存量库以版本 0 打基线后
+只跑新增变更，全新空库则可按 `db/legacy/MANIFEST.md` 的权威顺序自动重放（`bin/db-baseline.ps1`）。
+规范、回滚配对要求与菜单 ID 分段见 **[`db/README.md`](db/README.md)**，
+历史 70 个脚本的清单与已知阻塞项见 **[`db/legacy/MANIFEST.md`](db/legacy/MANIFEST.md)**。
+
+```powershell
+$env:FLYWAY_ENABLED="true"   # 默认 false，避免误改现有开发库
+```
+
+> **仓库卫生（V4.0 §7.3/C1）**：`sql/备份/` 下的整库 dump 含学生与教师真实个人信息，
+> 已从版本库移出并被 `.gitignore` 忽略，仅作本机开发资产保留。
+> 克隆仓库后如需整库导入，请按 `docker/mysql-init/README.md` 的方式自行导出并**脱敏**。
+
 ### 3. 配置说明
 
 后端核心配置位于 `yu-admin/src/main/resources/`：
 
-- `application-druid.yml`：数据库连接（默认 `localhost:3306/yu-CjluJwc`，`root/123456`），从库默认关闭。
-- `application.yml`：服务端口 `8080`、Redis、文件上传路径、Token、Flowable 等。
+- `application.yml`：服务端口 `8080`、Redis、文件上传路径、Token、Flowable、Flyway、Actuator、XSS 过滤范围等公共基线。
+- `application-dev.yml`：本地开发 profile —— 开放 Swagger / Druid 控制台、`com.yu` 调试日志、允许多语句执行。
+- `application-prod.yml`：生产 profile —— 关闭文档端点与控制台、日志降为 `warn`、Flyway 严格校验、Actuator 不展开细节。
+
+默认激活 profile 为 `dev`（保持既有本地开发行为不变），容器编排内默认 `prod`：
+
+```powershell
+$env:SPRING_PROFILES_ACTIVE="prod"
+```
 
 所有环境相关项均支持**环境变量覆盖，无需改动文件**：
 
 | 环境变量 | 说明 | 默认值 |
 |---|---|---|
+| `SPRING_PROFILES_ACTIVE` | 激活的 profile（自动附带 `druid` 数据源配置） | `dev`（compose 内 `prod`） |
 | `DB_HOST` / `DB_PORT` / `DB_NAME` | 数据库地址、端口、库名 | `localhost` / `3306` / `yu-CjluJwc` |
 | `DB_USER` / `DB_PASSWORD` | 数据库用户名、密码 | `root` / `123456` |
 | `DB_USE_SSL` / `DB_ALLOW_PUBLIC_KEY` | 连远程库无 SSL 时建议 `false` / `true` | `true` / `false` |
 | `SLAVE_ENABLED` | 从库数据源开关 | `false` |
+| `DRUID_STAT_VIEW_ENABLED` | Druid 监控台开关（基线跟随 profile） | dev `true` / prod `false` |
+| `DRUID_LOGIN_USERNAME` / `DRUID_LOGIN_PASSWORD` | Druid 监控台账号口令 | dev 取 `application-dev.yml`，prod 必须显式注入 |
+| `DRUID_ALLOW` | Druid 监控台允许访问的 IP 白名单 | （空，仅本机） |
+| `SWAGGER_UI_ENABLED` / `DOC_ENDPOINT_PERMIT_ALL` | 文档端点开关 / 是否免鉴权放行 | dev `true` / prod `false` |
+| `FLYWAY_ENABLED` / `FLYWAY_LOCATIONS` / `FLYWAY_VALIDATE` | 数据库版本管理开关、脚本位置、校验开关 | `false` / `filesystem:db/migration` / prod `true` |
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` / `REDIS_DATABASE` | Redis 地址、端口、密码、库索引 | `127.0.0.1` / `6379` / （空） / `0` |
 | `RUIYI_PROFILE` | 文件上传存储路径 | 项目内 `ruoyi/uploadPath`（Linux 建议 `/home/ruoyi/uploadPath`） |
 | `LOG_PATH` | 日志输出目录 | 启动目录下 `logs/`（Linux 建议 `/home/ruoyi/logs`） |
+| `LOG_MAX_HISTORY` | 日志保留天数 | `60`（compose 内 `30`） |
 
 PowerShell 设置示例（启动后端前执行）：
 
@@ -208,7 +237,7 @@ ry.bat        # 菜单式：启动/停止/重启/状态（需在 jar 所在目�
 
 - 后端服务：`http://localhost:8080`
 - Swagger 文档：`http://localhost:8080/swagger-ui.html`
-- Druid 监控：`http://localhost:8080/druid`（`ruoyi` / `123456`）
+- Druid 监控：`http://localhost:8080/druid`（**仅 `dev` profile 开启**；账号口令由 `DRUID_LOGIN_USERNAME` / `DRUID_LOGIN_PASSWORD` 注入，仓库内不再保留弱口令默认值）
 
 ### 5. 前端启动
 

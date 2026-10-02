@@ -30,6 +30,13 @@
   --dt-bg-page: #f0f2f5;         /* 内容区底色 */
   --dt-bg-container: #ffffff;    /* 卡片/面板表面 */
 
+  /* ---------- 全局样式专用表面（ruoyi.scss 原硬编码值，亮色段保持原样） ---------- */
+  --dt-table-header-bg: #f8f8f9;      /* 表格表头底色（ruoyi.scss .el-table th） */
+  --dt-table-header-text: #515a6e;    /* 表格表头文字 */
+  --dt-surface-weak: #f7f9fb;         /* 次级表面：详情卡标题 / 代码块底 */
+  --dt-surface-block: #f8f8f8;        /* 抽屉头部等整块浅底 */
+  --dt-border-color-weak: #ebeef5;    /* 轻分隔线（详情卡/条目） */
+
   /* ---------- 阴影 ---------- */
   --dt-shadow-light: 0 1px 4px rgba(0, 21, 41, 0.08);
   --dt-shadow-medium: 0 2px 12px 0 rgba(0, 0, 0, 0.08);
@@ -77,6 +84,13 @@ html.dark {
   --dt-fill-light: #262727;
   --dt-bg-page: #141414;
   --dt-bg-container: #1d1e1f;
+
+  /* ---------- 全局样式专用表面（暗色段重映射，与 EP 暗色表面对齐） ---------- */
+  --dt-table-header-bg: #262727;
+  --dt-table-header-text: #cfd3dc;
+  --dt-surface-weak: #1d1e1f;
+  --dt-surface-block: #1d1e1f;
+  --dt-border-color-weak: #363637;
 
   /* ---------- 阴影（暗色下加深） ---------- */
   --dt-shadow-light: 0 1px 4px rgba(0, 0, 0, 0.4);

@@ -14,10 +14,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.yu.common.annotation.Log;
+import com.yu.common.annotation.RateLimiter;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.core.page.TableDataInfo;
 import com.yu.common.enums.BusinessType;
+import com.yu.common.enums.LimitType;
 import com.yu.web.domain.StatusReportBatch;
 import com.yu.web.service.IStatusReportService;
 
@@ -77,6 +79,8 @@ public class StatusReportController extends BaseController
 
     /** 一键生成上报批次 */
     @PreAuthorize("@ss.hasPermi('system:statusReport:generate')")
+    // V4.0 §7.3/A1：报盘生成要全量抽取四类状态数据，全局限 10 次/分
+    @RateLimiter(time = 60, count = 10)
     @Log(title = "状态数据上报", businessType = BusinessType.INSERT)
     @PostMapping("/generate")
     public AjaxResult generate(@RequestBody StatusReportBatch batch)
@@ -86,6 +90,8 @@ public class StatusReportController extends BaseController
 
     /** 报盘导出（按批次导出时同步回填批次导出状态） */
     @PreAuthorize("@ss.hasPermi('system:statusReport:export')")
+    // V4.0 §7.3/A1：导出含全量个人信息，按 IP 限 20 次/分，兼顾误重复点击与抓取风险
+    @RateLimiter(time = 60, count = 20, limitType = LimitType.IP)
     @Log(title = "状态数据上报", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response,

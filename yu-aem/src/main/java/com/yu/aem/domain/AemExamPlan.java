@@ -76,6 +76,12 @@ public class AemExamPlan extends BaseEntity
     /** 子表：监考分配 */
     private List<AemExamInvigilation> invigilations;
 
+    /** 课程名称（非持久化，JOIN tpm_course_library 取得，供门户考试安排列表展示） */
+    private transient String courseName;
+
+    public String getCourseName() { return courseName; }
+    public void setCourseName(String courseName) { this.courseName = courseName; }
+
     public List<AemExamSeat> getSeats() { return seats; }
     public void setSeats(List<AemExamSeat> seats) { this.seats = seats; }
 

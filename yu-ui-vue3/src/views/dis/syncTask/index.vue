@@ -62,7 +62,7 @@
             <el-descriptions-item label="落库表">{{ (execResult.tables || []).join(', ') || '—' }}</el-descriptions-item>
             <el-descriptions-item label="批次号" :span="2">{{ execResult.batchNo }}</el-descriptions-item>
           </el-descriptions>
-          <div v-if="execResult.persistError" style="color:#E6A23C;margin-top:8px">落库异常：{{ execResult.persistError }}</div>
+          <div v-if="execResult.persistError" style="color:var(--el-color-warning);margin-top:8px">落库异常：{{ execResult.persistError }}</div>
         </template>
       </el-result>
       <template #footer>

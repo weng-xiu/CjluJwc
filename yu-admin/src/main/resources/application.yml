@@ -33,9 +33,10 @@ server:
       min-spare: 100
 
 # 日志配置
+# 基线口径：默认 info（V4.0 §7.3 合规止血——生产不再默认 debug）；开发调试的 debug 由 application-dev.yml 覆盖
 logging:
   level:
-    com.yu: debug
+    com.yu: info
     org.springframework: warn
 
 # 用户配置
@@ -61,8 +62,26 @@ spring:
   messages:
     # 国际化资源文件路径
     basename: i18n/messages
+  # 数据库迁移引擎（V4.0 A6：基线化 35 个 phase 脚本）
+  # 基线 enabled=false：存量库已人工到位，默认不自动改库；新环境建库或发布流程显式注入 FLYWAY_ENABLED=true
+  flyway:
+    enabled: ${FLYWAY_ENABLED:false}
+    # 已有库首次接管：以 baseline 标记现存结构，不重跑历史脚本
+    baseline-on-migrate: true
+    baseline-version: 0
+    baseline-description: existing yu-cjlujwc schema
+    # 存量脚本为历史基线，允许先关校验和比对，避免小幅注释差异阻断启动
+    validate-on-migrate: ${FLYWAY_VALIDATE:false}
+    clean-disabled: true
+    locations: ${FLYWAY_LOCATIONS:filesystem:db/migration}
   profiles:
-    active: druid
+    # V4.0 §7.3 多环境基线化：显式 profile 化，默认 dev（本地开发），容器/生产以 SPRING_PROFILES_ACTIVE=prod 启动。
+    # druid（数据源配置）通过 profile group 绑定到各环境，保持既有 application-druid.yml 加载方式不变。
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+    group:
+      dev: druid
+      prod: druid
+      test: druid
   # 文件上传
   servlet:
     multipart:
@@ -128,11 +147,15 @@ pagehelper:
   params: count=countSql
 
 # Springdoc配置
+# swagger 开关可被 profile 覆盖：application-prod.yml 设 swagger.ui-enabled=false 关闭接口文档
+swagger:
+  ui-enabled: ${SWAGGER_UI_ENABLED:true}
 springdoc:
   api-docs:
     path: /v3/api-docs
+    enabled: ${swagger.ui-enabled}
   swagger-ui:
-    enabled: true
+    enabled: ${swagger.ui-enabled}
     path: /swagger-ui.html
     tags-sorter: alpha
   group-configs:
@@ -154,8 +177,29 @@ xss:
   enabled: true
   # 排除链接（多个用逗号分隔）
   excludes: /system/notice
-  # 匹配链接
-  urlPatterns: /system/*,/monitor/*,/tool/*
+  # 匹配链接（V4.0 §7.3 止血：由 3 个系统路径扩展到全部业务路径，消除业务写接口存储型 XSS 面）
+  urlPatterns: /system/*,/monitor/*,/tool/*,/brm/*,/tpm/*,/sam/*,/aem/*,/portal/*,/oa/*,/dis/*
+
+# 安全开关（V4.0 §7.3）：文档与监控类端点是否匿名放行。
+# 基线默认 false（生产姿态）；仅 application-dev.yml 打开，避免 Swagger/Druid 控制台在生产 permitAll。
+security:
+  doc-endpoints:
+    permit-all: ${DOC_ENDPOINT_PERMIT_ALL:false}
+
+# 可观测性（V4.0 A5）：actuator 仅暴露 health/info，metrics 待接入 Prometheus 时再开
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when-authorized
+  info:
+    env:
+      enabled: false
 
 # Flowable 工作流引擎配置
 flowable:

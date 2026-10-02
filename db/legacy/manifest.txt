@@ -1,0 +1,87 @@
+# yu-cjlujwc 历史脚本基线清单（机器可读，人读版本见 db/legacy/MANIFEST.md）
+# 格式：order|relative_path|execute|note
+#   execute=Y  全新库基线导入时执行
+#   execute=N  不自动执行（破坏性运维脚本 / 逆向回滚脚本 / 演示数据）
+# 新增 sql/ 脚本或调整顺序时必须同步本文件，否则 bin/db-manifest-check.ps1 会报 FAIL。
+
+# ---------- A. 框架与工作流基础 ----------
+0.01|sql/ry_20260417.sql|Y|RuoYi 基础表与原生菜单，仅可对空库执行
+0.02|sql/quartz.sql|Y|QRTZ 定时任务表
+0.03|sql/flowable_create_all.sql|Y|Flowable 7.1.0 引擎表（utf8/utf8_bin，勿改）
+
+# ---------- B. 业务模块建表 ----------
+0.04|sql/brm.sql|Y|BRM 基础资源
+0.05|sql/tpm.sql|Y|TPM 培养过程
+0.06|sql/aem.sql|Y|AEM 考核评价
+0.07|sql/sam.sql|Y|SAM 学籍学位
+0.08|sql/dis.sql|Y|DIS 数据对接
+0.09|sql/oa.sql|Y|OA 办公自动化
+0.10|sql/portal.sql|Y|Portal 门户业务表
+0.11|sql/portal_cms.sql|Y|Portal CMS
+
+# ---------- C. 菜单与字典补丁 ----------
+0.12|sql/ry_brm_menu.sql|Y|BRM 菜单 2000 段
+0.13|sql/ry_brm_dict.sql|Y|BRM 字典
+0.14|sql/ry_tpm_menu.sql|Y|TPM 菜单 2100-2299 段
+0.15|sql/ry_aem_menu.sql|Y|AEM 菜单 2300 段
+0.16|sql/ry_sam_menu.sql|Y|SAM 菜单 2400-2599 段
+0.17|sql/ry_dis_menu.sql|Y|DIS 菜单 2600 段
+0.18|sql/ry_oa_menu.sql|Y|OA 菜单 2600 段
+0.19|sql/ry_oa_menu_2700.sql|Y|OA 菜单补充 2700 段，勿与 0.18 调换顺序
+0.20|sql/ry_oa_dict.sql|Y|OA 字典
+0.21|sql/ry_portal_menu.sql|Y|门户菜单 2800 段
+0.22|sql/ry_portal_cms_menu.sql|Y|门户 CMS 菜单 2800 段
+0.23|sql/ry_portal_role_menu.sql|Y|门户角色-菜单授权
+
+# ---------- D. 结构性升级补丁 ----------
+0.24|sql/user_mgmt_upgrade.sql|Y|用户管理增强
+0.25|sql/brm_dept_sync_from_sys.sql|Y|BRM 院系自 sys_dept 同步
+0.26|sql/fix_schedule_opt_menu.sql|Y|排课优化菜单修正
+0.27|sql/fix_gpa_config_menu.sql|Y|GPA 配置菜单修正
+
+# ---------- E. 增量 phase 脚本 ----------
+0.28|sql/phase1_upgrade.sql|Y|一期升级主体
+0.29|sql/phase1_rollback.sql|N|phase1 逆向脚本，仅回滚时使用（成对回滚范本）
+0.30|sql/phase1_warning_job.sql|Y|学业预警定时任务
+0.31|sql/phase3_governance.sql|Y|数据治理
+0.32|sql/phase4_tpm_enhancement.sql|Y|TPM 增强
+0.33|sql/phase5_aem_optimization.sql|Y|AEM 优化
+0.34|sql/phase6_portal_mobile.sql|Y|门户移动端结构
+0.35|sql/phase6_portal_mobile_seed.sql|Y|门户移动端种子数据，依赖 0.34
+0.36|sql/phase7_portal_selection_seed.sql|Y|门户选课种子数据
+0.37|sql/phase8_d1_sync.sql|Y|D1 同步改造
+0.38|sql/phase9_s5_o1_p1.sql|Y|S5/O1/P1 合并增量
+0.39|sql/phase10_s1_audit_menu.sql|Y|S1 审核菜单
+0.40|sql/phase11_a4_grade_weight.sql|Y|A4 成绩加权
+0.41|sql/phase12_t3_publish_status_dict.sql|Y|T3 发布状态字典
+0.42|sql/phase13_p7_course_import.sql|Y|P7 课程导入
+0.43|sql/phase14_d2_sync_reliability.sql|Y|D2 同步可靠性
+0.44|sql/phase15_s4_graduation_prereview.sql|Y|S4 毕业预审
+0.45|sql/phase16_p1_a5_s3_t6_a1a2.sql|Y|P1/A5/S3/T6/A1/A2 跨模块合并增量
+0.46|sql/phase17_a6_b2_stat.sql|Y|A6/B2 统计
+0.47|sql/phase18_b1_borrow.sql|Y|B1 教室借用
+0.48|sql/phase19_p7_a7_import_stat.sql|Y|P7/A7 导入统计
+0.49|sql/phase20_p7_plan_import.sql|Y|P7 方案导入
+0.50|sql/phase21_s8_registration.sql|Y|S8 学籍注册
+0.51|sql/phase22_s7_certificate_procedure.sql|Y|S7 证书办理
+0.52|sql/phase23_p4_print_credential.sql|Y|P4 打印凭证
+0.53|sql/phase24_p6_portal_apply_loop.sql|Y|P6 门户申请闭环
+0.54|sql/phase25_tpm_dict_restore.sql|Y|TPM 字典修复
+0.55|sql/phase26_sam_student_user_id.sql|Y|SAM 学生-用户关联
+0.56|sql/phase27_tpm_adjustment_approve_comment.sql|Y|调停课审批意见
+0.57|sql/phase28_p3_subject_stat.sql|Y|P3 学科统计
+0.58|sql/phase29_s6_warning_assist.sql|Y|S6 预警帮扶
+0.59|sql/phase30_o1_grade_review_flow.sql|Y|O1 成绩复核流程
+0.60|sql/phase31_o1_workflow_cosign.sql|Y|O1 流程会签
+0.61|sql/phase32_thesis_management.sql|Y|论文管理
+0.62|sql/phase33_status_report.sql|Y|教育部状态数据上报
+0.63|sql/phase34_ai_pilot.sql|Y|AI 试点
+0.64|sql/phase35_ui_theme.sql|Y|UI 主题与暗色模式令牌
+
+# ---------- F. 明确排除（保留登记，不参与自动导入） ----------
+9.01|sql/_drop_act.sql|N|破坏性运维脚本：DROP Flowable ACT_* 表
+9.02|sql/_drop_act_wrapped.sql|N|破坏性运维脚本：同 9.01 的包裹版
+9.03|sql/_drop_flow.sql|N|破坏性运维脚本：DROP Flowable FLW_* 表
+9.04|sql/_drop_flow_wrapped.sql|N|破坏性运维脚本：同 9.03 的包裹版
+9.05|sql/yangtze_seed_data.sql|N|演示数据，按需手工导入
+9.06|sql/seed_feature_test_data.sql|N|功能测试数据，按需手工导入

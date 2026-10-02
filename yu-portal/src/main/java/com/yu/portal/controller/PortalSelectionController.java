@@ -12,10 +12,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.yu.common.annotation.Log;
+import com.yu.common.annotation.RateLimiter;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.core.page.TableDataInfo;
 import com.yu.common.enums.BusinessType;
+import com.yu.common.enums.LimitType;
 import com.yu.common.utils.StringUtils;
 import com.yu.common.utils.poi.ExcelUtil;
 import com.yu.tpm.domain.TpmCourseOffering;
@@ -72,6 +74,7 @@ public class PortalSelectionController extends BaseController
 
     /** 学生端：选课冲突检测（返回冲突列表，空数组表示无冲突） */
     @PreAuthorize("@ss.hasPermi('portal:selection:enroll') and @ss.hasAnyRoles('admin,student')")
+    @RateLimiter(time = 60, count = 60, limitType = LimitType.IP)
     @PostMapping("/validate")
     public AjaxResult validate(@RequestBody TpmSelectionEnrollment tpmSelectionEnrollment)
     {
@@ -82,6 +85,8 @@ public class PortalSelectionController extends BaseController
 
     /** 学生端：带验证的选课（轮次/门数/冲突校验 + Redis 并发控制，自动绑定当前学生） */
     @PreAuthorize("@ss.hasPermi('portal:selection:enroll') and @ss.hasAnyRoles('admin,student')")
+    // V4.0 A1/§7.3：选课尖峰入站限流（IP 维度 30 次/分），避免无效重试打穿 Tomcat 线程与连接池
+    @RateLimiter(time = 60, count = 30, limitType = LimitType.IP)
     @Log(title = "门户选课", businessType = BusinessType.INSERT)
     @PostMapping("/enrollWithValidation")
     public AjaxResult enrollWithValidation(@RequestBody TpmSelectionEnrollment tpmSelectionEnrollment)
@@ -92,6 +97,8 @@ public class PortalSelectionController extends BaseController
 
     /** 学生选课 */
     @PreAuthorize("@ss.hasPermi('portal:selection:enroll') and @ss.hasAnyRoles('admin,student')")
+    // V4.0 A1/§7.3：选课尖峰入站限流（IP 维度 30 次/分）
+    @RateLimiter(time = 60, count = 30, limitType = LimitType.IP)
     @Log(title = "选课操作", businessType = BusinessType.INSERT)
     @PostMapping("/enroll")
     public AjaxResult enroll(@RequestBody TpmSelectionEnrollment tpmSelectionEnrollment)

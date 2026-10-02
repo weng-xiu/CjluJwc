@@ -16,9 +16,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.yu.common.annotation.Log;
+import com.yu.common.annotation.RateLimiter;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.enums.BusinessType;
+import com.yu.common.enums.LimitType;
 import com.yu.tpm.domain.TpmSelectionEnrollment;
 import com.yu.tpm.domain.dto.ConflictWarning;
 import com.yu.tpm.domain.dto.CourseSuggestion;
@@ -118,6 +120,8 @@ public class TpmSelectionEnrollmentController extends BaseController
      * 带验证的选课（含冲突检测+Redis并发控制）
      */
     @PreAuthorize("@ss.hasPermi('tpm:selection:enroll')")
+    // V4.0 §7.3/A1：选课尖峰入站限流（IP 维度 30 次/分）
+    @RateLimiter(time = 60, count = 30, limitType = LimitType.IP)
     @PostMapping("/enrollWithValidation")
     @Log(title = "带验证选课", businessType = BusinessType.INSERT)
     public AjaxResult enrollWithValidation(@RequestBody TpmSelectionEnrollment enrollment)
@@ -131,6 +135,8 @@ public class TpmSelectionEnrollmentController extends BaseController
      * T6：可选传入随机种子（seed），传入相同种子可复现同一抽签结果用于审计；不传则自动生成并记录。
      */
     @PreAuthorize("@ss.hasPermi('tpm:enroll:edit')")
+    // V4.0 §7.3/A1：抽签属全量重算，全局限 3 次/分（集群多实例下的竞态由 A3 分布式锁收口）
+    @RateLimiter(time = 60, count = 3)
     @PostMapping("/lottery/{roundId}")
     @Log(title = "选课抽签", businessType = BusinessType.UPDATE)
     public AjaxResult lottery(@PathVariable Long roundId,
@@ -144,6 +150,7 @@ public class TpmSelectionEnrollmentController extends BaseController
      * T6：候补递补——按候补排名将落选学生递补至空余容量
      */
     @PreAuthorize("@ss.hasPermi('tpm:enroll:edit')")
+    @RateLimiter(time = 60, count = 6)
     @PostMapping("/promoteWaitlist/{offeringId}")
     @Log(title = "选课候补递补", businessType = BusinessType.UPDATE)
     public AjaxResult promoteWaitlist(@PathVariable Long offeringId)

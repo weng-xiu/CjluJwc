@@ -151,21 +151,21 @@ export default {
 }
 
 .type-notify {
-  background: #fff8e6;
+  background: var(--el-color-warning-light-9);
   color: #b7791f;
-  border-left: 3px solid #d97706;
+  border-left: 3px solid var(--el-color-warning);
 }
 
 .type-announce {
-  background: #e8f5e9;
+  background: var(--el-color-success-light-9);
   color: #276749;
-  border-left: 3px solid #38a169;
+  border-left: 3px solid var(--el-color-success);
 }
 
 .notice-title {
   font-size: 22px;
   font-weight: 700;
-  color: #1a202c;
+  color: var(--dt-text-primary);
   line-height: 1.45;
   margin: 0 0 16px;
   letter-spacing: -0.2px;
@@ -177,8 +177,8 @@ export default {
   flex-wrap: wrap;
   gap: 16px;
   padding: 12px 0;
-  border-top: 1px solid #e9ecef;
-  border-bottom: 1px solid #e9ecef;
+  border-top: 1px solid var(--dt-border-color-light);
+  border-bottom: 1px solid var(--dt-border-color-light);
   margin-bottom: 28px;
 }
 
@@ -187,11 +187,11 @@ export default {
   align-items: center;
   gap: 5px;
   font-size: 12px;
-  color: #718096;
+  color: var(--dt-text-secondary);
 
   .el-icon {
     font-size: 12px;
-    color: #a0aec0;
+    color: var(--dt-text-placeholder);
   }
 }
 
@@ -204,11 +204,11 @@ export default {
 }
 
 .status-ok {
-  background: #38a169;
+  background: var(--el-color-success);
 }
 
 .status-off {
-  background: #e53e3e;
+  background: var(--el-color-danger);
 }
 
 .notice-divider {
@@ -230,11 +230,11 @@ export default {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #cbd5e0;
+  background: var(--dt-border-color);
 }
 
 .notice-body {
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 6px;
   padding: 28px 32px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
@@ -244,7 +244,7 @@ export default {
 .notice-content {
   font-size: 14px;
   line-height: 1.85;
-  color: #2d3748;
+  color: var(--dt-text-primary);
   word-break: break-word;
 }
 
@@ -256,7 +256,7 @@ export default {
 .notice-content :deep(h2),
 .notice-content :deep(h3) {
   font-weight: 700;
-  color: #1a202c;
+  color: var(--dt-text-primary);
   margin: 1.4em 0 0.6em;
 }
 
@@ -273,12 +273,12 @@ export default {
 }
 
 .notice-content :deep(a) {
-  color: #3182ce;
+  color: var(--el-color-primary);
   text-decoration: underline;
 }
 
 .notice-content :deep(a:hover) {
-  color: #2b6cb0;
+  color: var(--el-color-primary);
 }
 
 .notice-content :deep(img) {
@@ -298,11 +298,11 @@ export default {
 }
 
 .notice-content :deep(blockquote) {
-  border-left: 3px solid #cbd5e0;
+  border-left: 3px solid var(--dt-border-color);
   margin: 1em 0;
   padding: 6px 16px;
-  color: #718096;
-  background: #f7fafc;
+  color: var(--dt-text-secondary);
+  background: var(--dt-fill-light);
 }
 
 .notice-content :deep(table) {
@@ -314,19 +314,19 @@ export default {
 
 .notice-content :deep(table th),
 .notice-content :deep(table td) {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--dt-border-color-light);
   padding: 7px 12px;
 }
 
 .notice-content :deep(table th) {
-  background: #f7fafc;
+  background: var(--dt-fill-light);
   font-weight: 600;
 }
 
 .notice-empty {
   text-align: center;
   padding: 40px 0;
-  color: #a0aec0;
+  color: var(--dt-text-placeholder);
   font-size: 13px;
 }
 

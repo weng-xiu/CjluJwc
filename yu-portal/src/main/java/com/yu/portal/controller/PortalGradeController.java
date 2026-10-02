@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.yu.common.annotation.Log;
+import com.yu.common.annotation.RateLimiter;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.core.page.TableDataInfo;
 import com.yu.common.enums.BusinessType;
+import com.yu.common.enums.LimitType;
 import com.yu.common.utils.poi.ExcelUtil;
 import com.yu.aem.domain.AemGradeRecord;
 import com.yu.aem.domain.AemGradeStatistics;
@@ -73,6 +75,8 @@ public class PortalGradeController extends BaseController
 
     /** 教师端：录入成绩 */
     @PreAuthorize("@ss.hasPermi('portal:gradeEntry:add') and @ss.hasAnyRoles('admin,teacher')")
+    // V4.0 §7.3/A1：成绩录入写接口限流（IP 维度 120 次/分，容纳录入矩阵逐格保存）
+    @RateLimiter(time = 60, count = 120, limitType = LimitType.IP)
     @Log(title = "成绩录入", businessType = BusinessType.INSERT)
     @PostMapping("/entry")
     public AjaxResult entry(@RequestBody AemGradeRecord aemGradeRecord)
@@ -82,6 +86,7 @@ public class PortalGradeController extends BaseController
 
     /** 教师端：修改成绩 */
     @PreAuthorize("@ss.hasPermi('portal:gradeEntry:edit') and @ss.hasAnyRoles('admin,teacher')")
+    @RateLimiter(time = 60, count = 120, limitType = LimitType.IP)
     @Log(title = "成绩修改", businessType = BusinessType.UPDATE)
     @PutMapping("/entry")
     public AjaxResult editEntry(@RequestBody AemGradeRecord aemGradeRecord)
@@ -91,6 +96,7 @@ public class PortalGradeController extends BaseController
 
     /** 教师端：暂存/提交成绩（含平时成绩和期末成绩） */
     @PreAuthorize("@ss.hasPermi('portal:gradeEntry:add') and @ss.hasAnyRoles('admin,teacher')")
+    @RateLimiter(time = 60, count = 60, limitType = LimitType.IP)
     @Log(title = "成绩提交", businessType = BusinessType.INSERT)
     @PostMapping("/submit")
     public AjaxResult submit(@RequestBody Map<String, Object> params)

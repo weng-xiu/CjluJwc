@@ -223,7 +223,7 @@
             <span class="task-name">{{ task.taskName }}</span>
             <el-tag size="small" :type="task.endTime ? 'success' : 'warning'">{{ task.endTime ? '已办理' : '待办理' }}</el-tag>
           </div>
-          <div class="task-meta">办理人：{{ task.assignee || '未指定' }}<template v-if="task.endTime">　完成时间：{{ parseTime(task.endTime) }}</template></div>
+          <div class="task-meta">办理人：{{ task.assignee || '未指定' }}<template v-if="task.endTime">&emsp;完成时间：{{ parseTime(task.endTime) }}</template></div>
           <div v-for="(c, i) in task.comments" :key="i" class="task-comment"><el-icon><ChatLineSquare /></el-icon> {{ c }}</div>
         </el-timeline-item>
       </el-timeline>
@@ -550,10 +550,10 @@ export default {
 .history-title {
   margin: 18px 0 12px;
   padding-left: 8px;
-  border-left: 3px solid #007ab8;
+  border-left: 3px solid var(--dt-color-primary);
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--dt-text-primary);
 }
 .task-head {
   display: flex;
@@ -561,28 +561,28 @@ export default {
   gap: 8px;
   .task-name {
     font-weight: 600;
-    color: #303133;
+    color: var(--dt-text-primary);
   }
 }
 .task-meta {
   margin-top: 4px;
   font-size: 12px;
-  color: #909399;
+  color: var(--dt-text-secondary);
 }
 .task-comment {
   margin-top: 6px;
   padding: 6px 10px;
-  background: #edf3f9;
+  background: var(--el-color-primary-light-9);
   border-radius: 4px;
   font-size: 12px;
-  color: #606266;
+  color: var(--dt-text-regular);
   .el-icon {
-    color: #007ab8;
+    color: var(--dt-color-primary);
   }
 }
 .co-tip {
   font-size: 12px;
-  color: #909399;
+  color: var(--dt-text-secondary);
   line-height: 1.6;
 }
 .tab-badge {

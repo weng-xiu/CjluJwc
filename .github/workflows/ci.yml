@@ -1,4 +1,4 @@
-# CjluJwc CI 回归门禁（Q2 + Q1 覆盖率棘轮）
+# CjluJwc CI 回归门禁（Q2 + Q1 覆盖率棘轮 + V4.0 §7.3 数据库卫生/前端门禁）
 # 两阶段策略：先 install -DskipTests 安装上游模块，再仅跑受控模块测试，
 # 避免 -am 连带执行无关模块存量用例。受控模块：yu-tpm（排课/抽签/冲突/规则 + MockMvc 接口层）、yu-sam（学位/毕业审核）、yu-aem（成绩记录接口层）、yu-oa（工作流接口层）、yu-portal（门户成绩/选课/课表/预警接口层）、yu-admin（系统管理用户/公告/角色/菜单/部门 + 字典类型/岗位/参数配置 + 字典数据/个人中心/登录 + 注册/AI问答/凭证/消息中心/打印模板接口层）。
 # 各受控模块 test 阶段绑定 jacoco prepare-agent/report/check：低于行覆盖率下限（防回归棘轮，见各模块 pom 的 jacoco.line.minimum）即拦截回归。
@@ -58,19 +58,62 @@ jobs:
           path: build-temp/*/site/jacoco/
 
   frontend-build:
+    # V4.0 §7.3：两端 Vue3 工程同走 npm ci → lint → build 门禁（matrix 避免复制粘贴漂移）
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [yu-ui-vue3, yu-portal-ui-vue3]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: ${{ matrix.project }}/package-lock.json
+
+      # 用 npm ci 而非 npm install：严格按 lock 安装，依赖漂移当场失败而非流到构建后
+      - name: npm ci
+        working-directory: ${{ matrix.project }}
+        run: npm ci
+
+      - name: Lint (ESLint, errors block)
+        working-directory: ${{ matrix.project }}
+        run: npm run lint
+
+      # Prettier 作建议项：存量代码未全量格式化，开阻塞会产生万行 diff 淹没真实变更评审；
+      # 保留作业输出供棘轮，待一次性全量 format 后再转正为阻塞步骤。
+      - name: Format check (Prettier, advisory)
+        continue-on-error: true
+        working-directory: ${{ matrix.project }}
+        run: npm run format:check
+
+      - name: Build (prod)
+        working-directory: ${{ matrix.project }}
+        run: npm run build:prod
+
+      - name: Upload dist (artifact for deploy/image build)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.project }}-dist
+          path: ${{ matrix.project }}/dist/
+          retention-days: 7
+
+  db-hygiene:
+    # V4.0 §7.3 数据库版本管理门禁：不需要数据库实例，纯静态校验，秒级完成
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node 18
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: npm
-          cache-dependency-path: yu-ui-vue3/package-lock.json
+      - name: Check Flyway legacy manifest & rollback pairing
+        shell: pwsh
+        run: ./bin/db-manifest-check.ps1
 
-      - name: Build yu-ui-vue3 (prod)
-        working-directory: yu-ui-vue3
-        run: |
-          npm install
-          npm run build:prod
+      # -IgnoreLegacy：64 处历史 sys_menu 撞号（见 db/legacy/MANIFEST.md 「已知阻塞项」）
+      # 只拦新增冲突，存量冲突待基线重放时一次性解决
+      - name: Check sys_menu id segment collisions (new changes only)
+        shell: pwsh
+        run: ./bin/db-menu-check.ps1 -IgnoreLegacy

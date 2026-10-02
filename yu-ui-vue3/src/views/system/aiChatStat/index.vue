@@ -331,17 +331,17 @@ export default {
 
 <style scoped>
 .chart { height: 300px; }
-.stat-cards .stat-card { background: #f5f7fa; border-radius: 6px; padding: 14px; text-align: center; margin-bottom: 12px; }
-.stat-cards .stat-card.pass { background: #f0f9eb; }
-.stat-cards .stat-card.warn { background: #fdf6ec; }
-.stat-label { color: #909399; font-size: 13px; }
-.stat-value { font-size: 22px; font-weight: 600; color: #303133; margin-top: 6px; }
-.card-tip { margin-left: 12px; font-size: 12px; color: #909399; }
-.audit-tip { font-size: 12px; color: #909399; line-height: 28px; }
-.empty-tip { padding: 12px 0; font-size: 12px; color: #c0c4cc; text-align: center; }
-.scene-line { display: flex; align-items: center; margin-bottom: 10px; font-size: 12px; color: #606266; }
+.stat-cards .stat-card { background: var(--dt-fill-light); border-radius: 6px; padding: 14px; text-align: center; margin-bottom: 12px; }
+.stat-cards .stat-card.pass { background: var(--el-color-success-light-9); }
+.stat-cards .stat-card.warn { background: var(--el-color-warning-light-9); }
+.stat-label { color: var(--dt-text-secondary); font-size: 13px; }
+.stat-value { font-size: 22px; font-weight: 600; color: var(--dt-text-primary); margin-top: 6px; }
+.card-tip { margin-left: 12px; font-size: 12px; color: var(--dt-text-secondary); }
+.audit-tip { font-size: 12px; color: var(--dt-text-secondary); line-height: 28px; }
+.empty-tip { padding: 12px 0; font-size: 12px; color: var(--dt-text-placeholder); text-align: center; }
+.scene-line { display: flex; align-items: center; margin-bottom: 10px; font-size: 12px; color: var(--dt-text-regular); }
 .scene-name { width: 68px; flex: none; }
-.scene-val { width: 130px; flex: none; text-align: right; color: #909399; }
+.scene-val { width: 130px; flex: none; text-align: right; color: var(--dt-text-secondary); }
 .detail-content { white-space: pre-wrap; line-height: 1.7; max-height: 300px; overflow-y: auto; }
-.error-text { color: #f56c6c; }
+.error-text { color: var(--el-color-danger); }
 </style>

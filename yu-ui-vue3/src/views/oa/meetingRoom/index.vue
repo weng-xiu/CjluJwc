@@ -99,7 +99,7 @@
           :clearable="false"
           @change="loadOccupancy"
         />
-        <span style="margin-left: 12px; color: #909399;">共 {{ occupancyList.length }} 个有效安排</span>
+        <span style="margin-left: 12px; color: var(--dt-text-secondary);">共 {{ occupancyList.length }} 个有效安排</span>
       </div>
       <el-table v-loading="occupancyLoading" :data="occupancyList" border>
         <el-table-column label="会议主题" align="center" prop="meetingTheme" :show-overflow-tooltip="true" />

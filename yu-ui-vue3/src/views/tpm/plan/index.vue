@@ -368,7 +368,7 @@ export default {
 }
 .sub-table-tip {
   margin-left: 12px;
-  color: #909399;
+  color: var(--dt-text-secondary);
   font-size: 12px;
 }
 .sub-table :deep(.el-input__inner),

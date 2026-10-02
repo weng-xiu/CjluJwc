@@ -70,8 +70,8 @@
       <div v-if="assignResult">
         <el-descriptions :column="2" border size="small" style="margin-bottom:15px">
           <el-descriptions-item label="总排课数">{{ assignResult.totalCount }}</el-descriptions-item>
-          <el-descriptions-item label="成功分配"><span style="color:#67C23A;font-weight:bold">{{ assignResult.successCount }}</span></el-descriptions-item>
-          <el-descriptions-item label="分配失败"><span style="color:#F56C6C;font-weight:bold">{{ assignResult.failCount }}</span></el-descriptions-item>
+          <el-descriptions-item label="成功分配"><span style="color:var(--el-color-success);font-weight:bold">{{ assignResult.successCount }}</span></el-descriptions-item>
+          <el-descriptions-item label="分配失败"><span style="color:var(--el-color-danger);font-weight:bold">{{ assignResult.failCount }}</span></el-descriptions-item>
           <el-descriptions-item label="结果" :span="2">{{ assignResult.message }}</el-descriptions-item>
         </el-descriptions>
         <div v-if="failReasonRows.length > 0">
@@ -104,9 +104,9 @@
       <div v-if="asResult">
         <el-descriptions :column="4" border size="small" style="margin-bottom:12px">
           <el-descriptions-item label="待排开课">{{ asResult.totalCandidates }}</el-descriptions-item>
-          <el-descriptions-item label="成功编排"><span style="color:#67C23A;font-weight:bold">{{ asResult.scheduledOfferings }}</span></el-descriptions-item>
+          <el-descriptions-item label="成功编排"><span style="color:var(--el-color-success);font-weight:bold">{{ asResult.scheduledOfferings }}</span></el-descriptions-item>
           <el-descriptions-item label="生成课次">{{ asResult.totalSessions }}</el-descriptions-item>
-          <el-descriptions-item label="失败/未满"><span style="color:#F56C6C;font-weight:bold">{{ asResult.failedOfferings }}</span></el-descriptions-item>
+          <el-descriptions-item label="失败/未满"><span style="color:var(--el-color-danger);font-weight:bold">{{ asResult.failedOfferings }}</span></el-descriptions-item>
           <el-descriptions-item label="结果" :span="4">{{ asResult.message }}</el-descriptions-item>
         </el-descriptions>
 
@@ -122,7 +122,7 @@
 
         <div v-if="asFailRows.length" style="margin-top:12px">
           <el-alert title="失败 / 未满明细" type="warning" :closable="false" show-icon style="margin-bottom:8px" />
-          <ul style="margin:0;padding-left:20px;color:#E6A23C;font-size:13px;line-height:1.8">
+          <ul style="margin:0;padding-left:20px;color:var(--el-color-warning);font-size:13px;line-height:1.8">
             <li v-for="(r,i) in asFailRows" :key="i">{{ r }}</li>
           </ul>
         </div>

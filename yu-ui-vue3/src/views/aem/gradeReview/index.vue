@@ -35,8 +35,8 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="300">
         <template #default="scope">
           <el-button v-if="canSubmit(scope.row)" size="small" link icon="Upload" @click="handleSubmit(scope.row)" v-hasPermi="['aem:gradeReview:submit']">提交审批</el-button>
-          <el-button v-if="canApprove(scope.row)" size="small" link icon="Finished" style="color:#409eff" @click="handleApprove(scope.row)" v-hasPermi="['aem:gradeReview:audit']">审批</el-button>
-          <el-button v-if="canCancel(scope.row)" size="small" link icon="RefreshLeft" style="color:#e6a23c" @click="handleCancel(scope.row)" v-hasPermi="['aem:gradeReview:submit']">撤销</el-button>
+          <el-button v-if="canApprove(scope.row)" size="small" link icon="Finished" style="color:var(--el-color-primary)" @click="handleApprove(scope.row)" v-hasPermi="['aem:gradeReview:audit']">审批</el-button>
+          <el-button v-if="canCancel(scope.row)" size="small" link icon="RefreshLeft" style="color:var(--el-color-warning)" @click="handleCancel(scope.row)" v-hasPermi="['aem:gradeReview:submit']">撤销</el-button>
           <el-button v-if="scope.row.procInstId" size="small" link icon="View" @click="handleTrace(scope.row)" v-hasPermi="['aem:gradeReview:query']">追溯</el-button>
           <el-button v-if="canEdit(scope.row)" size="small" link icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['aem:gradeReview:edit']">修改</el-button>
           <el-button size="small" link icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['aem:gradeReview:remove']">删除</el-button>
@@ -93,9 +93,9 @@
         <el-timeline-item v-for="(t, i) in traceTasks" :key="i"
                           :timestamp="parseTime(t.endTime || t.startTime, '{y}-{m}-{d} {h}:{i}')"
                           :type="t.endTime ? 'success' : 'primary'" :hollow="!t.endTime">
-          <div><b>{{ t.taskName }}</b><span v-if="t.assignee" style="color:#909399;margin-left:8px">办理人：{{ t.assignee }}</span></div>
-          <div v-if="t.comments && t.comments.length" style="color:#606266">意见：{{ t.comments.join(' / ') }}</div>
-          <div v-if="!t.endTime" style="color:#E6A23C">进行中…</div>
+          <div><b>{{ t.taskName }}</b><span v-if="t.assignee" style="color:var(--dt-text-secondary);margin-left:8px">办理人：{{ t.assignee }}</span></div>
+          <div v-if="t.comments && t.comments.length" style="color:var(--dt-text-regular)">意见：{{ t.comments.join(' / ') }}</div>
+          <div v-if="!t.endTime" style="color:var(--el-color-warning)">进行中…</div>
         </el-timeline-item>
       </el-timeline>
       <el-empty v-else description="暂无流程记录" :image-size="60" />

@@ -52,17 +52,25 @@ function mix(color, weight, target) {
 
 const WHITE = [255, 255, 255]
 const BLACK = [0, 0, 0]
+/** Element Plus 官方暗色分支的色阶混色基色（theme-chalk dark css-vars 用 #141414） */
+const DARK_BASE = [20, 20, 20]
 
-/** 计算给定主色的全套 CSS 变量映射 */
-export function derivePrimaryVars(hex) {
+/** 当前是否处于暗色（以 html.dark 为单一事实源，与 utils/theme.js 的类切换保持同步） */
+function isDarkActive() {
+  return document.documentElement.classList.contains('dark')
+}
+
+/** 计算给定主色的全套 CSS 变量映射（明暗分支各按 EP 官方混色规则，避免暗色下行内浅色覆盖） */
+export function derivePrimaryVars(hex, dark = isDarkActive()) {
+  const lightTarget = dark ? DARK_BASE : WHITE
   return {
     '--el-color-primary': hex,
-    '--el-color-primary-light-3': mix(hex, 0.3, WHITE),
-    '--el-color-primary-light-5': mix(hex, 0.5, WHITE),
-    '--el-color-primary-light-7': mix(hex, 0.7, WHITE),
-    '--el-color-primary-light-8': mix(hex, 0.8, WHITE),
-    '--el-color-primary-light-9': mix(hex, 0.9, WHITE),
-    '--el-color-primary-dark-2': mix(hex, 0.2, BLACK),
+    '--el-color-primary-light-3': mix(hex, 0.3, lightTarget),
+    '--el-color-primary-light-5': mix(hex, 0.5, lightTarget),
+    '--el-color-primary-light-7': mix(hex, 0.7, lightTarget),
+    '--el-color-primary-light-8': mix(hex, 0.8, lightTarget),
+    '--el-color-primary-light-9': mix(hex, 0.9, lightTarget),
+    '--el-color-primary-dark-2': mix(hex, 0.2, dark ? WHITE : BLACK),
     '--dt-color-primary': hex
   }
 }
@@ -72,15 +80,29 @@ export function getStoredThemeColor() {
   return normalizeHex(localStorage.getItem(STORAGE_KEY)) || DEFAULT_PRIMARY
 }
 
+// 明暗切换（utils/theme.js 派发 app-theme-change）时按新分支重算行内色阶，
+// 否则浅色混入的 --el-color-primary-light-* 会持续覆盖 EP 暗色变量（plain 按钮近白底）。
+window.addEventListener('app-theme-change', () => {
+  writePrimaryVars(getStoredThemeColor())
+})
+
+/**
+ * 将色值套写入 html 行内样式（不触发主题事件，供 apply/重算复用）。
+ */
+function writePrimaryVars(color) {
+  const hex = normalizeHex(color) || DEFAULT_PRIMARY
+  const vars = derivePrimaryVars(hex)
+  const root = document.documentElement
+  Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v))
+  return hex
+}
+
 /**
  * 应用主题色到全站（写入 html 行内样式覆盖 CSS 变量）。
  * persist=true 时同时记入本地偏好；color 非法则回落默认色。返回实际生效色值。
  */
 export function applyThemeColor(color, persist = true) {
-  const hex = normalizeHex(color) || DEFAULT_PRIMARY
-  const vars = derivePrimaryVars(hex)
-  const root = document.documentElement
-  Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v))
+  const hex = writePrimaryVars(color)
   if (persist) {
     localStorage.setItem(STORAGE_KEY, hex)
   }

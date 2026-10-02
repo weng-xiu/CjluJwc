@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import com.yu.common.constant.Constants;
 import com.yu.common.filter.RefererFilter;
 import com.yu.common.filter.RepeatableFilter;
+import com.yu.common.filter.TraceIdFilter;
 import com.yu.common.filter.XssFilter;
 import com.yu.common.utils.StringUtils;
 
@@ -74,6 +75,24 @@ public class FilterConfig
         registration.addUrlPatterns("/*");
         registration.setName("repeatableFilter");
         registration.setOrder(FilterRegistrationBean.LOWEST_PRECEDENCE);
+        return registration;
+    }
+
+    /**
+     * 链路追踪过滤器（V4.0 §7.3 / A5）：为每个请求建立 traceId 并写入 MDC，
+     * 排在全链路最前，保证后续过滤器/业务日志均带链路编号。
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @Bean
+    @ConditionalOnProperty(value = "trace.enabled", havingValue = "true", matchIfMissing = true)
+    public FilterRegistrationBean traceIdFilterRegistration()
+    {
+        FilterRegistrationBean registration = new FilterRegistrationBean();
+        registration.setDispatcherTypes(DispatcherType.REQUEST);
+        registration.setFilter(new TraceIdFilter());
+        registration.addUrlPatterns("/*");
+        registration.setName("traceIdFilter");
+        registration.setOrder(FilterRegistrationBean.HIGHEST_PRECEDENCE);
         return registration;
     }
 

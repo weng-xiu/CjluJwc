@@ -133,7 +133,7 @@
 
     <!-- 凭证预览对话框 -->
     <el-dialog title="凭证预览" v-model="previewOpen" width="900px" append-to-body>
-      <iframe :srcdoc="previewHtml" style="width: 100%; height: 560px; border: 1px solid #e4e7ed;"></iframe>
+      <iframe :srcdoc="previewHtml" style="width: 100%; height: 560px; border: 1px solid var(--dt-border-color-light);"></iframe>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="previewOpen = false">关 闭</el-button>
@@ -149,8 +149,8 @@
       </el-form>
       <el-alert v-if="verifyResult != null" :title="verifyResult.message" :type="verifyResult.valid ? 'success' : 'error'" :closable="false" show-icon>
         <div v-if="verifyResult.valid" style="font-size: 12px; margin-top: 6px;">
-          类型：{{ verifyResult.bizTypeName }}　接收人：{{ verifyResult.receiveName }}<br />
-          标题：{{ verifyResult.title }}　发放时间：{{ parseTime(verifyResult.issueTime) }}
+          类型：{{ verifyResult.bizTypeName }}&emsp;接收人：{{ verifyResult.receiveName }}<br />
+          标题：{{ verifyResult.title }}&emsp;发放时间：{{ parseTime(verifyResult.issueTime) }}
         </div>
       </el-alert>
       <template #footer>
@@ -355,5 +355,5 @@ export default {
 </script>
 
 <style scoped>
-.tip-text { font-size: 12px; color: #909399; line-height: 1.6; }
+.tip-text { font-size: 12px; color: var(--dt-text-secondary); line-height: 1.6; }
 </style>

@@ -167,8 +167,8 @@
       <div v-if="autoAssignResult">
         <el-descriptions :column="2" border size="small" style="margin-bottom:15px">
           <el-descriptions-item label="总排课数">{{ autoAssignResult.totalCount }}</el-descriptions-item>
-          <el-descriptions-item label="成功分配"><span style="color:#67C23A;font-weight:bold">{{ autoAssignResult.successCount }}</span></el-descriptions-item>
-          <el-descriptions-item label="分配失败"><span style="color:#F56C6C;font-weight:bold">{{ autoAssignResult.failCount }}</span></el-descriptions-item>
+          <el-descriptions-item label="成功分配"><span style="color:var(--el-color-success);font-weight:bold">{{ autoAssignResult.successCount }}</span></el-descriptions-item>
+          <el-descriptions-item label="分配失败"><span style="color:var(--el-color-danger);font-weight:bold">{{ autoAssignResult.failCount }}</span></el-descriptions-item>
           <el-descriptions-item label="结果" :span="2">{{ autoAssignResult.message }}</el-descriptions-item>
         </el-descriptions>
         <div v-if="autoAssignResult.failReasons && autoAssignResult.failReasons.length > 0">
@@ -610,9 +610,9 @@ export default {
 <style>
 /* 冲突行标红样式（Element Plus 下 .el-table td 需加 .el-table__cell 选择器提升权重，配合 !important 效果一致） */
 .el-table .conflict-row {
-  background-color: #FEF0F0 !important;
+  background-color: var(--el-color-danger-light-9) !important;
 }
 .el-table .conflict-row td.el-table__cell {
-  color: #F56C6C !important;
+  color: var(--el-color-danger) !important;
 }
 </style>

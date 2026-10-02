@@ -93,7 +93,7 @@
         </trim> where teacher_id = #{teacherId}
     </update>
     <select id="selectBrmTeacherByUserId" parameterType="Long" resultMap="BrmTeacherResult">
-        select teacher_id, teacher_code, teacher_name, user_id, dept_id, gender, phone, email, title, education, status, create_by, create_time, update_by, update_time, remark from brm_teacher where user_id = #{userId}
+        select teacher_id, teacher_code, teacher_name, user_id, dept_id, gender, phone, email, title, education, status, create_by, create_time, update_by, update_time, remark from brm_teacher where user_id = #{userId} order by teacher_id limit 1
     </select>
     <update id="updateBrmTeacherByUserId" parameterType="BrmTeacher">update brm_teacher
         <trim prefix="SET" suffixOverrides=",">

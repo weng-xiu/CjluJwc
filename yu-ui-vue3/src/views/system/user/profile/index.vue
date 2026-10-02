@@ -4,9 +4,9 @@
       <!-- 用户信息 -->
       <el-col :span="6" :xs="24">
         <el-card class="box-card">
-          <div slot="header" class="clearfix">
-            <span>用户信息</span>
-          </div>
+          <template #header>
+            <div class="clearfix"><span>用户信息</span></div>
+          </template>
           <div style="display: flex; flex-direction: column; align-items: center">
             <el-upload
               class="avatar-uploader"
@@ -225,7 +225,7 @@ export default {
   .info-item {
     margin: 8px 0;
     font-size: 13px;
-    color: #606266;
+    color: var(--dt-text-regular);
     display: flex;
     align-items: center;
     .el-icon {

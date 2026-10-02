@@ -95,7 +95,7 @@
       </el-descriptions>
       <div class="content-title">正文内容</div>
       <div v-if="viewForm.content" class="content-body" v-html="viewForm.content"></div>
-      <div v-else class="content-body" style="color: #909399;">无正文内容</div>
+      <div v-else class="content-body" style="color: var(--dt-text-secondary);">无正文内容</div>
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" icon="Check" @click="viewOpen = false; handleApprove(viewRow)" v-hasPermi="['oa:document:approve']">通 过</el-button>
@@ -213,19 +213,19 @@ export default {
 .content-title {
   margin: 18px 0 10px;
   padding-left: 8px;
-  border-left: 3px solid #007ab8;
+  border-left: 3px solid var(--dt-color-primary);
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--dt-text-primary);
 }
 .content-body {
   padding: 12px 16px;
   min-height: 120px;
   max-height: 360px;
   overflow-y: auto;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--dt-border-color-light);
   border-radius: 4px;
-  background: #fafbfc;
+  background: var(--dt-fill-light);
   line-height: 1.8;
   :deep(img) {
     max-width: 100%;

@@ -78,7 +78,7 @@ export default {
 <style lang="scss" scoped>
 .tip {
   margin-top: 12px;
-  color: var(--dt-text-secondary, #909399);
+  color: var(--dt-text-secondary);
   font-size: 13px;
   text-align: center;
 }

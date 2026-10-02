@@ -9,3 +9,8 @@ export function listStudentStatus(query) {
 export function addStatusChange(data) {
   return request({ url: '/portal/studentStatus/change', method: 'post', data: data })
 }
+
+// 本人学籍异动申请记录（后端强制收敛为当前登录学生）
+export function listMyStatusChanges(query) {
+  return request({ url: '/portal/studentStatus/changeList', method: 'get', params: query })
+}

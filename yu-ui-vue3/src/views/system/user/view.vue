@@ -223,10 +223,10 @@ export default {
 .section-header {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--dt-text-primary);
   margin: 16px 0 12px;
   padding-left: 10px;
-  border-left: 3px solid #409eff;
+  border-left: 3px solid var(--el-color-primary);
 }
 .info-item {
   display: flex;
@@ -235,13 +235,13 @@ export default {
   font-size: 13px;
 }
 .info-label {
-  color: #909399;
+  color: var(--dt-text-secondary);
   min-width: 92px;
   text-align: right;
   margin-right: 8px;
 }
 .info-value.plaintext {
-  color: #303133;
+  color: var(--dt-text-primary);
   word-break: break-all;
 }
 </style>

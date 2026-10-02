@@ -14,10 +14,11 @@
 
 <script>
 // U4 数据可视化统一封装组件：收敛 echarts 直调页面的 init / setOption / resize / dispose 样板，
-// 统一「主题联动 + 自适应尺寸 + 空态占位」。主题换肤由 utils/chartTheme.js 对 echarts.init 的
-// 全局登记式补丁自动接管（本组件仅调用 echarts.init/setOption，即继承亮暗与机构主色联动），
-// 无需本组件感知主题细节。色值/尺寸走 U1 --dt-* 令牌随暗色联动。
-import * as echarts from 'echarts'
+// 统一「主题联动 + 自适应尺寸 + 空态占位」。主题换肤由 utils/chartTheme.js 的图表工厂
+// initChart() 接管（创建即登记、setOption 自动合并当前主题覆盖层），本组件无需感知主题细节。
+// 色值/尺寸走 U1 --dt-* 令牌随暗色联动。
+// 注：不直接 import echarts，是为把 1MB 的 echarts chunk 挡在入口包之外（仅图表页渲染时才拉取）。
+import { initChart } from '@/utils/chartTheme'
 
 export default {
   name: 'BaseChart',
@@ -37,7 +38,7 @@ export default {
   },
   emits: ['ready', 'click'],
   data() {
-    return { chart: null, ro: null, _winHandler: null }
+    return { chart: null, ro: null, winHandler: null }
   },
   computed: {
     rootStyle() {
@@ -72,12 +73,12 @@ export default {
     },
     init() {
       if (this.chart || !this.$refs.chartRef) return
-      this.chart = echarts.init(this.$refs.chartRef, this.theme || undefined)
+      this.chart = initChart(this.$refs.chartRef, this.theme || undefined)
       this.applyOption(this.option)
       this.chart.on('click', (params) => this.$emit('click', params))
       if (this.autoResize) {
-        this._winHandler = () => this.resize()
-        window.addEventListener('resize', this._winHandler)
+        this.winHandler = () => this.resize()
+        window.addEventListener('resize', this.winHandler)
         if (typeof ResizeObserver !== 'undefined') {
           // 监听容器尺寸变化（侧栏收起 / 断点重排 / 父级伸缩），比仅监听 window 更稳
           this.ro = new ResizeObserver(() => this.resize())
@@ -100,7 +101,7 @@ export default {
       return this.chart
     },
     destroy() {
-      if (this._winHandler) window.removeEventListener('resize', this._winHandler)
+      if (this.winHandler) window.removeEventListener('resize', this.winHandler)
       if (this.ro) {
         this.ro.disconnect()
         this.ro = null

@@ -221,7 +221,7 @@ export default {
 </script>
 
 <style scoped>
-.follow-title { margin: 16px 0 8px; font-weight: bold; color: #303133; }
-.rec-head { font-weight: bold; color: #409EFF; margin-bottom: 4px; }
-.rec-body { color: #606266; white-space: pre-wrap; }
+.follow-title { margin: 16px 0 8px; font-weight: bold; color: var(--dt-text-primary); }
+.rec-head { font-weight: bold; color: var(--el-color-primary); margin-bottom: 4px; }
+.rec-body { color: var(--dt-text-regular); white-space: pre-wrap; }
 </style>

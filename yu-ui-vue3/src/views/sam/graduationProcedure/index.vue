@@ -148,10 +148,10 @@ export default {
 </script>
 
 <style scoped>
-.stat-card { background: #f5f7fa; border-radius: 6px; padding: 18px 16px; text-align: center; }
-.stat-card.ok { background: #f0f9eb; }
-.stat-card.warn { background: #fdf6ec; }
-.stat-card.danger { background: #fef0f0; }
-.stat-num { font-size: 26px; font-weight: 600; color: #303133; }
-.stat-label { margin-top: 6px; font-size: 13px; color: #909399; }
+.stat-card { background: var(--dt-fill-light); border-radius: 6px; padding: 18px 16px; text-align: center; }
+.stat-card.ok { background: var(--el-color-success-light-9); }
+.stat-card.warn { background: var(--el-color-warning-light-9); }
+.stat-card.danger { background: var(--el-color-danger-light-9); }
+.stat-num { font-size: 26px; font-weight: 600; color: var(--dt-text-primary); }
+.stat-label { margin-top: 6px; font-size: 13px; color: var(--dt-text-secondary); }
 </style>

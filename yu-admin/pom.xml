@@ -35,6 +35,24 @@
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
         </dependency>
 
+        <!-- 可观测性基座（V4.0 A5）：actuator 提供 health/info/metrics，健康检查不再依赖 /dev/tcp 探活；
+             暴露面由 application-prod.yml 收敛为 health,info 并受 Spring Security 保护 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- 数据库迁移引擎（V4.0 A6）：基线化 sql/ 下 35 个 phase 手工脚本；
+             默认 spring.flyway.enabled=false，新环境建库/发布时显式开启 -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+
          <!-- Mysql驱动包 -->
         <dependency>
             <groupId>com.mysql</groupId>

@@ -546,19 +546,19 @@ export default {
 .thesis-stat-row { margin-bottom: 14px; }
 .thesis-stat-card { text-align: center; }
 .thesis-stat-card .stat-value { font-size: 22px; font-weight: 600; line-height: 30px; }
-.thesis-stat-card .stat-label { font-size: 13px; color: #909399; margin-top: 2px; }
+.thesis-stat-card .stat-label { font-size: 13px; color: var(--dt-text-secondary); margin-top: 2px; }
 .thesis-steps { margin: 18px 0 6px; }
-.stage-bar { margin-bottom: 12px; font-size: 13px; color: #606266; }
+.stage-bar { margin-bottom: 12px; font-size: 13px; color: var(--dt-text-regular); }
 .stage-bar-label { margin-right: 4px; }
-.stage-bar-empty { color: #909399; }
+.stage-bar-empty { color: var(--dt-text-secondary); }
 .stage-tag { margin-right: 8px; cursor: pointer; }
-.stage-tag-sub { font-size: 12px; color: #E6A23C; }
-.form-tip { margin-left: 10px; font-size: 12px; color: #909399; }
-.sample-tip { padding-left: 90px; font-size: 12px; color: #E6A23C; }
+.stage-tag-sub { font-size: 12px; color: var(--el-color-warning); }
+.form-tip { margin-left: 10px; font-size: 12px; color: var(--dt-text-secondary); }
+.sample-tip { padding-left: 90px; font-size: 12px; color: var(--el-color-warning); }
 .process-title { font-size: 14px; }
 .process-action { margin: 0 6px; font-weight: 600; }
-.process-score { margin-left: 8px; color: #409EFF; }
-.process-content { margin-top: 4px; font-size: 13px; color: #606266; white-space: pre-wrap; }
-.process-opinion { color: #E6A23C; }
-.process-meta { margin-top: 4px; font-size: 12px; color: #909399; }
+.process-score { margin-left: 8px; color: var(--el-color-primary); }
+.process-content { margin-top: 4px; font-size: 13px; color: var(--dt-text-regular); white-space: pre-wrap; }
+.process-opinion { color: var(--el-color-warning); }
+.process-meta { margin-top: 4px; font-size: 12px; color: var(--dt-text-secondary); }
 </style>

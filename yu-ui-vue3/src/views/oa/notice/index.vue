@@ -164,7 +164,7 @@
     <el-dialog title="公告详情" v-model="viewOpen" width="720px" append-to-body>
       <div v-loading="viewLoading">
         <h3 style="text-align: center;">{{ viewForm.noticeTitle }}</h3>
-        <p style="text-align: center; color: #909399; font-size: 14px;">
+        <p style="text-align: center; color: var(--dt-text-secondary); font-size: 14px;">
           <span>{{ viewForm.publisherName }}</span>
           <span style="margin-left: 15px;">{{ parseTime(viewForm.publishTime) }}</span>
         </p>

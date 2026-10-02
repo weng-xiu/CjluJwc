@@ -9,7 +9,7 @@
     <el-table v-loading="loading" :data="list">
       <el-table-column label="待办标题" align="center" prop="title" :show-overflow-tooltip="true" />
       <el-table-column label="类型" align="center" prop="todoType" width="90"><template #default="scope"><dict-tag :options="todoTypeOptions" :value="scope.row.todoType" /></template></el-table-column>
-      <el-table-column label="关联业务" align="center" width="160"><template #default="scope">{{ businessLabel(scope.row.businessType) }}<span v-if="scope.row.businessId" style="color:#909399"> #{{ scope.row.businessId }}</span></template></el-table-column>
+      <el-table-column label="关联业务" align="center" width="160"><template #default="scope">{{ businessLabel(scope.row.businessType) }}<span v-if="scope.row.businessId" style="color:var(--dt-text-secondary)"> #{{ scope.row.businessId }}</span></template></el-table-column>
       <el-table-column label="状态" align="center" prop="status" width="80"><template #default="scope"><el-tag :type="scope.row.status === '0' ? 'warning' : 'success'" size="small">{{ scope.row.status === '0' ? '待办' : '已办' }}</el-tag></template></el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="160"><template #default="scope"><span>{{ parseTime(scope.row.createTime) }}</span></template></el-table-column>
       <el-table-column label="完成时间" align="center" prop="completeTime" width="160"><template #default="scope"><span>{{ parseTime(scope.row.completeTime) }}</span></template></el-table-column>

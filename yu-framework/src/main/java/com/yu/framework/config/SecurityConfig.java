@@ -1,6 +1,7 @@
 package com.yu.framework.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -58,6 +59,14 @@ public class SecurityConfig
     @Autowired
     private PermitAllUrlProperties permitAllUrl;
 
+    /**
+     * 文档与监控类端点（Swagger / springdoc / Druid 控制台）是否匿名放行。
+     * V4.0 §7.3 合规止血：基线 false（生产姿态），仅 dev profile 打开；
+     * 关闭后这些端点回退到 JWT 鉴权，Druid 控制台自身登录仍生效。
+     */
+    @Value("${security.doc-endpoints.permit-all:false}")
+    private boolean docEndpointsPermitAll;
+
 	/**
 	 * 身份验证实现
 	 */
@@ -101,11 +110,18 @@ public class SecurityConfig
                 permitAllUrl.getUrls().forEach(url -> requests.requestMatchers(url).permitAll());
                 // 对于登录login 注册register 验证码captchaImage 允许匿名访问
                 requests.requestMatchers("/login", "/register", "/captchaImage").permitAll()
+                    // 健康检查供容器 orchestration/k8s 探针使用（仅 health，详情由 management.endpoint.health.show-details=never 收敛）
+                    .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/liveness", "/actuator/health/readiness").permitAll()
                     // 静态资源，可匿名访问
-                    .requestMatchers(HttpMethod.GET, "/", "/*.html", "/**.html", "/**.css", "/**.js", "/profile/**").permitAll()
-                    .requestMatchers("/swagger-ui.html", "/v3/api-docs/**", "/swagger-ui/**", "/druid/**").permitAll()
-                    // 除上面外的所有请求全部需要鉴权认证
-                    .anyRequest().authenticated();
+                    .requestMatchers(HttpMethod.GET, "/", "/*.html", "/**.html", "/**.css", "/**.js", "/profile/**").permitAll();
+                // 文档/监控端点仅在开发环境匿名放行（V4.0 §7.3），生产需登录后访问；
+                // 注意：必须排在 anyRequest() 之前，否则会被 anyRequest 先行命中而一律要求鉴权
+                if (docEndpointsPermitAll)
+                {
+                    requests.requestMatchers("/swagger-ui.html", "/v3/api-docs/**", "/swagger-ui/**", "/druid/**").permitAll();
+                }
+                // 除上面外的所有请求全部需要鉴权认证
+                requests.anyRequest().authenticated();
             })
             // 添加Logout filter
             .logout(logout -> logout.logoutUrl("/logout").logoutSuccessHandler(logoutSuccessHandler))

@@ -516,8 +516,8 @@ export default {
 .tree-sidebar {
   flex-shrink: 0;
   width: 220px;
-  background: #fff;
-  border-right: 1px solid #e8eaed;
+  background: var(--dt-bg-container);
+  border-right: 1px solid var(--dt-border-color-light);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -573,14 +573,14 @@ export default {
   justify-content: center;
   width: 15px;
   height: 20px;
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 0 4px 4px 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
 
   .tree-sidebar.collapsed & {
     right: 0;
-    background: #f7f8fa;
+    background: var(--dt-fill-light);
     border-radius: 0 4px 4px 0;
   }
 
@@ -591,15 +591,15 @@ export default {
 
 .collapse-button {
   font-size: 14px;
-  color: #909399;
+  color: var(--dt-text-secondary);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
   transition: all 0.2s;
 
   &:hover {
-    color: #409eff;
-    background: #ecf5ff;
+    color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
   }
 }
 
@@ -609,14 +609,14 @@ export default {
   justify-content: space-between;
   padding: 0 10px;
   height: 40px;
-  border-bottom: 1px solid #e8eaed;
-  background: #f7f8fa;
+  border-bottom: 1px solid var(--dt-border-color-light);
+  background: var(--dt-fill-light);
   flex-shrink: 0;
 
   .tree-title {
     font-size: 13px;
     font-weight: 600;
-    color: #303133;
+    color: var(--dt-text-primary);
     white-space: nowrap;
     overflow: hidden;
     display: flex;
@@ -624,7 +624,7 @@ export default {
     gap: 5px;
 
     .title-icon {
-      color: #409eff;
+      color: var(--el-color-primary);
       font-size: 14px;
     }
   }
@@ -639,15 +639,15 @@ export default {
 
 .tree-action-icon {
   font-size: 14px;
-  color: #909399;
+  color: var(--dt-text-secondary);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
   transition: all 0.2s;
 
   &:hover {
-    color: #409eff;
-    background: #ecf5ff;
+    color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
   }
 }
 
@@ -670,11 +670,11 @@ export default {
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #dcdfe6;
+    background: var(--dt-border-color);
     border-radius: 4px;
 
     &:hover {
-      background: #c0c4cc;
+      background: var(--dt-text-placeholder);
     }
   }
 
@@ -684,17 +684,17 @@ export default {
     margin-bottom: 1px;
 
     &:hover {
-      background: #f0f7ff;
+      background: var(--el-color-primary-light-9);
     }
   }
 
   :deep(.el-tree-node.is-current > .el-tree-node__content) {
-    background: #e6f0fd;
-    color: #409eff;
+    background: var(--el-color-primary-light-9);
+    color: var(--el-color-primary);
     font-weight: 600;
 
     .node-icon {
-      color: #409eff !important;
+      color: var(--el-color-primary) !important;
     }
   }
 }
@@ -708,7 +708,7 @@ export default {
 
   .node-icon {
     font-size: 14px;
-    color: #f5a623;
+    color: var(--el-color-warning);
     flex-shrink: 0;
   }
 
@@ -720,6 +720,6 @@ export default {
 }
 
 .node-icon.is-leaf {
-  color: #909399 !important;
+  color: var(--dt-text-secondary) !important;
 }
 </style>

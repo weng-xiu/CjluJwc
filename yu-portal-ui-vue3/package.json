@@ -7,7 +7,11 @@
   "scripts": {
     "dev": "vite",
     "build:prod": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint --ext .js,.vue src vite.config.js",
+    "lint:fix": "eslint --ext .js,.vue src vite.config.js --fix",
+    "format": "prettier --write \"src/**/*.{js,vue,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{js,vue,scss}\""
   },
   "dependencies": {
     "@element-plus/icons-vue": "2.3.1",
@@ -20,6 +24,10 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "5.1.4",
+    "eslint": "8.57.1",
+    "eslint-config-prettier": "9.1.0",
+    "eslint-plugin-vue": "9.33.0",
+    "prettier": "3.3.3",
     "sass": "1.79.5",
     "vite": "5.4.9"
   },

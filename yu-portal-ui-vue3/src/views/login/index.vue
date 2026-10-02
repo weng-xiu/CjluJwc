@@ -44,7 +44,16 @@ export default {
   name: 'Login',
   data() {
     return {
-      loginForm: { username: 'admin', password: 'admin123', rememberMe: true, code: '', uuid: '' },
+      loginForm: {
+        // V4.0 §7.3/C3：清空硬编码测试凭证（原为 admin / admin123）。
+        // 门户面向学生/教师，入口账号不得写进可 Clone 的前端源码。
+        // rememberMe 同时改 false：本页无“记住我”控件，写 true 属于跟页面不一致的隐藏行为。
+        username: '',
+        password: '',
+        rememberMe: false,
+        code: '',
+        uuid: ''
+      },
       loginRules: {
         username: [{ required: true, trigger: 'blur', message: '请输入账号' }],
         password: [{ required: true, trigger: 'blur', message: '请输入密码' }],

@@ -8,7 +8,7 @@
     </el-form>
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5"><el-button type="success" plain icon="Check" size="small" @click="handleReadAll" v-hasPermi="['system:msg:edit']">全部已读</el-button></el-col>
-      <el-col :span="1.5"><span style="line-height:26px;color:#909399">未读 {{ unread }} 条</span></el-col>
+      <el-col :span="1.5"><span style="line-height:26px;color:var(--dt-text-secondary)">未读 {{ unread }} 条</span></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-table v-loading="loading" :data="list">

@@ -65,7 +65,7 @@
         <el-form-item label="证书类型"><el-select v-model="genForm.certType" style="width:100%"><el-option label="毕业证书" value="0"/><el-option label="学位证书" value="1"/><el-option label="结业证书" value="2"/></el-select></el-form-item>
         <el-form-item label="毕业年份"><el-input v-model="genForm.gradYear" placeholder="可选，如 2026，留空不限" /></el-form-item>
       </el-form>
-      <div style="color:#909399;font-size:12px;padding-left:100px;">将为已通过审核且尚无该类型证书的学生批量生成证书，编号自动唯一分配。</div>
+      <div style="color:var(--dt-text-secondary);font-size:12px;padding-left:100px;">将为已通过审核且尚无该类型证书的学生批量生成证书，编号自动唯一分配。</div>
       <template #footer>
         <div class="dialog-footer"><el-button type="primary" :loading="genLoading" @click="submitGenerate">确 定</el-button><el-button @click="genOpen=false">取 消</el-button></div>
       </template>

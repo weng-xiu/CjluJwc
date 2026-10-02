@@ -28,18 +28,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"         column="remark"           />
         <result property="credit"         column="credit"           />
         <result property="courseName"     column="course_name"      />
+        <result property="courseCode"     column="course_code"      />
         <result property="semesterName"   column="semester_name"    />
+        <result property="studentNo"      column="student_no"       />
+        <result property="studentName"    column="student_name"     />
     </resultMap>
     <sql id="selectAemGradeRecordVo">
         select grade_id, student_id, course_id, semester_id, exam_type, regular_score, exam_score, total_score, grade_point, grade_level, is_pass, is_reviewed, status, submit_status, submit_by, submit_time, lock_time, create_by, create_time, update_by, update_time, remark from aem_grade_record
     </sql>
+    <!-- V4.0 §6.1/N7：附带学号/姓名/课程编码/课程名，并支持按学号、姓名、课程名筛选（教师端成绩录入列表与录入矩阵使用） -->
     <select id="selectAemGradeRecordList" parameterType="AemGradeRecord" resultMap="AemGradeRecordResult">
-        select gr.grade_id, gr.student_id, gr.course_id, gr.semester_id, gr.exam_type, gr.regular_score, gr.exam_score, gr.total_score, gr.grade_point, gr.grade_level, gr.is_pass, gr.is_reviewed, gr.status, gr.submit_status, gr.submit_by, gr.submit_time, gr.lock_time, gr.create_by, gr.create_time, gr.update_by, gr.update_time, gr.remark
+        select gr.grade_id, gr.student_id, gr.course_id, gr.semester_id, gr.exam_type, gr.regular_score, gr.exam_score, gr.total_score, gr.grade_point, gr.grade_level, gr.is_pass, gr.is_reviewed, gr.status, gr.submit_status, gr.submit_by, gr.submit_time, gr.lock_time, gr.create_by, gr.create_time, gr.update_by, gr.update_time, gr.remark,
+               ss.student_no, ss.student_name, cl.course_code, cl.course_name
         from aem_grade_record gr
         left join sam_student ss on gr.student_id = ss.student_id
         left join sys_dept d on ss.dept_id = d.dept_id
+        left join tpm_course_library cl on gr.course_id = cl.course_id
         <where>
             <if test="studentId != null"> and gr.student_id = #{studentId}</if>
+            <if test="studentNo != null and studentNo.trim() != ''"> and ss.student_no like concat('%', #{studentNo}, '%')</if>
+            <if test="studentName != null and studentName.trim() != ''"> and ss.student_name like concat('%', #{studentName}, '%')</if>
+            <if test="courseName != null and courseName.trim() != ''"> and cl.course_name like concat('%', #{courseName}, '%')</if>
             <if test="courseId != null"> and gr.course_id = #{courseId}</if>
             <if test="semesterId != null"> and gr.semester_id = #{semesterId}</if>
             <if test="examType != null and examType.trim() != ''"> and gr.exam_type = #{examType}</if>
@@ -55,13 +64,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 门户端：学生个人成绩列表（附带课程名/学分/学期名，不套用部门数据范围） -->
     <select id="selectAemGradeRecordListForPortal" parameterType="AemGradeRecord" resultMap="AemGradeRecordResult">
         select gr.grade_id, gr.student_id, gr.course_id, gr.semester_id, gr.exam_type, gr.regular_score, gr.exam_score, gr.total_score, gr.grade_point, gr.grade_level, gr.is_pass, gr.is_reviewed, gr.status, gr.create_by, gr.create_time, gr.update_by, gr.update_time, gr.remark,
-               cl.course_name, cl.credit, sem.semester_name
+               cl.course_name, cl.course_code, cl.credit, sem.semester_name
         from aem_grade_record gr
         left join tpm_course_library cl on gr.course_id = cl.course_id
         left join brm_semester sem on gr.semester_id = sem.semester_id
         <where>
             <if test="studentId != null"> and gr.student_id = #{studentId}</if>
             <if test="semesterId != null"> and gr.semester_id = #{semesterId}</if>
+            <!-- V4.0 §6.1/N7：门户成绩查询支持按课程名称筛选（此前该条件传入后被静默忽略） -->
+            <if test="courseName != null and courseName.trim() != ''"> and cl.course_name like concat('%', #{courseName}, '%')</if>
             <if test="examType != null and examType.trim() != ''"> and gr.exam_type = #{examType}</if>
             <if test="status != null and status.trim() != ''"> and gr.status = #{status}</if>
         </where>

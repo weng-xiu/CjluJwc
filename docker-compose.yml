@@ -1,7 +1,10 @@
 # CjluJwc 教务管理系统一键编排（Q2 容器化）
 # 使用：复制 .env.example 为 .env 并填写密钥后 `docker compose up -d --build`
-# 注意：MySQL 首次启动自动导入 sql/备份 下全量库（Navicat 导出无 USE 语句，
-#       依赖 MYSQL_DATABASE=yu-cjlujwc 作为默认库）；数据卷已存在时不会重复导入。
+#
+# V4.0 §7.3/C1 调整：不再挂载仓库内含真实数据的整库 dump。
+#   MySQL 首启改为读取本机目录 ./docker/mysql-init/（已被 .gitignore 忽略），
+#   该目录为空时只起一个空实例，由后端 Flyway（FLYWAY_ENABLED=true）建基线，
+#   或按 docker/mysql-init/README.md 放置脱敏脚本。数据卷已存在时不会重复导入。
 
 services:
   mysql:
@@ -18,8 +21,8 @@ services:
       - --collation-server=utf8mb4_general_ci
     volumes:
       - mysql-data:/var/lib/mysql
-      # 首启自动建库（按文件名顺序执行 *.sql）
-      - ./sql/备份/yu-cjlujwc_20260821.sql:/docker-entrypoint-initdb.d/01_full_backup.sql:ro
+      # 首启自动导入：脚本由本机放置（脱敏 dump 或留空走 Flyway），仓库内不携带数据文件
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
     ports:
       - "${DB_PORT_EXPOSE:-3307}:3306"
     healthcheck:
@@ -56,6 +59,8 @@ services:
       redis:
         condition: service_healthy
     environment:
+      # V4.0 §7.3/C2：容器内默认跑 prod profile（关 Swagger/Druid 控制台、日志降噪）
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       DB_HOST: mysql
       DB_PORT: 3306
       DB_NAME: yu-cjlujwc
@@ -67,12 +72,28 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       TOKEN_SECRET: ${TOKEN_SECRET:-}
+      # 数据库版本管理（Flyway）默认关闭，避免影响现有本地库；新库首启可置 true
+      FLYWAY_ENABLED: ${FLYWAY_ENABLED:-false}
+      # Druid 监控台/文档端点：prod profile 下基线关闭，仅按需显式放开
+      DRUID_STAT_VIEW_ENABLED: ${DRUID_STAT_VIEW_ENABLED:-false}
+      DRUID_LOGIN_USERNAME: ${DRUID_LOGIN_USERNAME:-}
+      DRUID_LOGIN_PASSWORD: ${DRUID_LOGIN_PASSWORD:-}
+      DOC_ENDPOINT_PERMIT_ALL: ${DOC_ENDPOINT_PERMIT_ALL:-false}
+      SWAGGER_UI_ENABLED: ${SWAGGER_UI_ENABLED:-false}
+      LOG_MAX_HISTORY: ${LOG_MAX_HISTORY:-30}
       TZ: Asia/Shanghai
     volumes:
       - backend-logs:/app/logs
       - backend-upload:/app/uploadPath
     ports:
       - "${BACKEND_PORT_EXPOSE:-8080}:8080"
+    # V4.0 §7.3/Q1：JVM 通过 UseContainerSupport 感知 cgroup 限额，堆内存按 MaxRAMPercentage 推导
+    mem_limit: ${BACKEND_MEM_LIMIT:-2g}
+    cpus: ${BACKEND_CPU_LIMIT:-2.0}
+    security_opt:
+      - no-new-privileges:true
+    # 健康探活沿用镜像内 HEALTHCHECK（bash /dev/tcp，不依赖 curl/wget），
+    # frontend 通过 service_healthy 等待后端就绪
 
   frontend:
     build:
@@ -81,9 +102,30 @@ services:
     container_name: yu-frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "${FRONTEND_PORT_EXPOSE:-80}:80"
+    security_opt:
+      - no-new-privileges:true
+
+  # V4.0 §7.3：门户端（师生服务）镜像补齐，与管理端共用同一后端，独立宿主端口
+  portal:
+    build:
+      context: ./yu-portal-ui-vue3
+      dockerfile: Dockerfile
+      args:
+        # 构建期烧入：门户内“管理入口”跳转的管理端地址（留空则不跳转）
+        VITE_APP_ADMIN_URL: ${PORTAL_ADMIN_URL:-}
+    container_name: yu-portal
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${PORTAL_PORT_EXPOSE:-81}:80"
+    security_opt:
+      - no-new-privileges:true
 
 volumes:
   mysql-data:

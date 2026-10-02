@@ -395,18 +395,18 @@ export default {
 .content-title {
   margin: 18px 0 10px;
   padding-left: 8px;
-  border-left: 3px solid #007ab8;
+  border-left: 3px solid var(--dt-color-primary);
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--dt-text-primary);
 }
 .content-body {
   padding: 12px 16px;
   max-height: 300px;
   overflow-y: auto;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--dt-border-color-light);
   border-radius: 4px;
-  background: #fafbfc;
+  background: var(--dt-fill-light);
   line-height: 1.8;
   :deep(img) {
     max-width: 100%;

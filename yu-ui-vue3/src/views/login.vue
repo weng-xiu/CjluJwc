@@ -62,6 +62,7 @@
 import { getCodeImg } from '@/api/login'
 import Cookies from 'js-cookie'
 import { encrypt, decrypt } from '@/utils/jsencrypt'
+import { safeCookieOptions } from '@/utils/auth'
 import defaultSettings from '@/settings'
 import { User, Lock, Key } from '@element-plus/icons-vue'
 
@@ -74,8 +75,11 @@ export default {
       cookiePassword: '',
       showPwd: false,
       loginForm: {
-        username: 'admin',
-        password: 'admin123',
+        // V4.0 §7.3/C3：清空硬编码测试凭证（原为 admin / admin123）。
+        // 账号不得写在前端源码里：仓库对外可 Clone 即泄露入口与口令。
+        // 联调需要时用浏览器「记住我」（下方 getCookie/setCookie）或本地 .env.local 自行带入。
+        username: '',
+        password: '',
         rememberMe: false,
         code: '',
         uuid: ''
@@ -119,7 +123,10 @@ export default {
       const username = Cookies.get('username')
       const password = Cookies.get('password')
       const rememberMe = Cookies.get('rememberMe')
+      // 合并而非整体覆盖：原写法会把 created() 中 getCode() 已回填的 code/uuid 一并丢掉，
+      // 导致“看过登录页但验证码总是校验失败”。
       this.loginForm = {
+        ...this.loginForm,
         username: username === undefined ? this.loginForm.username : username,
         password: password === undefined ? this.loginForm.password : decrypt(password),
         rememberMe: rememberMe === undefined ? false : Boolean(rememberMe)
@@ -130,9 +137,11 @@ export default {
         if (valid) {
           this.loading = true
           if (this.loginForm.rememberMe) {
-            Cookies.set('username', this.loginForm.username, { expires: 30 })
-            Cookies.set('password', encrypt(this.loginForm.password), { expires: 30 })
-            Cookies.set('rememberMe', this.loginForm.rememberMe, { expires: 30 })
+            // V4.0 §7.3/C3：记住我写的就是账号与（RSA 加密后的）口令，
+            // 同样需要 SameSite/Secure 属性，避免被跨站请求携带与明文渠道回传
+            Cookies.set('username', this.loginForm.username, { expires: 30, ...safeCookieOptions })
+            Cookies.set('password', encrypt(this.loginForm.password), { expires: 30, ...safeCookieOptions })
+            Cookies.set('rememberMe', this.loginForm.rememberMe, { expires: 30, ...safeCookieOptions })
           } else {
             Cookies.remove('username')
             Cookies.remove('password')

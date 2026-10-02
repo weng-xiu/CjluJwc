@@ -124,7 +124,15 @@ router.beforeEach((to, from, next) => {
       const permissions = store.state.user.permissions
       if (userCategory === 'admin' || roles.includes('admin')) {
         store.dispatch('FedLogOut')
-        window.location.href = 'http://localhost:80/login'
+        // V4.0 §7.3/C3：管理端地址改由环境变量注入，不再硬编码 http://localhost:80
+        // （原写法一旦部署到真实域名，会把教师/学生直接弹回一台不存在的开发机）。
+        const adminUrl = import.meta.env.VITE_APP_ADMIN_URL
+        if (adminUrl) {
+          window.location.href = `${String(adminUrl).replace(/\/+$/, '')}/login`
+          return
+        }
+        // 未配置时留在门户登录页并给出原因，不跳未知地址
+        next({ path: '/login', query: { reason: 'admin_use_console' } })
         return
       }
       if (to.meta && to.meta.permission) {

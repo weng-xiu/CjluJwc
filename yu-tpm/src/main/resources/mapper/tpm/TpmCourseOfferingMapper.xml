@@ -30,12 +30,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <sql id="selectTpmCourseOfferingVo">
         select offering_id, semester_id, course_id, teacher_id, campus_id, class_count, max_students, offering_status, status, del_flag, create_by, create_time, update_by, update_time, remark from tpm_course_offering
     </sql>
+    <!-- V4.0 §6.1/N7：附带课程学分（与 ForPortal 口径对齐）并支持按课程名称筛选 -->
     <select id="selectTpmCourseOfferingList" parameterType="TpmCourseOffering" resultMap="TpmCourseOfferingResult">
         select co.offering_id, co.semester_id, co.course_id, co.teacher_id, co.campus_id, co.class_count, co.max_students,
                co.offering_status, co.status, co.del_flag, co.create_by, co.create_time, co.update_by, co.update_time, co.remark,
                se.semester_name as semester_name,
                cl.course_name as course_name,
                cl.course_code as course_code,
+               cl.credit as credit,
                t.teacher_name as teacher_name,
                ca.campus_name as campus_name
         from tpm_course_offering co
@@ -52,6 +54,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="campusId != null"> and co.campus_id = #{campusId}</if>
             <if test="offeringStatus != null and offeringStatus.trim() != ''"> and co.offering_status = #{offeringStatus}</if>
             <if test="status != null and status.trim() != ''"> and co.status = #{status}</if>
+            <if test="courseName != null and courseName.trim() != ''"> and cl.course_name like concat('%', #{courseName}, '%')</if>
             <!-- 数据范围过滤 -->
             ${params.dataScope}
         </where>
@@ -77,6 +80,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="offeringStatus != null and offeringStatus.trim() != ''"> and co.offering_status = #{offeringStatus}</if>
             <if test="status != null and status.trim() != ''"> and co.status = #{status}</if>
             <if test="courseName != null and courseName.trim() != ''"> and cl.course_name like concat('%', #{courseName}, '%')</if>
+            <!-- V4.0 §6.1/N7：门户选课页的“教师”筛选原为空操作（无对应过滤条件），此处补齐 -->
+            <if test="teacherName != null and teacherName.trim() != ''"> and t.teacher_name like concat('%', #{teacherName}, '%')</if>
         </where>
         order by co.offering_id asc
     </select>

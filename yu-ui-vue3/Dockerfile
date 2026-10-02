@@ -6,8 +6,9 @@
 FROM node:18-alpine AS builder
 WORKDIR /build
 
-COPY package*.json ./
-RUN npm install --registry=https://registry.npmmirror.com
+# 先拷贝依赖清单利用层缓存；npm ci 严格按 lock 安装（与 CI / 门户端同源），lock 漂移当场失败
+COPY package.json package-lock.json ./
+RUN npm ci --registry=https://registry.npmmirror.com
 
 COPY . .
 RUN npm run build:prod

@@ -56,6 +56,6 @@ export default {
 </script>
 
 <style scoped>
-.pagination-container { background: #fff; padding: 8px 0; }
+.pagination-container { background: var(--dt-bg-container); padding: 8px 0; }
 .pagination-container.hidden { display: none; }
 </style>

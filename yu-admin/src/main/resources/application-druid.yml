@@ -41,15 +41,18 @@ spring:
             testOnBorrow: false
             testOnReturn: false
             webStatFilter: 
-                enabled: true
+                enabled: ${druid.web-stat.enabled:true}
             statViewServlet:
-                enabled: true
-                # 设置白名单，不填则允许所有访问
-                allow:
+                # V4.0 §7.3 止血：基线默认关闭（false），仅 application-dev.yml 显式开启；
+                # 即使未正确指定 profile也不会把监控台暴露到公网
+                enabled: ${druid.stat-view.enabled:false}
+                # 设置白名单，不填则允许所有访问；生产建议收紧到运维网段
+                allow: ${DRUID_ALLOW:}
                 url-pattern: /druid/*
-                # 控制台管理用户名和密码（Q4 安全加固：支持环境变量覆盖，生产请注入强口令或关闭 statViewServlet）
-                login-username: ${DRUID_LOGIN_USERNAME:ruoyi}
-                login-password: ${DRUID_LOGIN_PASSWORD:123456}
+                # 控制台管理用户名和密码（Q4 安全加固 + V4.0 §7.3：不再内置 ruoyi/123456 弱口令；
+                # 开发默认值取自 application-dev.yml 的 druid.console.*，生产由环境变量注入且默认关闭控制台）
+                login-username: ${DRUID_LOGIN_USERNAME:${druid.console.username:}}
+                login-password: ${DRUID_LOGIN_PASSWORD:${druid.console.password:}}
             filter:
                 stat:
                     enabled: true
@@ -59,4 +62,5 @@ spring:
                     merge-sql: true
                 wall:
                     config:
-                        multi-statement-allow: true
+                        # V4.0 §7.3 止血：多语句执行默认关闭（dev profile 显式打开），阻断堆叠语句注入面
+                        multi-statement-allow: ${druid.wall.multi-statement-allow:false}

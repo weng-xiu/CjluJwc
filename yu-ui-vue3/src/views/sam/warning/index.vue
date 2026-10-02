@@ -4,32 +4,32 @@
     <el-row :gutter="20" class="mb8" v-if="stats">
       <el-col :span="4">
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-item"><div class="stat-num" style="color:#409EFF">{{ stats.totalCount || 0 }}</div><div class="stat-label">预警总数</div></div>
+          <div class="stat-item"><div class="stat-num" style="color:var(--el-color-primary)">{{ stats.totalCount || 0 }}</div><div class="stat-label">预警总数</div></div>
         </el-card>
       </el-col>
       <el-col :span="4">
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-item"><div class="stat-num" style="color:#E6A23C">{{ stats.gpaCount || 0 }}</div><div class="stat-label">成绩预警</div></div>
+          <div class="stat-item"><div class="stat-num" style="color:var(--el-color-warning)">{{ stats.gpaCount || 0 }}</div><div class="stat-label">成绩预警</div></div>
         </el-card>
       </el-col>
       <el-col :span="4">
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-item"><div class="stat-num" style="color:#F56C6C">{{ stats.creditCount || 0 }}</div><div class="stat-label">学分预警</div></div>
+          <div class="stat-item"><div class="stat-num" style="color:var(--el-color-danger)">{{ stats.creditCount || 0 }}</div><div class="stat-label">学分预警</div></div>
         </el-card>
       </el-col>
       <el-col :span="4">
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-item"><div class="stat-num" style="color:#909399">{{ stats.attendanceCount || 0 }}</div><div class="stat-label">出勤预警</div></div>
+          <div class="stat-item"><div class="stat-num" style="color:var(--dt-text-secondary)">{{ stats.attendanceCount || 0 }}</div><div class="stat-label">出勤预警</div></div>
         </el-card>
       </el-col>
       <el-col :span="4">
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-item"><div class="stat-num" style="color:#F56C6C">{{ stats.highRiskCount || 0 }}</div><div class="stat-label">高危预警</div></div>
+          <div class="stat-item"><div class="stat-num" style="color:var(--el-color-danger)">{{ stats.highRiskCount || 0 }}</div><div class="stat-label">高危预警</div></div>
         </el-card>
       </el-col>
       <el-col :span="4">
         <el-card shadow="hover" class="stat-card">
-          <div class="stat-item"><div class="stat-num" style="color:#E6A23C">{{ stats.unresolvedCount || 0 }}</div><div class="stat-label">未解除</div></div>
+          <div class="stat-item"><div class="stat-num" style="color:var(--el-color-warning)">{{ stats.unresolvedCount || 0 }}</div><div class="stat-label">未解除</div></div>
         </el-card>
       </el-col>
     </el-row>
@@ -237,5 +237,5 @@ export default {
 <style scoped>
 .stat-card { text-align: center; }
 .stat-item .stat-num { font-size: 28px; font-weight: bold; }
-.stat-item .stat-label { font-size: 14px; color: #909399; margin-top: 5px; }
+.stat-item .stat-label { font-size: 14px; color: var(--dt-text-secondary); margin-top: 5px; }
 </style>

@@ -47,7 +47,7 @@
 
     <!-- A7：多维成绩分析（班级 / 教师 / 专业 / 历史趋势） -->
     <el-card shadow="never" style="margin-top:12px">
-      <template #header><span>多维成绩分析（A7）</span><span style="color:#909399;font-size:12px;margin-left:10px">需先输入学期ID并点击「统计分析」；课程ID可选（仅班级维度与趋势支持按课程过滤）</span></template>
+      <template #header><span>多维成绩分析（A7）</span><span style="color:var(--dt-text-secondary);font-size:12px;margin-left:10px">需先输入学期ID并点击「统计分析」；课程ID可选（仅班级维度与趋势支持按课程过滤）</span></template>
       <el-tabs v-model="a7Tab" @tab-click="loadA7Tab">
         <el-tab-pane label="班级维度" name="class">
           <el-table :data="a7.classList" v-loading="a7.classLoading" size="small" max-height="360">
@@ -241,8 +241,8 @@ export default {
 }
 </script>
 <style scoped>
-.stat-cards .stat-card { background:#f5f7fa;border-radius:6px;padding:14px;text-align:center;margin-bottom:12px; }
-.stat-cards .stat-card.pass { background:#f0f9eb; }
-.stat-label { color:#909399;font-size:13px; }
-.stat-value { font-size:22px;font-weight:600;color:#303133;margin-top:6px; }
+.stat-cards .stat-card { background:var(--dt-fill-light);border-radius:6px;padding:14px;text-align:center;margin-bottom:12px; }
+.stat-cards .stat-card.pass { background:var(--el-color-success-light-9); }
+.stat-label { color:var(--dt-text-secondary);font-size:13px; }
+.stat-value { font-size:22px;font-weight:600;color:var(--dt-text-primary);margin-top:6px; }
 </style>

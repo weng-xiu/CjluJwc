@@ -160,9 +160,9 @@
         <el-timeline-item v-for="(t, i) in traceTasks" :key="i"
                           :timestamp="parseTime(t.endTime || t.startTime, '{y}-{m}-{d} {h}:{i}')"
                           :type="t.endTime ? 'success' : 'primary'" :hollow="!t.endTime">
-          <div><b>{{ t.taskName }}</b><span v-if="t.assignee" style="color:#909399;margin-left:8px">办理人：{{ t.assignee }}</span></div>
-          <div v-if="t.comments && t.comments.length" style="color:#606266">意见：{{ t.comments.join(' / ') }}</div>
-          <div v-if="!t.endTime" style="color:#E6A23C">进行中…</div>
+          <div><b>{{ t.taskName }}</b><span v-if="t.assignee" style="color:var(--dt-text-secondary);margin-left:8px">办理人：{{ t.assignee }}</span></div>
+          <div v-if="t.comments && t.comments.length" style="color:var(--dt-text-regular)">意见：{{ t.comments.join(' / ') }}</div>
+          <div v-if="!t.endTime" style="color:var(--el-color-warning)">进行中…</div>
         </el-timeline-item>
       </el-timeline>
       <el-empty v-else description="暂无流程记录" :image-size="60" />
@@ -461,5 +461,5 @@ export default {
 </script>
 
 <style scoped>
-.occ-title { font-weight: bold; margin: 6px 0; color: #303133; }
+.occ-title { font-weight: bold; margin: 6px 0; color: var(--dt-text-primary); }
 </style>

@@ -102,11 +102,11 @@ export default {
 <style scoped>
 .read-stat {
   font-size: 13px;
-  color: #606266;
+  color: var(--dt-text-regular);
   line-height: 28px;
 }
 .read-stat strong {
-  color: #409eff;
+  color: var(--el-color-primary);
   font-size: 15px;
   margin: 0 2px;
 }

@@ -40,10 +40,10 @@ export default {
 .path {
   margin: 12px 0;
   font-family: Menlo, Consolas, monospace;
-  color: #909399;
+  color: var(--dt-text-secondary);
 }
 .tip {
-  color: #606266;
+  color: var(--dt-text-regular);
   font-size: 13px;
   line-height: 1.8;
 }

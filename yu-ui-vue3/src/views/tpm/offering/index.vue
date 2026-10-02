@@ -38,7 +38,7 @@
       <el-table-column label="学期" align="center" prop="semesterName" :show-overflow-tooltip="true" />
       <el-table-column label="课程" align="center" prop="courseName" min-width="140" :show-overflow-tooltip="true">
         <template #default="scope">
-          {{ scope.row.courseName }}<span v-if="scope.row.courseCode" style="color:#909399">（{{ scope.row.courseCode }}）</span>
+          {{ scope.row.courseName }}<span v-if="scope.row.courseCode" style="color:var(--dt-text-secondary)">（{{ scope.row.courseCode }}）</span>
         </template>
       </el-table-column>
       <el-table-column label="教师" align="center" prop="teacherName" width="100" />

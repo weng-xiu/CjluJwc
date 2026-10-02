@@ -198,8 +198,8 @@ export default {
   overflow: auto;
   max-height: 380px;
   padding: 6px 4px;
-  background: #fafcff;
-  border: 1px solid #ebeef5;
+  background: var(--dt-fill-light);
+  border: 1px solid var(--dt-border-color-light);
   border-radius: 4px;
 }
 .diagram-empty {
@@ -208,9 +208,9 @@ export default {
   justify-content: center;
   gap: 6px;
   height: 120px;
-  color: #909399;
-  background: #fafcff;
-  border: 1px dashed #dcdfe6;
+  color: var(--dt-text-secondary);
+  background: var(--dt-fill-light);
+  border: 1px dashed var(--dt-border-color);
   border-radius: 4px;
 }
 .diagram-svg {
@@ -258,7 +258,7 @@ export default {
   gap: 16px;
   margin-top: 8px;
   font-size: 12px;
-  color: #606266;
+  color: var(--dt-text-regular);
   .dot {
     display: inline-block;
     width: 10px;
@@ -268,17 +268,17 @@ export default {
     vertical-align: middle;
   }
   .dot-finished {
-    background: #67c23a;
+    background: var(--el-color-success);
   }
   .dot-active {
-    background: #e6a23c;
+    background: var(--el-color-warning);
   }
   .dot-pending {
-    background: #c0c4cc;
+    background: var(--dt-text-placeholder);
   }
   .legend-tip {
     margin-left: auto;
-    color: #007ab8;
+    color: var(--dt-color-primary);
   }
 }
 </style>

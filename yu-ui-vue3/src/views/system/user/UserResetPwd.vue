@@ -82,7 +82,7 @@ export default {
 
 <style scoped>
 .pwd-strength-tip {
-  color: #909399;
+  color: var(--dt-text-secondary);
   font-size: 12px;
   line-height: 1.5;
   padding-left: 80px;

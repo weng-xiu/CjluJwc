@@ -94,6 +94,15 @@ public class AemGradeRecord extends BaseEntity
     /** 学期名称（非持久化，JOIN brm_semester 取得，供门户移动端分组展示） */
     private transient String semesterName;
 
+    /** 课程编码（非持久化，JOIN tpm_course_library 取得，供门户成绩查询/成绩录入列表展示） */
+    private transient String courseCode;
+
+    /** 学号（非持久化，JOIN sam_student 取得，供教师端成绩录入列表与录入矩阵展示） */
+    private transient String studentNo;
+
+    /** 学生姓名（非持久化，JOIN sam_student 取得，供教师端成绩录入列表与录入矩阵展示） */
+    private transient String studentName;
+
     /** 子表：成绩复核记录 */
     private List<AemGradeReview> reviews;
 
@@ -108,6 +117,15 @@ public class AemGradeRecord extends BaseEntity
 
     public String getSemesterName() { return semesterName; }
     public void setSemesterName(String semesterName) { this.semesterName = semesterName; }
+
+    public String getCourseCode() { return courseCode; }
+    public void setCourseCode(String courseCode) { this.courseCode = courseCode; }
+
+    public String getStudentNo() { return studentNo; }
+    public void setStudentNo(String studentNo) { this.studentNo = studentNo; }
+
+    public String getStudentName() { return studentName; }
+    public void setStudentName(String studentName) { this.studentName = studentName; }
 
     public Long getGradeId() { return gradeId; }
     public void setGradeId(Long gradeId) { this.gradeId = gradeId; }

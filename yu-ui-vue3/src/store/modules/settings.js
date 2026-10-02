@@ -22,7 +22,9 @@ const state = {
 }
 const mutations = {
   CHANGE_SETTING: (state, { key, value }) => {
-    if (state.hasOwnProperty(key)) {
+    // 用原型 call 而非 state.hasOwnProperty：Vuex state 为响应式代理，
+    // 直接调用继承方法存在被自身 key 遮蔽的风险（ESLint no-prototype-builtins）
+    if (Object.prototype.hasOwnProperty.call(state, key)) {
       state[key] = value
     }
   },

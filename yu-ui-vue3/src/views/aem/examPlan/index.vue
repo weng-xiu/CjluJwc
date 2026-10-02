@@ -240,6 +240,6 @@ export default {
 }
 </script>
 <style scoped>
-.tips-text { color: #909399; font-size: 12px; line-height: 28px; }
+.tips-text { color: var(--dt-text-secondary); font-size: 12px; line-height: 28px; }
 .detail-tabs { margin: 0; }
 </style>

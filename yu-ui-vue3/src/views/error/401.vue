@@ -17,17 +17,17 @@ export default { name: 'Unauthorized' }
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background: #f0f2f5;
+  background: var(--dt-bg-page);
 }
 .code {
   font-size: 120px;
   font-weight: 700;
-  color: #e6a23c;
+  color: var(--el-color-warning);
   line-height: 1;
 }
 .desc {
   margin: 24px 0;
   font-size: 20px;
-  color: #606266;
+  color: var(--dt-text-regular);
 }
 </style>

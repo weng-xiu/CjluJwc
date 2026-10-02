@@ -70,7 +70,7 @@
               <el-step v-for="(s, i) in detailSteps" :key="i" :title="s.name" :description="s.assignee ? '审批人：' + s.assignee : '未指定审批人'" icon="Finished" />
             </el-steps>
           </template>
-          <span v-else style="color: #909399;">无法解析节点（可查看 XML 源码）</span>
+          <span v-else style="color: var(--dt-text-secondary);">无法解析节点（可查看 XML 源码）</span>
         </el-descriptions-item>
         <el-descriptions-item label="描述">{{ detailInfo.description || '无' }}</el-descriptions-item>
       </el-descriptions>
@@ -453,37 +453,37 @@ ${flows.join("\n")}
 .design-tip {
   margin-bottom: 12px;
   padding: 8px 12px;
-  background: #edf3f9;
+  background: var(--el-color-primary-light-9);
   border-radius: 4px;
-  color: #007ab8;
+  color: var(--dt-color-primary);
   font-size: 13px;
 }
 .flow-node {
   display: flex;
   align-items: center;
   padding: 8px 12px;
-  border: 1px solid #dcdfe6;
+  border: 1px solid var(--dt-border-color);
   border-radius: 6px;
-  background: #fff;
+  background: var(--dt-bg-container);
 }
 .flow-node-fixed {
   width: 160px;
   margin: 0 auto;
   justify-content: center;
-  color: #67c23a;
-  border-color: #c2e7b0;
-  background: #f0f9eb;
+  color: var(--el-color-success);
+  border-color: var(--el-color-success-light-7);
+  background: var(--el-color-success-light-9);
   font-weight: bold;
   .el-icon { margin-right: 6px; }
 }
 .flow-node-end {
-  color: #f56c6c;
-  border-color: #fbc4c4;
-  background: #fef0f0;
+  color: var(--el-color-danger);
+  border-color: var(--el-color-danger-light-7);
+  background: var(--el-color-danger-light-9);
 }
 .flow-arrow {
   text-align: center;
-  color: #c0c4cc;
+  color: var(--dt-text-placeholder);
   font-size: 18px;
   padding: 4px 0;
 }
@@ -493,15 +493,15 @@ ${flows.join("\n")}
   transition: box-shadow 0.2s;
   &:hover {
     box-shadow: 0 2px 8px rgba(0, 122, 184, 0.15);
-    border-color: #007ab8;
+    border-color: var(--dt-color-primary);
   }
 }
 .drag-handle {
   cursor: move;
-  color: #909399;
+  color: var(--dt-text-secondary);
   font-size: 16px;
   padding: 4px;
-  &:hover { color: #007ab8; }
+  &:hover { color: var(--dt-color-primary); }
 }
 .step-index {
   flex-shrink: 0;
@@ -510,7 +510,7 @@ ${flows.join("\n")}
   line-height: 22px;
   text-align: center;
   border-radius: 50%;
-  background: #007ab8;
+  background: var(--dt-color-primary);
   color: #fff;
   font-size: 12px;
 }
@@ -518,13 +518,13 @@ ${flows.join("\n")}
   flex: 1;
 }
 .step-del {
-  color: #f56c6c;
-  &.is-disabled { color: #c0c4cc; }
+  color: var(--el-color-danger);
+  &.is-disabled { color: var(--dt-text-placeholder); }
 }
 .step-ghost {
   opacity: 0.5;
-  background: #edf3f9;
-  border: 1px dashed #007ab8;
+  background: var(--el-color-primary-light-9);
+  border: 1px dashed var(--dt-color-primary);
 }
 .add-step-btn {
   width: 100%;

@@ -8,7 +8,7 @@
       show-icon>
       <template #title>
         <span>当前回答引擎：<b>{{ engine.llmEnabled ? '已接入大模型（检索增强生成）' : '本地知识库检索 + 抽取式作答' }}</b></span>
-        <span class="engine-meta">检索阈值 {{ engine.minScore }}　启用条目 {{ engine.enabledTotal }} 条</span>
+        <span class="engine-meta">检索阈值 {{ engine.minScore }}&emsp;启用条目 {{ engine.enabledTotal }} 条</span>
       </template>
       <div class="engine-note">{{ engine.engineNote }}</div>
     </el-alert>
@@ -234,7 +234,7 @@
       <div v-if="answer.answerSource" class="answer-box">
         <div class="answer-head">
           <dict-tag :options="dict.type.sys_ai_answer_source" :value="answer.answerSource" />
-          <span class="answer-meta">置信度 {{ answer.confidence }}　耗时 {{ answer.costTime }} ms</span>
+          <span class="answer-meta">置信度 {{ answer.confidence }}&emsp;耗时 {{ answer.costTime }} ms</span>
         </div>
         <div class="answer-text">{{ answer.answer }}</div>
         <div v-if="answer.errorMsg" class="answer-error">降级原因：{{ answer.errorMsg }}</div>
@@ -244,7 +244,7 @@
           <div v-for="(ref, i) in answer.references" :key="i" class="ref-item">
             <span class="ref-name">{{ i + 1 }}. {{ ref.title }}</span>
             <span class="ref-score">得分 {{ ref.score }}</span>
-            <div class="ref-matched">{{ ref.matchedOn }}　来源：{{ ref.knowledge && ref.knowledge.source ? ref.knowledge.source : '未标注' }}</div>
+            <div class="ref-matched">{{ ref.matchedOn }}&emsp;来源：{{ ref.knowledge && ref.knowledge.source ? ref.knowledge.source : '未标注' }}</div>
           </div>
         </div>
       </div>
@@ -500,23 +500,23 @@ export default {
 </script>
 
 <style scoped>
-.engine-meta { margin-left: 16px; color: #606266; font-size: 12px; }
-.engine-note { margin-top: 4px; font-size: 12px; color: #909399; line-height: 1.6; }
-.card-tip { margin-left: 12px; font-size: 12px; color: #909399; }
+.engine-meta { margin-left: 16px; color: var(--dt-text-regular); font-size: 12px; }
+.engine-note { margin-top: 4px; font-size: 12px; color: var(--dt-text-secondary); line-height: 1.6; }
+.card-tip { margin-left: 12px; font-size: 12px; color: var(--dt-text-secondary); }
 .detail-content { white-space: pre-wrap; line-height: 1.7; max-height: 300px; overflow-y: auto; }
 .suggest-box { margin-top: 10px; line-height: 24px; }
-.suggest-label { font-size: 12px; color: #909399; }
+.suggest-label { font-size: 12px; color: var(--dt-text-secondary); }
 .suggest-tag { margin: 0 6px 6px 0; cursor: pointer; }
-.suggest-empty { font-size: 12px; color: #c0c4cc; }
-.answer-box { margin-top: 14px; border: 1px solid #ebeef5; border-radius: 6px; padding: 12px 14px; background: #fafafa; }
+.suggest-empty { font-size: 12px; color: var(--dt-text-placeholder); }
+.answer-box { margin-top: 14px; border: 1px solid var(--dt-border-color-light); border-radius: 6px; padding: 12px 14px; background: var(--dt-fill-light); }
 .answer-head { margin-bottom: 8px; }
-.answer-meta { margin-left: 12px; font-size: 12px; color: #909399; }
-.answer-text { white-space: pre-wrap; line-height: 1.8; color: #303133; }
-.answer-error { margin-top: 8px; font-size: 12px; color: #f56c6c; }
-.answer-engine { margin-top: 8px; font-size: 12px; color: #909399; }
-.answer-refs { margin-top: 10px; border-top: 1px dashed #dcdfe6; padding-top: 8px; }
-.refs-title { font-size: 12px; color: #606266; margin-bottom: 4px; }
-.ref-item { font-size: 12px; line-height: 20px; color: #303133; }
-.ref-score { margin-left: 8px; color: #909399; }
-.ref-matched { color: #909399; padding-left: 18px; }
+.answer-meta { margin-left: 12px; font-size: 12px; color: var(--dt-text-secondary); }
+.answer-text { white-space: pre-wrap; line-height: 1.8; color: var(--dt-text-primary); }
+.answer-error { margin-top: 8px; font-size: 12px; color: var(--el-color-danger); }
+.answer-engine { margin-top: 8px; font-size: 12px; color: var(--dt-text-secondary); }
+.answer-refs { margin-top: 10px; border-top: 1px dashed var(--dt-border-color); padding-top: 8px; }
+.refs-title { font-size: 12px; color: var(--dt-text-regular); margin-bottom: 4px; }
+.ref-item { font-size: 12px; line-height: 20px; color: var(--dt-text-primary); }
+.ref-score { margin-left: 8px; color: var(--dt-text-secondary); }
+.ref-matched { color: var(--dt-text-secondary); padding-left: 18px; }
 </style>

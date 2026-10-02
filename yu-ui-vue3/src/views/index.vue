@@ -105,20 +105,20 @@ export default {
     margin-bottom: 20px;
     .stat-label {
       font-size: 13px;
-      color: #909399;
+      color: var(--dt-text-secondary);
       margin-bottom: 8px;
     }
     .stat-value {
       font-size: 18px;
       font-weight: 600;
-      color: #303133;
+      color: var(--dt-text-primary);
     }
   }
   .notice-card {
     p {
       margin: 4px 0;
       line-height: 1.7;
-      color: #606266;
+      color: var(--dt-text-regular);
     }
   }
 }

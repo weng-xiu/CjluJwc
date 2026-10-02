@@ -1,0 +1,52 @@
+# 生产环境 profile（V4.0 §7.3 多环境基线化 + 合规止血）
+# 激活方式：SPRING_PROFILES_ACTIVE=prod（docker-compose / 启动脚本注入）
+# 口径：生产默认值一律取"安全侧"，任何放开都必须显式通过环境变量注入，避免误上线。
+spring:
+  # 生产禁止热部署
+  devtools:
+    restart:
+      enabled: false
+  # 数据库迁移引擎的参数基线定义在 application.yml（默认 enabled=false）；
+  # 生产开启仅通过环境变量注入：FLYWAY_ENABLED=true + FLYWAY_VALIDATE=true（发布后恢复校验）
+  flyway:
+    validate-on-migrate: ${FLYWAY_VALIDATE:true}
+
+# 生产日志：仅 warn 及以上的业务日志 + 慢 SQL，明细量交由 JSON appender 采集
+logging:
+  level:
+    com.yu: warn
+    org.springframework: warn
+
+# 生产不匿名放行任何文档/监控端点：Swagger、springdoc、Druid 控制台均需鉴权后由运维按需放开
+security:
+  doc-endpoints:
+    permit-all: false
+
+swagger:
+  ui-enabled: false
+
+# Druid 监控台生产关闭（如需开启，须由 DRUID_STAT_VIEW_ENABLED=true + 强口令共同决定）
+druid:
+  stat-view:
+    enabled: ${DRUID_STAT_VIEW_ENABLED:false}
+  wall:
+    # 关闭多语句执行，阻断 SQL 注入的堆叠语句面
+    multi-statement-allow: false
+
+# IP 归属地解析会登录时发起外网 HTTP 请求，生产默认关闭（内网部署无出口时会造成登录超时）
+ruoyi:
+  addressEnabled: ${ADDRESS_ENABLED:false}
+
+referer:
+  enabled: ${REFERER_ENABLED:true}
+  allowed-domains: ${REFERER_ALLOWED_DOMAINS:jw.cjlu.edu.cn}
+
+# 可观测性（V4.0 A5）：actuator 仅暴露 health/info，且需鉴权访问
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
