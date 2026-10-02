@@ -22,3 +22,12 @@ $color-border: #e4e7ed;
 $menu-bg: #f5f7fa;
 $menu-active-bg: #edf3f9;
 $menu-active-color: #007ab8;
+
+// 字体族（标题采用衬线宋体系，贴近官网学术气质；正文保持无衬线）
+$font-family-heading: 'Source Han Serif SC', 'Noto Serif SC', 'STZhongsong',
+  'SimSun', '宋体', 'Microsoft YaHei', serif;
+$font-family-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+  'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+
+// 强调色（官网「更多」链接与细分隔线采用深蓝）
+$color-accent: #c8161d;

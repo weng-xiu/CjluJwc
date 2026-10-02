@@ -1,5 +1,23 @@
 <template>
   <div class="public-layout">
+    <!-- 0. 顶部工具条（参考官网：左侧日期、右侧常用入口） -->
+    <div class="top-bar">
+      <div class="container top-bar-inner">
+        <span class="top-date">{{ todayText }}</span>
+        <div class="top-links">
+          <a href="https://ehall.yangtzeu.edu.cn/" target="_blank">办事大厅</a>
+          <span class="tb-divider">|</span>
+          <a href="https://xzxx.yangtzeu.edu.cn/" target="_blank">校长信箱</a>
+          <span class="tb-divider">|</span>
+          <a href="https://mail.yangtzeu.edu.cn/" target="_blank">长大邮箱</a>
+          <span class="tb-divider">|</span>
+          <a href="http://oa.yangtzeu.edu.cn/seeyon/index.jsp" target="_blank">OA办公</a>
+          <span class="tb-divider">|</span>
+          <a href="https://english.yangtzeu.edu.cn/" target="_blank">English</a>
+        </div>
+      </div>
+    </div>
+
     <!-- 整体蓝色头部（参考长江大学官网版式：左侧校标校名，右侧工具行+主导航行） -->
     <header class="site-header">
       <div class="container header-inner">
@@ -66,20 +84,22 @@
       <div class="container">
         <div class="footer-content">
           <div class="footer-info">
-            <h3>长江大学</h3>
-            <p>荆州校区：湖北省荆州市荆州区学苑路1号</p>
-            <p>武汉校区：湖北省武汉市蔡甸区大学路111号</p>
-            <p>招生热线：0716-8060550 | 传真：0716-8060813</p>
+            <h3>长江大学教务系统</h3>
+            <p>荆州校区（东校区）：湖北省荆州市荆州区学苑路1号　邮编：434023</p>
+            <p>荆州校区（西校区）：湖北省荆州市荆州区荆秘路88号</p>
+            <p>武汉校区：湖北省武汉市蔡甸区大学路111号　邮编：430100</p>
+            <p>接访电话：0716-8060001　招生咨询：0716-8060550　传真：0716-8060575</p>
           </div>
           <div class="footer-links">
             <h4>快速链接</h4>
             <p><a href="https://www.yangtzeu.edu.cn" target="_blank">长江大学官网</a></p>
             <p><a href="https://jwc.yangtzeu.edu.cn" target="_blank">教务处</a></p>
             <p><a href="https://zs.yangtzeu.edu.cn" target="_blank">招生信息网</a></p>
+            <p><a href="https://news.yangtzeu.edu.cn" target="_blank">新闻网</a></p>
           </div>
-          <div class="footer-copyright">
-            <p>&copy; 2026 长江大学教务处 版权所有</p>
-          </div>
+        </div>
+        <div class="footer-copyright">
+          <p>版权所有 © 长江大学教务处　鄂ICP备05003301号-1　公安备案 42100202000009号</p>
         </div>
       </div>
     </footer>
@@ -106,6 +126,11 @@ export default {
     }
   },
   computed: {
+    todayText() {
+      const d = new Date()
+      const week = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+      return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${week[d.getDay()]}`
+    },
     activeNav() {
       const path = this.$route.path
       if (path === '/public/home' || path === '/public' || path === '/public/') {
@@ -139,6 +164,47 @@ export default {
   padding: 0 16px;
   width: 100%;
   box-sizing: border-box;
+}
+
+/* ========== 顶部工具条 ========== */
+.top-bar {
+  background: #f0f2f5;
+  border-bottom: 1px solid #e4e7ed;
+  font-size: 12px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.top-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 34px;
+}
+
+.top-date {
+  color: #888;
+  letter-spacing: 0.5px;
+}
+
+.top-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.top-links a {
+  color: #666;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.top-links a:hover {
+  color: #007ab8;
+}
+
+.tb-divider {
+  color: #ccc;
 }
 
 /* ========== 整体蓝色头部 ========== */
@@ -179,6 +245,7 @@ export default {
   font-weight: 700;
   letter-spacing: 3px;
   line-height: 1.3;
+  font-family: 'Source Han Serif SC', 'Noto Serif SC', 'STZhongsong', 'SimSun', '宋体', 'Microsoft YaHei', serif;
 }
 
 .school-name-en {
@@ -400,6 +467,10 @@ export default {
 
 /* ========== 响应式 ========== */
 @media (max-width: 768px) {
+  .top-bar {
+    display: none;
+  }
+
   .school-name {
     font-size: 17px;
     letter-spacing: 1px;

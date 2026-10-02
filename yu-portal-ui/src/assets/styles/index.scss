@@ -2,10 +2,17 @@
 
 /* 全局基础样式 */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  font-family: #{$font-family-body};
+  font-size: 14px;
+  color: #{$color-text};
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 标题采用宋系衬线字体，贴近高校官网学术风格 */
+h1, h2, h3, h4 {
+  font-family: #{$font-family-heading};
+  font-weight: 700;
 }
 
 /* CSS 自定义属性（方便组件引用） */
@@ -14,4 +21,7 @@ body {
   --color-primary-hover: #{$color-primary-hover};
   --color-primary-light: #{$color-primary-light};
   --color-topbar-bg: #{$color-topbar-bg};
+  --color-accent: #{$color-accent};
+  --font-heading: #{$font-family-heading};
+  --font-body: #{$font-family-body};
 }

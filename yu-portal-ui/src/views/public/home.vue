@@ -23,30 +23,37 @@
       </div>
     </section>
 
-    <!-- 2. 新闻资讯 -->
+    <!-- 2. 长大要闻（大图头条 + 右侧列表，参考官网要闻版式） -->
     <section class="section news-section">
       <div class="container">
         <div class="section-header">
           <div class="title-group">
-            <h2 class="section-title">新闻资讯</h2>
+            <h2 class="section-title">长大要闻</h2>
             <span class="section-subtitle">News</span>
           </div>
           <router-link to="/public/column/news" class="more-link">更多 →</router-link>
         </div>
-        <div class="news-grid">
-          <div class="news-card" v-for="item in newsArticles" :key="item.articleId"
-               @click="goArticle(item.articleId)">
-            <div class="card-img">
-              <img :src="imgUrl(item.coverUrl) || defaultCover" :alt="item.title" loading="lazy"
-                   @error="handleImgError" />
-              <span class="card-date">{{ formatDate(item.publishDate) }}</span>
+        <div class="news-layout" v-if="newsArticles.length">
+          <div class="news-featured" v-if="newsArticles[0]" @click="goArticle(newsArticles[0].articleId)">
+            <div class="featured-img">
+              <img :src="imgUrl(newsArticles[0].coverUrl) || defaultCover" :alt="newsArticles[0].title"
+                   loading="lazy" @error="handleImgError" />
             </div>
-            <div class="card-body">
-              <h3 class="card-title">{{ item.title }}</h3>
+            <div class="featured-body">
+              <h3 class="featured-title">{{ newsArticles[0].title }}</h3>
+              <p class="featured-summary" v-if="newsArticles[0].summary">{{ newsArticles[0].summary }}</p>
+              <span class="featured-date">{{ formatDate(newsArticles[0].publishDate) }}</span>
             </div>
           </div>
+          <ul class="news-side-list" v-if="newsArticles.length > 1">
+            <li v-for="item in newsArticles.slice(1, 5)" :key="item.articleId" @click="goArticle(item.articleId)">
+              <span class="side-dot"></span>
+              <span class="side-title">{{ item.title }}</span>
+              <span class="side-date">{{ formatDate(item.publishDate) }}</span>
+            </li>
+          </ul>
         </div>
-        <el-empty v-if="!newsArticles.length" description="暂无新闻" :image-size="60"></el-empty>
+        <el-empty v-else description="暂无新闻" :image-size="60"></el-empty>
       </div>
     </section>
 
@@ -260,7 +267,7 @@ export default {
       this.loadColumnData('people', 'peopleArticles', 1)
       this.loadColumnData('topic', 'topicArticles', 8)
       // 降级兼容：聚合接口失败时补拉各栏目数据
-      if (!this.newsArticles.length) this.loadColumnData('news', 'newsArticles', 3)
+      if (!this.newsArticles.length) this.loadColumnData('news', 'newsArticles', 5)
       if (!this.academicArticles.length) this.loadColumnData('academic', 'academicArticles', 6)
       if (!this.noticeArticles.length) this.loadColumnData('notice', 'noticeArticles', 8)
       if (!this.campusArticles.length) this.loadColumnData('campus', 'campusArticles', 4)
@@ -395,7 +402,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 1px solid #eaeaea;
   padding-bottom: 12px;
   margin-bottom: 24px;
 }
@@ -403,7 +410,21 @@ export default {
 .title-group {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 10px;
+  position: relative;
+  padding-left: 14px;
+}
+
+.title-group::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 22px;
+  background: linear-gradient(#007ab8, #008ed6);
+  border-radius: 2px;
 }
 
 .section-title {
@@ -411,6 +432,7 @@ export default {
   color: #003366;
   font-weight: 700;
   margin: 0;
+  letter-spacing: 1px;
 }
 
 .section-subtitle {
@@ -431,14 +453,15 @@ export default {
   opacity: 0.8;
 }
 
-/* ========== 新闻资讯 ========== */
-.news-grid {
+/* ========== 长大要闻 ========== */
+.news-layout {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 28px;
+  align-items: stretch;
 }
 
-.news-card {
+.news-featured {
   background: #fff;
   border-radius: 8px;
   overflow: hidden;
@@ -447,48 +470,36 @@ export default {
   transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.news-card:hover {
+.news-featured:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 10px 28px rgba(0, 51, 102, 0.14);
 }
 
-.card-img {
-  position: relative;
+.featured-img {
   overflow: hidden;
 }
 
-.card-img img {
+.featured-img img {
   width: 100%;
-  height: 180px;
+  height: 260px;
   object-fit: cover;
   display: block;
-  transition: transform 0.3s;
+  transition: transform 0.4s;
 }
 
-.news-card:hover .card-img img {
+.news-featured:hover .featured-img img {
   transform: scale(1.05);
 }
 
-.card-date {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  background: rgba(0, 102, 204, 0.85);
-  color: #fff;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 0 4px 0 0;
+.featured-body {
+  padding: 18px 22px 22px;
 }
 
-.card-body {
-  padding: 14px 16px 18px;
-}
-
-.card-title {
-  font-size: 15px;
-  color: #333;
-  line-height: 1.6;
-  margin: 0;
+.featured-title {
+  font-size: 19px;
+  color: #1a1a1a;
+  line-height: 1.5;
+  margin: 0 0 10px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -496,8 +507,79 @@ export default {
   transition: color 0.3s;
 }
 
-.news-card:hover .card-title {
+.news-featured:hover .featured-title {
   color: #007ab8;
+}
+
+.featured-summary {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.8;
+  margin: 0 0 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.featured-date {
+  font-size: 13px;
+  color: #999;
+}
+
+.news-side-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.news-side-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px dashed #e8e8e8;
+  cursor: pointer;
+}
+
+.news-side-list li:last-child {
+  border-bottom: none;
+}
+
+.side-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #007ab8;
+}
+
+.side-title {
+  flex: 1;
+  color: #333;
+  font-size: 15px;
+  line-height: 1.6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.3s;
+}
+
+.news-side-list li:hover .side-title {
+  color: #007ab8;
+}
+
+.news-side-list li:hover .side-dot {
+  background: #008ed6;
+}
+
+.side-date {
+  flex-shrink: 0;
+  color: #999;
+  font-size: 13px;
 }
 
 /* ========== 双栏布局 ========== */
@@ -862,12 +944,13 @@ export default {
     font-size: 18px;
   }
 
-  .news-grid {
+  .news-layout {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
 
-  .card-img img {
-    height: 160px;
+  .featured-img img {
+    height: 200px;
   }
 
   .dual-container {

@@ -1,34 +1,57 @@
 <template>
   <div class="public-search">
-    <div class="container">
-      <!-- 搜索框 -->
-      <div class="search-box">
-        <el-input
-          v-model="keyword"
-          placeholder="请输入搜索关键词"
-          @keyup.enter.native="doSearch"
-          clearable
-          prefix-icon="el-icon-search"
-        >
-          <el-button slot="append" icon="el-icon-search" @click="doSearch">搜索</el-button>
-        </el-input>
+    <!-- 搜索头部（官网风格 hero） -->
+    <div class="search-hero">
+      <div class="container">
+        <h1 class="hero-title">全站搜索</h1>
+        <p class="hero-sub">搜索校园新闻、通知公告、学术动态等内容</p>
+        <div class="search-box">
+          <el-input
+            v-model="keyword"
+            placeholder="请输入关键词，按回车搜索"
+            @keyup.enter.native="doSearch"
+            clearable
+            size="large"
+          >
+            <i slot="prefix" class="el-input__icon el-icon-search"></i>
+          </el-input>
+          <el-button class="search-btn" type="primary" icon="el-icon-search" @click="doSearch">搜索</el-button>
+        </div>
+        <!-- 热门关键词 -->
+        <div class="hot-words">
+          <span class="hot-label">热门：</span>
+          <a
+            v-for="w in hotWords"
+            :key="w"
+            class="hot-word"
+            :class="{ active: keyword === w }"
+            @click="searchByWord(w)"
+          >{{ w }}</a>
+        </div>
       </div>
+    </div>
 
+    <div class="container">
       <!-- 搜索结果 -->
       <div class="search-results" v-loading="loading">
         <p class="result-count" v-if="searched && !loading">
-          共找到 <strong>{{ total }}</strong> 条结果
+          “<strong class="kw">{{ lastKeyword }}</strong>” 共找到 <strong>{{ total }}</strong> 条结果
         </p>
 
         <div class="article-item" v-for="item in articles" :key="item.articleId"
              @click="goArticle(item.articleId)">
-          <h3 class="item-title" v-html="highlightTitle(item.title)"></h3>
-          <p class="item-summary" v-if="item.summary" v-html="highlightSummary(item.summary)"></p>
-          <div class="item-meta">
-            <span v-if="item.columnName" class="meta-column">
-              <i class="el-icon-folder-opened"></i> {{ item.columnName }}
-            </span>
-            <span class="meta-date">{{ formatDate(item.publishDate) }}</span>
+          <div class="item-cover" v-if="item.coverUrl">
+            <img :src="imgUrl(item.coverUrl)" :alt="item.title" loading="lazy" @error="handleImgError" />
+          </div>
+          <div class="item-main">
+            <h3 class="item-title" v-html="highlightTitle(item.title)"></h3>
+            <p class="item-summary" v-if="item.summary" v-html="highlightSummary(item.summary)"></p>
+            <div class="item-meta">
+              <span v-if="item.columnName" class="meta-column">
+                <i class="el-icon-folder-opened"></i> {{ item.columnName }}
+              </span>
+              <span class="meta-date">{{ formatDate(item.publishDate) }}</span>
+            </div>
           </div>
         </div>
 
@@ -43,7 +66,7 @@
         <!-- 初始状态提示 -->
         <div class="search-initial" v-if="!searched && !loading">
           <i class="el-icon-search"></i>
-          <p>请输入关键词开始搜索</p>
+          <p>输入关键词，或点击上方热门词开始搜索</p>
         </div>
       </div>
 
@@ -64,18 +87,21 @@
 
 <script>
 import { searchArticles } from '@/api/public'
+import { imgUrl } from '@/utils/image'
 
 export default {
   name: 'PublicSearch',
   data() {
     return {
       keyword: '',
+      lastKeyword: '',
       articles: [],
       total: 0,
       pageNum: 1,
       pageSize: 10,
       loading: false,
-      searched: false
+      searched: false,
+      hotWords: ['教学', '科研', '招生', '考试', '学位', '通知']
     }
   },
   created() {
@@ -87,6 +113,7 @@ export default {
     }
   },
   methods: {
+    imgUrl,
     doSearch() {
       const kw = this.keyword.trim()
       if (!kw) {
@@ -96,11 +123,16 @@ export default {
         return
       }
       this.pageNum = 1
+      this.lastKeyword = kw
       // 更新URL参数
       if (this.$route.query.keyword !== kw) {
         this.$router.replace({ path: '/public/search', query: { keyword: kw } })
       }
       this.searchData()
+    },
+    searchByWord(word) {
+      this.keyword = word
+      this.doSearch()
     },
     async searchData() {
       const kw = this.keyword.trim()
@@ -134,16 +166,17 @@ export default {
       if (!dateStr) return ''
       return dateStr.substring(0, 10)
     },
+    handleImgError(e) {
+      e.target.style.display = 'none'
+    },
     highlightTitle(title) {
-      if (!title || !this.keyword.trim()) return title
-      const kw = this.keyword.trim()
-      const reg = new RegExp('(' + this.escapeReg(kw) + ')', 'gi')
+      if (!title || !this.lastKeyword) return title
+      const reg = new RegExp('(' + this.escapeReg(this.lastKeyword) + ')', 'gi')
       return title.replace(reg, '<em class="search-highlight">$1</em>')
     },
     highlightSummary(summary) {
-      if (!summary || !this.keyword.trim()) return summary
-      const kw = this.keyword.trim()
-      const reg = new RegExp('(' + this.escapeReg(kw) + ')', 'gi')
+      if (!summary || !this.lastKeyword) return summary
+      const reg = new RegExp('(' + this.escapeReg(this.lastKeyword) + ')', 'gi')
       return summary.replace(reg, '<em class="search-highlight">$1</em>')
     },
     escapeReg(str) {
@@ -157,7 +190,7 @@ export default {
 .public-search {
   background: #f5f5f5;
   min-height: 60vh;
-  padding: 20px 0 60px;
+  padding-bottom: 60px;
 }
 
 .container {
@@ -166,14 +199,102 @@ export default {
   padding: 0 20px;
 }
 
-/* ========== 搜索框 ========== */
-.search-box {
+/* ========== 搜索头部 ========== */
+.search-hero {
+  background: linear-gradient(135deg, #003366 0%, #007ab8 100%);
+  padding: 48px 0 40px;
   margin-bottom: 28px;
-  max-width: 640px;
+  color: #fff;
+  text-align: center;
 }
 
-.search-box .el-input >>> .el-input__inner {
-  border-radius: 4px;
+.hero-title {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin: 0 0 8px;
+  color: #fff;
+}
+
+.hero-sub {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0 0 26px;
+}
+
+.search-box {
+  display: flex;
+  max-width: 680px;
+  margin: 0 auto;
+  gap: 12px;
+}
+
+.search-box .el-input {
+  flex: 1;
+}
+
+.search-box >>> .el-input__inner {
+  height: 50px;
+  line-height: 50px;
+  border-radius: 25px;
+  border: none;
+  font-size: 15px;
+  padding-left: 44px;
+}
+
+.search-box >>> .el-input__prefix {
+  left: 14px;
+}
+
+.search-box >>> .el-input__icon {
+  line-height: 50px;
+  color: #007ab8;
+}
+
+.search-btn {
+  height: 50px;
+  padding: 0 32px;
+  border-radius: 25px;
+  font-size: 16px;
+  background: #008ed6;
+  border-color: #008ed6;
+  flex-shrink: 0;
+}
+
+.search-btn:hover {
+  background: #1a9de0;
+  border-color: #1a9de0;
+}
+
+/* ========== 热门词 ========== */
+.hot-words {
+  max-width: 680px;
+  margin: 18px auto 0;
+  font-size: 13px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 4px;
+}
+
+.hot-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.hot-word {
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  padding: 2px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  transition: all 0.3s;
+}
+
+.hot-word:hover,
+.hot-word.active {
+  background: #fff;
+  color: #007ab8;
 }
 
 /* ========== 结果统计 ========== */
@@ -181,6 +302,11 @@ export default {
   font-size: 14px;
   color: #666;
   margin: 0 0 20px;
+}
+
+.result-count .kw {
+  color: #e65500;
+  font-size: 15px;
 }
 
 .result-count strong {
@@ -194,9 +320,11 @@ export default {
 }
 
 .article-item {
+  display: flex;
+  gap: 18px;
   background: #fff;
   border-radius: 8px;
-  padding: 20px 24px;
+  padding: 18px 22px;
   margin-bottom: 14px;
   cursor: pointer;
   transition: box-shadow 0.3s, transform 0.3s;
@@ -206,6 +334,26 @@ export default {
 .article-item:hover {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
+}
+
+.item-cover {
+  flex-shrink: 0;
+  width: 160px;
+  height: 100px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.item-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.item-main {
+  flex: 1;
+  min-width: 0;
 }
 
 .article-item .item-title {
@@ -289,12 +437,31 @@ export default {
     padding: 0 12px;
   }
 
+  .search-hero {
+    padding: 32px 0 28px;
+  }
+
+  .hero-title {
+    font-size: 24px;
+  }
+
   .search-box {
-    margin-bottom: 20px;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .search-btn {
+    width: 100%;
   }
 
   .article-item {
     padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .item-cover {
+    width: 100px;
+    height: 72px;
   }
 
   .article-item .item-title {
@@ -324,14 +491,3 @@ export default {
   }
 }
 </style>
-<template>
-  <div class="public-search">
-    <h1>搜索</h1>
-  </div>
-</template>
-
-<script>
-export default {
-  name: 'PublicSearch'
-}
-</script>
