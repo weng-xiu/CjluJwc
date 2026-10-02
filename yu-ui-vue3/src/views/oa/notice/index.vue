@@ -89,7 +89,7 @@
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :title="title" v-model="open" width="780px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="780px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-row>
           <el-col :span="12">
@@ -156,7 +156,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -185,10 +185,13 @@
 // type="text" → link；size mini → small；el-radio :label → :value；value-format yyyy → YYYY。发布/撤回/阅读上报逻辑与 Vue2 一致。
 import { listNotice, getNotice, delNotice, addNotice, updateNotice, publishNotice, revokeNotice, readNotice } from "@/api/oa/notice"
 import { deptTreeSelect } from "@/api/system/user"
+import dialogGuard from "@/utils/dialogGuard"
 
 export default {
   name: "OaNotice",
   dicts: ['oa_notice_type', 'oa_publish_scope', 'oa_publish_status', 'sys_yes_no', 'sys_normal_disable'],
+  mixins: [dialogGuard],
+  guardWatch: ['selectedDeptIds'],
   data() {
     return {
       loading: true,
@@ -273,6 +276,7 @@ export default {
       this.reset()
       this.open = true
       this.title = "添加公告"
+      this.captureDialogSnapshot()
     },
     handleUpdate(row) {
       this.reset()
@@ -284,6 +288,7 @@ export default {
         }
         this.open = true
         this.title = "修改公告"
+        this.captureDialogSnapshot()
       })
     },
     handleView(row) {

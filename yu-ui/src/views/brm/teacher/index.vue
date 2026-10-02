@@ -31,7 +31,7 @@
       </el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="12"><el-form-item label="教师工号" prop="teacherCode"><el-input v-model="form.teacherCode" placeholder="请输入教师工号" /></el-form-item></el-col>
@@ -81,7 +81,7 @@
           <el-table-column label="状态" prop="status" width="120"><template slot-scope="scope"><el-select v-model="scope.row.status" placeholder="请选择"><el-option label="正常" value="0"/><el-option label="停用" value="1"/></el-select></template></el-table-column>
         </el-table>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
 
     <!-- P7：教师导入对话框 -->
@@ -98,9 +98,12 @@
 <script>
 import { listTeacher, getTeacher, delTeacher, addTeacher, updateTeacher } from "@/api/brm/teacher"
 import ExcelImportDialog from "@/components/ExcelImportDialog"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
   name: "Teacher", dicts: ['sys_normal_disable', 'sys_user_sex'],
   components: { ExcelImportDialog },
+  mixins: [dialogGuard],
+  guardWatch: ['positionList', 'qualificationList'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, teacherList: [], title: "", open: false,
     positionList: [], checkedPosition: [], qualificationList: [], checkedQualification: [],
     queryParams: { pageNum: 1, pageSize: 10, teacherCode: null, teacherName: null, status: null },
@@ -114,8 +117,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.teacherId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加教师" },
-    handleUpdate(row) { this.reset(); const teacherId = row.teacherId || this.ids; getTeacher(teacherId).then(response => { this.form = response.data; this.positionList = response.data.positionList || []; this.qualificationList = response.data.qualificationList || []; this.open = true; this.title = "修改教师" }) },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加教师"; this.captureDialogSnapshot() },
+    handleUpdate(row) { this.reset(); const teacherId = row.teacherId || this.ids; getTeacher(teacherId).then(response => { this.form = response.data; this.positionList = response.data.positionList || []; this.qualificationList = response.data.qualificationList || []; this.open = true; this.title = "修改教师"; this.captureDialogSnapshot() }) },
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {

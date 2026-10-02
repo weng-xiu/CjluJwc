@@ -35,7 +35,7 @@
       <app-empty v-if="!loading && !teacherList.length" description="暂无教师数据，可调整查询条件、点击「新增」或「导入」批量录入" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" v-model="open" width="800px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="800px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="12"><el-form-item label="教师工号" prop="teacherCode"><el-input v-model="form.teacherCode" placeholder="请输入教师工号" /></el-form-item></el-col>
@@ -86,7 +86,7 @@
         </el-table>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
       </template>
     </el-dialog>
 
@@ -106,9 +106,12 @@
 // el-radio :label → :value；size mini → small；value-format yyyy-MM-dd → YYYY-MM-DD。业务逻辑与 Vue2 保持一致。
 import { listTeacher, getTeacher, delTeacher, addTeacher, updateTeacher } from "@/api/brm/teacher"
 import ExcelImportDialog from "@/components/ExcelImportDialog"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
   name: "Teacher", dicts: ['sys_normal_disable', 'sys_user_sex'],
   components: { ExcelImportDialog },
+  mixins: [dialogGuard],
+  guardWatch: ['positionList', 'qualificationList'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, teacherList: [], title: "", open: false,
     positionList: [], checkedPosition: [], qualificationList: [], checkedQualification: [],
     queryParams: { pageNum: 1, pageSize: 10, teacherCode: null, teacherName: null, status: null },
@@ -122,8 +125,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.teacherId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加教师" },
-    handleUpdate(row) { this.reset(); const teacherId = row.teacherId || this.ids; getTeacher(teacherId).then(response => { this.form = response.data; this.positionList = response.data.positionList || []; this.qualificationList = response.data.qualificationList || []; this.open = true; this.title = "修改教师" }) },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加教师"; this.captureDialogSnapshot() },
+    handleUpdate(row) { this.reset(); const teacherId = row.teacherId || this.ids; getTeacher(teacherId).then(response => { this.form = response.data; this.positionList = response.data.positionList || []; this.qualificationList = response.data.qualificationList || []; this.open = true; this.title = "修改教师"; this.captureDialogSnapshot() }) },
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {

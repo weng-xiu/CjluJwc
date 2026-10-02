@@ -63,7 +63,7 @@
       <app-empty v-if="!loading && !gradeRecordList.length" description="暂无成绩记录，可调整查询条件或通过「导入」批量录入成绩" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" v-model="open" width="650px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="650px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="form.studentId" placeholder="请输入学生ID" /></el-form-item>
         <el-form-item label="课程ID" prop="courseId"><el-input v-model="form.courseId" placeholder="请输入课程ID" /></el-form-item>
@@ -78,7 +78,7 @@
         <el-form-item label="是否已复核" prop="isReviewed"><el-radio-group v-model="form.isReviewed"><el-radio v-for="dict in dict.type.aem_is_reviewed" :key="dict.value" :value="dict.value">{{ dict.label }}</el-radio></el-radio-group></el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
       </template>
     </el-dialog>
 
@@ -99,9 +99,11 @@ import { listGradeRecord, getGradeRecord, delGradeRecord, addGradeRecord, update
 import { listGradeReview, addGradeReview, updateGradeReview, delGradeReview } from "@/api/aem/gradeReview"
 import MasterDetailPanel from "../components/MasterDetailPanel"
 import ImportExcelDialog from "../components/ImportExcelDialog"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
   name: "GradeRecord",
   components: { MasterDetailPanel, ImportExcelDialog },
+  mixins: [dialogGuard],
   dicts: ['aem_grade_exam_type', 'aem_grade_level', 'aem_is_pass', 'aem_is_reviewed', 'aem_review_type', 'aem_approve_status'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, gradeRecordList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, studentId: null, courseId: null, examType: null, isPass: null },
@@ -137,8 +139,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.gradeId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加成绩记录" },
-    handleUpdate(row) { this.reset(); const gradeId = row.gradeId || this.ids; getGradeRecord(gradeId).then(response => { this.form = response.data; this.open = true; this.title = "修改成绩记录" }) },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加成绩记录"; this.captureDialogSnapshot() },
+    handleUpdate(row) { this.reset(); const gradeId = row.gradeId || this.ids; getGradeRecord(gradeId).then(response => { this.form = response.data; this.open = true; this.title = "修改成绩记录"; this.captureDialogSnapshot() }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.gradeId != null) { updateGradeRecord(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addGradeRecord(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const gradeIds = row.gradeId || this.ids; this.$modal.confirm('是否确认删除成绩记录编号为"' + gradeIds + '"的数据项？').then(function() { return delGradeRecord(gradeIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('aem/gradeRecord/export', { ...this.queryParams }, `gradeRecord_${new Date().getTime()}.xlsx`) },

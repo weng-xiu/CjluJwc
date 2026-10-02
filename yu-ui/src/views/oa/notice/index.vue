@@ -85,7 +85,7 @@
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :title="title" :visible.sync="open" width="780px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="780px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-row>
           <el-col :span="12">
@@ -140,7 +140,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -165,11 +165,14 @@ import { listNotice, getNotice, delNotice, addNotice, updateNotice, publishNotic
 import { deptTreeSelect } from "@/api/system/user"
 import Treeselect from "@riophae/vue-treeselect"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css"
+import dialogGuard from "@/utils/dialogGuard"
 
 export default {
   name: "OaNotice",
   dicts: ['oa_notice_type', 'oa_publish_scope', 'oa_publish_status', 'sys_yes_no', 'sys_normal_disable'],
   components: { Treeselect },
+  mixins: [dialogGuard],
+  guardWatch: ['selectedDeptIds'],
   data() {
     return {
       loading: true,
@@ -254,6 +257,7 @@ export default {
       this.reset()
       this.open = true
       this.title = "添加公告"
+      this.captureDialogSnapshot()
     },
     handleUpdate(row) {
       this.reset()
@@ -265,6 +269,7 @@ export default {
         }
         this.open = true
         this.title = "修改公告"
+        this.captureDialogSnapshot()
       })
     },
     handleView(row) {

@@ -12,8 +12,8 @@
     <artifactId>yu-tpm</artifactId>
 
     <properties>
-        <!-- JaCoCo 行覆盖率防回归棘轮（当前实测 ~31.6%，下限保守取 0.28） -->
-        <jacoco.line.minimum>0.28</jacoco.line.minimum>
+        <!-- JaCoCo 行覆盖率防回归棘轮（Q1⑬批后实测 ~32.5%，下限保守取 0.30） -->
+        <jacoco.line.minimum>0.30</jacoco.line.minimum>
     </properties>
 
     <description>
