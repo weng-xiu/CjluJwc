@@ -91,6 +91,7 @@ bin/db-backup/
 *.eslintcache
 *.prettiercache
 node_modules/.vite/
+/ruoyi/
 
 ######################################################################
 # V4.0 §7.3/C1：MySQL 首启初始化脚本改为本机自造（脱敏后放置），仓库只保留说明

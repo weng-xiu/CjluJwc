@@ -176,7 +176,10 @@ xss:
   # 过滤开关
   enabled: true
   # 排除链接（多个用逗号分隔）
-  excludes: /system/notice
+  # 富文本类接口须排除：XssHttpServletRequestWrapper 会对整个 JSON body 跑 EscapeUtil.clean(HTMLFilter)，
+  # 正文里的 <img src="https://…"> 等标签的转义引号与 // 会被破坏，导致 Jackson 报 "Unexpected character '/'"。
+  # /system/notice 与门户 CMS 文章正文(/portal/articleManage)同属富文本，改由编辑器/输出端防护，此处按官方范式排除。
+  excludes: /system/notice,/portal/articleManage,/portal/articleManage/**
   # 匹配链接（V4.0 §7.3 止血：由 3 个系统路径扩展到全部业务路径，消除业务写接口存储型 XSS 面）
   urlPatterns: /system/*,/monitor/*,/tool/*,/brm/*,/tpm/*,/sam/*,/aem/*,/portal/*,/oa/*,/dis/*
 
