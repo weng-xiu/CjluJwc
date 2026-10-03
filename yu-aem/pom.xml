@@ -12,8 +12,8 @@
     <artifactId>yu-aem</artifactId>
 
     <properties>
-        <!-- JaCoCo 行覆盖率防回归棘轮（当前实测 ~2.0%，下限保守取 0.01） -->
-        <jacoco.line.minimum>0.01</jacoco.line.minimum>
+        <!-- JaCoCo 行覆盖率防回归棘轮（Q1 第十七批补测 aem 长尾12控制器接口层：评教问卷/问题/结果/统计、考试安排/监考/座位、成绩复核/统计/权重、督导记录、GPA算法配置，实测 ~16.3%，下限取 0.14） -->
+        <jacoco.line.minimum>0.14</jacoco.line.minimum>
     </properties>
 
     <description>

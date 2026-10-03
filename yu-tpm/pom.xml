@@ -12,8 +12,8 @@
     <artifactId>yu-tpm</artifactId>
 
     <properties>
-        <!-- JaCoCo 行覆盖率防回归棘轮（Q1⑬批后实测 ~32.5%，下限保守取 0.30） -->
-        <jacoco.line.minimum>0.30</jacoco.line.minimum>
+        <!-- JaCoCo 行覆盖率防回归棘轮（Q1 第十七批补测 tpm 长尾5控制器接口层：选课轮次/规则、学分结构、调停课审批、教室借用流程，实测 ~36.6%，下限取 0.34） -->
+        <jacoco.line.minimum>0.34</jacoco.line.minimum>
     </properties>
 
     <description>
