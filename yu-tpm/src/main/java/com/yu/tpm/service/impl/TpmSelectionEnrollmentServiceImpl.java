@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.yu.common.core.domain.AjaxResult;
+import com.yu.common.annotation.BizMetric;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.schedule.TimeSlotUtils;
 import com.yu.framework.cache.SelectionCacheManager;
@@ -395,6 +396,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
      */
     @Transactional
     @Override
+    @BizMetric("selection")
     public AjaxResult enrollWithValidation(Long studentId, Long courseOfferingId, Long roundId)
     {
         // 保持既有口径：无志愿优先级
@@ -406,6 +408,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
      * 供轮次采用 weighted 抽签模式时按志愿权重中签；为空则等同普通选课。
      */
     @Override
+    @BizMetric("selection")
     public AjaxResult enrollWithValidation(Long studentId, Long courseOfferingId, Long roundId, Integer priority)
     {
         // 0. 校验轮次状态

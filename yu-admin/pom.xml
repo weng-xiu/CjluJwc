@@ -42,6 +42,13 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- 可观测性（Q3）：Micrometer Prometheus 注册表，暴露 /actuator/prometheus 供 Prometheus 抓取；
+             JVM/接口/缓存/业务指标统一经此导出，版本由 spring-boot BOM 管理 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
         <!-- 数据库迁移引擎（V4.0 A6）：基线化 sql/ 下 35 个 phase 手工脚本；
              默认 spring.flyway.enabled=false，新环境建库/发布时显式开启 -->
         <dependency>

@@ -41,12 +41,14 @@ referer:
   enabled: ${REFERER_ENABLED:true}
   allowed-domains: ${REFERER_ALLOWED_DOMAINS:jw.cjlu.edu.cn}
 
-# 可观测性（V4.0 A5）：actuator 仅暴露 health/info，且需鉴权访问
+# 可观测性（Q3）：生产默认仅暴露 health,info（安全侧）；需接入 Prometheus 时，
+# 通过独立管理端口 MANAGEMENT_SERVER_PORT（与业务鉴权链隔离）+ MANAGEMENT_EXPOSURE_INCLUDE 显式放开，
+# 并将管理端口限定在容器内网/本机回环，不对公网暴露。
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: ${MANAGEMENT_EXPOSURE_INCLUDE:health,info}
   endpoint:
     health:
       show-details: never

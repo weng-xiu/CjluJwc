@@ -41,6 +41,12 @@
             <artifactId>yu-system</artifactId>
         </dependency>
 
+        <!-- 可观测性（Q3）：资源告警任务读取 Micrometer 指标（JVM 水位/接口 5xx 错误率）-->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

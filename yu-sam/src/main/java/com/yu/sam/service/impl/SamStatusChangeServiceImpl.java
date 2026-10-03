@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.common.exception.ServiceException;
+import com.yu.common.annotation.BizMetric;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.SecurityUtils;
 import com.yu.oa.domain.OaProcessInstance;
@@ -192,6 +193,7 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
 
     @Override
     @Transactional
+    @BizMetric("approval")
     public int approveChange(Long changeId, String taskId, String comment)
     {
         String assignee = SecurityUtils.getUsername();

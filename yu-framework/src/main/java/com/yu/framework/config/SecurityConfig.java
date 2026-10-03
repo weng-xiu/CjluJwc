@@ -119,6 +119,9 @@ public class SecurityConfig
                 if (docEndpointsPermitAll)
                 {
                     requests.requestMatchers("/swagger-ui.html", "/v3/api-docs/**", "/swagger-ui/**", "/druid/**").permitAll();
+                    // 可观测性（Q3）：未启用独立管理端口时，actuator 指标/Prometheus 与业务同端口，
+                    // 仅开发环境匿名放行便于本地抓取/联调；生产以独立管理端口或登录后访问。
+                    requests.requestMatchers(HttpMethod.GET, "/actuator/metrics", "/actuator/metrics/**", "/actuator/prometheus").permitAll();
                 }
                 // 除上面外的所有请求全部需要鉴权认证
                 requests.anyRequest().authenticated();

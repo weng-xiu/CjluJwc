@@ -29,6 +29,13 @@
             <artifactId>spring-boot-starter-aspectj</artifactId>
         </dependency>
 
+        <!-- 可观测性（Q3）：Micrometer 指标门面，供 BizMetrics 业务埋点与告警水位读取；
+             运行时注册表（Prometheus）由 yu-admin 引入 actuator 提供，版本由 spring-boot BOM 管理 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+
         <!-- 阿里数据库连接池 -->
         <dependency>
             <groupId>com.alibaba</groupId>

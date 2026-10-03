@@ -189,17 +189,31 @@ security:
   doc-endpoints:
     permit-all: ${DOC_ENDPOINT_PERMIT_ALL:false}
 
-# 可观测性（V4.0 A5）：actuator 仅暴露 health/info，metrics 待接入 Prometheus 时再开
+# 可观测性（Q3 可观测性体系，承接 V4.0 A5 actuator 基座）：
+# - 接入 Prometheus 注册表，暴露 metrics/prometheus，JVM/接口/缓存/业务指标统一导出；
+# - 管理端口可独立（management.server.port），独立端口下 actuator 不走业务 JWT 过滤器链，
+#   Prometheus 可在容器内网无凭证抓取（配合 docker-compose 仅向本机 127.0.0.1 暴露）；留空则沿用业务端口。
+# - 暴露面基线：dev 默认含 metrics,prometheus；prod 覆盖为 health,info，可经 MANAGEMENT_EXPOSURE_INCLUDE 显式放开。
 management:
+  server:
+    port: ${MANAGEMENT_SERVER_PORT:}
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: ${MANAGEMENT_EXPOSURE_INCLUDE:health,info,metrics,prometheus}
   endpoint:
     health:
       probes:
         enabled: true
       show-details: when-authorized
+  metrics:
+    tags:
+      # 为所有指标附加应用维度标签，便于多实例/多环境在 Prometheus/Grafana 中区分
+      application: ${APPLICATION_NAME:cjlu-jwc-backend}
+    distribution:
+      percentiles-histogram:
+        # 采集 HTTP 接口耗时直方图，支撑 P95/P99 与接口错误率面板
+        http.server.requests: true
   info:
     env:
       enabled: false

@@ -1,0 +1,13 @@
+# Q3 可观测性：Prometheus 抓取配置
+# 后端 actuator/prometheus 走独立管理端口 8081（compose 网络内直连，不经业务网关/鉴权）。
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "cjlu-jwc-backend"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["backend:8081"]
+        labels:
+          application: "cjlu-jwc-backend"

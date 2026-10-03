@@ -17,6 +17,7 @@ import com.yu.sam.mapper.SamWarningDataMapper;
 import com.yu.sam.service.ISamWarningAssistService;
 import com.yu.sam.service.ISamWarningRuleConfigService;
 import com.yu.sam.service.ISamWarningService;
+import com.yu.common.monitor.BizMetrics;
 import com.yu.system.service.ISysNotifyService;
 
 /**
@@ -49,6 +50,10 @@ public class AcademicWarningEngine
     /** S6：预警生成后多渠道通知（站内信+邮件+短信，复用统一通知服务） */
     @Autowired
     private ISysNotifyService sysNotifyService;
+
+    /** Q3 可观测性：预警触发业务埋点（按类型/级别计数） */
+    @Autowired
+    private BizMetrics bizMetrics;
 
     /** S6：预警生成后按级别自动派发帮扶任务 */
     @Autowired
@@ -98,6 +103,15 @@ public class AcademicWarningEngine
         for (SamWarning w : warnings)
         {
             samWarningService.insertSamWarning(w);
+            // Q3：预警触发埋点（异常不影响主流程）
+            try
+            {
+                bizMetrics.recordWarning(w.getWarningType(), w.getWarningLevel());
+            }
+            catch (Exception ignore)
+            {
+                // 指标写入失败不影响预警落库
+            }
         }
 
         // S6：生成后自动向学生推送预警消息（多渠道），并按级别派发帮扶任务（异常不影响主流程）

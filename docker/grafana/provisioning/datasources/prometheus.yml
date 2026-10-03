@@ -1,0 +1,11 @@
+# Q3 可观测性：Grafana 自动装载 Prometheus 数据源
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus          # 与仪表盘 panels 中 datasource.uid="prometheus" 对应，避免自动生成 uid 导致引用失效
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true

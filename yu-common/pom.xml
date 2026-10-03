@@ -118,6 +118,13 @@
             <artifactId>jakarta.servlet-api</artifactId>
         </dependency>
 
+        <!-- 可观测性（Q3）：Micrometer 门面，供 BizMetrics 业务埋点（全模块可见）使用；
+             运行时注册表由 yu-admin 的 actuator + prometheus 提供，版本由 spring-boot BOM 管理 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

@@ -81,6 +81,11 @@ services:
       DOC_ENDPOINT_PERMIT_ALL: ${DOC_ENDPOINT_PERMIT_ALL:-false}
       SWAGGER_UI_ENABLED: ${SWAGGER_UI_ENABLED:-false}
       LOG_MAX_HISTORY: ${LOG_MAX_HISTORY:-30}
+      # Q3 可观测性：独立管理端口（与业务 JWT 过滤器链隔离），便于 Prometheus 容器内网无凭证抓取；
+      # 管理端口不对宿主暴露，仅同网内 Prometheus 可达；prod profile 默认仅 health,info，此处显式放开指标面。
+      MANAGEMENT_SERVER_PORT: ${MGMT_SERVER_PORT:-8081}
+      MANAGEMENT_EXPOSURE_INCLUDE: ${MANAGEMENT_EXPOSURE_INCLUDE:-health,info,metrics,prometheus}
+      APPLICATION_NAME: ${APPLICATION_NAME:-cjlu-jwc-backend}
       TZ: Asia/Shanghai
     volumes:
       - backend-logs:/app/logs
@@ -127,8 +132,47 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  # Q3 可观测性：Prometheus 时序库，抓取后端 actuator/prometheus（同网内直连管理端口 8081）
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: yu-prometheus
+    restart: unless-stopped
+    depends_on:
+      - backend
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      # 仅绑定本机回环，不对公网暴露
+      - "127.0.0.1:${PROMETHEUS_PORT_EXPOSE:-9090}:9090"
+
+  # Q3 可观测性：Grafana 可视化，自动装载 Prometheus 数据源与教务仪表盘
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: yu-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      TZ: Asia/Shanghai
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT_EXPOSE:-3000}:3000"
+
 volumes:
   mysql-data:
   redis-data:
   backend-logs:
   backend-upload:
+  prometheus-data:
+  grafana-data:
