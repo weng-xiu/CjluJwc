@@ -1,4 +1,5 @@
 # CjluJwc CI 回归门禁（Q2 + Q1 覆盖率棘轮 + V4.0 §7.3 数据库卫生/前端门禁）
+# 交付链：backend-tests / frontend-build / db-hygiene（并行门禁）→ build-images（三门禁通过后构建推送 GHCR）→ deploy-staging（main + vars.DEPLOY_ENABLED 门控的预发重部署）
 # 两阶段策略：先 install -DskipTests 安装上游模块，再仅跑受控模块测试，
 # 避免 -am 连带执行无关模块存量用例。受控模块：yu-tpm（排课/抽签/冲突/规则 + MockMvc 接口层）、yu-sam（学位/毕业审核 + 学籍/异动/证书/毕业审核/论文/选题 + 注册登记/学位配置/学位审核/离校手续/流程步骤/证书补办/预警/预警规则/预警帮扶接口层）、yu-aem（成绩记录接口层）、yu-oa（工作流接口层）、yu-portal（门户成绩/选课/课表/预警接口层）、yu-brm（教师/班级/院系/教室 + 专业/学年/学期/校区/楼栋/教室类型/设备/报修/借用/教师岗位/教师资格/资源统计接口层）、yu-dis（外部系统/同步任务/字段映射/接口配置 + 数据交换日志接口层）、yu-admin（系统管理用户/公告/角色/菜单/部门 + 字典类型/岗位/参数配置 + 字典数据/个人中心/登录 + 注册/AI问答/凭证/消息中心/打印模板接口层）。
 # 各受控模块 test 阶段绑定 jacoco prepare-agent/report/check：低于行覆盖率下限（防回归棘轮，见各模块 pom 的 jacoco.line.minimum）即拦截回归。
@@ -123,3 +124,118 @@ jobs:
       - name: Check sys_menu id segment collisions (new changes only)
         shell: pwsh
         run: ./bin/db-menu-check.ps1 -IgnoreLegacy
+
+  build-images:
+    # Q2 部署阶段：三门禁全绿后构建后端/管理端/门户三镜像；main 推送时打 sha + latest 双标签并推 GHCR，
+    # PR 仅跑一次 docker build 验证 Dockerfile 可构建（push=false，不登录不推送），提前暴露镜像层回归。
+    name: Build & Push Images (${{ matrix.image.name }})
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-build, db-hygiene]
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - name: backend
+            context: .
+            dockerfile: Dockerfile
+            build_args: ""
+          - name: admin-ui
+            context: yu-ui-vue3
+            dockerfile: yu-ui-vue3/Dockerfile
+            build_args: ""
+          - name: portal-ui
+            context: yu-portal-ui-vue3
+            dockerfile: yu-portal-ui-vue3/Dockerfile
+            # 门户“管理入口”跳转地址为构建期常量，从仓库变量注入（未设置则空、停在登录页）
+            build_args: "VITE_APP_ADMIN_URL=${{ vars.PORTAL_ADMIN_URL }}"
+    steps:
+      - uses: actions/checkout@v4
+
+      # GHCR 镜像名必须全小写：owner 可能含大写，归一化为命名空间
+      - name: Normalize GHCR namespace
+        id: ns
+        run: echo "ns=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/cjlu-jwc" >> "$GITHUB_OUTPUT"
+
+      - name: Compute image tag
+        id: tag
+        run: echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build (and push on main) ${{ matrix.image.name }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.dockerfile }}
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: |
+            ghcr.io/${{ steps.ns.outputs.ns }}/${{ matrix.image.name }}:${{ steps.tag.outputs.tag }}
+            ghcr.io/${{ steps.ns.outputs.ns }}/${{ matrix.image.name }}:latest
+          build-args: ${{ matrix.image.build_args }}
+          cache-from: type=gha,scope=${{ matrix.image.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image.name }}
+
+  deploy-staging:
+    # Q2 预发部署：仅 main 推送且显式开启 vars.DEPLOY_ENABLED=true 时执行（默认未配置→跳过，不阻断存量 CI）。
+    # 机制：同步编排文件到目标机 → GHCR 登录 → 拉取本次 sha 镜像 → docker compose up -d（拉取式，不在目标机构建）。
+    name: Deploy to Staging (预发)
+    runs-on: ubuntu-latest
+    needs: [build-images]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute image tag
+        id: tag
+        run: echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      # 只同步编排与配置目录（镜像内容不依赖源码），保证目标机 compose 文件与仓库一致
+      - name: Sync orchestration files to staging host
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_PORT || 22 }}
+          source: "docker-compose.yml,docker-compose.prod.yml,docker"
+          target: ${{ vars.STAGING_COMPOSE_DIR }}
+
+      - name: Redeploy (compose pull + up)
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
+          GHCR_USER: ${{ vars.GHCR_USER }}
+          IMAGE_NAMESPACE: ${{ vars.IMAGE_NAMESPACE }}
+          IMAGE_TAG: ${{ steps.tag.outputs.tag }}
+          COMPOSE_DIR: ${{ vars.STAGING_COMPOSE_DIR }}
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_PORT || 22 }}
+          script_stop: true
+          envs: GHCR_TOKEN,GHCR_USER,IMAGE_NAMESPACE,IMAGE_TAG,COMPOSE_DIR
+          script: |
+            set -euo pipefail
+            cd "${COMPOSE_DIR}"
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
+            export IMAGE_NAMESPACE="${IMAGE_NAMESPACE}" IMAGE_TAG="${IMAGE_TAG}"
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull backend frontend portal
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+            docker image prune -f

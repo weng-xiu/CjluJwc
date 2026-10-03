@@ -1,0 +1,29 @@
+# CjluJwc 预发/生产部署覆盖层（Q2 部署阶段 · 多环境常态化）
+# 与 base docker-compose.yml 叠加使用，核心差异：三个业务镜像改为“拉取式”——
+#   运行 CI（build-images job）已构建并推送到 GHCR 的镜像，目标机不再重新构建。
+#
+# 用法（本地预演 / 预发部署同理）：
+#   export IMAGE_NAMESPACE=<owner>/cjlu-jwc IMAGE_TAG=<git-sha7 或 latest>
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull backend frontend portal
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#   # 需要可观测性时追加：--profile observability 后再 up -d（默认不启动 Prometheus/Grafana）
+#
+# 说明：base 的 build: 段在此保留但不触发——up 不带 --build 且 image: 已存在即用镜像，
+#       pull 只拉 image:，不会在目标机执行多阶段构建。
+
+services:
+  backend:
+    image: ${IMAGE_REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE:?IMAGE_NAMESPACE 必填，格式 <owner>/cjlu-jwc}/backend:${IMAGE_TAG:-latest}
+
+  frontend:
+    image: ${IMAGE_REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE:?IMAGE_NAMESPACE 必填，格式 <owner>/cjlu-jwc}/admin-ui:${IMAGE_TAG:-latest}
+
+  portal:
+    image: ${IMAGE_REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE:?IMAGE_NAMESPACE 必填，格式 <owner>/cjlu-jwc}/portal-ui:${IMAGE_TAG:-latest}
+
+  # 可观测性栈在预发/生产按 profile 后置：默认 up -d 不启动，需显式 --profile observability
+  prometheus:
+    profiles: ["observability"]
+
+  grafana:
+    profiles: ["observability"]

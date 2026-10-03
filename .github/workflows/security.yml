@@ -1,0 +1,85 @@
+# Q4 安全加固 · 依赖漏洞常态扫描（周度审计作业，与 Dependabot 互补）
+# Dependabot 负责"自动开升级 PR"，本作业负责"产出可读的漏洞清单与依赖快照并留痕归档"，
+# 两者共同满足 Q4 待补项：定期依赖漏洞扫描 + 漏洞清单可跟踪。
+# 触发：每周一 02:00（Asia/Shanghai）定时 + 手动 dispatch；advisory（非阻塞），高危项由 Dependabot/人工跟进。
+name: Security Scan
+
+on:
+  schedule:
+    # GitHub 定时按 UTC；周日 18:00 UTC = 北京时间周一 02:00（与 Dependabot 周一节奏对齐）
+    - cron: "0 18 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-audit:
+    name: npm audit (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 仅活跃交付前端；原 Vue2 工程归档冻结不纳入常态扫描
+        project: [yu-ui-vue3, yu-portal-ui-vue3]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ${{ matrix.project }}/package-lock.json
+
+      - name: npm ci (from lock)
+        working-directory: ${{ matrix.project }}
+        run: npm ci
+
+      # --omit=dev：只审计随生产镜像交付的依赖；audit-level=high 只列高危及以上
+      # advisory：存量大版本可能命中历史公告，先不阻断，产出 JSON 供跟踪，收敛后转阻塞
+      - name: npm audit (high+, advisory)
+        working-directory: ${{ matrix.project }}
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Export audit report (JSON)
+        working-directory: ${{ matrix.project }}
+        if: always()
+        run: npm audit --omit=dev --json > "../audit-${{ matrix.project }}.json" 2>/dev/null || true
+
+      - name: Upload audit artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-${{ matrix.project }}
+          path: audit-${{ matrix.project }}.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+  backend-dependency-inventory:
+    name: Maven 依赖清单快照
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      # 产出全模块依赖树，作为版本清单留痕归档；结合 Dependabot 广告库比对覆盖已知漏洞，
+      # 如需 OSV/OWASP 深度 SCA 可后续接入（本作业不引入 NVD 外部依赖以保证常态可跑）。
+      - name: Generate dependency tree
+        run: mvn -B -q dependency:tree | tee backend-dependency-tree.txt
+
+      - name: Upload dependency inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dependency-tree
+          path: backend-dependency-tree.txt
+          retention-days: 30
+          if-no-files-found: ignore

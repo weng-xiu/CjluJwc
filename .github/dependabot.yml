@@ -1,0 +1,68 @@
+# Q4 安全加固 · 依赖漏洞常态扫描（GitHub Dependabot）
+# 说明：Dependabot 每周比对 GitHub 安全广告库，对存在已知漏洞的依赖自动开升级 PR，
+#       形成"漏洞清单可跟踪"的常态机制（Q4 待补项落地）。
+# 范围：仅覆盖活跃交付工程——后端 Maven 多模块 + 两端 Vue3 前端 + Actions 自身；
+#       原 Vue2 工程（yu-ui / yu-portal-ui）已归档冻结、源码保护红线禁止自动改写，故不纳入自动开 PR。
+version: 2
+
+updates:
+  # ---------- 后端 Maven（父 pom 聚合 13 模块，dependencyManagement 统一版本） ----------
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 10
+    # 次要/补丁版本合并为单个 PR，减少噪音；主版本（可能破坏性）留独立 PR 人工评估
+    groups:
+      maven-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+
+  # ---------- 管理端 Vue3 ----------
+  - package-ecosystem: "npm"
+    directory: "/yu-ui-vue3"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+
+  # ---------- 门户端 Vue3 ----------
+  - package-ecosystem: "npm"
+    directory: "/yu-portal-ui-vue3"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+
+  # ---------- GitHub Actions 自身（pin 的第三方 action 版本） ----------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
