@@ -3,7 +3,9 @@ package com.yu.system.service.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import jakarta.validation.Validator;
@@ -23,6 +25,8 @@ import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.SecurityUtils;
 import com.yu.common.utils.StringUtils;
 import com.yu.common.utils.bean.BeanValidators;
+import com.yu.common.utils.bean.FieldChange;
+import com.yu.common.utils.bean.FieldDiffUtils;
 import com.yu.common.utils.spring.SpringUtils;
 import com.yu.brm.domain.BrmTeacher;
 import com.yu.brm.service.IBrmTeacherService;
@@ -34,6 +38,7 @@ import com.yu.system.mapper.SysRoleMapper;
 import com.yu.system.mapper.SysUserMapper;
 import com.yu.system.mapper.SysUserPostMapper;
 import com.yu.system.mapper.SysUserRoleMapper;
+import com.yu.system.service.IDataChangeAuditService;
 import com.yu.system.service.ISysConfigService;
 import com.yu.system.service.ISysDeptService;
 import com.yu.system.service.ISysUserService;
@@ -77,6 +82,20 @@ public class SysUserServiceImpl implements ISysUserService
 
     @Autowired
     private IBrmTeacherService brmTeacherService;
+
+    /** K1 合规③：字段级数据变更留痕服务（系统用户含教师，手机号/邮箱等个人信息修改须可追溯） */
+    @Autowired
+    private IDataChangeAuditService dataChangeAuditService;
+
+    /** 用户留痕跟踪字段：仅比对这些业务列，忽略密码/头像/技术字段 */
+    private static final Set<String> USER_TRACKED_FIELDS = new HashSet<>(Arrays.asList(
+            "nickName", "phonenumber", "email", "sex", "status", "deptId", "userCategory", "teacherCode"));
+
+    /** 用户敏感字段：命中者旧/新值掩码后再落库，防止明文手机号/邮箱进入审计流水 */
+    private static final Set<String> USER_SENSITIVE_FIELDS = new HashSet<>(Arrays.asList("phonenumber", "email"));
+
+    /** 用户变更流水的实体类型标识（与表名一致，供审计查询归类） */
+    private static final String USER_ENTITY_TYPE = "sys_user";
 
     /**
      * 根据条件分页查询用户列表
@@ -407,6 +426,13 @@ public class SysUserServiceImpl implements ISysUserService
         {
             clearUserCache(userId, user.getUserName());
             log.info("[用户管理] 修改用户 - userId={}, userName={}", user.getUserId(), user.getUserName());
+            // K1 合规③：修改成功后，在同一事务内比对旧值并写字段级变更流水（手机号/邮箱等敏感字段脱敏）
+            if (oldUser != null)
+            {
+                List<FieldChange> changes = FieldDiffUtils.diff(oldUser, user, USER_TRACKED_FIELDS, USER_SENSITIVE_FIELDS);
+                dataChangeAuditService.recordDiff(USER_ENTITY_TYPE, "系统用户",
+                        String.valueOf(userId), changes);
+            }
         }
         return rows;
     }

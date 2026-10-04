@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.system.mapper.DataChangeAuditMapper">
+
+    <resultMap type="DataChangeAudit" id="DataChangeAuditResult">
+        <id     property="auditId"         column="audit_id"          />
+        <result property="entityType"      column="entity_type"       />
+        <result property="entityTypeLabel" column="entity_type_label" />
+        <result property="bizId"           column="biz_id"            />
+        <result property="fieldName"       column="field_name"        />
+        <result property="fieldLabel"      column="field_label"       />
+        <result property="oldValue"        column="old_value"         />
+        <result property="newValue"        column="new_value"         />
+        <result property="operName"        column="oper_name"         />
+        <result property="operIp"          column="oper_ip"           />
+        <result property="traceId"         column="trace_id"          />
+        <result property="changeTime"      column="change_time"       />
+        <result property="remark"          column="remark"            />
+    </resultMap>
+
+    <sql id="selectDataChangeAuditVo">
+        select audit_id, entity_type, entity_type_label, biz_id, field_name, field_label,
+               old_value, new_value, oper_name, oper_ip, trace_id, change_time, remark
+        from data_change_audit
+    </sql>
+
+    <insert id="batchInsertDataChangeAudit" parameterType="java.util.List">
+        insert into data_change_audit (entity_type, entity_type_label, biz_id, field_name, field_label,
+            old_value, new_value, oper_name, oper_ip, trace_id, change_time, remark)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.entityType}, #{item.entityTypeLabel}, #{item.bizId}, #{item.fieldName}, #{item.fieldLabel},
+             #{item.oldValue}, #{item.newValue}, #{item.operName}, #{item.operIp}, #{item.traceId},
+             #{item.changeTime}, #{item.remark})
+        </foreach>
+    </insert>
+
+    <select id="selectDataChangeAuditList" parameterType="DataChangeAudit" resultMap="DataChangeAuditResult">
+        <include refid="selectDataChangeAuditVo"/>
+        <where>
+            <if test="entityType != null and entityType != ''"> and entity_type = #{entityType}</if>
+            <if test="bizId != null and bizId != ''"> and biz_id = #{bizId}</if>
+            <if test="fieldName != null and fieldName != ''"> and field_name = #{fieldName}</if>
+            <if test="operName != null and operName != ''"> and oper_name like concat('%', #{operName}, '%')</if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                and change_time &gt;= #{params.beginTime}
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                and change_time &lt;= #{params.endTime}
+            </if>
+        </where>
+        order by change_time desc, audit_id desc
+    </select>
+
+    <select id="selectByBiz" resultMap="DataChangeAuditResult">
+        <include refid="selectDataChangeAuditVo"/>
+        where entity_type = #{entityType} and biz_id = #{bizId}
+        order by change_time desc, audit_id desc
+    </select>
+
+</mapper>

@@ -41,4 +41,15 @@ public interface SamStudentMapper
 
     /** P7 导入：身份证号冲突校验（排除自身） */
     public int countIdCardConflict(@org.apache.ibatis.annotations.Param("idCard") String idCard, @org.apache.ibatis.annotations.Param("studentId") Long studentId);
+
+    // ===== K1 合规②：身份证列加密灰度迁移专用（仅 data.encrypt.enabled 开启后调用，引用密文列 id_card_cipher） =====
+
+    /** 灰度回填：查询「有明文身份证、密文列尚为空」的行（仅取 student_id/id_card，limit 控制批量） */
+    public List<SamStudent> selectStudentsForCipherBackfill(@org.apache.ibatis.annotations.Param("limit") int limit);
+
+    /** 灰度回填：将加密结果写入密文列 id_card_cipher（只写密文列，保留明文列） */
+    public int updateStudentIdCardCipher(@org.apache.ibatis.annotations.Param("studentId") Long studentId, @org.apache.ibatis.annotations.Param("cipher") String cipher);
+
+    /** 双读：读取某学籍的身份证密文列值（灰度开启后专用） */
+    public String selectIdCardCipherByStudentId(@org.apache.ibatis.annotations.Param("studentId") Long studentId);
 }

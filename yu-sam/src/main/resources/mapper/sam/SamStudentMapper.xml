@@ -154,4 +154,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select count(1) from sam_student where id_card = #{idCard}
         <if test="studentId != null"> and student_id != #{studentId}</if>
     </select>
+
+    <!-- ===== K1 合规②：身份证列加密灰度迁移专用（引用密文列 id_card_cipher，仅 data.encrypt.enabled 开启后由迁移服务调用） ===== -->
+    <select id="selectStudentsForCipherBackfill" resultMap="SamStudentResult">
+        select student_id, id_card from sam_student
+        where id_card is not null and id_card &lt;&gt; ''
+          and id_card_cipher is null
+        order by student_id
+        limit #{limit}
+    </select>
+    <update id="updateStudentIdCardCipher">
+        update sam_student set id_card_cipher = #{cipher} where student_id = #{studentId}
+    </update>
+    <select id="selectIdCardCipherByStudentId" resultType="String">
+        select id_card_cipher from sam_student where student_id = #{studentId}
+    </select>
 </mapper>

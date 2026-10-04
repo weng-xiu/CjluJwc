@@ -20,6 +20,14 @@ import com.yu.aem.service.IAemGradeRecordService;
 import com.yu.aem.service.IAemGradeWeightService;
 import com.yu.aem.strategy.GpaStrategyFactory;
 import com.yu.aem.strategy.IGpaCalculationStrategy;
+import com.yu.common.utils.bean.FieldChange;
+import com.yu.common.utils.bean.FieldDiffUtils;
+import com.yu.system.service.IDataChangeAuditService;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * 成绩记录Service业务层处理
@@ -45,6 +53,18 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     /** A4：成绩权重配置（无配置时回退默认 30/70） */
     @Autowired
     private IAemGradeWeightService aemGradeWeightService;
+
+    /** K1 合规③：字段级数据变更留痕服务（成绩属重要数据，修改须可追溯旧值/新值/操作人） */
+    @Autowired
+    private IDataChangeAuditService dataChangeAuditService;
+
+    /** 成绩记录需留痕的业务字段（成绩/绩点/等级/通过/状态等，排除主键与审计列） */
+    private static final Set<String> GRADE_TRACKED_FIELDS = new HashSet<>(Arrays.asList(
+            "examType", "regularScore", "examScore", "totalScore", "gradePoint", "gradeLevel",
+            "isPass", "isReviewed", "status", "submitStatus"));
+
+    /** 成绩变更流水的实体类型标识（与表名一致，供审计查询归类） */
+    private static final String GRADE_ENTITY_TYPE = "aem_grade_record";
 
     /** A5：成绩录入开放期控制（默认关闭，保持历史行为；开启后仅窗口内可录入/修改） */
     @org.springframework.beans.factory.annotation.Value("${aem.grade.entry.enabled:false}")
@@ -204,7 +224,15 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
             throw new ServiceException("总成绩必须在0-100范围内");
         }
         aemGradeRecord.setUpdateTime(DateUtils.getNowDate());
-        return aemGradeRecordMapper.updateAemGradeRecord(aemGradeRecord);
+        int rows = aemGradeRecordMapper.updateAemGradeRecord(aemGradeRecord);
+        // K1 合规③：修改成功后，在同一事务内比对旧值并写字段级变更流水（无差异则不写）
+        if (rows > 0 && existing != null)
+        {
+            List<FieldChange> changes = FieldDiffUtils.diff(existing, aemGradeRecord, GRADE_TRACKED_FIELDS, null);
+            dataChangeAuditService.recordDiff(GRADE_ENTITY_TYPE, "成绩记录",
+                    String.valueOf(aemGradeRecord.getGradeId()), changes);
+        }
+        return rows;
     }
 
     @Override

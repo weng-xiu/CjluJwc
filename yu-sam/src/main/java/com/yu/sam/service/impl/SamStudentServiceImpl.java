@@ -1,10 +1,16 @@
 package com.yu.sam.service.impl;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import com.yu.common.annotation.DataScope;
 import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.StringUtils;
+import com.yu.common.utils.bean.FieldChange;
+import com.yu.common.utils.bean.FieldDiffUtils;
+import com.yu.system.service.IDataChangeAuditService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +39,21 @@ public class SamStudentServiceImpl implements ISamStudentService
 
     @Autowired
     private SamCertificateMapper samCertificateMapper;
+
+    /** K1 合规③：字段级数据变更留痕服务（学籍含身份证等个人敏感信息，修改须可追溯旧值/新值/操作人） */
+    @Autowired
+    private IDataChangeAuditService dataChangeAuditService;
+
+    /** 学籍留痕跟踪字段：仅比对这些业务列，忽略关联展示字段与技术字段 */
+    private static final Set<String> STUDENT_TRACKED_FIELDS = new HashSet<>(Arrays.asList(
+            "studentNo", "studentName", "gender", "birthDate", "idCard", "majorId", "deptId",
+            "classId", "enrollmentYear", "educationLevel", "studentStatus", "status"));
+
+    /** 学籍敏感字段：命中者旧/新值掩码后再落库，防止明文身份证进入审计流水 */
+    private static final Set<String> STUDENT_SENSITIVE_FIELDS = new HashSet<>(Arrays.asList("idCard"));
+
+    /** 学籍变更流水的实体类型标识（与表名一致，供审计查询归类） */
+    private static final String STUDENT_ENTITY_TYPE = "sam_student";
 
     @Override
     public SamStudent selectSamStudentByStudentId(Long studentId)
@@ -80,7 +101,15 @@ public class SamStudentServiceImpl implements ISamStudentService
             throw new ServiceException("已毕业的学生不允许修改学籍信息");
         }
         samStudent.setUpdateTime(DateUtils.getNowDate());
-        return samStudentMapper.updateSamStudent(samStudent);
+        int rows = samStudentMapper.updateSamStudent(samStudent);
+        // K1 合规③：修改成功后，在同一事务内比对旧值并写字段级变更流水（无差异则不写，身份证等敏感字段脱敏）
+        if (rows > 0 && existing != null)
+        {
+            List<FieldChange> changes = FieldDiffUtils.diff(existing, samStudent, STUDENT_TRACKED_FIELDS, STUDENT_SENSITIVE_FIELDS);
+            dataChangeAuditService.recordDiff(STUDENT_ENTITY_TYPE, "学生学籍",
+                    String.valueOf(samStudent.getStudentId()), changes);
+        }
+        return rows;
     }
 
     @Override
