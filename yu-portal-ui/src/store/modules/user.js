@@ -24,9 +24,9 @@ const user = {
   },
   actions: {
     Login({ commit, dispatch }, userInfo) {
-      const { username, password, code, uuid } = userInfo
+      const { username, password, code, uuid, totpCode } = userInfo
       return new Promise((resolve, reject) => {
-        login(username.trim(), password, code, uuid).then(res => {
+        login(username.trim(), password, code, uuid, totpCode).then(res => {
           setToken(res.token)
           commit('SET_TOKEN', res.token)
           // 登录成功后立即获取用户信息（含角色/类别）

@@ -77,16 +77,40 @@
             <artifactId>poi-ooxml</artifactId>
         </dependency>
 
-        <!-- Token生成与解析-->
+        <!-- Token生成与解析（K3：现代 jjwt 拆分包）-->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt</artifactId>
+            <artifactId>jjwt-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Jackson 核心：旧版 jjwt 0.9.1 曾传递引入 jackson-databind 供编译期使用，
+             升级为 jjwt-api 后不再传递，此处显式声明（版本由 spring-boot BOM 管理），
+             避免下游模块（如 yu-system 打印服务）编译期找不到 ObjectMapper -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
 
         <!-- Jaxb -->
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
+        </dependency>
+
+        <!-- 国密算法提供者（K3：SensitiveFieldCipher 的 SM4-CBC/HMAC-SM3 原语；单 jar 零传递依赖，离线安全） -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
         </dependency>
 
         <!-- redis 缓存操作 -->

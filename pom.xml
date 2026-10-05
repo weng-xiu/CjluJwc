@@ -28,7 +28,9 @@
         <commons.io.version>2.21.0</commons.io.version>
         <poi.version>4.1.2</poi.version>
         <velocity.version>2.3</velocity.version>
-        <jwt.version>0.9.1</jwt.version>
+        <jwt.version>0.11.5</jwt.version>
+        <zxing.version>3.5.0</zxing.version>
+        <bcprov.version>1.74</bcprov.version>
         <jaxb-api.version>2.3.1</jaxb-api.version>
         <springdoc.version>3.0.2</springdoc.version>
         <!-- JaCoCo 行覆盖率下限：默认 0（不对无测试模块施红），受控模块在各自 pom 的 <properties> 中抬高为防回归棘轮 -->
@@ -123,11 +125,35 @@
                 <version>${fastjson.version}</version>
             </dependency>
 
-            <!-- Token生成与解析-->
+            <!-- Token生成与解析（K3：由 EOL 的 0.9.1 升级为现代拆分包 api/impl/jackson）-->
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt</artifactId>
+                <artifactId>jjwt-api</artifactId>
                 <version>${jwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jwt.version}</version>
+            </dependency>
+
+            <!-- MFA 绑定二维码生成（仅 core，无传递依赖，离线安全） -->
+            <dependency>
+                <groupId>com.google.zxing</groupId>
+                <artifactId>core</artifactId>
+                <version>${zxing.version}</version>
+            </dependency>
+
+            <!-- 国密 SM4/SM3 算法提供者（K3：SensitiveFieldCipher 原语；单 jar 零传递依赖，离线安全） -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bcprov.version}</version>
             </dependency>
 
             <!-- 验证码 -->

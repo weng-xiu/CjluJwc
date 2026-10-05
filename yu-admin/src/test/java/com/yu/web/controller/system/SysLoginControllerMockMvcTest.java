@@ -92,7 +92,7 @@ class SysLoginControllerMockMvcTest {
     @Test
     @DisplayName("login：委派登录服务生成令牌并写入 token 字段")
     void login_returnsToken() throws Exception {
-        when(loginService.login(any(), any(), any(), any())).thenReturn("TOKEN-ABC-123");
+        when(loginService.login(any(), any(), any(), any(), any())).thenReturn("TOKEN-ABC-123");
 
         mockMvc.perform(post("/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -101,7 +101,7 @@ class SysLoginControllerMockMvcTest {
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.token").value("TOKEN-ABC-123"));
 
-        verify(loginService).login(eq("admin"), eq("admin123"), any(), any());
+        verify(loginService).login(eq("admin"), eq("admin123"), any(), any(), any());
     }
 
     @Test

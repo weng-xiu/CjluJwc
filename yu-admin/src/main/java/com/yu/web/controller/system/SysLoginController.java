@@ -57,9 +57,9 @@ public class SysLoginController
     public AjaxResult login(@RequestBody LoginBody loginBody)
     {
         AjaxResult ajax = AjaxResult.success();
-        // 生成令牌
+        // 生成令牌（含 K3 MFA 二次鉴别，仅对已启用多因子用户生效）
         String token = loginService.login(loginBody.getUsername(), loginBody.getPassword(), loginBody.getCode(),
-                loginBody.getUuid());
+                loginBody.getUuid(), loginBody.getTotpCode());
         ajax.put(Constants.TOKEN, token);
         return ajax;
     }

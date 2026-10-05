@@ -1,11 +1,11 @@
 import request from '@/utils/request'
 
-export function login(username, password, code, uuid) {
+export function login(username, password, code, uuid, totpCode) {
   return request({
     url: '/login',
     headers: { isToken: false, repeatSubmit: false },
     method: 'post',
-    data: { username, password, code, uuid }
+    data: { username, password, code, uuid, totpCode }
   })
 }
 

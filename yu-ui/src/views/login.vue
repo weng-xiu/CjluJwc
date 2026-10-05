@@ -84,6 +84,20 @@
               <img :src="codeUrl" class="login-code-img" @click="getCode">
             </div>
           </el-form-item>
+          <!-- K3 MFA 二次鉴别：账号已启用多因子时由后端提示后浮现 -->
+          <el-form-item v-if="mfaRequired" prop="totpCode">
+            <el-input
+              v-model="loginForm.totpCode"
+              type="text"
+              maxlength="6"
+              auto-complete="off"
+              placeholder="动态口令（6位）"
+              @keyup.enter.native="handleLogin"
+            >
+              <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon" />
+            </el-input>
+            <div class="mfa-tip">该账号已启用多因子鉴别，请输入身份验证器中的动态口令</div>
+          </el-form-item>
 
           <div class="login-options">
             <el-checkbox v-model="loginForm.rememberMe">
@@ -186,7 +200,8 @@ export default {
         password: "admin123",
         rememberMe: true,
         code: "",
-        uuid: ""
+        uuid: "",
+        totpCode: ""
       },
       loginRules: {
         username: [
@@ -200,6 +215,8 @@ export default {
       loading: false,
       // 验证码开关
       captchaEnabled: true,
+      // K3 MFA：首次登录被后端提示后显示动态口令输入框
+      mfaRequired: false,
       // 注册开关
       register: false,
       redirect: undefined
@@ -234,7 +251,10 @@ export default {
       this.loginForm = {
         username: username === undefined ? this.loginForm.username : username,
         password: password === undefined ? this.loginForm.password : decrypt(password),
-        rememberMe: rememberMe === undefined ? false : Boolean(rememberMe)
+        rememberMe: rememberMe === undefined ? false : Boolean(rememberMe),
+        code: this.loginForm.code,
+        uuid: this.loginForm.uuid,
+        totpCode: this.loginForm.totpCode
       }
     },
     handleLogin() {
@@ -252,7 +272,12 @@ export default {
           }
           this.$store.dispatch("Login", this.loginForm).then(() => {
             this.$router.push({ path: this.redirect || "/" }).catch(()=>{})
-          }).catch(() => {
+          }).catch((err) => {
+            // K3 MFA：后端判定账号已启用多因子（口令缺失/错误），浮现动态口令输入框
+            const msg = (err && err.message) ? String(err.message) : String(err || "")
+            if (msg.indexOf("MFA") !== -1) {
+              this.mfaRequired = true
+            }
             this.loading = false
             if (this.captchaEnabled) {
               this.getCode()
@@ -531,6 +556,14 @@ export default {
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.2);
   }
+}
+
+/* K3 MFA 动态口令提示 */
+.mfa-tip {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+  padding-top: 4px;
 }
 
 .login-code-img {

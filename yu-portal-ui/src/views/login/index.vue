@@ -17,6 +17,11 @@
           <el-input v-model="loginForm.code" placeholder="验证码" prefix-icon="el-icon-picture" size="medium" style="width:60%" @keyup.enter.native="handleLogin" />
           <img :src="codeUrl" @click="getCode" class="captcha-img" title="点击刷新" />
         </el-form-item>
+        <!-- K3 MFA：账号已启用多因子时由后端提示后浮现 -->
+        <el-form-item prop="totpCode" v-if="mfaRequired">
+          <el-input v-model="loginForm.totpCode" placeholder="动态口令（6位）" prefix-icon="el-icon-key" size="medium" maxlength="6" @keyup.enter.native="handleLogin" />
+          <div class="mfa-tip">该账号已启用多因子鉴别，请输入身份验证器中的动态口令</div>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" size="medium" style="width:100%" :loading="loading" @click.native.prevent="handleLogin">
             {{ loading ? '登录中...' : '登 录' }}
@@ -35,7 +40,7 @@ export default {
   name: 'Login',
   data() {
     return {
-      loginForm: { username: 'admin', password: 'admin123', rememberMe: true, code: '', uuid: '' },
+      loginForm: { username: 'admin', password: 'admin123', rememberMe: true, code: '', uuid: '', totpCode: '' },
       loginRules: {
         username: [{ required: true, trigger: 'blur', message: '请输入账号' }],
         password: [{ required: true, trigger: 'blur', message: '请输入密码' }],
@@ -43,6 +48,8 @@ export default {
       },
       loading: false,
       captchaEnabled: true,
+      // K3 MFA：首次登录被后端提示后显示动态口令输入框
+      mfaRequired: false,
       codeUrl: '',
       redirect: undefined
     }
@@ -71,7 +78,12 @@ export default {
         this.$store.dispatch('Login', this.loginForm).then(() => {
           this.$store.dispatch('GetInfo')
           this.$router.push({ path: this.redirect || '/' }).catch(() => {})
-        }).catch(() => {
+        }).catch((err) => {
+          // K3 MFA：后端判定已启用多因子（口令缺失/错误），浮现动态口令输入框
+          const msg = (err && err.message) ? String(err.message) : String(err || '')
+          if (msg.indexOf('MFA') !== -1) {
+            this.mfaRequired = true
+          }
           this.loading = false
           if (this.captchaEnabled) this.getCode()
         })

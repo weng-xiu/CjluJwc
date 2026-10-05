@@ -26,6 +26,7 @@ import com.yu.tpm.domain.dto.ConflictWarning;
 import com.yu.tpm.domain.dto.CourseSuggestion;
 import com.yu.tpm.service.ITpmSelectionEnrollmentService;
 import com.yu.framework.cache.DistributedLock;
+import com.yu.framework.cache.SelectionAdmission;
 import com.yu.common.utils.poi.ExcelUtil;
 import com.yu.common.core.page.TableDataInfo;
 
@@ -45,6 +46,10 @@ public class TpmSelectionEnrollmentController extends BaseController
     /** A3：多实例下保护抽签/递补等全量重算写路径的竞态 */
     @Autowired
     private DistributedLock distributedLock;
+
+    /** A1：选课尖峰削峰与排队号发号 */
+    @Autowired
+    private SelectionAdmission selectionAdmission;
 
     @PreAuthorize("@ss.hasPermi('tpm:enroll:list')")
     @GetMapping("/list")
@@ -131,10 +136,21 @@ public class TpmSelectionEnrollmentController extends BaseController
     @Log(title = "带验证选课", businessType = BusinessType.INSERT)
     public AjaxResult enrollWithValidation(@RequestBody TpmSelectionEnrollment enrollment)
     {
+        // A1：削峰闸门——超过平滑速率的请求在此被快速拒绝并领取排队号，不触达 DB（容量超卖仍由下游原子扣减+分布式锁兜底）
+        SelectionAdmission.Admission admission = selectionAdmission.tryAdmit(enrollment.getRoundId());
+        if (!admission.isAllowed())
+        {
+            AjaxResult busy = error("当前选课人数较多，已进入削峰排队，您的排队号为 " + admission.getQueueNumber() + "，请稍后重试");
+            busy.put("queueNumber", admission.getQueueNumber());
+            busy.put("queued", true);
+            return busy;
+        }
         // F2-2：支持携带志愿优先级（priority），供轮次 weighted 抽签模式按志愿权重中签
-        return tpmSelectionEnrollmentService
+        AjaxResult result = tpmSelectionEnrollmentService
                 .enrollWithValidation(enrollment.getStudentId(), enrollment.getCourseOfferingId(),
                         enrollment.getRoundId(), enrollment.getPriority());
+        result.put("queueNumber", admission.getQueueNumber());
+        return result;
     }
 
     /**

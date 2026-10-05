@@ -27,6 +27,11 @@ public class LoginBody
      */
     private String uuid;
 
+    /**
+     * MFA 一次性口令（TOTP，仅已启用多因子的用户登录时必填）
+     */
+    private String totpCode;
+
     public String getUsername()
     {
         return username;
@@ -65,5 +70,15 @@ public class LoginBody
     public void setUuid(String uuid)
     {
         this.uuid = uuid;
+    }
+
+    public String getTotpCode()
+    {
+        return totpCode;
+    }
+
+    public void setTotpCode(String totpCode)
+    {
+        this.totpCode = totpCode;
     }
 }

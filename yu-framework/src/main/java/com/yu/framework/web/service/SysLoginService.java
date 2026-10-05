@@ -26,6 +26,7 @@ import com.yu.framework.manager.AsyncManager;
 import com.yu.framework.manager.factory.AsyncFactory;
 import com.yu.framework.security.context.AuthenticationContextHolder;
 import com.yu.system.service.ISysConfigService;
+import com.yu.system.service.ISysUserMfaService;
 import com.yu.system.service.ISysUserService;
 
 /**
@@ -54,6 +55,9 @@ public class SysLoginService
     @Autowired
     private CaptchaValidator captchaValidator;
 
+    @Autowired
+    private ISysUserMfaService mfaService;
+
     /**
      * 登录验证
      * 
@@ -64,6 +68,21 @@ public class SysLoginService
      * @return 结果
      */
     public String login(String username, String password, String code, String uuid)
+    {
+        return login(username, password, code, uuid, null);
+    }
+
+    /**
+     * 登录验证（含 K3 MFA 二次鉴别）
+     *
+     * @param username 用户名
+     * @param password 密码
+     * @param code 验证码
+     * @param uuid 唯一标识
+     * @param totpCode MFA 一次性口令（仅当用户已启用 MFA 时必填）
+     * @return 结果
+     */
+    public String login(String username, String password, String code, String uuid, String totpCode)
     {
         // 验证码校验
         validateCaptcha(username, code, uuid);
@@ -97,12 +116,39 @@ public class SysLoginService
         }
         AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_SUCCESS, MessageUtils.message("user.login.success")));
         LoginUser loginUser = (LoginUser) authentication.getPrincipal();
+        // K3 MFA 二次鉴别：仅对已启用多因子的用户强制校验 TOTP，未启用者登录行为不变
+        verifyMfa(loginUser, username, totpCode);
         // 登录成功后清除密码错误计数及用户缓存，防止陈旧缓存干扰下次登录
         redisCache.deleteObject(CacheConstants.PWD_ERR_CNT_KEY + username);
         redisCache.deleteObject(CacheConstants.SYS_USER_NAME_KEY + username);
         recordLoginInfo(loginUser.getUserId());
         // 生成token
         return tokenService.createToken(loginUser);
+    }
+
+    /**
+     * K3 MFA 二次鉴别。仅当用户已启用多因子时强制校验 TOTP 口令；
+     * 未启用者直接返回，保持存量登录行为不变。
+     *
+     * @param loginUser 已通过第一因子（密码）认证的登录用户
+     * @param username  用户名（用于登录审计）
+     * @param totpCode  用户提交的一次性口令
+     */
+    private void verifyMfa(LoginUser loginUser, String username, String totpCode)
+    {
+        if (loginUser == null || loginUser.getUserId() == null)
+        {
+            return;
+        }
+        if (!mfaService.isEnabled(loginUser.getUserId()))
+        {
+            return;
+        }
+        if (StringUtils.isBlank(totpCode) || !mfaService.verifyCode(loginUser.getUserId(), totpCode.trim()))
+        {
+            AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, "MFA 校验失败"));
+            throw new ServiceException("MFA 校验失败：一次性口令不正确或已过期");
+        }
     }
 
     /**

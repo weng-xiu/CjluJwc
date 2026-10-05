@@ -60,6 +60,12 @@
             <artifactId>flyway-mysql</artifactId>
         </dependency>
 
+        <!-- MFA 绑定二维码生成（K3-2）：仅 zxing core，无传递依赖，离线可用；版本由根 pom 管理 -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+        </dependency>
+
          <!-- Mysql驱动包 -->
         <dependency>
             <groupId>com.mysql</groupId>

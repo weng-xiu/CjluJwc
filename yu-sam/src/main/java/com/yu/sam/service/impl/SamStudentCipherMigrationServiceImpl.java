@@ -16,7 +16,7 @@ import com.yu.sam.service.ISamStudentCipherMigrationService;
 /**
  * 身份证号列加密灰度迁移服务实现（V4.1 §6.2 K1 合规②）。
  *
- * <p>加解密原语复用 {@link SensitiveFieldCipher}（AES-256/GCM）。密钥来自配置
+ * <p>加解密原语复用 {@link SensitiveFieldCipher}（国密 SM4-CBC + HMAC-SM3，兼容读取 legacy AES-GCM）。密钥来自配置
  * {@code data.encrypt.key}（应由密钥库/环境变量注入，禁止入库、禁止硬编码默认值）。</p>
  *
  * @author yu

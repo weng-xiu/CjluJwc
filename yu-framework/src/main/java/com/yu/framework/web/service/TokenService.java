@@ -23,7 +23,7 @@ import com.yu.common.utils.ip.IpUtils;
 import com.yu.common.utils.uuid.IdUtils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
@@ -58,6 +58,14 @@ public class TokenService
     private RedisCache redisCache;
 
     /**
+     * K3 jjwt 升级：由配置密钥派生的 HMAC 签名密钥。
+     * 新版 jjwt（0.11.x）对 HS512 强制要求密钥 >= 512 位，旧 0.9.1 未校验。为兼容任意长度的
+     * TOKEN_SECRET（可能短于 64 字节），启动时用 SHA-512 摘要将 secret 归一为 64 字节密钥，
+     * 既保证长度合规，又对同一 secret 确定性可复现（多实例可互验）。
+     */
+    private javax.crypto.SecretKey signKey;
+
+    /**
      * Q4 安全加固：令牌密钥启动校验。
      * 密钥不再明文写入配置文件（application.yml 的 token.secret 改为 ${TOKEN_SECRET:} 环境变量注入）。
      * 若未注入则生成一次性强随机密钥，保证本地/单机可运行；但重启后旧 token 失效、多实例无法互验，
@@ -71,6 +79,17 @@ public class TokenService
             secret = generateRandomSecret();
             log.warn("未检测到 token.secret（TOKEN_SECRET 环境变量），已生成一次性随机密钥用于本地运行。"
                     + "生产/多实例部署请务必设置 TOKEN_SECRET，否则重启将使全部令牌失效。");
+        }
+        // K3：派生固定长度的 HMAC 签名密钥（SHA-512 摘要 → 64 字节 → HS512）
+        try
+        {
+            byte[] keyBytes = java.security.MessageDigest.getInstance("SHA-512")
+                    .digest(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            this.signKey = Keys.hmacShaKeyFor(keyBytes);
+        }
+        catch (java.security.NoSuchAlgorithmException e)
+        {
+            throw new IllegalStateException("SHA-512 不可用，无法初始化令牌签名密钥", e);
         }
     }
 
@@ -212,10 +231,10 @@ public class TokenService
      */
     private String createToken(Map<String, Object> claims)
     {
-        String token = Jwts.builder()
+        // K3 jjwt 0.11.x：signWith(SecretKey) 由密钥长度自动选定 HS512
+        return Jwts.builder()
                 .setClaims(claims)
-                .signWith(SignatureAlgorithm.HS512, secret).compact();
-        return token;
+                .signWith(signKey).compact();
     }
 
     /**
@@ -226,8 +245,10 @@ public class TokenService
      */
     private Claims parseToken(String token)
     {
-        return Jwts.parser()
-                .setSigningKey(secret)
+        // K3 jjwt 0.11.x：parserBuilder().setSigningKey(SecretKey).build()
+        return Jwts.parserBuilder()
+                .setSigningKey(signKey)
+                .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
