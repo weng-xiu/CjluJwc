@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.yu.web.mapper.DashboardStatMapper;
+import com.yu.web.service.CurrentSemesterCacheService;
 import com.yu.web.service.IDashboardStatService;
 
 /**
@@ -28,13 +29,16 @@ public class DashboardStatServiceImpl implements IDashboardStatService
     @Autowired
     private DashboardStatMapper dashboardStatMapper;
 
+    @Autowired
+    private CurrentSemesterCacheService currentSemesterCacheService;
+
     @Override
     public Map<String, Object> selectOverview()
     {
         Map<String, Object> overview = new HashMap<>();
 
-        // 1. 当前学期
-        Map<String, Object> semester = dashboardStatMapper.selectCurrentSemester();
+        // 1. 当前学期（走 A3 缓存：读多写极少，TTL 10 分钟 + 学期 CRUD 主动失效）
+        Map<String, Object> semester = currentSemesterCacheService.getCurrentSemester();
         Long semesterId = null;
         if (semester != null && semester.get("semesterId") != null)
         {

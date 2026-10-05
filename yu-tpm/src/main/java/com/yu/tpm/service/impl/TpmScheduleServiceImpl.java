@@ -4,7 +4,10 @@ import java.util.List;
 import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.schedule.TimeSlotUtils;
+import com.yu.framework.config.CacheConfig;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.tpm.domain.TpmCourseOffering;
@@ -45,6 +48,9 @@ public class TpmScheduleServiceImpl implements ITpmScheduleService
     }
 
     @Override
+    @Cacheable(cacheNames = CacheConfig.CACHE_STUDENT_SCHEDULE,
+            key = "#studentId + ':' + (#semesterId != null ? #semesterId : 'all')",
+            unless = "#result == null || #result.isEmpty()")
     public List<TpmSchedule> selectStudentScheduleList(Long studentId, Long semesterId)
     {
         return tpmScheduleMapper.selectStudentScheduleList(studentId, semesterId);
@@ -131,6 +137,7 @@ public class TpmScheduleServiceImpl implements ITpmScheduleService
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.CACHE_STUDENT_SCHEDULE, allEntries = true)
     @Override
     public int insertTpmSchedule(TpmSchedule tpmSchedule)
     {
@@ -140,6 +147,7 @@ public class TpmScheduleServiceImpl implements ITpmScheduleService
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.CACHE_STUDENT_SCHEDULE, allEntries = true)
     @Override
     public int updateTpmSchedule(TpmSchedule tpmSchedule)
     {
@@ -149,6 +157,7 @@ public class TpmScheduleServiceImpl implements ITpmScheduleService
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.CACHE_STUDENT_SCHEDULE, allEntries = true)
     @Override
     public int deleteTpmScheduleByScheduleId(Long scheduleId)
     {
@@ -156,6 +165,7 @@ public class TpmScheduleServiceImpl implements ITpmScheduleService
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.CACHE_STUDENT_SCHEDULE, allEntries = true)
     @Override
     public int deleteTpmScheduleByScheduleIds(Long[] scheduleIds)
     {

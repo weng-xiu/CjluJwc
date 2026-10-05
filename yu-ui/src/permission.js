@@ -5,7 +5,7 @@ import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 import { getToken } from '@/utils/auth'
 import { isPathMatch } from '@/utils/validate'
-import { isRelogin } from '@/utils/request'
+import { isRelogin, cancelPendingRequests } from '@/utils/request'
 
 NProgress.configure({ showSpinner: false })
 
@@ -16,6 +16,8 @@ const isWhiteList = (path) => {
 }
 
 router.beforeEach((to, from, next) => {
+  // A7：进入新路由前取消上一页尚未完成的请求，避免旧响应覆盖新页数据
+  cancelPendingRequests()
   NProgress.start()
   if (getToken()) {
     to.meta.title && store.dispatch('settings/setTitle', to.meta.title)

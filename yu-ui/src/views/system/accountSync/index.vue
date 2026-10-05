@@ -31,7 +31,8 @@
         <el-tab-pane label="学生账号同步" name="student">
           <el-form :inline="true">
             <el-form-item label="选择班级">
-              <el-select v-model="studentClassId" placeholder="全部班级" clearable filterable style="width: 300px">
+              <el-select v-model="studentClassId" placeholder="输入班级名搜索（默认可选前 20 条）" clearable filterable
+                remote :remote-method="searchClazz" :loading="clazzLoading" style="width: 300px">
                 <el-option v-for="item in classOptions" :key="item.classId" :label="item.className" :value="item.classId" />
               </el-select>
             </el-form-item>
@@ -70,6 +71,7 @@ export default {
       studentClassId: null,
       flatDeptOptions: [],
       classOptions: [],
+      clazzLoading: false,
       syncLoading: false,
       syncResult: null
     };
@@ -83,7 +85,8 @@ export default {
   },
   created() {
     this.getDeptList();
-    this.getClassOptions();
+    // A7-3：不再全量拉取班级（原 pageSize:9999），仅预加载首页供直接选择，搜索时远程拉取
+    this.searchClazz('');
   },
   methods: {
     getDeptList() {
@@ -95,10 +98,15 @@ export default {
         }));
       }).catch(() => {});
     },
-    getClassOptions() {
-      listClazz({ pageSize: 9999 }).then(response => {
+    searchClazz(query) {
+      this.clazzLoading = true;
+      listClazz({ pageNum: 1, pageSize: 20, className: (query || undefined) }).then(response => {
         this.classOptions = response.rows || [];
-      }).catch(() => {});
+      }).catch(() => {
+        this.classOptions = [];
+      }).finally(() => {
+        this.clazzLoading = false;
+      });
     },
     handleSyncTeachers() {
       this.$modal.confirm('确认要同步教师账号吗？将从基础资源模块读取教师数据并创建系统账号。').then(() => {

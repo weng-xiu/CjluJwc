@@ -121,6 +121,23 @@ const router = new Router({
 })
 
 /**
+ * A7：路由懒加载 chunk 失效自愈——发版后旧 chunk 哈希丢失会造成白屏，
+ * 捕获加载失败自动刷新一次；用 sessionStorage 时间戳防止 10s 内反复重载形如死循环。
+ */
+router.onError((error) => {
+  const pattern = /Loading chunk (\S+ )?failed|Failed to fetch dynamically imported module|Loading CSS chunk/i
+  if (pattern.test(error && error.message)) {
+    const RELOAD_KEY = 'chunk_reload_ts'
+    const last = Number(sessionStorage.getItem(RELOAD_KEY) || 0)
+    const now = Date.now()
+    if (!last || now - last > 10000) {
+      sessionStorage.setItem(RELOAD_KEY, String(now))
+      window.location.reload()
+    }
+  }
+})
+
+/**
  * 移动端设备检测路由守卫
  * - 移动设备访问PC页面时，提示可跳转移动版（不强制）
  * - 用户选择后可通过 sessionStorage 标记偏好

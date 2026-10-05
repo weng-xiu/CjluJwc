@@ -183,6 +183,32 @@ public class RedisCache
     }
 
     /**
+     * 向 Set 中添加成员（用于在线令牌索引等场景）
+     *
+     * @param key    Set 键
+     * @param values 成员
+     * @return 加入数量
+     */
+    public long setAdd(final String key, final Object... values)
+    {
+        Long count = redisTemplate.opsForSet().add(key, values);
+        return count == null ? 0 : count;
+    }
+
+    /**
+     * 从 Set 中移除成员
+     *
+     * @param key    Set 键
+     * @param values 成员
+     * @return 移除数量
+     */
+    public long setRemove(final String key, final Object... values)
+    {
+        Long count = redisTemplate.opsForSet().remove(key, values);
+        return count == null ? 0 : count;
+    }
+
+    /**
      * 缓存Map
      *
      * @param key

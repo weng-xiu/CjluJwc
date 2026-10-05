@@ -13,6 +13,12 @@ public class CacheConstants
     public static final String LOGIN_TOKEN_KEY = "login_tokens:";
 
     /**
+     * 在线令牌索引集合（存放各 loginUser 的 token uuid），
+     * 用于替代 refreshPermissionByRoleId 的 keys login_tokens:* 全量扫描（A3）。
+     */
+    public static final String LOGIN_TOKEN_INDEX_KEY = "login_tokens_index";
+
+    /**
      * 验证码 redis key
      */
     public static final String CAPTCHA_CODE_KEY = "captcha_codes:";

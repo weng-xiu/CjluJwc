@@ -182,8 +182,29 @@ Router.prototype.replace = function push(location) {
   return routerReplace.call(this, location).catch(err => err)
 }
 
-export default new Router({
+const router = new Router({
   mode: 'history', // 去掉url中的#
   scrollBehavior: () => ({ y: 0 }),
   routes: constantRoutes
 })
+
+/**
+ * A7：路由级异常兜底。发版后旧页面懒加载的 chunk 因哈希变更而 404，
+ * 捕获后对目标路由做一次硬刷新拉取新资源；用 sessionStorage 时间戳防止无限重载循环。
+ */
+router.onError((error) => {
+  const msg = (error && (error.message || String(error))) || ''
+  const isChunkError = /Loading chunk (\S+ )?failed|Failed to fetch dynamically imported module|Loading CSS chunk/i.test(msg)
+  if (isChunkError) {
+    const KEY = 'chunk_reload_ts'
+    const last = Number(sessionStorage.getItem(KEY) || 0)
+    const now = Date.now()
+    // 10 秒内不重复硬刷新，避免发版窗口内的无限重载
+    if (now - last > 10000) {
+      sessionStorage.setItem(KEY, String(now))
+      window.location.reload()
+    }
+  }
+})
+
+export default router

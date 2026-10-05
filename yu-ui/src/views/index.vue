@@ -151,9 +151,8 @@ import { listNoticeManage } from "@/api/portal/notice"
 import { getDashboardOverview } from "@/api/dashboard"
 import * as echarts from "echarts"
 
-// 学期起始日兜底（后端 brm_semester 无数据时使用），可根据校历调整
-const SEMESTER_START = new Date(2026, 1, 23) // 2026-02-23 春季学期第一周周一
-const SEMESTER_NAME = "2025-2026学年 春季学期"
+// A7-4：不再内置硬编码学期起始日/名称作为兜底（旧常量会随年份漂移且掩盖“后端无学期数据”的真相）。
+// 当前学期一律以后端 getDashboardOverview 返回的 dashSemester 为准；缺失时前端显式提示“未配置学期”。
 
 export default {
   name: "Index",
@@ -203,10 +202,13 @@ export default {
       return `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 星期${weeks[now.getDay()]}`
     },
     semesterText() {
-      return this.dashSemester.semesterName || SEMESTER_NAME
+      // 由后端供给当前学期；无数据时不再回退到硬编码常量，改为显式提示
+      return this.dashSemester.semesterName || "未配置学期"
     },
     teachingWeek() {
-      const start = this.parseSemesterDate(this.dashSemester.startDate) || SEMESTER_START
+      // 仅当后端提供学期起始日时推算教学周；否则返回 null，由卡片显示“未配置”
+      const start = this.parseSemesterDate(this.dashSemester.startDate)
+      if (!start) return null
       const diff = Date.now() - start.getTime()
       const week = Math.floor(diff / (7 * 24 * 3600 * 1000)) + 1
       return week > 0 ? week : 1
@@ -219,7 +221,7 @@ export default {
         { label: "本学期开课", value: this.fmtNum(c.offeringCount), icon: "el-icon-notebook-2", bg: "#fdf3e7", color: "#e6a23c" },
         { label: "平均通过率", value: c.avgPassRate != null ? c.avgPassRate + "%" : "--", icon: "el-icon-data-line", bg: "#e8f7f9", color: "#17a2b8" },
         { label: "未解除预警", value: this.fmtNum(c.activeWarningCount), icon: "el-icon-warning-outline", bg: "#fdeeee", color: "#f56c6c" },
-        { label: "当前教学周", value: "第" + this.teachingWeek + "周", icon: "el-icon-alarm-clock", bg: "#f0edf9", color: "#7367f0" }
+        { label: "当前教学周", value: this.teachingWeek ? ("第" + this.teachingWeek + "周") : "未配置", icon: "el-icon-alarm-clock", bg: "#f0edf9", color: "#7367f0" }
       ]
     }
   },

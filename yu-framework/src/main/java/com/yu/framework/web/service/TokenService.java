@@ -130,6 +130,8 @@ public class TokenService
         {
             String userKey = getTokenKey(token);
             redisCache.deleteObject(userKey);
+            // 同步从在线令牌索引集合中移除，避免遗留失效成员
+            redisCache.setRemove(CacheConstants.LOGIN_TOKEN_INDEX_KEY, token);
         }
     }
 
@@ -180,6 +182,11 @@ public class TokenService
         // 根据uuid将loginUser缓存
         String userKey = getTokenKey(loginUser.getToken());
         redisCache.setCacheObject(userKey, loginUser, expireTime, TimeUnit.MINUTES);
+        // 维护在线令牌索引集合：以 uuid 为成员，供权限刷新按索引遍历，替代 keys 全量扫描
+        if (StringUtils.isNotEmpty(loginUser.getToken()))
+        {
+            redisCache.setAdd(CacheConstants.LOGIN_TOKEN_INDEX_KEY, loginUser.getToken());
+        }
     }
 
     /**
@@ -266,17 +273,23 @@ public class TokenService
      */
     public void refreshPermissionByRoleId(Long roleId, SysPermissionService permissionService)
     {
-        // 扫描所有在线 token
-        String pattern = CacheConstants.LOGIN_TOKEN_KEY + "*";
-        Collection<String> keys = redisCache.keys(pattern);
-        if (keys == null || keys.isEmpty())
+        // 基于在线令牌索引集合遍历，替代原 keys login_tokens:* 全量扫描（避免在线量大时 Redis 单命令阻塞）
+        java.util.Set<String> tokens = redisCache.getCacheSet(CacheConstants.LOGIN_TOKEN_INDEX_KEY);
+        if (tokens == null || tokens.isEmpty())
         {
             return;
         }
-        for (String key : keys)
+        for (String uuid : tokens)
         {
+            String key = getTokenKey(uuid);
             LoginUser loginUser = redisCache.getCacheObject(key);
-            if (loginUser == null || loginUser.getUser() == null || loginUser.getUser().isAdmin())
+            if (loginUser == null)
+            {
+                // 令牌已过期但索引未清理，顺带剔除失效成员
+                redisCache.setRemove(CacheConstants.LOGIN_TOKEN_INDEX_KEY, uuid);
+                continue;
+            }
+            if (loginUser.getUser() == null || loginUser.getUser().isAdmin())
             {
                 // 管理员拥有所有权限，跳过
                 continue;

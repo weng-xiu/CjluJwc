@@ -75,6 +75,14 @@ Vue.use(Element, {
 
 Vue.config.productionTip = false
 
+// A7：全局错误兜底，防止组件运行时异常直接白屏；记录日志并做非阻断式提示
+Vue.config.errorHandler = function (err, vm, info) {
+  console.error('[全局异常]', info, err)
+  if (vm && vm.$modal && typeof vm.$modal.msgError === 'function') {
+    vm.$modal.msgError('页面出现异常，请刷新重试')
+  }
+}
+
 new Vue({
   el: '#app',
   router,

@@ -25,6 +25,7 @@ import com.yu.tpm.domain.TpmSelectionEnrollment;
 import com.yu.tpm.domain.dto.ConflictWarning;
 import com.yu.tpm.domain.dto.CourseSuggestion;
 import com.yu.tpm.service.ITpmSelectionEnrollmentService;
+import com.yu.framework.cache.DistributedLock;
 import com.yu.common.utils.poi.ExcelUtil;
 import com.yu.common.core.page.TableDataInfo;
 
@@ -40,6 +41,10 @@ public class TpmSelectionEnrollmentController extends BaseController
 {
     @Autowired
     private ITpmSelectionEnrollmentService tpmSelectionEnrollmentService;
+
+    /** A3：多实例下保护抽签/递补等全量重算写路径的竞态 */
+    @Autowired
+    private DistributedLock distributedLock;
 
     @PreAuthorize("@ss.hasPermi('tpm:enroll:list')")
     @GetMapping("/list")
@@ -156,8 +161,22 @@ public class TpmSelectionEnrollmentController extends BaseController
     public AjaxResult lottery(@PathVariable Long roundId,
                               @RequestParam(required = false) Long seed)
     {
-        Map<String, Object> result = tpmSelectionEnrollmentService.runLottery(roundId, seed);
-        return success(result);
+        // A3：抽签为轮次级全量重算，加分布式锁防多实例并发重复抽取；锁在事务提交后（控制器层）释放
+        String lockKey = "selection:lottery:" + roundId;
+        String token = distributedLock.tryLock(lockKey, 0L, 30000L);
+        if (token == null)
+        {
+            return error("该轮次抽签正在进行中，请稍后重试");
+        }
+        try
+        {
+            Map<String, Object> result = tpmSelectionEnrollmentService.runLottery(roundId, seed);
+            return success(result);
+        }
+        finally
+        {
+            distributedLock.unlock(lockKey, token);
+        }
     }
 
     /**
@@ -169,7 +188,21 @@ public class TpmSelectionEnrollmentController extends BaseController
     @Log(title = "选课候补递补", businessType = BusinessType.UPDATE)
     public AjaxResult promoteWaitlist(@PathVariable Long offeringId)
     {
-        return success(tpmSelectionEnrollmentService.promoteWaitlist(offeringId));
+        // A3：同一开课的候补递补需串行，加分布式锁避免并发超卖/重复递补
+        String lockKey = "selection:promote:" + offeringId;
+        String token = distributedLock.tryLock(lockKey, 0L, 20000L);
+        if (token == null)
+        {
+            return error("该开课递补正在进行中，请稍后重试");
+        }
+        try
+        {
+            return success(tpmSelectionEnrollmentService.promoteWaitlist(offeringId));
+        }
+        finally
+        {
+            distributedLock.unlock(lockKey, token);
+        }
     }
 
     /**

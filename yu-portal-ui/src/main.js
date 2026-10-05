@@ -5,11 +5,22 @@ import './assets/styles/index.scss'
 import App from './App'
 import store from './store'
 import router from './router'
+import { cancelPendingRequests } from '@/utils/request'
 
 Vue.use(Element, { size: 'medium' })
 Vue.config.productionTip = false
 
+// A7：全局未捕获异常兑底，避免单页报错导致白屏无反馈
+Vue.config.errorHandler = function (err, vm, info) {
+  console.error('[全局异常]', info, err)
+  if (vm && vm.$message && typeof vm.$message.error === 'function') {
+    vm.$message.error('页面出现异常，请刷新重试')
+  }
+}
+
 router.beforeEach((to, from, next) => {
+  // A7：路由切换时取消上一页在途请求，防止迟到响应覆盖新页数据
+  cancelPendingRequests()
   // 公开页面无需登录，直接放行
   if (to.matched.some(record => record.meta.isPublic)) {
     next()

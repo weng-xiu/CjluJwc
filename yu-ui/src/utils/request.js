@@ -11,6 +11,19 @@ let downloadLoadingInstance
 // 是否显示重新登录
 export let isRelogin = { show: false }
 
+// A7：在途请求的 AbortController 登记集，路由切换时统一取消，防止上一页的迟到响应覆盖新页状态
+const pendingControllers = new Set()
+
+/**
+ * A7：取消所有在途且标记为“可路由切换取消”的请求。通常在路由 beforeEach 中调用。
+ */
+export function cancelPendingRequests() {
+  pendingControllers.forEach(controller => {
+    try { controller.abort() } catch (e) { /* ignore */ }
+  })
+  pendingControllers.clear()
+}
+
 axios.defaults.headers['Content-Type'] = 'application/json;charset=utf-8'
 // 创建axios实例
 const service = axios.create({
@@ -66,6 +79,13 @@ service.interceptors.request.use(config => {
       }
     }
   }
+  // A7：为可路由切换取消的请求登记 AbortController（默认开启，下载/上传等可传 cancelOnRouteChange=false 关闭）
+  if (config.cancelOnRouteChange !== false && typeof AbortController !== 'undefined') {
+    const controller = new AbortController()
+    config.signal = controller.signal
+    config.__abortController = controller
+    pendingControllers.add(controller)
+  }
   return config
 }, error => {
     console.log(error)
@@ -74,6 +94,10 @@ service.interceptors.request.use(config => {
 
 // 响应拦截器
 service.interceptors.response.use(res => {
+    // A7：请求完成，从在途登记集移除
+    if (res.config && res.config.__abortController) {
+      pendingControllers.delete(res.config.__abortController)
+    }
     // 未设置状态码则默认成功状态
     const code = res.data.code || 200
     // 获取错误信息
@@ -109,6 +133,13 @@ service.interceptors.response.use(res => {
     }
   },
   error => {
+    // A7：主动取消（路由切换）属预期行为，静默丢弃，不弹错误提示
+    if (error.config && error.config.__abortController) {
+      pendingControllers.delete(error.config.__abortController)
+    }
+    if (axios.isCancel && axios.isCancel(error)) {
+      return Promise.reject(error)
+    }
     console.log('err' + error)
     let { message } = error
     if (message == "Network Error") {
@@ -130,6 +161,7 @@ export function download(url, params, filename, config) {
     transformRequest: [(params) => { return tansParams(params) }],
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     responseType: 'blob',
+    cancelOnRouteChange: false,
     ...config
   }).then(async (data) => {
     const isBlob = blobValidate(data)

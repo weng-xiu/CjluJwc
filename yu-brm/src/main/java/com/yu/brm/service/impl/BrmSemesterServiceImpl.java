@@ -4,6 +4,7 @@ import java.util.List;
 import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.brm.mapper.BrmSemesterMapper;
@@ -36,6 +37,7 @@ public class BrmSemesterServiceImpl implements IBrmSemesterService
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "current_semester", allEntries = true)
     public int insertBrmSemester(BrmSemester brmSemester)
     {
         // 唯一性校验：同学年下学期名称不能重复
@@ -53,6 +55,7 @@ public class BrmSemesterServiceImpl implements IBrmSemesterService
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "current_semester", allEntries = true)
     public int updateBrmSemester(BrmSemester brmSemester)
     {
         // 唯一性校验：同学年下学期名称不能重复（排除自身）
@@ -76,6 +79,7 @@ public class BrmSemesterServiceImpl implements IBrmSemesterService
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "current_semester", allEntries = true)
     public int deleteBrmSemesterBySemesterId(Long semesterId)
     {
         if (brmSemesterMapper.checkSemesterHasExamPlan(semesterId) > 0)
@@ -91,6 +95,7 @@ public class BrmSemesterServiceImpl implements IBrmSemesterService
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = "current_semester", allEntries = true)
     public int deleteBrmSemesterBySemesterIds(Long[] semesterIds)
     {
         for (Long semesterId : semesterIds)
