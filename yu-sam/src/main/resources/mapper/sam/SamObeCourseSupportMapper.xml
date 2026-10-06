@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamObeCourseSupportMapper">
+    <resultMap type="SamObeCourseSupport" id="SamObeCourseSupportResult">
+        <result property="supportId"     column="support_id"     />
+        <result property="planId"        column="plan_id"        />
+        <result property="ipId"          column="ip_id"          />
+        <result property="courseId"      column="course_id"      />
+        <result property="supportWeight" column="support_weight" />
+        <result property="sortOrder"     column="sort_order"     />
+        <result property="status"        column="status"         />
+        <result property="delFlag"       column="del_flag"       />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"        column="remark"         />
+        <result property="courseName"    column="course_name"    />
+        <result property="ipCode"        column="ip_code"        />
+    </resultMap>
+    <sql id="selectVo">
+        select s.support_id, s.plan_id, s.ip_id, s.course_id, s.support_weight, s.sort_order, s.status, s.del_flag,
+               s.create_by, s.create_time, s.update_by, s.update_time, s.remark,
+               cl.course_name as course_name, ip.ip_code as ip_code
+        from sam_obe_course_support s
+        left join tpm_course_library cl on cl.course_id = s.course_id
+        left join sam_obe_indicator_point ip on ip.ip_id = s.ip_id
+    </sql>
+    <select id="selectSamObeCourseSupportList" parameterType="SamObeCourseSupport" resultMap="SamObeCourseSupportResult">
+        <include refid="selectVo"/>
+        <where>
+            s.del_flag = '0'
+            <if test="planId != null"> and s.plan_id = #{planId}</if>
+            <if test="ipId != null"> and s.ip_id = #{ipId}</if>
+            <if test="courseId != null"> and s.course_id = #{courseId}</if>
+            <if test="status != null and status.trim() != ''"> and s.status = #{status}</if>
+        </where>
+        order by s.plan_id, s.ip_id, s.sort_order, s.support_id
+    </select>
+    <select id="selectSamObeCourseSupportBySupportId" parameterType="Long" resultMap="SamObeCourseSupportResult">
+        <include refid="selectVo"/> where s.support_id = #{supportId} and s.del_flag = '0'
+    </select>
+    <select id="selectByIpId" parameterType="Long" resultMap="SamObeCourseSupportResult">
+        <include refid="selectVo"/> where s.ip_id = #{ipId} and s.del_flag = '0' order by s.sort_order, s.support_id
+    </select>
+    <select id="selectByPlanId" parameterType="Long" resultMap="SamObeCourseSupportResult">
+        <include refid="selectVo"/> where s.plan_id = #{planId} and s.del_flag = '0' and s.status = '0' order by s.ip_id, s.sort_order, s.support_id
+    </select>
+    <insert id="insertSamObeCourseSupport" parameterType="SamObeCourseSupport" useGeneratedKeys="true" keyProperty="supportId">
+        insert into sam_obe_course_support
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="planId != null">plan_id,</if>
+            <if test="ipId != null">ip_id,</if>
+            <if test="courseId != null">course_id,</if>
+            <if test="supportWeight != null">support_weight,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="planId != null">#{planId},</if>
+            <if test="ipId != null">#{ipId},</if>
+            <if test="courseId != null">#{courseId},</if>
+            <if test="supportWeight != null">#{supportWeight},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateSamObeCourseSupport" parameterType="SamObeCourseSupport">
+        update sam_obe_course_support
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="planId != null">plan_id = #{planId},</if>
+            <if test="ipId != null">ip_id = #{ipId},</if>
+            <if test="courseId != null">course_id = #{courseId},</if>
+            <if test="supportWeight != null">support_weight = #{supportWeight},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where support_id = #{supportId}
+    </update>
+    <delete id="deleteSamObeCourseSupportBySupportIds" parameterType="String">
+        update sam_obe_course_support set del_flag = '2' where support_id in
+        <foreach item="supportId" collection="array" open="(" separator="," close=")">#{supportId}</foreach>
+    </delete>
+    <delete id="deleteByIpIds" parameterType="String">
+        update sam_obe_course_support set del_flag = '2' where ip_id in
+        <foreach item="ipId" collection="array" open="(" separator="," close=")">#{ipId}</foreach>
+    </delete>
+</mapper>

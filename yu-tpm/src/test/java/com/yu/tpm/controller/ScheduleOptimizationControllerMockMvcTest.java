@@ -212,6 +212,39 @@ class ScheduleOptimizationControllerMockMvcTest {
         verify(scheduleOptimizationService, never()).applyDragAdjust(any(), any(), any(), any(), eq(false));
     }
 
+    @Test
+    @DisplayName("incrementalReschedule：逗号开课ID绑定List并透传dryRun/dsl")
+    void incrementalReschedule_bindsAndDelegates() throws Exception {
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("rescheduledOfferings", 2);
+        when(scheduleOptimizationService.incrementalReschedule(eq(1L), eq(List.of(10L, 20L)), eq(true), eq("soft.labMatch=120")))
+                .thenReturn(res);
+
+        mockMvc.perform(post("/tpm/scheduleOpt/incrementalReschedule")
+                        .param("semesterId", "1")
+                        .param("offeringIds", "10,20")
+                        .param("dryRun", "true")
+                        .param("constraintDsl", "soft.labMatch=120"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.rescheduledOfferings").value(2));
+
+        verify(scheduleOptimizationService).incrementalReschedule(eq(1L), eq(List.of(10L, 20L)), eq(true), eq("soft.labMatch=120"));
+    }
+
+    @Test
+    @DisplayName("validateConstraintDsl：合法返回空错误、非法返回错误列表")
+    void validateConstraintDsl_returnsErrors() throws Exception {
+        mockMvc.perform(get("/tpm/scheduleOpt/validateConstraintDsl").param("constraintDsl", "hard.forbidden=false"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data").isEmpty());
+
+        mockMvc.perform(get("/tpm/scheduleOpt/validateConstraintDsl").param("constraintDsl", "bad.key=1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(1));
+    }
+
     /** 辅助断言：列表项包含指定键值（避免手写冗长 jsonPath）。 */
     private static org.hamcrest.Matcher<? extends Map<? extends String, ?>> hasItem(String key, Object value) {
         return org.hamcrest.Matchers.hasEntry(org.hamcrest.Matchers.is(key), org.hamcrest.Matchers.is(value));

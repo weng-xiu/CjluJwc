@@ -117,4 +117,16 @@ public interface IScheduleOptimizationService
      * @return 结果 Map：success、conflicts（冲突明细）、schedule（调整后排课）
      */
     Map<String, Object> applyDragAdjust(Long scheduleId, Integer weekDay, Integer startPeriod, Integer endPeriod, boolean force);
+
+    /**
+     * N4 增量重排：仅对"受影响开课"重新求解排课，其余既有排课作为锁定占用，避免整学期全局重算。
+     * 典型用于删除/调整若干排课后，为被腾空的开课见缝插针地重排。
+     *
+     * @param semesterId   学期ID
+     * @param offeringIds  受影响（需重排）的开课ID集合
+     * @param dryRun       true 仅预览不落库
+     * @param constraintDsl 约束 DSL 文本（null/空则用默认策略，等价既有贪心口径）
+     * @return 结果 Map：items/failReasons/rescheduledOfferings/failedOfferings/totalSessions/inserted/dryRun/policy
+     */
+    Map<String, Object> incrementalReschedule(Long semesterId, List<Long> offeringIds, boolean dryRun, String constraintDsl);
 }

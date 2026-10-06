@@ -56,6 +56,10 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
     @Autowired
     private TpmCourseOfferingMapper courseOfferingMapper;
 
+    /** N4 增量重排引擎（纯逻辑组件） */
+    @Autowired
+    private com.yu.tpm.schedule.incremental.IncrementalRescheduler incrementalRescheduler;
+
     /** 默认课程容量（从配置读取） */
     @org.springframework.beans.factory.annotation.Value("${tpm.schedule.defaultCapacity:30}")
     private int defaultCapacity;
@@ -745,6 +749,120 @@ public class ScheduleOptimizationServiceImpl implements IScheduleOptimizationSer
                         plans.size(), plans.get(0).get("strategy"), plans.get(0).get("score")));
         log.info("F2-1 多方案对比：学期={} 方案数={} 推荐={}",
                 semesterId, plans.size(), result.get("bestStrategy"));
+        return result;
+    }
+
+    /**
+     * N4 增量重排：仅重排受影响开课，其余既有排课锁定为占用。默认策略等价既有贪心口径，
+     * 可通过约束 DSL 声明式调参。dryRun 预览不落库；落库时先删除受影响开课的旧排课再写入新排课。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> incrementalReschedule(Long semesterId, List<Long> offeringIds,
+                                                     boolean dryRun, String constraintDsl)
+    {
+        Map<String, Object> result = new HashMap<>();
+        result.put("dryRun", dryRun);
+        if (offeringIds == null || offeringIds.isEmpty())
+        {
+            throw new com.yu.common.exception.ServiceException("增量重排需指定受影响的开课ID集合");
+        }
+        // 解析 DSL（非法即抛 ServiceException，回传全部校验错误）
+        com.yu.tpm.schedule.dsl.ScheduleConstraintPolicy policy;
+        try
+        {
+            policy = com.yu.tpm.schedule.dsl.ConstraintDslParser.parse(constraintDsl);
+        }
+        catch (com.yu.tpm.schedule.dsl.ConstraintDslException e)
+        {
+            throw new com.yu.common.exception.ServiceException(e.getMessage());
+        }
+        result.put("policy", policy);
+
+        int days = clamp(cfgDaysPerWeek, 1, 7);
+        int ppd = clamp(cfgPeriodsPerDay, 1, 20);
+        int pps = clamp(cfgPeriodsPerSession, 1, ppd);
+        int weeks = clamp(cfgTotalWeeks, 1, 60);
+
+        java.util.Set<Long> affected = new HashSet<>(offeringIds);
+        List<com.yu.tpm.domain.dto.ScheduleCandidate> targets =
+                courseOfferingMapper.selectCandidatesByOfferingIds(offeringIds);
+        if (targets == null || targets.isEmpty())
+        {
+            result.put("rescheduledOfferings", 0);
+            result.put("failedOfferings", 0);
+            result.put("totalSessions", 0);
+            result.put("items", new ArrayList<>());
+            result.put("failReasons", new ArrayList<>());
+            result.put("inserted", 0);
+            result.put("message", "受影响开课集合中没有可重排的开课");
+            return result;
+        }
+
+        List<com.yu.tpm.domain.dto.SchedulableClassroom> rooms = scheduleMapper.selectSchedulableClassrooms();
+        List<com.yu.tpm.domain.TpmSchedule> existing = scheduleMapper.selectSchedulesBySemester(semesterId);
+        List<com.yu.tpm.domain.TpmSchedule> locked = new ArrayList<>();
+        List<Long> staleScheduleIds = new ArrayList<>();
+        if (existing != null)
+        {
+            for (com.yu.tpm.domain.TpmSchedule s : existing)
+            {
+                if (s.getOfferingId() != null && affected.contains(s.getOfferingId()))
+                {
+                    if (s.getScheduleId() != null) { staleScheduleIds.add(s.getScheduleId()); }
+                }
+                else
+                {
+                    locked.add(s);
+                }
+            }
+        }
+        List<com.yu.tpm.domain.dto.ForbiddenSlot> forbidden = scheduleMapper.selectForbiddenSlotsBySemester(semesterId);
+
+        com.yu.tpm.schedule.incremental.IncrementalRescheduler.Result rr = incrementalRescheduler.reschedule(
+                locked, forbidden, targets, rooms, days, ppd, pps, weeks,
+                defaultCapacity, cfgDefaultWeeklyHours, policy);
+
+        int inserted = 0;
+        if (!dryRun)
+        {
+            if (!staleScheduleIds.isEmpty())
+            {
+                scheduleMapper.deleteTpmScheduleByScheduleIds(staleScheduleIds.toArray(new Long[0]));
+            }
+            String op = safeUsername();
+            for (com.yu.tpm.domain.dto.AutoScheduleItem it : rr.getItems())
+            {
+                com.yu.tpm.domain.TpmSchedule tpmSchedule = new com.yu.tpm.domain.TpmSchedule();
+                tpmSchedule.setOfferingId(it.getOfferingId());
+                tpmSchedule.setClassroomId(it.getClassroomId());
+                tpmSchedule.setWeekDay(it.getWeekDay());
+                tpmSchedule.setStartPeriod(it.getStartPeriod());
+                tpmSchedule.setEndPeriod(it.getEndPeriod());
+                tpmSchedule.setStartWeek(it.getStartWeek());
+                tpmSchedule.setEndWeek(it.getEndWeek());
+                tpmSchedule.setScheduleType("auto");
+                tpmSchedule.setStatus("0");
+                tpmSchedule.setCreateBy(op);
+                tpmSchedule.setCreateTime(DateUtils.getNowDate());
+                inserted += scheduleMapper.insertTpmSchedule(tpmSchedule);
+            }
+        }
+
+        result.put("targets", targets.size());
+        result.put("rescheduledOfferings", rr.getRescheduledOfferings());
+        result.put("failedOfferings", rr.getFailedOfferings());
+        result.put("totalSessions", rr.getTotalSessions());
+        result.put("inserted", dryRun ? 0 : inserted);
+        result.put("items", rr.getItems());
+        result.put("failReasons", rr.getFailReasons());
+        result.put("message", String.format("%s：受影响开课%d个，成功重排%d个（共%d次课），失败/未满%d个%s",
+                dryRun ? "增量重排预览" : "增量重排",
+                targets.size(), rr.getRescheduledOfferings(), rr.getTotalSessions(), rr.getFailedOfferings(),
+                dryRun ? "（未落库）" : ("，已写入" + inserted + "条排课")));
+        log.info("N4 增量重排：学期={} 受影响={} 重排={} 会话={} 失败={} dryRun={}",
+                semesterId, targets.size(), rr.getRescheduledOfferings(), rr.getTotalSessions(),
+                rr.getFailedOfferings(), dryRun);
         return result;
     }
 

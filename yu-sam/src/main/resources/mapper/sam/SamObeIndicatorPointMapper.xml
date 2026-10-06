@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamObeIndicatorPointMapper">
+    <resultMap type="SamObeIndicatorPoint" id="SamObeIndicatorPointResult">
+        <result property="ipId"        column="ip_id"        />
+        <result property="grId"        column="gr_id"        />
+        <result property="planId"      column="plan_id"      />
+        <result property="ipCode"      column="ip_code"      />
+        <result property="ipName"      column="ip_name"      />
+        <result property="ipDesc"      column="ip_desc"      />
+        <result property="weight"      column="weight"       />
+        <result property="targetValue" column="target_value" />
+        <result property="sortOrder"   column="sort_order"   />
+        <result property="status"      column="status"       />
+        <result property="delFlag"     column="del_flag"     />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"  column="create_time"  />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"  column="update_time"  />
+        <result property="remark"      column="remark"       />
+    </resultMap>
+    <sql id="selectVo">
+        select ip_id, gr_id, plan_id, ip_code, ip_name, ip_desc, weight, target_value, sort_order, status, del_flag,
+               create_by, create_time, update_by, update_time, remark
+        from sam_obe_indicator_point
+    </sql>
+    <select id="selectSamObeIndicatorPointList" parameterType="SamObeIndicatorPoint" resultMap="SamObeIndicatorPointResult">
+        <include refid="selectVo"/>
+        <where>
+            del_flag = '0'
+            <if test="grId != null"> and gr_id = #{grId}</if>
+            <if test="planId != null"> and plan_id = #{planId}</if>
+            <if test="ipCode != null and ipCode.trim() != ''"> and ip_code = #{ipCode}</if>
+            <if test="ipName != null and ipName.trim() != ''"> and ip_name like concat('%', #{ipName}, '%')</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+        </where>
+        order by gr_id, sort_order, ip_id
+    </select>
+    <select id="selectSamObeIndicatorPointByIpId" parameterType="Long" resultMap="SamObeIndicatorPointResult">
+        <include refid="selectVo"/> where ip_id = #{ipId} and del_flag = '0'
+    </select>
+    <select id="selectByGrId" parameterType="Long" resultMap="SamObeIndicatorPointResult">
+        <include refid="selectVo"/> where gr_id = #{grId} and del_flag = '0' order by sort_order, ip_id
+    </select>
+    <select id="selectByPlanId" parameterType="Long" resultMap="SamObeIndicatorPointResult">
+        <include refid="selectVo"/> where plan_id = #{planId} and del_flag = '0' and status = '0' order by gr_id, sort_order, ip_id
+    </select>
+    <insert id="insertSamObeIndicatorPoint" parameterType="SamObeIndicatorPoint" useGeneratedKeys="true" keyProperty="ipId">
+        insert into sam_obe_indicator_point
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="grId != null">gr_id,</if>
+            <if test="planId != null">plan_id,</if>
+            <if test="ipCode != null">ip_code,</if>
+            <if test="ipName != null">ip_name,</if>
+            <if test="ipDesc != null">ip_desc,</if>
+            <if test="weight != null">weight,</if>
+            <if test="targetValue != null">target_value,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="grId != null">#{grId},</if>
+            <if test="planId != null">#{planId},</if>
+            <if test="ipCode != null">#{ipCode},</if>
+            <if test="ipName != null">#{ipName},</if>
+            <if test="ipDesc != null">#{ipDesc},</if>
+            <if test="weight != null">#{weight},</if>
+            <if test="targetValue != null">#{targetValue},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateSamObeIndicatorPoint" parameterType="SamObeIndicatorPoint">
+        update sam_obe_indicator_point
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="grId != null">gr_id = #{grId},</if>
+            <if test="planId != null">plan_id = #{planId},</if>
+            <if test="ipCode != null">ip_code = #{ipCode},</if>
+            <if test="ipName != null">ip_name = #{ipName},</if>
+            <if test="ipDesc != null">ip_desc = #{ipDesc},</if>
+            <if test="weight != null">weight = #{weight},</if>
+            <if test="targetValue != null">target_value = #{targetValue},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where ip_id = #{ipId}
+    </update>
+    <delete id="deleteSamObeIndicatorPointByIpIds" parameterType="String">
+        update sam_obe_indicator_point set del_flag = '2' where ip_id in
+        <foreach item="ipId" collection="array" open="(" separator="," close=")">#{ipId}</foreach>
+    </delete>
+    <delete id="deleteByGrIds" parameterType="String">
+        update sam_obe_indicator_point set del_flag = '2' where gr_id in
+        <foreach item="grId" collection="array" open="(" separator="," close=")">#{grId}</foreach>
+    </delete>
+</mapper>

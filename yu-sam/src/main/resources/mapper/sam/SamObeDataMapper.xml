@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamObeDataMapper">
+
+    <!-- 某学生各课程最佳归一化得分 max(total_score)/100 -->
+    <select id="selectStudentCourseScores" parameterType="Long"
+            resultType="com.yu.sam.domain.dto.ObeCourseScore">
+        select gr.course_id as courseId, round(max(gr.total_score) / 100, 4) as score
+        from aem_grade_record gr
+        where gr.student_id = #{studentId}
+          and gr.status = '0'
+          and gr.total_score is not null
+          and gr.course_id is not null
+        group by gr.course_id
+    </select>
+
+    <!-- 群体各课程平均归一化得分 avg(total_score)/100，semesterId 为空统计全部学期 -->
+    <select id="selectCourseAverageScores" resultType="com.yu.sam.domain.dto.ObeCourseScore">
+        select gr.course_id as courseId, round(avg(gr.total_score) / 100, 4) as score
+        from aem_grade_record gr
+        where gr.status = '0'
+          and gr.total_score is not null
+          and gr.course_id is not null
+          <if test="_parameter != null">and gr.semester_id = #{semesterId}</if>
+        group by gr.course_id
+    </select>
+
+    <!-- 课程ID → 课程名称 -->
+    <select id="selectCourseNames" resultType="java.util.HashMap">
+        select course_id as courseId, course_name as courseName
+        from tpm_course_library
+        where del_flag = '0'
+    </select>
+
+</mapper>

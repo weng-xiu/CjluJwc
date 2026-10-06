@@ -40,4 +40,12 @@ public interface TpmCourseOfferingMapper
      * @return 排课候选列表
      */
     public List<ScheduleCandidate> selectOfferingsToSchedule(@Param("semesterId") Long semesterId);
+
+    /**
+     * N4 增量重排：按开课ID集合载入候选（含课程学时/校区/容量），用于对被腾空的开课重排。
+     *
+     * @param offeringIds 受影响的开课ID集合（非空）
+     * @return 排课候选列表
+     */
+    public List<ScheduleCandidate> selectCandidatesByOfferingIds(@Param("offeringIds") List<Long> offeringIds);
 }

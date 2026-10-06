@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamStudentProfileMapper">
+
+    <!-- 学籍基础信息 -->
+    <select id="selectStudentBase" resultType="java.util.LinkedHashMap">
+        select s.student_id as studentId, s.student_no as studentNo, s.student_name as studentName,
+               s.gender as gender, s.birth_date as birthDate, s.enrollment_year as enrollmentYear,
+               s.education_level as educationLevel, s.student_status as studentStatus, s.user_id as userId,
+               d.dept_name as deptName, m.major_name as majorName, c.class_name as className
+        from sam_student s
+        left join brm_department d on s.dept_id = d.dept_id
+        left join brm_major m on s.major_id = m.major_id
+        left join brm_class c on s.class_id = c.class_id
+        where s.student_id = #{studentId} limit 1
+    </select>
+
+    <!-- 学业汇总 -->
+    <select id="selectAcademicSummary" resultType="java.util.LinkedHashMap">
+        select
+            (select count(distinct gr.course_id) from aem_grade_record gr
+               where gr.student_id = #{studentId} and gr.status = '0') as courseCount,
+            coalesce((select sum(cl.credit) from aem_grade_record gr
+               join tpm_course_library cl on cl.course_id = gr.course_id
+               where gr.student_id = #{studentId} and gr.is_pass = '1' and gr.status = '0'), 0) as earnedCredit,
+            coalesce((select sum(cl.credit) from aem_grade_record gr
+               join tpm_course_library cl on cl.course_id = gr.course_id
+               where gr.student_id = #{studentId} and gr.status = '0'), 0) as attemptedCredit,
+            (select round(sum(gr.grade_point * cl.credit) / sum(cl.credit), 2) from aem_grade_record gr
+               join tpm_course_library cl on cl.course_id = gr.course_id
+               where gr.student_id = #{studentId} and gr.status = '0' and gr.grade_point is not null) as gpa,
+            (select round(sum(gr.total_score * cl.credit) / sum(cl.credit), 2) from aem_grade_record gr
+               join tpm_course_library cl on cl.course_id = gr.course_id
+               where gr.student_id = #{studentId} and gr.status = '0' and gr.total_score is not null) as avgScore,
+            coalesce((select count(distinct gr.course_id) from aem_grade_record gr
+               where gr.student_id = #{studentId} and gr.is_pass = '0' and gr.status = '0'), 0) as failCount
+        from (select 1) t
+    </select>
+
+    <!-- 培养方案信息 -->
+    <select id="selectPlanInfo" resultType="java.util.LinkedHashMap">
+        select tp.plan_id as planId, tp.plan_name as planName, tp.plan_year as planYear,
+               tp.version as version, tp.total_credits as totalCredits
+        from sam_student st
+        join tpm_training_plan tp
+          on tp.major_id = st.major_id
+         and tp.del_flag = '0'
+         and tp.publish_status = '1'
+         and (tp.plan_year = st.enrollment_year or st.enrollment_year is null or tp.plan_year is null)
+        where st.student_id = #{studentId}
+        order by tp.plan_year desc, tp.plan_id desc
+        limit 1
+    </select>
+
+    <!-- 学分结构分项 -->
+    <select id="selectCreditSections" resultType="java.util.LinkedHashMap">
+        select cs.credit_type as creditType, cs.credit_type_name as creditTypeName, cs.required_credit as requiredCredit
+        from tpm_credit_structure cs
+        where cs.plan_id = #{planId} and cs.del_flag = '0'
+        order by cs.struct_id
+    </select>
+
+    <!-- 按课程属性分类已获学分 -->
+    <select id="selectEarnedByCategory" resultType="java.util.LinkedHashMap">
+        select cl.course_category as creditType, coalesce(sum(cl.credit), 0) as earnedCredit
+        from aem_grade_record gr
+        join tpm_course_library cl on cl.course_id = gr.course_id
+        where gr.student_id = #{studentId} and gr.is_pass = '1' and gr.status = '0'
+          and cl.course_category is not null
+        group by cl.course_category
+    </select>
+
+    <!-- 学业预警明细 -->
+    <select id="selectWarnings" resultType="java.util.LinkedHashMap">
+        select warning_type as warningType, warning_level as warningLevel, warning_reason as warningReason,
+               warning_date as warningDate, is_resolved as isResolved
+        from sam_warning
+        where student_id = #{studentId} and status = '0'
+        order by warning_date desc
+    </select>
+
+    <!-- 毕业/学位审核结论 -->
+    <select id="selectReviewRecords" resultType="java.util.LinkedHashMap">
+        select 'graduation' as reviewType, review_status as reviewStatus, review_date as reviewDate, reviewer as reviewer
+        from sam_graduation_review where student_id = #{studentId} and status = '0'
+        union all
+        select 'degree' as reviewType, review_status as reviewStatus, review_date as reviewDate, reviewer as reviewer
+        from sam_degree_review where student_id = #{studentId} and status = '0'
+    </select>
+
+    <!-- 毕业论文档案 -->
+    <select id="selectThesis" resultType="java.util.LinkedHashMap">
+        select plan_year as planYear, topic_name as topicName, current_stage as currentStage,
+               stage_status as stageStatus, total_score as totalScore, grade_level as gradeLevel,
+               is_qualified as isQualified
+        from sam_thesis where student_id = #{studentId} and status = '0'
+        order by thesis_id desc limit 1
+    </select>
+
+    <!-- 近期成绩明细 -->
+    <select id="selectRecentGrades" resultType="java.util.LinkedHashMap">
+        select cl.course_name as courseName, gr.credit as credit, gr.total_score as totalScore,
+               gr.grade_point as gradePoint, gr.is_pass as isPass, gr.semester_id as semesterId
+        from aem_grade_record gr
+        left join tpm_course_library cl on cl.course_id = gr.course_id
+        where gr.student_id = #{studentId} and gr.status = '0'
+        order by gr.create_time desc, gr.course_id asc
+        limit #{limit}
+    </select>
+
+</mapper>

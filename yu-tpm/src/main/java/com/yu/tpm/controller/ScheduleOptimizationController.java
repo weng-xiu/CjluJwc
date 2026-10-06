@@ -161,6 +161,34 @@ public class ScheduleOptimizationController extends BaseController
     }
 
     /**
+     * N4 增量重排：仅重排受影响开课（其余排课锁定为占用），可选约束 DSL 调参。默认 dryRun=true 仅预览。
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:schedule:autoAssign')")
+    @RateLimiter(time = 60, count = 10)
+    @PostMapping("/incrementalReschedule")
+    @Log(title = "排课增量重排", businessType = BusinessType.UPDATE)
+    public AjaxResult incrementalReschedule(@RequestParam Long semesterId,
+                                            @RequestParam List<Long> offeringIds,
+                                            @RequestParam(defaultValue = "true") boolean dryRun,
+                                            @RequestParam(required = false) String constraintDsl)
+    {
+        Map<String, Object> result = scheduleOptimizationService.incrementalReschedule(
+                semesterId, offeringIds, dryRun, constraintDsl);
+        return success(result);
+    }
+
+    /**
+     * N4 约束 DSL 校验：仅解析并返回校验错误列表（空即合法），供前端预检配置文本。
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:schedule:autoAssign')")
+    @GetMapping("/validateConstraintDsl")
+    public AjaxResult validateConstraintDsl(@RequestParam(required = false) String constraintDsl)
+    {
+        List<String> errors = com.yu.tpm.schedule.dsl.ConstraintDslParser.validate(constraintDsl);
+        return success(errors);
+    }
+
+    /**
      * T5 拖拽调整：将排课移动到目标星期/节次窗口并落库（force=true 时忽略冲突强制保存）。
      */
     @PreAuthorize("@ss.hasPermi('tpm:schedule:edit')")
