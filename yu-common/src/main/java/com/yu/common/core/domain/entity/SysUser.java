@@ -12,7 +12,9 @@ import com.yu.common.annotation.Excel;
 import com.yu.common.annotation.Excel.ColumnType;
 import com.yu.common.annotation.Excel.Type;
 import com.yu.common.annotation.Excels;
+import com.yu.common.annotation.Sensitive;
 import com.yu.common.core.domain.BaseEntity;
+import com.yu.common.enums.DesensitizedType;
 import com.yu.common.utils.SecurityUtils;
 import com.yu.common.xss.Xss;
 
@@ -192,6 +194,7 @@ public class SysUser extends BaseEntity
 
     @Email(message = "邮箱格式不正确")
     @Size(min = 0, max = 50, message = "邮箱长度不能超过50个字符")
+    @Sensitive(desensitizedType = DesensitizedType.EMAIL)
     public String getEmail()
     {
         return email;
@@ -203,6 +206,7 @@ public class SysUser extends BaseEntity
     }
 
     @Size(min = 0, max = 11, message = "手机号码长度不能超过11个字符")
+    @Sensitive(desensitizedType = DesensitizedType.PHONE)
     public String getPhonenumber()
     {
         return phonenumber;

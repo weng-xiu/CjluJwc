@@ -19,6 +19,7 @@ import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.core.page.TableDataInfo;
 import com.yu.common.enums.BusinessType;
 import com.yu.common.enums.LimitType;
+import com.yu.common.security.PortalDataScope;
 import com.yu.common.utils.poi.ExcelUtil;
 import com.yu.aem.domain.AemGradeRecord;
 import com.yu.aem.domain.AemGradeStatistics;
@@ -46,7 +47,7 @@ public class PortalGradeController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(AemGradeRecord aemGradeRecord)
     {
-        aemGradeRecord.setStudentId(getUserId());
+        PortalDataScope.restrictToSelf(aemGradeRecord, AemGradeRecord::setStudentId);
         startPage();
         List<AemGradeRecord> list = aemGradeRecordService.selectAemGradeRecordListForPortal(aemGradeRecord);
         return getDataTable(list);
@@ -58,7 +59,9 @@ public class PortalGradeController extends BaseController
     @PostMapping("/export")
     public void export(HttpServletResponse response, AemGradeRecord aemGradeRecord)
     {
-        List<AemGradeRecord> list = aemGradeRecordService.selectAemGradeRecordList(aemGradeRecord);
+        // 集中收敛：强制仅导出本人成绩，规避此前未限定归属导致的越权导出
+        PortalDataScope.restrictToSelf(aemGradeRecord, AemGradeRecord::setStudentId);
+        List<AemGradeRecord> list = aemGradeRecordService.selectAemGradeRecordListForPortal(aemGradeRecord);
         ExcelUtil<AemGradeRecord> util = new ExcelUtil<AemGradeRecord>(AemGradeRecord.class);
         util.exportExcel(response, list, "个人成绩数据");
     }

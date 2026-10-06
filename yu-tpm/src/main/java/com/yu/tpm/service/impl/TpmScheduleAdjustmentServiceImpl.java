@@ -11,6 +11,9 @@ import com.yu.system.domain.SysMessage;
 import com.yu.system.domain.SysTodo;
 import com.yu.system.service.ISysMessageService;
 import com.yu.system.service.ISysTodoService;
+import com.yu.system.notify.MessagePushedEvent;
+import com.yu.system.notify.TodoPushedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import com.yu.system.service.ISysUserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +49,9 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
 
     @Autowired
     private ISysTodoService sysTodoService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Autowired
     private ISysUserService sysUserService;
@@ -300,7 +306,7 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
             todo.setBusinessType("scheduleAdjust");
             todo.setBusinessId(adjustment.getAdjustId());
             todo.setCreateBy(SecurityUtils.getUsername());
-            sysTodoService.createTodo(todo);
+            eventPublisher.publishEvent(new TodoPushedEvent(todo));
 
             SysMessage msg = new SysMessage();
             msg.setReceiverId(receiverId);
@@ -311,7 +317,7 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
             msg.setBusinessType("scheduleAdjust");
             msg.setBusinessId(adjustment.getAdjustId());
             msg.setCreateBy(SecurityUtils.getUsername());
-            sysMessageService.sendMessage(msg);
+            eventPublisher.publishEvent(new MessagePushedEvent(msg));
         }
         catch (Exception e)
         {
@@ -341,7 +347,7 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
             msg.setBusinessType("scheduleAdjust");
             msg.setBusinessId(adjustment.getAdjustId());
             msg.setCreateBy(SecurityUtils.getUsername());
-            sysMessageService.sendMessage(msg);
+            eventPublisher.publishEvent(new MessagePushedEvent(msg));
         }
         catch (Exception e)
         {

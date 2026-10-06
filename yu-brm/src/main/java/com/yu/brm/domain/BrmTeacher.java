@@ -7,7 +7,9 @@ import jakarta.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.yu.common.annotation.Excel;
+import com.yu.common.annotation.Sensitive;
 import com.yu.common.core.domain.BaseEntity;
+import com.yu.common.enums.DesensitizedType;
 
 /**
  * 教师对象 brm_teacher
@@ -78,6 +80,7 @@ public class BrmTeacher extends BaseEntity
 
     @NotBlank(message = "教师姓名不能为空")
     @Size(min = 0, max = 50, message = "教师姓名长度不能超过50个字符")
+    @Sensitive(desensitizedType = DesensitizedType.USERNAME)
     public String getTeacherName() { return teacherName; }
     public void setTeacherName(String teacherName) { this.teacherName = teacherName; }
 
@@ -92,10 +95,12 @@ public class BrmTeacher extends BaseEntity
     public void setGender(String gender) { this.gender = gender; }
 
     @Size(min = 0, max = 20, message = "联系电话长度不能超过20个字符")
+    @Sensitive(desensitizedType = DesensitizedType.PHONE)
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
 
     @Size(min = 0, max = 100, message = "邮箱长度不能超过100个字符")
+    @Sensitive(desensitizedType = DesensitizedType.EMAIL)
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 

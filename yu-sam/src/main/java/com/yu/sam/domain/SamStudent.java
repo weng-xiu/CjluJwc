@@ -7,7 +7,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.yu.common.annotation.Excel;
+import com.yu.common.annotation.Sensitive;
 import com.yu.common.core.domain.BaseEntity;
+import com.yu.common.enums.DesensitizedType;
 
 import java.util.Date;
 
@@ -98,6 +100,7 @@ public class SamStudent extends BaseEntity
 
     @NotBlank(message = "姓名不能为空")
     @Size(min = 0, max = 100, message = "姓名长度不能超过100个字符")
+    @Sensitive(desensitizedType = DesensitizedType.USERNAME)
     public String getStudentName() { return studentName; }
     public void setStudentName(String studentName) { this.studentName = studentName; }
 
@@ -107,6 +110,7 @@ public class SamStudent extends BaseEntity
     public Date getBirthDate() { return birthDate; }
     public void setBirthDate(Date birthDate) { this.birthDate = birthDate; }
 
+    @Sensitive(desensitizedType = DesensitizedType.ID_CARD)
     public String getIdCard() { return idCard; }
     public void setIdCard(String idCard) { this.idCard = idCard; }
 

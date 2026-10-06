@@ -21,6 +21,8 @@ import com.yu.system.domain.SysTodo;
 import com.yu.system.service.ISysConfigService;
 import com.yu.system.service.ISysNotifyService;
 import com.yu.system.service.ISysTodoService;
+import com.yu.system.notify.TodoPushedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 
 /**
  * 学业预警帮扶任务服务实现（S6 帮扶闭环）。
@@ -51,6 +53,9 @@ public class SamWarningAssistServiceImpl implements ISamWarningAssistService
 
     @Autowired
     private ISysTodoService sysTodoService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Autowired
     private ISysConfigService configService;
@@ -284,7 +289,7 @@ public class SamWarningAssistServiceImpl implements ISamWarningAssistService
             todo.setBusinessType("warningAssist");
             todo.setBusinessId(assist.getAssistId());
             todo.setCreateBy("system");
-            sysTodoService.createTodo(todo);
+            eventPublisher.publishEvent(new TodoPushedEvent(todo));
         }
         catch (Exception e)
         {

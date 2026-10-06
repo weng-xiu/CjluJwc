@@ -149,6 +149,13 @@
             <artifactId>micrometer-core</artifactId>
         </dependency>
 
+        <!-- 单元测试（A4 字段级脱敏策略/序列化器验证） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>

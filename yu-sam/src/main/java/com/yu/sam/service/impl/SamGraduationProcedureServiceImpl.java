@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.system.domain.SysMessage;
 import com.yu.system.service.ISysMessageService;
+import com.yu.system.notify.MessagePushedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import com.yu.sam.mapper.SamGraduationProcedureMapper;
 import com.yu.sam.mapper.SamProcedureItemMapper;
 import com.yu.sam.mapper.SamProcedureStepMapper;
@@ -58,6 +60,9 @@ public class SamGraduationProcedureServiceImpl implements ISamGraduationProcedur
 
     @Autowired
     private ISysMessageService sysMessageService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Override
     public SamGraduationProcedure selectSamGraduationProcedureByProcedureId(Long procedureId) { return samGraduationProcedureMapper.selectSamGraduationProcedureByProcedureId(procedureId); }
@@ -261,7 +266,7 @@ public class SamGraduationProcedureServiceImpl implements ISamGraduationProcedur
             msg.setBusinessType("graduationProcedure");
             msg.setBusinessId(procedureId);
             msg.setCreateBy(StringUtils.isNotEmpty(proc.getUpdateBy()) ? proc.getUpdateBy() : "system");
-            sysMessageService.sendMessage(msg);
+            eventPublisher.publishEvent(new MessagePushedEvent(msg));
         }
         catch (Exception e)
         {

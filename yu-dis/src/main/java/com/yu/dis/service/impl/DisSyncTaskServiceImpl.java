@@ -28,6 +28,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.system.domain.SysMessage;
 import com.yu.system.service.ISysMessageService;
+import com.yu.system.notify.MessagePushedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import com.yu.dis.mapper.DisSyncTaskMapper;
 import com.yu.dis.mapper.DisInterfaceConfigMapper;
 import com.yu.dis.mapper.DisExternalSystemMapper;
@@ -73,6 +75,9 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
 
     @Autowired
     private ISysMessageService sysMessageService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     /** 同步异常告警接收人用户ID（默认 admin） */
     @Value("${dis.alert.receiverId:1}")
@@ -529,7 +534,7 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
             msg.setContent(content);
             msg.setBusinessType("dis_sync");
             msg.setBusinessId(task.getTaskId());
-            sysMessageService.sendMessage(msg);
+            eventPublisher.publishEvent(new MessagePushedEvent(msg));
         }
         catch (Exception e)
         {

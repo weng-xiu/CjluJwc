@@ -19,6 +19,8 @@ import com.yu.sam.mapper.SamWarningDataMapper;
 import com.yu.sam.service.ISamCertReissueApplyService;
 import com.yu.system.domain.SysMessage;
 import com.yu.system.service.ISysMessageService;
+import com.yu.system.notify.MessagePushedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 
 /**
  * 证书补办申请Service业务层处理（S7b）
@@ -47,6 +49,9 @@ public class SamCertReissueApplyServiceImpl implements ISamCertReissueApplyServi
 
     @Autowired
     private ISysMessageService sysMessageService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Override
     public SamCertReissueApply selectSamCertReissueApplyByApplyId(Long applyId)
@@ -200,7 +205,7 @@ public class SamCertReissueApplyServiceImpl implements ISamCertReissueApplyServi
             msg.setContent(content);
             msg.setBusinessType("certReissue");
             msg.setBusinessId(studentId);
-            sysMessageService.sendMessage(msg);
+            eventPublisher.publishEvent(new MessagePushedEvent(msg));
         }
         catch (Exception e)
         {

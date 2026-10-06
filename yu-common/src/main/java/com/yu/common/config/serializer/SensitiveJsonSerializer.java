@@ -9,9 +9,8 @@ import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ValueSerializer;
 import tools.jackson.databind.ser.std.StdSerializer;
 import com.yu.common.annotation.Sensitive;
-import com.yu.common.core.domain.model.LoginUser;
 import com.yu.common.enums.DesensitizedType;
-import com.yu.common.utils.SecurityUtils;
+import com.yu.common.security.SensitivePolicy;
 
 /**
  * 数据脱敏序列化过滤
@@ -37,7 +36,7 @@ public class SensitiveJsonSerializer extends StdSerializer<String>
     @Override
     public void serialize(String value, JsonGenerator gen, SerializationContext ctxt) throws JacksonException
     {
-        if (desensitizedType != null && desensitization())
+        if (desensitizedType != null && SensitivePolicy.shouldDesensitize())
         {
             gen.writeString(desensitizedType.desensitizer().apply(value));
         }
@@ -56,22 +55,5 @@ public class SensitiveJsonSerializer extends StdSerializer<String>
             return new SensitiveJsonSerializer(annotation.desensitizedType());
         }
         return ctxt.findValueSerializer(property.getType());
-    }
-
-    /**
-     * 是否需要脱敏处理
-     */
-    private boolean desensitization()
-    {
-        try
-        {
-            LoginUser securityUser = SecurityUtils.getLoginUser();
-            // 管理员不脱敏
-            return !securityUser.getUser().isAdmin();
-        }
-        catch (Exception e)
-        {
-            return true;
-        }
     }
 }

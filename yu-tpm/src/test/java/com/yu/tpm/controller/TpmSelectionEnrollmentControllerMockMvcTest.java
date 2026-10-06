@@ -1,5 +1,6 @@
 package com.yu.tpm.controller;
 
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -28,6 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.yu.common.core.domain.AjaxResult;
+import com.yu.framework.cache.DistributedLock;
 import com.yu.tpm.domain.TpmSelectionEnrollment;
 import com.yu.tpm.service.ITpmSelectionEnrollmentService;
 
@@ -43,6 +45,10 @@ class TpmSelectionEnrollmentControllerMockMvcTest {
     @Mock
     private ITpmSelectionEnrollmentService tpmSelectionEnrollmentService;
 
+    /** A3：抽签/递补写路径依赖分布式锁，standalone 需显式提供 mock，否则控制器字段为 null */
+    @Mock
+    private DistributedLock distributedLock;
+
     @InjectMocks
     private TpmSelectionEnrollmentController controller;
 
@@ -51,6 +57,9 @@ class TpmSelectionEnrollmentControllerMockMvcTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        // 默认令抽签/递补获锁成功，返回非空 token 进入业务分支
+        when(distributedLock.tryLock(org.mockito.ArgumentMatchers.any(), anyLong(), anyLong()))
+                .thenReturn("mock-token");
     }
 
     @Test

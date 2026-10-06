@@ -27,6 +27,9 @@ import com.yu.system.domain.SysTodo;
 import com.yu.system.service.ISysMessageService;
 import com.yu.system.service.ISysTodoService;
 import com.yu.system.service.ISysUserService;
+import com.yu.system.notify.MessagePushedEvent;
+import com.yu.system.notify.TodoPushedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,6 +70,9 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
 
     @Autowired
     private ISysTodoService sysTodoService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Override
     public SamStatusChange selectSamStatusChangeByChangeId(Long changeId)
@@ -382,7 +388,7 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
             todo.setBusinessType("statusChange");
             todo.setBusinessId(change.getChangeId());
             todo.setCreateBy(SecurityUtils.getUsername());
-            sysTodoService.createTodo(todo);
+            eventPublisher.publishEvent(new TodoPushedEvent(todo));
 
             SysMessage msg = new SysMessage();
             msg.setReceiverId(receiverId);
@@ -392,7 +398,7 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
             msg.setBusinessType("statusChange");
             msg.setBusinessId(change.getChangeId());
             msg.setCreateBy(SecurityUtils.getUsername());
-            sysMessageService.sendMessage(msg);
+            eventPublisher.publishEvent(new MessagePushedEvent(msg));
         }
         catch (Exception e)
         {
@@ -419,7 +425,7 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
             msg.setBusinessType("statusChange");
             msg.setBusinessId(change.getChangeId());
             msg.setCreateBy(SecurityUtils.getUsername());
-            sysMessageService.sendMessage(msg);
+            eventPublisher.publishEvent(new MessagePushedEvent(msg));
         }
         catch (Exception e)
         {

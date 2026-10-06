@@ -25,6 +25,9 @@ import com.yu.system.domain.SysTodo;
 import com.yu.system.service.ISysDeptService;
 import com.yu.system.service.ISysMessageService;
 import com.yu.system.service.ISysTodoService;
+import com.yu.system.notify.MessagePushedEvent;
+import com.yu.system.notify.TodoPushedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import com.yu.system.service.ISysUserService;
 import com.yu.tpm.service.IBrmBorrowFlowService;
 
@@ -64,6 +67,9 @@ public class BrmBorrowFlowServiceImpl implements IBrmBorrowFlowService
 
     @Autowired
     private ISysTodoService sysTodoService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Autowired
     private ISysUserService sysUserService;
@@ -374,7 +380,7 @@ public class BrmBorrowFlowServiceImpl implements IBrmBorrowFlowService
             todo.setBusinessType(BUSINESS_TYPE);
             todo.setBusinessId(borrowId);
             todo.setCreateBy(SecurityUtils.getUsername());
-            sysTodoService.createTodo(todo);
+            eventPublisher.publishEvent(new TodoPushedEvent(todo));
 
             SysMessage msg = new SysMessage();
             msg.setReceiverId(receiverId);
@@ -384,7 +390,7 @@ public class BrmBorrowFlowServiceImpl implements IBrmBorrowFlowService
             msg.setBusinessType(BUSINESS_TYPE);
             msg.setBusinessId(borrowId);
             msg.setCreateBy(SecurityUtils.getUsername());
-            sysMessageService.sendMessage(msg);
+            eventPublisher.publishEvent(new MessagePushedEvent(msg));
         }
         catch (Exception e)
         {
@@ -411,7 +417,7 @@ public class BrmBorrowFlowServiceImpl implements IBrmBorrowFlowService
             msg.setBusinessType(BUSINESS_TYPE);
             msg.setBusinessId(borrow.getBorrowId());
             msg.setCreateBy(SecurityUtils.getUsername());
-            sysMessageService.sendMessage(msg);
+            eventPublisher.publishEvent(new MessagePushedEvent(msg));
         }
         catch (Exception e)
         {

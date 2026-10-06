@@ -23,6 +23,9 @@ import com.yu.system.domain.SysMessage;
 import com.yu.system.domain.SysTodo;
 import com.yu.system.service.ISysMessageService;
 import com.yu.system.service.ISysTodoService;
+import com.yu.system.notify.MessagePushedEvent;
+import com.yu.system.notify.TodoPushedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import com.yu.system.service.ISysUserService;
 import com.yu.aem.mapper.AemGradeReviewMapper;
 import com.yu.aem.domain.AemGradeReview;
@@ -76,6 +79,9 @@ public class AemGradeReviewServiceImpl implements IAemGradeReviewService
 
     @Autowired
     private ISysTodoService sysTodoService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Autowired
     private ISysUserService sysUserService;
@@ -544,7 +550,7 @@ public class AemGradeReviewServiceImpl implements IAemGradeReviewService
             todo.setBusinessType(BUSINESS_TYPE);
             todo.setBusinessId(reviewId);
             todo.setCreateBy(SecurityUtils.getUsername());
-            sysTodoService.createTodo(todo);
+            eventPublisher.publishEvent(new TodoPushedEvent(todo));
 
             SysMessage msg = new SysMessage();
             msg.setReceiverId(receiverId);
@@ -554,7 +560,7 @@ public class AemGradeReviewServiceImpl implements IAemGradeReviewService
             msg.setBusinessType(BUSINESS_TYPE);
             msg.setBusinessId(reviewId);
             msg.setCreateBy(SecurityUtils.getUsername());
-            sysMessageService.sendMessage(msg);
+            eventPublisher.publishEvent(new MessagePushedEvent(msg));
         }
         catch (Exception e)
         {
@@ -578,7 +584,7 @@ public class AemGradeReviewServiceImpl implements IAemGradeReviewService
                 msg.setBusinessType(BUSINESS_TYPE);
                 msg.setBusinessId(review.getReviewId());
                 msg.setCreateBy(SecurityUtils.getUsername());
-                sysMessageService.sendMessage(msg);
+                eventPublisher.publishEvent(new MessagePushedEvent(msg));
             }
         }
         catch (Exception e)
@@ -604,7 +610,7 @@ public class AemGradeReviewServiceImpl implements IAemGradeReviewService
                 msg.setBusinessType(BUSINESS_TYPE);
                 msg.setBusinessId(review.getReviewId());
                 msg.setCreateBy(SecurityUtils.getUsername());
-                sysMessageService.sendMessage(msg);
+                eventPublisher.publishEvent(new MessagePushedEvent(msg));
             }
             catch (Exception e)
             {

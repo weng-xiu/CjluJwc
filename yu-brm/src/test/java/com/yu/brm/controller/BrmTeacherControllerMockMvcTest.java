@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,11 +26,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.yu.brm.domain.BrmTeacher;
 import com.yu.brm.service.IBrmTeacherService;
+import com.yu.common.core.domain.entity.SysUser;
+import com.yu.common.core.domain.model.LoginUser;
 
 /**
  * 教师接口层测试（Q1 第十四批：MockMvc standalone，首次覆盖 yu-brm 业务域控制器）。
@@ -54,9 +59,25 @@ class BrmTeacherControllerMockMvcTest {
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
     }
 
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    /** A4 集中脱敏：以超级管理员身份登录，明细视图应展示明文（非管理员/匿名才脱敏）。 */
+    private void loginAdmin() {
+        SysUser user = new SysUser();
+        user.setUserId(1L);
+        LoginUser loginUser = new LoginUser();
+        loginUser.setUser(user);
+        SecurityContextHolder.getContext()
+                .setAuthentication(new UsernamePasswordAuthenticationToken(loginUser, null));
+    }
+
     @Test
-    @DisplayName("getInfo：路径变量绑定teacherId并返回教师数据体")
+    @DisplayName("getInfo：管理员上下文绑定teacherId并返回明文教师数据")
     void getInfo_returnsTeacher() throws Exception {
+        loginAdmin();
         BrmTeacher teacher = new BrmTeacher();
         teacher.setTeacherId(7L);
         teacher.setTeacherName("张三");

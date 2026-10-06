@@ -26,6 +26,9 @@ import com.yu.system.domain.SysMessage;
 import com.yu.system.domain.SysTodo;
 import com.yu.system.service.ISysMessageService;
 import com.yu.system.service.ISysTodoService;
+import com.yu.system.notify.MessagePushedEvent;
+import com.yu.system.notify.TodoPushedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import com.yu.system.service.ISysUserService;
 
 /**
@@ -63,6 +66,9 @@ public class SamThesisServiceImpl implements ISamThesisService
 
     @Autowired
     private ISysTodoService sysTodoService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Autowired
     private ISysUserService sysUserService;
@@ -569,7 +575,7 @@ public class SamThesisServiceImpl implements ISamThesisService
                 todo.setBusinessType(TODO_TYPE);
                 todo.setBusinessId(businessId);
                 todo.setCreateBy("system");
-                sysTodoService.createTodo(todo);
+                eventPublisher.publishEvent(new TodoPushedEvent(todo));
             }
             SysMessage msg = new SysMessage();
             msg.setReceiverId(receiverId);
@@ -579,7 +585,7 @@ public class SamThesisServiceImpl implements ISamThesisService
             msg.setBusinessType(TODO_TYPE);
             msg.setBusinessId(businessId);
             msg.setCreateBy("system");
-            sysMessageService.sendMessage(msg);
+            eventPublisher.publishEvent(new MessagePushedEvent(msg));
         }
         catch (Exception e)
         {
