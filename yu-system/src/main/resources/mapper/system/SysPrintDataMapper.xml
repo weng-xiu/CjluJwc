@@ -18,9 +18,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                case s.student_status
                     when '0' then '在读' when '1' then '休学' when '2' then '退学'
                     when '3' then '毕业' when '4' then '转出' when '5' then '保留学籍' else '' end as studentStatusText,
-               ifnull(m.major_name, '')                              as majorName,
-               ifnull(c.class_name, '')                              as className,
-               ifnull(d.dept_name, '')                               as deptName
+               COALESCE(m.major_name, '')                              as majorName,
+               COALESCE(c.class_name, '')                              as className,
+               COALESCE(d.dept_name, '')                               as deptName
         from sam_student s
         left join brm_major m on m.major_id = s.major_id
         left join brm_class c on c.class_id = s.class_id
@@ -30,18 +30,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 成绩单明细行（含课程、学期、考试类型翻译） -->
     <select id="selectTranscriptRows" resultType="java.util.HashMap">
-        select ifnull(cl.course_code, '')                            as courseCode,
-               ifnull(cl.course_name, concat('课程', g.course_id))   as courseName,
-               ifnull(cl.credit, 0)                                  as credit,
-               ifnull(cl.total_hours, 0)                             as totalHours,
-               case cl.course_type when '0' then '必修' when '1' then '选修' else ifnull(cl.course_type, '') end as courseType,
+        select COALESCE(cl.course_code, '')                            as courseCode,
+               COALESCE(cl.course_name, concat('课程', g.course_id))   as courseName,
+               COALESCE(cl.credit, 0)                                  as credit,
+               COALESCE(cl.total_hours, 0)                             as totalHours,
+               case cl.course_type when '0' then '必修' when '1' then '选修' else COALESCE(cl.course_type, '') end as courseType,
                sem.semester_name                                     as semesterName,
                case g.exam_type when '0' then '正考' when '1' then '补考' when '2' then '重修' else '' end as examTypeText,
-               ifnull(g.regular_score, 0)                            as regularScore,
-               ifnull(g.exam_score, 0)                               as examScore,
-               ifnull(g.total_score, 0)                              as totalScore,
-               ifnull(g.grade_point, 0)                              as gradePoint,
-               ifnull(g.grade_level, '')                             as gradeLevel,
+               COALESCE(g.regular_score, 0)                            as regularScore,
+               COALESCE(g.exam_score, 0)                               as examScore,
+               COALESCE(g.total_score, 0)                              as totalScore,
+               COALESCE(g.grade_point, 0)                              as gradePoint,
+               COALESCE(g.grade_level, '')                             as gradeLevel,
                case g.is_pass when '1' then '是' else '否' end        as isPassText
         from aem_grade_record g
         left join tpm_course_library cl on cl.course_id = g.course_id
@@ -82,8 +82,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                ct.cert_number                                        as certNumber,
                date_format(ct.cert_date, '%Y-%m-%d')                 as certDate,
                case ct.cert_type when '0' then '毕业证书' when '1' then '学位证书' when '2' then '结业证书' else '证书' end as certTypeName,
-               ifnull(ct.education_level, ifnull(s.education_level, '')) as educationLevel,
-               ifnull(m.major_name, '')                              as majorName,
+               COALESCE(ct.education_level, COALESCE(s.education_level, '')) as educationLevel,
+               COALESCE(m.major_name, '')                              as majorName,
                s.student_no                                          as studentNo,
                s.student_name                                        as studentName,
                case s.gender when '0' then '男' when '1' then '女' else '' end as gender,
@@ -102,19 +102,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                st.row_number                                         as rowNumber,
                st.col_number                                         as colNumber,
                e.exam_name                                           as examName,
-               ifnull(cl.course_name, '')                            as courseName,
-               ifnull(cl.course_code, '')                            as courseCode,
+               COALESCE(cl.course_name, '')                            as courseName,
+               COALESCE(cl.course_code, '')                            as courseCode,
                date_format(e.exam_date, '%Y-%m-%d')                  as examDate,
                e.start_time                                          as startTime,
                e.end_time                                            as endTime,
-               ifnull(e.duration, 0)                                 as duration,
+               COALESCE(e.duration, 0)                                 as duration,
                sem.semester_name                                     as semesterName,
-               concat(ifnull(b.building_name, ''), ifnull(cr.classroom_name, '')) as classroomName,
-               ifnull(cr.capacity, 0)                                as capacity,
+               concat(COALESCE(b.building_name, ''), COALESCE(cr.classroom_name, '')) as classroomName,
+               COALESCE(cr.capacity, 0)                                as capacity,
                s.student_no                                          as studentNo,
                s.student_name                                        as studentName,
-               ifnull(m.major_name, '')                              as majorName,
-               ifnull(c.class_name, '')                              as className
+               COALESCE(m.major_name, '')                              as majorName,
+               COALESCE(c.class_name, '')                              as className
         from aem_exam_seat st
         join aem_exam_plan e on e.exam_id = st.exam_id
         left join tpm_course_library cl on cl.course_id = e.course_id
@@ -136,16 +136,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 学生课表行（选课→开课→排课→教室） -->
     <select id="selectScheduleRows" resultType="java.util.HashMap">
-        select ifnull(cl.course_name, concat('课程', off.course_id)) as courseName,
-               ifnull(cl.course_code, '')                            as courseCode,
-               ifnull(t.teacher_name, '')                            as teacherName,
-               concat(ifnull(b.building_name, ''), ifnull(cr.classroom_name, '')) as classroomName,
+        select COALESCE(cl.course_name, concat('课程', off.course_id)) as courseName,
+               COALESCE(cl.course_code, '')                            as courseCode,
+               COALESCE(t.teacher_name, '')                            as teacherName,
+               concat(COALESCE(b.building_name, ''), COALESCE(cr.classroom_name, '')) as classroomName,
                sc.week_day                                           as weekDay,
                sc.start_period                                       as startPeriod,
                sc.end_period                                         as endPeriod,
                sc.start_week                                         as startWeek,
                sc.end_week                                           as endWeek,
-               ifnull(cl.credit, 0)                                  as credit,
+               COALESCE(cl.credit, 0)                                  as credit,
                sem.semester_name                                     as semesterName
         from tpm_selection_enrollment e
         join tpm_course_offering off on off.offering_id = e.course_offering_id and off.del_flag = '0'
@@ -162,16 +162,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 教师课表行 -->
     <select id="selectTeacherScheduleRows" resultType="java.util.HashMap">
-        select ifnull(cl.course_name, concat('课程', off.course_id)) as courseName,
-               ifnull(cl.course_code, '')                            as courseCode,
-               ifnull(t.teacher_name, '')                            as teacherName,
-               concat(ifnull(b.building_name, ''), ifnull(cr.classroom_name, '')) as classroomName,
+        select COALESCE(cl.course_name, concat('课程', off.course_id)) as courseName,
+               COALESCE(cl.course_code, '')                            as courseCode,
+               COALESCE(t.teacher_name, '')                            as teacherName,
+               concat(COALESCE(b.building_name, ''), COALESCE(cr.classroom_name, '')) as classroomName,
                sc.week_day                                           as weekDay,
                sc.start_period                                       as startPeriod,
                sc.end_period                                         as endPeriod,
                sc.start_week                                         as startWeek,
                sc.end_week                                           as endWeek,
-               ifnull(cl.credit, 0)                                  as credit,
+               COALESCE(cl.credit, 0)                                  as credit,
                sem.semester_name                                     as semesterName
         from tpm_course_offering off
         join tpm_schedule sc on sc.offering_id = off.offering_id and sc.del_flag = '0' and sc.status = '0'
@@ -190,15 +190,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select iv.invigilation_id                                    as invigilationId,
                case iv.duty_type when '0' then '主监考' when '1' then '副监考' when '2' then '巡考' else '监考' end as dutyTypeName,
                e.exam_name                                           as examName,
-               ifnull(cl.course_name, '')                            as courseName,
-               date_format(ifnull(iv.exam_date, e.exam_date), '%Y-%m-%d') as examDate,
-               ifnull(iv.start_time, e.start_time)                   as startTime,
-               ifnull(iv.end_time, e.end_time)                       as endTime,
-               concat(ifnull(b.building_name, ''), ifnull(cr.classroom_name, '')) as classroomName,
-               ifnull(cr.capacity, 0)                                as capacity,
+               COALESCE(cl.course_name, '')                            as courseName,
+               date_format(COALESCE(iv.exam_date, e.exam_date), '%Y-%m-%d') as examDate,
+               COALESCE(iv.start_time, e.start_time)                   as startTime,
+               COALESCE(iv.end_time, e.end_time)                       as endTime,
+               concat(COALESCE(b.building_name, ''), COALESCE(cr.classroom_name, '')) as classroomName,
+               COALESCE(cr.capacity, 0)                                as capacity,
                t.teacher_name                                        as teacherName,
                t.teacher_code                                        as teacherCode,
-               ifnull(d.dept_name, '')                               as deptName,
+               COALESCE(d.dept_name, '')                               as deptName,
                sem.semester_name                                     as semesterName,
                (select group_concat(distinct concat(t2.teacher_name, '（',
                    case iv2.duty_type when '0' then '主' when '1' then '副' else '巡' end, '）') order by iv2.invigilation_id separator '、')
@@ -248,7 +248,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select u.user_id
         from aem_exam_invigilation iv
         join brm_teacher t on t.teacher_id = iv.teacher_id
-        join sys_user u on u.user_id = ifnull(t.user_id, t.teacher_id) and u.del_flag = '0'
+        join sys_user u on u.user_id = COALESCE(t.user_id, t.teacher_id) and u.del_flag = '0'
         where iv.invigilation_id = #{invigilationId}
     </select>
 
@@ -256,13 +256,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectStudentSeatList" resultType="java.util.HashMap">
         select st.seat_id                                           as seatId,
                e.exam_name                                          as examName,
-               ifnull(cl.course_name, '')                           as courseName,
-               ifnull(cl.course_code, '')                           as courseCode,
+               COALESCE(cl.course_name, '')                           as courseName,
+               COALESCE(cl.course_code, '')                           as courseCode,
                date_format(e.exam_date, '%Y-%m-%d')                 as examDate,
                e.start_time                                         as startTime,
                e.end_time                                           as endTime,
                sem.semester_name                                    as semesterName,
-               concat(ifnull(b.building_name, ''), ifnull(cr.classroom_name, '')) as classroomName,
+               concat(COALESCE(b.building_name, ''), COALESCE(cr.classroom_name, '')) as classroomName,
                st.seat_number                                       as seatNumber
         from aem_exam_seat st
         join aem_exam_plan e on e.exam_id = st.exam_id
@@ -278,11 +278,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectTeacherInvigilationList" resultType="java.util.HashMap">
         select iv.invigilation_id                                   as invigilationId,
                e.exam_name                                          as examName,
-               ifnull(cl.course_name, '')                           as courseName,
-               date_format(ifnull(iv.exam_date, e.exam_date), '%Y-%m-%d') as examDate,
-               ifnull(iv.start_time, e.start_time)                  as startTime,
-               ifnull(iv.end_time, e.end_time)                      as endTime,
-               concat(ifnull(b.building_name, ''), ifnull(cr.classroom_name, '')) as classroomName,
+               COALESCE(cl.course_name, '')                           as courseName,
+               date_format(COALESCE(iv.exam_date, e.exam_date), '%Y-%m-%d') as examDate,
+               COALESCE(iv.start_time, e.start_time)                  as startTime,
+               COALESCE(iv.end_time, e.end_time)                      as endTime,
+               concat(COALESCE(b.building_name, ''), COALESCE(cr.classroom_name, '')) as classroomName,
                case iv.duty_type when '0' then '主监考' when '1' then '副监考' when '2' then '巡考' else '监考' end as dutyTypeName,
                sem.semester_name                                    as semesterName
         from aem_exam_invigilation iv
@@ -292,7 +292,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         left join brm_semester sem on sem.semester_id = e.semester_id
         left join brm_classroom cr on cr.classroom_id = iv.classroom_id
         left join brm_building b on b.building_id = cr.building_id
-        where ifnull(t.user_id, t.teacher_id) = #{userId} and iv.status = '0'
-        order by ifnull(iv.exam_date, e.exam_date), iv.invigilation_id
+        where COALESCE(t.user_id, t.teacher_id) = #{userId} and iv.status = '0'
+        order by COALESCE(iv.exam_date, e.exam_date), iv.invigilation_id
     </select>
 </mapper>

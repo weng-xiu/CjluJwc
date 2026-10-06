@@ -52,7 +52,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                d.dept_name as szyx,
                m.major_name as zymc,
                c.class_name as bjmc,
-               regexp_replace(ifnull(s.enrollment_year, ''), '[^0-9]', '') as rxnj,
+               regexp_replace(COALESCE(s.enrollment_year, ''), '[^0-9]', '') as rxnj,
                case when s.education_level like '%博士%' then '10'
                     when s.education_level like '%硕士%' then '20'
                     when s.education_level like '%本科%' then '30'
@@ -73,9 +73,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="reportYear != null and reportYear != ''">
                 and (
                     (s.student_status in ('0', '1', '5')
-                        and regexp_replace(ifnull(s.enrollment_year, ''), '[^0-9]', '') &lt;= #{reportYear})
+                        and regexp_replace(COALESCE(s.enrollment_year, ''), '[^0-9]', '') &lt;= #{reportYear})
                     or (s.student_status = '3'
-                        and cast(nullif(regexp_replace(ifnull(s.enrollment_year, ''), '[^0-9]', ''), '') as unsigned) + 4 = cast(#{reportYear} as unsigned))
+                        and cast(nullif(regexp_replace(COALESCE(s.enrollment_year, ''), '[^0-9]', ''), '') as unsigned) + 4 = cast(#{reportYear} as unsigned))
                 )
             </if>
         </where>
@@ -88,9 +88,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                cl.course_name as kcm,
                cl.course_name_en as kcmcyw,
                cast(cl.credit as char) as xf,
-               ifnull(cl.total_hours, ifnull(cl.theory_hours, 0) + ifnull(cl.practice_hours, 0)) as zxs,
-               ifnull(cl.theory_hours, 0) as llxs,
-               ifnull(cl.practice_hours, 0) as sjxs,
+               COALESCE(cl.total_hours, COALESCE(cl.theory_hours, 0) + COALESCE(cl.practice_hours, 0)) as zxs,
+               COALESCE(cl.theory_hours, 0) as llxs,
+               COALESCE(cl.practice_hours, 0) as sjxs,
                case when cl.course_type like '%必修%' then '1'
                     when cl.course_type like '%公选%' then '3'
                     when cl.course_type like '%选修%' then '2'
@@ -99,12 +99,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                case when cl.assessment_method like '%考试%' then '1'
                     when cl.assessment_method like '%考查%' then '2'
                     else '9' end as kskfms,
-               ifnull(d.dept_name, '教务处') as ssyx
+               COALESCE(d.dept_name, '教务处') as ssyx
         from tpm_course_library cl
         left join tpm_training_plan p on cl.plan_id = p.plan_id
         left join brm_department d on p.dept_id = d.dept_id
         <where>
-            and cl.status = '0' and ifnull(cl.del_flag, '0') = '0'
+            and cl.status = '0' and COALESCE(cl.del_flag, '0') = '0'
             <if test="deptId != null and deptId > 0"> and p.dept_id = #{deptId}</if>
         </where>
         order by cl.course_code asc
@@ -145,12 +145,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select t.teacher_code as jsgh,
                t.teacher_name as xm,
                case t.gender when '0' then '1' when '1' then '2' else '9' end as xbdm,
-               ifnull(d.dept_name, '') as ssyx,
+               COALESCE(d.dept_name, '') as ssyx,
                t.title as zcdm,
                t.education as xldm,
                t.phone as lxdh,
                t.email as dzyx,
-               case when ifnull(t.status, '0') = '0' then 'Y' else 'N' end as sfjs
+               case when COALESCE(t.status, '0') = '0' then 'Y' else 'N' end as sfjs
         from brm_teacher t
         left join brm_department d on t.dept_id = d.dept_id
         <where>
@@ -166,7 +166,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 上报范围下拉选项（自含查询，避免依赖 brm 模块菜单权限造成 403） -->
     <select id="selectDeptOptions" resultType="java.util.HashMap">
         select dept_id as deptId, dept_name as deptName from brm_department
-        where ifnull(status, '0') = '0' order by dept_id asc
+        where COALESCE(status, '0') = '0' order by dept_id asc
     </select>
 
     <sql id="selectBatchVo">

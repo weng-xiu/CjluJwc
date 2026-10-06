@@ -104,7 +104,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="educationLevel != null and educationLevel != ''">#{educationLevel},</if>
             <if test="studentStatus != null and studentStatus != ''">#{studentStatus},</if>
             <if test="remark != null and remark != ''">#{remark},</if>
-            sysdate()
+            CURRENT_TIMESTAMP
         )
     </insert>
 
@@ -120,7 +120,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="educationLevel != null and educationLevel != ''">education_level = #{educationLevel},</if>
             <if test="studentStatus != null and studentStatus != ''">student_status = #{studentStatus},</if>
             <if test="remark != null">remark = #{remark},</if>
-            update_time = sysdate()
+            update_time = CURRENT_TIMESTAMP
         </set>
         where student_id = #{studentId}
     </update>
@@ -144,7 +144,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         insert into sys_student(user_id, student_code, class_id, major_id, dept_id, grade, enrollment_year, education_level, student_status, remark, create_time)
         values
         <foreach collection="list" item="item" separator=",">
-            (#{item.userId}, #{item.studentCode}, #{item.classId}, #{item.majorId}, #{item.deptId}, #{item.grade}, #{item.enrollmentYear}, #{item.educationLevel}, #{item.studentStatus}, #{item.remark}, sysdate())
+            (#{item.userId}, #{item.studentCode}, #{item.classId}, #{item.majorId}, #{item.deptId}, #{item.grade}, #{item.enrollmentYear}, #{item.educationLevel}, #{item.studentStatus}, #{item.remark}, CURRENT_TIMESTAMP)
         </foreach>
     </insert>
 

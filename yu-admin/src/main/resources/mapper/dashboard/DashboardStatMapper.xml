@@ -11,7 +11,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select semester_id as semesterId, semester_name as semesterName, start_date as startDate, end_date as endDate
         from brm_semester
         where status = '0'
-        order by (start_date &lt;= curdate() and end_date &gt;= curdate()) desc, semester_id desc
+        order by (start_date &lt;= CURRENT_DATE and end_date &gt;= CURRENT_DATE) desc, semester_id desc
         limit 1
     </select>
 
@@ -47,7 +47,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 学期课程通过率最低 TOP N -->
     <select id="selectCoursePassTop" resultType="java.util.HashMap">
-        select ifnull(cl.course_name, concat('课程', s.course_id)) as courseName,
+        select COALESCE(cl.course_name, concat('课程', s.course_id)) as courseName,
                s.pass_rate as passRate, s.avg_score as avgScore, s.fail_count as failCount
         from aem_grade_statistics s
         left join tpm_course_library cl on cl.course_id = s.course_id

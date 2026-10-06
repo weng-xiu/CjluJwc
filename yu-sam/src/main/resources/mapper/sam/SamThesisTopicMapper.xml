@@ -51,16 +51,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          注：MySQL 的 UPDATE 赋值按书写顺序求值，后置表达式取的是已更新后的列值 -->
     <update id="occupyTopic" parameterType="Long">
         update sam_thesis_topic
-        set elected_count = ifnull(elected_count, 0) + 1,
-            status = case when elected_count &gt;= ifnull(capacity, 1) then '2' else status end
+        set elected_count = COALESCE(elected_count, 0) + 1,
+            status = case when elected_count &gt;= COALESCE(capacity, 1) then '2' else status end
         where topic_id = #{topicId}
-          and ifnull(elected_count, 0) &lt; ifnull(capacity, 1)
+          and COALESCE(elected_count, 0) &lt; COALESCE(capacity, 1)
     </update>
     <!-- 名额释放：删除论文档案时回退，并把因选满而置 2 的题目恢复为可选题 -->
     <update id="releaseTopic" parameterType="Long">
         update sam_thesis_topic
-        set elected_count = case when ifnull(elected_count, 0) &gt; 0 then elected_count - 1 else 0 end,
-            status = case when status = '2' and elected_count &lt; ifnull(capacity, 1) then '1' else status end
+        set elected_count = case when COALESCE(elected_count, 0) &gt; 0 then elected_count - 1 else 0 end,
+            status = case when status = '2' and elected_count &lt; COALESCE(capacity, 1) then '1' else status end
         where topic_id = #{topicId}
     </update>
     <insert id="insertSamThesisTopic" parameterType="SamThesisTopic" useGeneratedKeys="true" keyProperty="topicId">

@@ -66,7 +66,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="userId != null">#{userId},</if>
             <if test="teacherId != null">#{teacherId},</if>
             <if test="teacherCode != null and teacherCode != ''">#{teacherCode},</if>
-            sysdate()
+            CURRENT_TIMESTAMP
         )
     </insert>
 
@@ -76,7 +76,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="userId != null">user_id = #{userId},</if>
             <if test="teacherId != null">teacher_id = #{teacherId},</if>
             <if test="teacherCode != null and teacherCode != ''">teacher_code = #{teacherCode},</if>
-            update_time = sysdate()
+            update_time = CURRENT_TIMESTAMP
         </set>
         where link_id = #{linkId}
     </update>
@@ -93,7 +93,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         insert into sys_teacher_link(user_id, teacher_id, teacher_code, create_time)
         values
         <foreach collection="list" item="item" separator=",">
-            (#{item.userId}, #{item.teacherId}, #{item.teacherCode}, sysdate())
+            (#{item.userId}, #{item.teacherId}, #{item.teacherCode}, CURRENT_TIMESTAMP)
         </foreach>
     </insert>
 

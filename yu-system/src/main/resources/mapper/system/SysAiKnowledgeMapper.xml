@@ -122,7 +122,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
     <update id="increaseHitCount">
-        update sys_ai_knowledge set hit_count = ifnull(hit_count, 0) + 1
+        update sys_ai_knowledge set hit_count = COALESCE(hit_count, 0) + 1
         where knowledge_id in 
         <foreach item="knowledgeId" collection="knowledgeIds" open="(" separator="," close=")">
             #{knowledgeId}

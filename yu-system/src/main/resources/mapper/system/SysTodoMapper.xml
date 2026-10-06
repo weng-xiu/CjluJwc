@@ -31,7 +31,7 @@
         values (#{receiverId}, #{todoType}, #{title}, #{businessType}, #{businessId}, #{status}, #{createBy}, #{createTime})
     </insert>
     <update id="complete">
-        update sys_todo set status = '1', complete_time = now() where todo_id = #{todoId} and receiver_id = #{receiverId} and status = '0'
+        update sys_todo set status = '1', complete_time = CURRENT_TIMESTAMP where todo_id = #{todoId} and receiver_id = #{receiverId} and status = '0'
     </update>
     <select id="countPending" parameterType="Long" resultType="int">
         select count(1) from sys_todo where receiver_id = #{receiverId} and status = '0'

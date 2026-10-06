@@ -38,10 +38,10 @@
         </foreach>
     </insert>
     <update id="markRead">
-        update sys_message set read_status = '1', read_time = now() where message_id = #{messageId} and receiver_id = #{receiverId}
+        update sys_message set read_status = '1', read_time = CURRENT_TIMESTAMP where message_id = #{messageId} and receiver_id = #{receiverId}
     </update>
     <update id="markAllRead" parameterType="Long">
-        update sys_message set read_status = '1', read_time = now() where receiver_id = #{receiverId} and read_status = '0'
+        update sys_message set read_status = '1', read_time = CURRENT_TIMESTAMP where receiver_id = #{receiverId} and read_status = '0'
     </update>
     <select id="countUnread" parameterType="Long" resultType="int">
         select count(1) from sys_message where receiver_id = #{receiverId} and read_status = '0'

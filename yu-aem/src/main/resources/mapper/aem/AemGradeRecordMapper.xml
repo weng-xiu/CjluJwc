@@ -214,7 +214,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             grade_level = values(grade_level),
             is_pass = values(is_pass),
             update_by = values(create_by),
-            update_time = now()
+            update_time = CURRENT_TIMESTAMP
     </insert>
 
     <!-- A5：教师提交成绩（未提交/已驳回→已提交待审），锁定记录不受影响 -->

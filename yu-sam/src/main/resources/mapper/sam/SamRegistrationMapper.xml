@@ -105,7 +105,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 报到初始化：为指定学期全部在读学生生成未注册记录，NOT EXISTS 保证幂等 -->
     <insert id="initRegistrationForSemester">
         insert into sam_registration (student_id, semester_id, register_status, create_by, create_time)
-        select s.student_id, #{semesterId}, '0', #{createBy}, sysdate()
+        select s.student_id, #{semesterId}, '0', #{createBy}, CURRENT_TIMESTAMP
         from sam_student s
         where s.student_status = '0'
           and not exists (
@@ -127,7 +127,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="statByDept" parameterType="Long" resultType="java.util.HashMap">
-        select ifnull(d.dept_name, '未分配院系') as deptName,
+        select COALESCE(d.dept_name, '未分配院系') as deptName,
                count(1) as total,
                sum(case when r.register_status = '1' then 1 else 0 end) as registered,
                sum(case when r.register_status = '2' then 1 else 0 end) as deferred,
@@ -144,7 +144,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectCurrentSemesterId" resultType="java.lang.Long">
         select semester_id from brm_semester
         where status = '0'
-        order by (start_date &lt;= curdate() and end_date &gt;= curdate()) desc, semester_id desc
+        order by (start_date &lt;= CURRENT_DATE and end_date &gt;= CURRENT_DATE) desc, semester_id desc
         limit 1
     </select>
 </mapper>

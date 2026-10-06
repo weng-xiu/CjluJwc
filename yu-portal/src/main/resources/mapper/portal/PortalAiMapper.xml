@@ -7,9 +7,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 学生档案：学籍 + 专业 + 班级 + 院系 -->
     <select id="selectStudentProfile" parameterType="java.lang.Long" resultType="java.util.HashMap">
         select s.student_id as studentId, s.student_no as studentNo, s.student_name as studentName,
-               s.gender as gender, s.major_id as majorId, ifnull(m.major_name, '') as majorName,
-               s.class_id as classId, ifnull(c.class_name, '') as className,
-               s.dept_id as deptId, ifnull(d.dept_name, '') as deptName,
+               s.gender as gender, s.major_id as majorId, COALESCE(m.major_name, '') as majorName,
+               s.class_id as classId, COALESCE(c.class_name, '') as className,
+               s.dept_id as deptId, COALESCE(d.dept_name, '') as deptName,
                s.enrollment_year as enrollmentYear, s.education_level as educationLevel,
                s.student_status as studentStatus, s.user_id as userId
         from sam_student s
@@ -57,22 +57,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 学生已通过成绩按课程类别折算学分 -->
     <select id="selectStudentEarnedByCategory" parameterType="java.lang.Long" resultType="java.util.HashMap">
-        select ifnull(cl.course_category, 'UNCATEGORIZED') as creditType,
-               ifnull(sum(cl.credit), 0) as earnedCredit, count(1) as passedCount
+        select COALESCE(cl.course_category, 'UNCATEGORIZED') as creditType,
+               COALESCE(sum(cl.credit), 0) as earnedCredit, count(1) as passedCount
         from aem_grade_record g
         join tpm_course_library cl on cl.course_id = g.course_id
         where g.student_id = #{studentId} and g.status = '0' and g.is_pass = '1'
-        group by ifnull(cl.course_category, 'UNCATEGORIZED')
+        group by COALESCE(cl.course_category, 'UNCATEGORIZED')
     </select>
 
     <!-- 学生成绩总览（仅统计有效成绩记录） -->
     <select id="selectStudentGradeSummary" parameterType="java.lang.Long" resultType="java.util.HashMap">
         select count(1) as courseCount,
                round(avg(g.total_score), 2) as avgScore,
-               round(sum(case when g.grade_point is not null and g.total_score is not null then g.grade_point * ifnull(cl.credit,0) else 0 end)
-                     / nullif(sum(case when g.grade_point is not null and g.total_score is not null then ifnull(cl.credit,0) else 0 end), 0), 2) as gpa,
+               round(sum(case when g.grade_point is not null and g.total_score is not null then g.grade_point * COALESCE(cl.credit,0) else 0 end)
+                     / nullif(sum(case when g.grade_point is not null and g.total_score is not null then COALESCE(cl.credit,0) else 0 end), 0), 2) as gpa,
                sum(case when g.is_pass = '0' then 1 else 0 end) as failCount,
-               round(sum(case when g.is_pass = '1' then ifnull(cl.credit, 0) else 0 end), 2) as earnedCredit
+               round(sum(case when g.is_pass = '1' then COALESCE(cl.credit, 0) else 0 end), 2) as earnedCredit
         from aem_grade_record g
         left join tpm_course_library cl on cl.course_id = g.course_id
         where g.student_id = #{studentId} and g.status = '0'
@@ -84,8 +84,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select count(1) as peerCount, round(avg(t.avg_score), 2) as peerAvgScore, round(avg(t.gpa), 2) as peerAvgGpa
         from (
             select g.student_id, round(avg(g.total_score), 2) as avg_score,
-                   round(sum(case when g.grade_point is not null then g.grade_point * ifnull(cl.credit,0) else 0 end)
-                         / nullif(sum(case when g.grade_point is not null then ifnull(cl.credit,0) else 0 end), 0), 2) as gpa
+                   round(sum(case when g.grade_point is not null then g.grade_point * COALESCE(cl.credit,0) else 0 end)
+                         / nullif(sum(case when g.grade_point is not null then COALESCE(cl.credit,0) else 0 end), 0), 2) as gpa
             from aem_grade_record g
             join sam_student s on s.student_id = g.student_id
             left join tpm_course_library cl on cl.course_id = g.course_id
@@ -99,9 +99,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 最近成绩明细 -->
     <select id="selectRecentGrades" resultType="java.util.HashMap">
         select g.grade_id as gradeId, g.course_id as courseId, cl.course_name as courseName,
-               cl.course_category as courseCategory, ifnull(cl.credit, 0) as credit,
+               cl.course_category as courseCategory, COALESCE(cl.credit, 0) as credit,
                g.total_score as totalScore, g.grade_point as gradePoint, g.grade_level as gradeLevel,
-               g.is_pass as isPass, g.semester_id as semesterId, ifnull(smm.semester_name, '') as semesterName,
+               g.is_pass as isPass, g.semester_id as semesterId, COALESCE(smm.semester_name, '') as semesterName,
                g.submit_status as submitStatus, g.create_time as createTime
         from aem_grade_record g
         left join tpm_course_library cl on cl.course_id = g.course_id
@@ -113,21 +113,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 各类别成绩表现 -->
     <select id="selectCategoryScoreStat" parameterType="java.lang.Long" resultType="java.util.HashMap">
-        select ifnull(cl.course_category, 'UNCATEGORIZED') as creditType,
+        select COALESCE(cl.course_category, 'UNCATEGORIZED') as creditType,
                count(1) as courseCount, round(avg(g.total_score), 2) as avgScore,
-               round(sum(ifnull(cl.credit, 0)), 2) as totalCredit,
-               round(sum(case when g.is_pass = '1' then ifnull(cl.credit, 0) else 0 end), 2) as earnedCredit
+               round(sum(COALESCE(cl.credit, 0)), 2) as totalCredit,
+               round(sum(case when g.is_pass = '1' then COALESCE(cl.credit, 0) else 0 end), 2) as earnedCredit
         from aem_grade_record g
         join tpm_course_library cl on cl.course_id = g.course_id
         where g.student_id = #{studentId} and g.status = '0'
-        group by ifnull(cl.course_category, 'UNCATEGORIZED')
+        group by COALESCE(cl.course_category, 'UNCATEGORIZED')
         order by avgScore desc
     </select>
 
     <!-- 学业预警概况 -->
     <select id="selectStudentWarningSummary" parameterType="java.lang.Long" resultType="java.util.HashMap">
         select count(1) as total,
-               sum(case when ifnull(w.is_resolved, '0') = '0' then 1 else 0 end) as unresolved,
+               sum(case when COALESCE(w.is_resolved, '0') = '0' then 1 else 0 end) as unresolved,
                max(w.warning_level) as maxLevel
         from sam_warning w
         where w.student_id = #{studentId}
@@ -137,7 +137,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectStudentWarnings" parameterType="java.lang.Long" resultType="java.util.HashMap">
         select w.warning_id as warningId, w.warning_type as warningType, w.warning_level as warningLevel,
                w.warning_reason as warningReason, w.warning_date as warningDate,
-               ifnull(w.is_resolved, '0') as isResolved, smm.semester_name as semesterName
+               COALESCE(w.is_resolved, '0') as isResolved, smm.semester_name as semesterName
         from sam_warning w
         left join brm_semester smm on smm.semester_id = w.semester_id
         where w.student_id = #{studentId}
@@ -148,7 +148,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 已修读学期数与最近学期 -->
     <select id="selectStudentSemesterProgress" parameterType="java.lang.Long" resultType="java.util.HashMap">
         select count(distinct g.semester_id) as studiedSemesters,
-               max(ifnull(smm.semester_order, 0)) as lastSemesterOrder,
+               max(COALESCE(smm.semester_order, 0)) as lastSemesterOrder,
                max(g.semester_id) as lastSemesterId
         from aem_grade_record g
         left join brm_semester smm on smm.semester_id = g.semester_id

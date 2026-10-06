@@ -54,19 +54,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectOverviewStat" parameterType="SysAiChatRecord" resultType="java.util.HashMap">
         select count(1) as total,
-               ifnull(sum(case when answer_source in ('LLM','EXTRACT') then 1 else 0 end), 0) as hitTotal,
-               ifnull(sum(case when answer_source = 'NONE' then 1 else 0 end), 0) as missTotal,
-               ifnull(sum(case when answer_source = 'ERROR' then 1 else 0 end), 0) as errorTotal,
-               ifnull(round(avg(case when answer_source in ('LLM','EXTRACT') then confidence end), 3), 0) as avgConfidence,
-               ifnull(round(avg(cost_time)), 0) as avgCostTime,
+               COALESCE(sum(case when answer_source in ('LLM','EXTRACT') then 1 else 0 end), 0) as hitTotal,
+               COALESCE(sum(case when answer_source = 'NONE' then 1 else 0 end), 0) as missTotal,
+               COALESCE(sum(case when answer_source = 'ERROR' then 1 else 0 end), 0) as errorTotal,
+               COALESCE(round(avg(case when answer_source in ('LLM','EXTRACT') then confidence end), 3), 0) as avgConfidence,
+               COALESCE(round(avg(cost_time)), 0) as avgCostTime,
                count(distinct user_id) as userTotal
         from sys_ai_chat_record
         <include refid="chatRecordWhere"/>
     </select>
 
     <select id="selectSourceStat" parameterType="SysAiChatRecord" resultType="java.util.HashMap">
-        select ifnull(answer_source, 'UNKNOWN') as answerSource, count(1) as total,
-               ifnull(round(avg(confidence), 3), 0) as avgConfidence
+        select COALESCE(answer_source, 'UNKNOWN') as answerSource, count(1) as total,
+               COALESCE(round(avg(confidence), 3), 0) as avgConfidence
         from sys_ai_chat_record
         <include refid="chatRecordWhere"/>
         group by answer_source
@@ -74,8 +74,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectSceneStat" parameterType="SysAiChatRecord" resultType="java.util.HashMap">
-        select ifnull(scene, 'unknown') as scene, count(1) as total,
-               ifnull(sum(case when answer_source in ('LLM','EXTRACT') then 1 else 0 end), 0) as hitTotal
+        select COALESCE(scene, 'unknown') as scene, count(1) as total,
+               COALESCE(sum(case when answer_source in ('LLM','EXTRACT') then 1 else 0 end), 0) as hitTotal
         from sys_ai_chat_record
         <include refid="chatRecordWhere"/>
         group by scene
@@ -89,7 +89,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                    count(1) as total,
                    sum(case when answer_source in ('LLM','EXTRACT') then 1 else 0 end) as hitTotal
             from sys_ai_chat_record
-            where create_time &gt;= date_sub(curdate(), interval #{days} day)
+            where create_time &gt;= date_sub(CURRENT_DATE, interval #{days} day)
             group by date_format(create_time, '%Y-%m-%d')
         ) t
         order by stat_date

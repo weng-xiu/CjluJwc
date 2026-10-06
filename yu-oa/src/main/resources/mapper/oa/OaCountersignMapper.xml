@@ -123,7 +123,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
     <update id="cancelBatchByProcessInstanceId" parameterType="String">
-        update oa_countersign_batch set status = '2', update_time = now()
+        update oa_countersign_batch set status = '2', update_time = CURRENT_TIMESTAMP
         where proc_inst_id = #{processInstanceId} and status = '0'
     </update>
 

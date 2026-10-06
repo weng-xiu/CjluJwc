@@ -43,7 +43,7 @@
                c.classroom_name      as classroomName,
                m.last_repair_date    as lastRepairDate,
                case when m.last_repair_date is null then null
-                    else datediff(curdate(), m.last_repair_date) end as daysSince
+                    else datediff(CURRENT_DATE, m.last_repair_date) end as daysSince
         from brm_equipment e
         left join brm_classroom c on e.classroom_id = c.classroom_id
         left join (
@@ -52,7 +52,7 @@
             group by equip_id
         ) m on m.equip_id = e.equip_id
         where e.status = '0'
-          and (m.last_repair_date is null or datediff(curdate(), m.last_repair_date) &gt;= #{dueDays})
+          and (m.last_repair_date is null or datediff(CURRENT_DATE, m.last_repair_date) &gt;= #{dueDays})
         order by daysSince desc, e.equip_name asc
     </select>
 

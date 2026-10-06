@@ -35,8 +35,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <include refid="selectPortalBannerVo"/>
         <where>
             is_active = '1'
-            and (start_time is null or start_time <![CDATA[<=]]> NOW())
-            and (end_time is null or end_time <![CDATA[>=]]> NOW())
+            and (start_time is null or start_time <![CDATA[<=]]> CURRENT_TIMESTAMP)
+            and (end_time is null or end_time <![CDATA[>=]]> CURRENT_TIMESTAMP)
         </where>
         order by sort_order asc
     </select>

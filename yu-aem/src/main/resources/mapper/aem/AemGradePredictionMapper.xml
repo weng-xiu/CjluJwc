@@ -11,7 +11,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                count(1) as courseCount,
                coalesce(round(avg(r.total_score),2),0) as avgScore,
                coalesce(round(avg(r.grade_point),2),0) as avgGpa,
-               coalesce(sum(case when r.total_score &gt;= 60 then ifnull(cl.credit,0) else 0 end),0) as creditEarned,
+               coalesce(sum(case when r.total_score &gt;= 60 then COALESCE(cl.credit,0) else 0 end),0) as creditEarned,
                sum(case when r.total_score &lt; 60 then 1 else 0 end) as failCount
         from aem_grade_record r
         left join brm_semester sm on sm.semester_id = r.semester_id
@@ -81,7 +81,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select coalesce(round(avg(r.total_score),2),0) as avgScore,
                coalesce(round(avg(r.grade_point),2),0) as avgGpa,
                sum(case when r.total_score &lt; 60 then 1 else 0 end) as failCount,
-               coalesce(sum(case when r.total_score &gt;= 60 then ifnull(cl.credit,0) else 0 end),0) as creditEarned,
+               coalesce(sum(case when r.total_score &gt;= 60 then COALESCE(cl.credit,0) else 0 end),0) as creditEarned,
                count(distinct r.semester_id) as semesterCount
         from aem_grade_record r
         left join tpm_course_library cl on cl.course_id = r.course_id

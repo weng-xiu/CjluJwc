@@ -11,7 +11,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select semester_id as semesterId, semester_name as semesterName, start_date as startDate, end_date as endDate
         from brm_semester
         where status = '0'
-        order by (start_date &lt;= curdate() and end_date &gt;= curdate()) desc, semester_id desc
+        order by (start_date &lt;= CURRENT_DATE and end_date &gt;= CURRENT_DATE) desc, semester_id desc
         limit 1
     </select>
 
@@ -33,7 +33,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 在读学生按院系分布 -->
     <select id="selectStudentByDept" resultType="java.util.HashMap">
-        select ifnull(d.dept_name, '未分配院系') as name, count(1) as value
+        select COALESCE(d.dept_name, '未分配院系') as name, count(1) as value
         from sam_student s
         left join brm_department d on d.dept_id = s.dept_id
         where s.status = '0' and s.student_status = '0'
@@ -43,7 +43,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 在读学生按入学年份分布 -->
     <select id="selectStudentByEnrollmentYear" resultType="java.util.HashMap">
-        select ifnull(enrollment_year, '未知') as name, count(1) as value
+        select COALESCE(enrollment_year, '未知') as name, count(1) as value
         from sam_student
         where status = '0' and student_status = '0'
         group by name
@@ -61,7 +61,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 在读学生按培养层次分布 -->
     <select id="selectStudentByEducationLevel" resultType="java.util.HashMap">
-        select ifnull(education_level, '未填写') as name, count(1) as value
+        select COALESCE(education_level, '未填写') as name, count(1) as value
         from sam_student
         where status = '0' and student_status = '0'
         group by name
@@ -108,7 +108,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 按院系成绩聚合（经成绩→学生→院系） -->
     <select id="selectGradeByDept" resultType="java.util.HashMap">
-        select ifnull(d.dept_name, '未分配院系') as deptName,
+        select COALESCE(d.dept_name, '未分配院系') as deptName,
                count(1)                                                   as recordCount,
                round(avg(g.total_score), 1)                               as avgScore,
                round(sum(g.is_pass = '1') * 100 / nullif(count(1), 0), 1) as passRate
@@ -141,13 +141,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             (select count(1) from brm_teacher where status = '0')                          as teacherCount,
             (select count(1) from tpm_course_offering o where o.del_flag = '0' and o.offering_status != '2'
              <if test="semesterId != null"> and o.semester_id = #{semesterId}</if>)        as offeringCount,
-            (select ifnull(sum(o.class_count), 0) from tpm_course_offering o where o.del_flag = '0' and o.offering_status != '2'
+            (select COALESCE(sum(o.class_count), 0) from tpm_course_offering o where o.del_flag = '0' and o.offering_status != '2'
              <if test="semesterId != null"> and o.semester_id = #{semesterId}</if>)        as classCount
     </select>
 
     <!-- 在职教师按院系分布 -->
     <select id="selectTeacherByDept" resultType="java.util.HashMap">
-        select ifnull(d.dept_name, '未分配院系') as name, count(1) as value
+        select COALESCE(d.dept_name, '未分配院系') as name, count(1) as value
         from brm_teacher t
         left join brm_department d on d.dept_id = t.dept_id
         where t.status = '0'
@@ -157,7 +157,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 在职教师按职称分布 -->
     <select id="selectTeacherByTitle" resultType="java.util.HashMap">
-        select ifnull(title, '未填写') as name, count(1) as value
+        select COALESCE(title, '未填写') as name, count(1) as value
         from brm_teacher
         where status = '0'
         group by name
@@ -166,7 +166,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 在职教师按学历分布 -->
     <select id="selectTeacherByEducation" resultType="java.util.HashMap">
-        select ifnull(education, '未填写') as name, count(1) as value
+        select COALESCE(education, '未填写') as name, count(1) as value
         from brm_teacher
         where status = '0'
         group by name
@@ -185,10 +185,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 教师授课工作量 TOP N（经 offering.teacher_id = teacher.teacher_id 归口） -->
     <select id="selectTeacherWorkloadTop" resultType="java.util.HashMap">
         select t.teacher_name as teacherName,
-               ifnull(d.dept_name, '未分配院系') as deptName,
+               COALESCE(d.dept_name, '未分配院系') as deptName,
                count(o.offering_id)                        as offeringCount,
-               ifnull(sum(o.class_count), 0)               as classCount,
-               ifnull(sum(o.max_students), 0)              as studentCapacity
+               COALESCE(sum(o.class_count), 0)               as classCount,
+               COALESCE(sum(o.max_students), 0)              as studentCapacity
         from brm_teacher t
         left join brm_department d on d.dept_id = t.dept_id
         join tpm_course_offering o on o.teacher_id = t.teacher_id and o.del_flag = '0' and o.offering_status != '2'

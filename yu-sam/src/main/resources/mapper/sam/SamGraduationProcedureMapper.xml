@@ -55,7 +55,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 为已毕业(student_status=3)且尚无手续记录的学生初始化（studentId 非空则仅该生） -->
     <insert id="initProceduresForGraduates">
         insert into sam_graduation_procedure (student_id, library_cleared, finance_cleared, dormitory_cleared, card_returned, procedure_status, status, create_by, create_time)
-        select s.student_id, '0', '0', '0', '0', '0', '0', #{createBy}, sysdate()
+        select s.student_id, '0', '0', '0', '0', '0', '0', #{createBy}, CURRENT_TIMESTAMP
         from sam_student s
         where s.student_status = '3'
         <if test="studentId != null"> and s.student_id = #{studentId}</if>

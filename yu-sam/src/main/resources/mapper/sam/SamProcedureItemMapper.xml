@@ -78,7 +78,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 为学生已有手续记录按启用环节补齐未办明细（NOT EXISTS 幂等）；studentId 为空则处理全部 -->
     <insert id="initItemsForProcedures">
         insert into sam_procedure_item (procedure_id, student_id, step_id, item_status, check_type, create_time)
-        select p.procedure_id, p.student_id, st.step_id, '0', '0', sysdate()
+        select p.procedure_id, p.student_id, st.step_id, '0', '0', CURRENT_TIMESTAMP
         from sam_graduation_procedure p
         join sam_procedure_step st on st.status = '0'
         <where>
