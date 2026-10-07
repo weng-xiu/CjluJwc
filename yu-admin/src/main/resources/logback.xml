@@ -4,8 +4,9 @@
 	<property name="log.path" value="${LOG_PATH:-logs}" />
     <!-- 日志输出格式（V4.0 A5：加入 %X{traceId}，一次请求全链路可串联） -->
 	<property name="log.pattern" value="%d{HH:mm:ss.SSS} [%thread] [%X{traceId:-}] %-5level %logger{20} - [%method,%line] - %msg%n" />
-    <!-- 文本日志保留天数（本地默认 60 天；生产按等保数据新规由 LOG_MAX_HISTORY 注入 >=1095 天，见 application-prod.yml 注释） -->
-	<property name="log.maxHistory" value="${LOG_MAX_HISTORY:-60}" />
+    <!-- 文本日志保留天数（K1 等保数据新规：代码默认 180 天，满足《网络安全法》第二十一条网络日志留存≥6个月底线；
+         生产环境由 LOG_MAX_HISTORY 注入 >=1095 天以实现 3 年审计留存，见 application-prod.yml / .env 说明） -->
+	<property name="log.maxHistory" value="${LOG_MAX_HISTORY:-180}" />
 
 	<!-- 控制台输出 -->
 	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">

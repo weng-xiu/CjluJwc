@@ -23,6 +23,12 @@ public interface IAiLlmClient
     public String describeEngine();
 
     /**
+     * 当前登记的大模型名称/版本（K4 AI 治理 · 模型版本留痕）。
+     * 未启用或未配置模型时返回空串，由调用方如实记录为「本地抽取」。
+     */
+    public String getModelName();
+
+    /**
      * 以「系统提示 + 用户提示」发起一次对话补全
      *
      * @param systemPrompt 系统提示（角色与作答约束）

@@ -19,12 +19,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result     property="costTime"         column="cost_time"          />
         <result     property="status"           column="status"             />
         <result     property="errorMsg"         column="error_msg"          />
+        <result     property="modelVersion"     column="model_version"      />
+        <result     property="moderationResult"  column="moderation_result"  />
+        <result     property="moderationNote"   column="moderation_note"    />
         <result     property="createTime"       column="create_time"        />
     </resultMap>
 
     <sql id="selectSysAiChatRecordVo">
         select record_id, user_id, user_name, user_role, scene, question, answer, answer_source,
-               knowledge_ids, knowledge_titles, confidence, cost_time, status, error_msg, create_time
+               knowledge_ids, knowledge_titles, confidence, cost_time, status, error_msg,
+               model_version, moderation_result, moderation_note, create_time
         from sys_ai_chat_record
     </sql>
 
@@ -120,6 +124,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="costTime != null">cost_time,</if>
             <if test="status != null and status != ''">status,</if>
             <if test="errorMsg != null">error_msg,</if>
+            <if test="modelVersion != null">model_version,</if>
+            <if test="moderationResult != null and moderationResult != ''">moderation_result,</if>
+            <if test="moderationNote != null">moderation_note,</if>
             <if test="createTime != null">create_time,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
@@ -136,6 +143,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="costTime != null">#{costTime},</if>
             <if test="status != null and status != ''">#{status},</if>
             <if test="errorMsg != null">#{errorMsg},</if>
+            <if test="modelVersion != null">#{modelVersion},</if>
+            <if test="moderationResult != null and moderationResult != ''">#{moderationResult},</if>
+            <if test="moderationNote != null">#{moderationNote},</if>
             <if test="createTime != null">#{createTime},</if>
          </trim>
     </insert>

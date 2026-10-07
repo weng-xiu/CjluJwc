@@ -64,6 +64,15 @@ public class SysAiChatRecord extends BaseEntity
     /** 失败/降级原因 */
     private String errorMsg;
 
+    /** 作答依据的大模型名称/版本（K4 AI 治理 · 模型版本留痕，空表示本地抽取） */
+    private String modelVersion;
+
+    /** 内容治理结果码（0通过 1输入拦截 2输出改写） */
+    private String moderationResult;
+
+    /** 内容治理说明（命中类别，供审计） */
+    private String moderationNote;
+
     /** 查询条件：开始时间 */
     private String beginTime;
 
@@ -228,5 +237,35 @@ public class SysAiChatRecord extends BaseEntity
     public String getEndTime()
     {
         return endTime;
+    }
+
+    public void setModelVersion(String modelVersion)
+    {
+        this.modelVersion = modelVersion;
+    }
+
+    public String getModelVersion()
+    {
+        return modelVersion;
+    }
+
+    public void setModerationResult(String moderationResult)
+    {
+        this.moderationResult = moderationResult;
+    }
+
+    public String getModerationResult()
+    {
+        return moderationResult;
+    }
+
+    public void setModerationNote(String moderationNote)
+    {
+        this.moderationNote = moderationNote;
+    }
+
+    public String getModerationNote()
+    {
+        return moderationNote;
     }
 }

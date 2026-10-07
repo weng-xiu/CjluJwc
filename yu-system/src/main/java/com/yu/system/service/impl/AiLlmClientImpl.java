@@ -68,6 +68,13 @@ public class AiLlmClientImpl implements IAiLlmClient
     }
 
     @Override
+    public String getModelName()
+    {
+        // 仅在真正启用大模型时登记模型版本；本地降级应答不虚构模型名，返回空串由上层标注口径
+        return isEnabled() ? trim(configService.selectConfigByKey(CFG_MODEL)) : "";
+    }
+
+    @Override
     public String complete(String systemPrompt, String userPrompt) throws Exception
     {
         String baseUrl = trim(configService.selectConfigByKey(CFG_BASE_URL));

@@ -29,6 +29,9 @@ public class AiAnswer implements Serializable
     /** 回答来源：大模型调用失败，已降级为抽取式回答 */
     public static final String SOURCE_ERROR = "ERROR";
 
+    /** 回答来源：输入命中内容治理规则，未进入检索与模型即被安全话术拦截（K4 AI 治理） */
+    public static final String SOURCE_MODERATED = "MODERATED";
+
     /** 问题原文 */
     private String question;
 
@@ -52,6 +55,15 @@ public class AiAnswer implements Serializable
 
     /** 失败或降级原因 */
     private String errorMsg;
+
+    /** 作答所依据的大模型名称/版本（未接入模型时为空，表示本地抽取） */
+    private String modelVersion;
+
+    /** 内容治理结果码（0通过 1输入拦截 2输出改写） */
+    private String moderationResult;
+
+    /** 内容治理说明（命中类别，供审计） */
+    private String moderationNote;
 
     public String getQuestion()
     {
@@ -131,5 +143,35 @@ public class AiAnswer implements Serializable
     public void setErrorMsg(String errorMsg)
     {
         this.errorMsg = errorMsg;
+    }
+
+    public String getModelVersion()
+    {
+        return modelVersion;
+    }
+
+    public void setModelVersion(String modelVersion)
+    {
+        this.modelVersion = modelVersion;
+    }
+
+    public String getModerationResult()
+    {
+        return moderationResult;
+    }
+
+    public void setModerationResult(String moderationResult)
+    {
+        this.moderationResult = moderationResult;
+    }
+
+    public String getModerationNote()
+    {
+        return moderationNote;
+    }
+
+    public void setModerationNote(String moderationNote)
+    {
+        this.moderationNote = moderationNote;
     }
 }

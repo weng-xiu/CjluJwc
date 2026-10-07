@@ -83,3 +83,77 @@ jobs:
           path: backend-dependency-tree.txt
           retention-days: 30
           if-no-files-found: ignore
+
+  # -----------------------------------------------------------------------------
+  # K5 供应链治理 · 标准 SBOM（CycloneDX）生成，作为可交付/可归档的软件物料清单。
+  # 与上方"依赖树快照"的区别：树是排查视图，SBOM 是符合 CycloneDX 规范的机读物料清单，
+  # 可作为等级保护/信创验收交付物并导入 VEX/SCA 平台。
+  # 关键约束：SBOM 生成插件仅在联网 CI 解析，绝不写入 pom/reactor，本地离线构建（mvn -o）零影响；
+  #          作业为 advisory（continue-on-error），插件不可用时不阻断常态扫描。
+  # -----------------------------------------------------------------------------
+  backend-sbom:
+    name: Maven SBOM (CycloneDX)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      # 全 reactor 聚合生成一份 CycloneDX BOM（输出到根 target/bom.xml 与 bom.json）
+      - name: Generate aggregate CycloneDX SBOM
+        continue-on-error: true
+        run: mvn -B org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
+
+      - name: Collect SBOM files
+        if: always()
+        run: |
+          mkdir -p sbom-out
+          [ -f target/bom.xml ] && cp target/bom.xml sbom-out/backend-sbom.xml || true
+          [ -f target/bom.json ] && cp target/bom.json sbom-out/backend-sbom.json || true
+
+      - name: Upload SBOM artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclonedx-backend-sbom
+          path: sbom-out/
+          retention-days: 90
+          if-no-files-found: ignore
+
+  frontend-sbom:
+    name: npm SBOM (CycloneDX)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 仅活跃交付前端；Vue2 归档冻结不纳入
+        project: [yu-ui-vue3, yu-portal-ui-vue3]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: ${{ matrix.project }}/package-lock.json
+
+      # 直接基于 lockfile 生成 CycloneDX SBOM，无需 npm ci，更快且不受安装期脚本影响
+      - name: Generate CycloneDX SBOM from lockfile
+        working-directory: ${{ matrix.project }}
+        continue-on-error: true
+        run: npx --yes @cyclonedx/cyclonedx-npm --output-file sbom.json -- package-lock.json
+
+      - name: Upload SBOM artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyclonedx-frontend-sbom-${{ matrix.project }}
+          path: ${{ matrix.project }}/sbom.json
+          retention-days: 90
+          if-no-files-found: ignore

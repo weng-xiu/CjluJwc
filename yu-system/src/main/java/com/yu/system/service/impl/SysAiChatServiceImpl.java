@@ -19,6 +19,7 @@ import com.yu.common.utils.StringUtils;
 import com.yu.common.core.domain.entity.SysRole;
 import com.yu.common.core.domain.model.LoginUser;
 import com.yu.system.ai.AiAnswer;
+import com.yu.system.ai.AiContentModerator;
 import com.yu.system.ai.AiKnowledgeHit;
 import com.yu.system.ai.AiTextAnalyzer;
 import com.yu.system.domain.SysAiChatRecord;
@@ -67,6 +68,9 @@ public class SysAiChatServiceImpl implements ISysAiChatService
     @Autowired
     private ISysConfigService configService;
 
+    @Autowired
+    private AiContentModerator contentModerator;
+
     @Override
     public AiAnswer ask(String question, int topK, String scene, Long userId, String userName, String userRole)
     {
@@ -74,8 +78,26 @@ public class SysAiChatServiceImpl implements ISysAiChatService
         AiAnswer answer = new AiAnswer();
         answer.setQuestion(question);
         answer.setEngineNote(aiLlmClient.describeEngine());
+        // K4 AI 治理：登记本次作答所依据的模型版本（未接入模型时为空，如实反映本地抽取）
+        answer.setModelVersion(aiLlmClient.getModelName());
 
         String q = StringUtils.isBlank(question) ? "" : question.trim();
+
+        // K4 AI 治理：输入先行审核，命中越狱/套取/超限等风险即以安全话术拦截，不触达检索与模型
+        answer.setModerationResult(AiContentModerator.RESULT_PASS);
+        AiContentModerator.Verdict inVerdict = contentModerator.moderateInput(q);
+        if (!inVerdict.isPass())
+        {
+            answer.setAnswerSource(AiAnswer.SOURCE_MODERATED);
+            answer.setConfidence(0d);
+            answer.setAnswer(inVerdict.getSafeReply());
+            answer.setModerationResult(inVerdict.getResult());
+            answer.setModerationNote(inVerdict.getCategory());
+            answer.setCostTime((int) (System.currentTimeMillis() - start));
+            saveRecord(q, answer, scene, userId, userName, userRole);
+            return answer;
+        }
+
         int limit = topK > 0 ? topK : intConfig(CFG_TOP_K, 4);
         List<AiKnowledgeHit> hits = knowledgeService.retrieve(q, limit);
         answer.setReferences(hits);
@@ -114,6 +136,17 @@ public class SysAiChatServiceImpl implements ISysAiChatService
             }
             knowledgeService.markHit(idsOf(hits));
         }
+
+        // K4 AI 治理：输出防泄露改写，命中密钥/连接串形态时整段替换为安全话术，来源口径保持不变仅供审计
+        AiContentModerator.Verdict outVerdict = contentModerator.moderateOutput(answer.getAnswer());
+        if (!outVerdict.isPass())
+        {
+            answer.setAnswer(outVerdict.getSafeReply());
+            answer.setModerationResult(outVerdict.getResult());
+            answer.setModerationNote(outVerdict.getCategory());
+            log.warn("AI 输出命中防泄露改写：note={}, scene={}", outVerdict.getCategory(), scene);
+        }
+
         answer.setCostTime((int) (System.currentTimeMillis() - start));
 
         saveRecord(q, answer, scene, userId, userName, userRole);
@@ -392,6 +425,11 @@ public class SysAiChatServiceImpl implements ISysAiChatService
             // 大模型降级属于系统缺陷，状态记为失败以便管理端筛出排查
             record.setStatus(AiAnswer.SOURCE_ERROR.equals(answer.getAnswerSource()) ? "1" : "0");
             record.setErrorMsg(answer.getErrorMsg());
+            // K4 AI 治理留痕：模型版本 + 审核结果码 + 命中类别，支撑算法审计
+            record.setModelVersion(StringUtils.substring(answer.getModelVersion(), 0, 100));
+            record.setModerationResult(StringUtils.isEmpty(answer.getModerationResult())
+                    ? AiContentModerator.RESULT_PASS : answer.getModerationResult());
+            record.setModerationNote(StringUtils.substring(answer.getModerationNote(), 0, 100));
             record.setCreateTime(DateUtils.getNowDate());
             sysAiChatRecordMapper.insertSysAiChatRecord(record);
         }
