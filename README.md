@@ -196,7 +196,7 @@ $env:SPRING_PROFILES_ACTIVE="prod"
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` / `REDIS_DATABASE` | Redis 地址、端口、密码、库索引 | `127.0.0.1` / `6379` / （空） / `0` |
 | `RUIYI_PROFILE` | 文件上传存储路径 | 项目内 `ruoyi/uploadPath`（Linux 建议 `/home/ruoyi/uploadPath`） |
 | `LOG_PATH` | 日志输出目录 | 启动目录下 `logs/`（Linux 建议 `/home/ruoyi/logs`） |
-| `LOG_MAX_HISTORY` | 日志保留天数 | `60`（compose 内 `30`） |
+| `LOG_MAX_HISTORY` | 日志保留天数（K1 等保：代码默认 180 天≥《网络安全法》6 个月底线；生产/预发由 `docker-compose.prod.yml` 固化 1095 天=3 年审计留存；base compose 本地联调默认 30） | `180`（prod 覆盖层 `1095`） |
 
 PowerShell 设置示例（启动后端前执行）：
 

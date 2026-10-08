@@ -14,6 +14,10 @@
 services:
   backend:
     image: ${IMAGE_REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE:?IMAGE_NAMESPACE 必填，格式 <owner>/cjlu-jwc}/backend:${IMAGE_TAG:-latest}
+    # K1 等保数据新规·日志留存固化：生产/预发不再依赖手工注入，默认钉死 1095 天（3 年审计留存）；
+    # 仍允许显式环境变量上调（如更长的合规留存期），但不会回落到 base 的本地联调默认 30 天。
+    environment:
+      LOG_MAX_HISTORY: ${LOG_MAX_HISTORY:-1095}
 
   frontend:
     image: ${IMAGE_REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE:?IMAGE_NAMESPACE 必填，格式 <owner>/cjlu-jwc}/admin-ui:${IMAGE_TAG:-latest}

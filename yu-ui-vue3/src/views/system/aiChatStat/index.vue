@@ -131,6 +131,14 @@
           <dict-tag :options="dict.type.sys_ai_answer_source" :value="scope.row.answerSource" />
         </template>
       </el-table-column>
+      <el-table-column label="模型版本" align="center" prop="modelVersion" width="120" :show-overflow-tooltip="true">
+        <template #default="scope"><span>{{ scope.row.modelVersion || '本地抽取' }}</span></template>
+      </el-table-column>
+      <el-table-column label="治理结果" align="center" prop="moderationResult" width="90">
+        <template #default="scope">
+          <dict-tag :options="dict.type.sys_ai_moderation_result" :value="scope.row.moderationResult || '0'" />
+        </template>
+      </el-table-column>
       <el-table-column label="依据条目" align="left" prop="knowledgeTitles" min-width="180" :show-overflow-tooltip="true" />
       <el-table-column label="置信度" align="center" prop="confidence" width="90" />
       <el-table-column label="耗时(ms)" align="center" prop="costTime" width="90" />
@@ -157,10 +165,17 @@
         <el-descriptions-item label="回答来源">
           <dict-tag :options="dict.type.sys_ai_answer_source" :value="detail.answerSource" />
         </el-descriptions-item>
+        <el-descriptions-item label="模型版本">{{ detail.modelVersion || '本地抽取' }}</el-descriptions-item>
+        <el-descriptions-item label="治理结果">
+          <dict-tag :options="dict.type.sys_ai_moderation_result" :value="detail.moderationResult || '0'" />
+        </el-descriptions-item>
         <el-descriptions-item label="置信度">{{ detail.confidence }}</el-descriptions-item>
         <el-descriptions-item label="耗时">{{ detail.costTime }} ms</el-descriptions-item>
         <el-descriptions-item label="问题" :span="2">{{ detail.question }}</el-descriptions-item>
         <el-descriptions-item label="依据条目" :span="2">{{ detail.knowledgeTitles || '—' }}</el-descriptions-item>
+        <el-descriptions-item v-if="detail.moderationNote" label="治理命中类别" :span="2">
+          <span class="error-text">{{ detail.moderationNote }}</span>
+        </el-descriptions-item>
         <el-descriptions-item label="回答内容" :span="2">
           <div class="detail-content">{{ detail.answer }}</div>
         </el-descriptions-item>
@@ -190,7 +205,7 @@ const SOURCE_COLOR = { LLM: '#67c23a', EXTRACT: '#409eff', NONE: '#909399', ERRO
 
 export default {
   name: 'AiChatStat',
-  dicts: ['sys_ai_answer_source'],
+  dicts: ['sys_ai_answer_source', 'sys_ai_moderation_result'],
   data() {
     return {
       loading: true,

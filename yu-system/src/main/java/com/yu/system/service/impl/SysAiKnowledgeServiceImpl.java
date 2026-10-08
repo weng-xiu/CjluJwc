@@ -9,8 +9,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.StringUtils;
+import com.yu.system.ai.AiCorpusDesensitizer;
 import com.yu.system.ai.AiKnowledgeHit;
 import com.yu.system.ai.AiTextAnalyzer;
 import com.yu.system.domain.SysAiKnowledge;
@@ -43,6 +45,10 @@ public class SysAiKnowledgeServiceImpl implements ISysAiKnowledgeService
 
     @Autowired
     private ISysConfigService configService;
+
+    /** K4 垂直语料脱敏口径：知识库是 RAG 唯一事实来源，入库前对正文内嵌个人信息去标识化 */
+    @Autowired
+    private AiCorpusDesensitizer corpusDesensitizer;
 
     @Override
     public SysAiKnowledge selectSysAiKnowledgeByKnowledgeId(Long knowledgeId)
@@ -106,6 +112,7 @@ public class SysAiKnowledgeServiceImpl implements ISysAiKnowledgeService
     @Override
     public int insertSysAiKnowledge(SysAiKnowledge sysAiKnowledge)
     {
+        applyCorpusDesensitize(sysAiKnowledge);
         if (sysAiKnowledge.getCreateTime() == null)
         {
             sysAiKnowledge.setCreateTime(DateUtils.getNowDate());
@@ -116,8 +123,33 @@ public class SysAiKnowledgeServiceImpl implements ISysAiKnowledgeService
     @Override
     public int updateSysAiKnowledge(SysAiKnowledge sysAiKnowledge)
     {
+        applyCorpusDesensitize(sysAiKnowledge);
         sysAiKnowledge.setUpdateTime(DateUtils.getNowDate());
         return sysAiKnowledgeMapper.updateSysAiKnowledge(sysAiKnowledge);
+    }
+
+    /**
+     * K4 垂直语料脱敏口径：正文命中个人信息时，按模式自动掩码（MASK）或拒绝入库（BLOCK）。
+     * 关闭开关时不做任何处理，交由机构自行把握语料合规。
+     */
+    private void applyCorpusDesensitize(SysAiKnowledge knowledge)
+    {
+        if (!corpusDesensitizer.isEnabled() || knowledge == null)
+        {
+            return;
+        }
+        Map<String, Integer> hits = corpusDesensitizer.scan(knowledge.getContent());
+        if (hits.isEmpty())
+        {
+            return;
+        }
+        if (AiCorpusDesensitizer.MODE_BLOCK.equals(corpusDesensitizer.mode()))
+        {
+            throw new ServiceException("知识条目正文含个人信息" + hits.keySet() + "，请先去标识化后再入库（语料脱敏口径：BLOCK）");
+        }
+        String masked = corpusDesensitizer.mask(knowledge.getContent());
+        knowledge.setContent(masked);
+        log.warn("AI知识库条目[{}]入库时自动脱敏命中个人信息{}，已按 MASK 口径掩码", knowledge.getTitle(), hits.keySet());
     }
 
     @Override
