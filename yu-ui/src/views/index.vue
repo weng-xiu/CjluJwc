@@ -55,7 +55,10 @@
         <el-card class="panel-card" shadow="never">
           <div slot="header" class="panel-header">
             <span class="panel-title"><i class="el-icon-data-line"></i> 教务数据驾驶舱</span>
-            <span class="panel-sub" v-if="dashSemester.semesterName">{{ dashSemester.semesterName }}</span>
+            <div class="panel-actions">
+              <span class="panel-sub" v-if="dashSemester.semesterName">{{ dashSemester.semesterName }}</span>
+              <el-button type="text" icon="el-icon-full-screen" class="btn-bigscreen" @click="goBigScreen">进入大屏</el-button>
+            </div>
           </div>
           <div v-loading="loading.dashboard">
             <el-row :gutter="16">
@@ -345,6 +348,11 @@ export default {
     goTarget(url) {
       window.open(url, "__blank")
     },
+    goBigScreen() {
+      // U4 教务指挥大屏：以独立新窗口打开全屏看板墙（/bigscreen 为不带 Layout 的全屏路由）
+      const resolved = this.$router.resolve({ path: "/bigscreen" })
+      window.open(resolved.href, "_blank")
+    },
     formatDate(dateStr) {
       if (!dateStr) return ""
       return String(dateStr).substring(0, 10)
@@ -459,6 +467,22 @@ export default {
     display: flex;
     align-items: center;
     justify-content: space-between;
+  }
+
+  .panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn-bigscreen {
+    padding: 0;
+    font-size: 13px;
+    color: #007ab8;
+
+    &:hover {
+      color: #008ed6;
+    }
   }
 
   .panel-title {

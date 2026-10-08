@@ -81,6 +81,13 @@ export const constantRoutes = [
     meta: { title: '锁定屏幕' }
   },
   {
+    // U4 教务指挥大屏：1920×1080 看板墙，独立全屏页（不带 Layout），仿 /lock 注册为隐藏常量路由，需登录后访问（数据接口受鉴权保护）
+    path: '/bigscreen',
+    component: () => import('@/views/bigscreen'),
+    hidden: true,
+    meta: { title: '教务指挥大屏' }
+  },
+  {
     path: '/user',
     component: Layout,
     hidden: true,

@@ -119,9 +119,12 @@ export default {
 }
 
 .container {
-  max-width: 1200px;
+  /* U2 门户 PC 流式化：与 PublicLayout 同口径 */
+  width: clamp(720px, 92vw, 1600px);
+  max-width: 100%;
   margin: 0 auto;
   padding: 0 20px;
+  box-sizing: border-box;
 }
 
 .page-breadcrumb {
@@ -131,6 +134,9 @@ export default {
 .article-detail {
   background: #fff;
   border-radius: 8px;
+  /* U2 流式化：外层容器拉宽，但正文阅读列限宽居中，避免行宽过长损害可读性 */
+  max-width: 900px;
+  margin: 0 auto;
   padding: 40px 50px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   min-height: 400px;

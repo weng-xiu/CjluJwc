@@ -159,10 +159,11 @@ export default {
 }
 
 .container {
-  max-width: 1200px;
+  /* U2 门户 PC 流式化：定宽 1200 → 流式，宽屏（≥~1740px）铺满至 1600 上限，常见笔记本随视口拉伸，窄屏由 max-width:100% 兜底不溢出 */
+  width: clamp(720px, 92vw, 1600px);
+  max-width: 100%;
   margin: 0 auto;
   padding: 0 16px;
-  width: 100%;
   box-sizing: border-box;
 }
 

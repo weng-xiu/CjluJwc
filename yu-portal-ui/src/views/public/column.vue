@@ -137,9 +137,12 @@ export default {
 }
 
 .container {
-  max-width: 1200px;
+  /* U2 门户 PC 流式化：与 PublicLayout 同口径 */
+  width: clamp(720px, 92vw, 1600px);
+  max-width: 100%;
   margin: 0 auto;
   padding: 0 20px;
+  box-sizing: border-box;
 }
 
 .page-breadcrumb {

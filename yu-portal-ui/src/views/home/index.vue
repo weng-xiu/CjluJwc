@@ -66,7 +66,8 @@ export default {
 </script>
 
 <style scoped>
-.portal-home { max-width: 1200px; margin: 0 auto; }
+/* U2 门户 PC 流式化：服务大厅首页容器随视口拉伸，宽屏上限 1440 保障卡片可读性 */
+.portal-home { width: clamp(720px, 92vw, 1440px); max-width: 100%; margin: 0 auto; }
 .welcome-banner {
   background: linear-gradient(135deg, #007ab8 0%, #008ed6 100%);
   border-radius: 8px; padding: 32px; color: #fff; margin-bottom: 24px;

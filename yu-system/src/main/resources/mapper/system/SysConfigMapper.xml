@@ -69,7 +69,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where config_key = #{configKey} limit 1
     </select>
     
-    <insert id="insertConfig" parameterType="SysConfig">
+    <!-- A4 配置项级审计：回填自增主键 configId，供新建参数变更流水的 bizId 归类（纯增量属性，不改 SQL 语义） -->
+    <insert id="insertConfig" parameterType="SysConfig" useGeneratedKeys="true" keyProperty="configId">
         insert into sys_config (
 			<if test="configName != null and configName != '' ">config_name,</if>
 			<if test="configKey != null and configKey != '' ">config_key,</if>
