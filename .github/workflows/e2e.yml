@@ -1,0 +1,118 @@
+# CjluJwc E2E（Playwright）流水线（Q1：E2E 接入 CI）
+#
+# 定位：端到端“本地可重复”断言资产接入 CI（e2e/ 四条链路，见 e2e/README.md）。
+# 与主 CI（ci.yml）解耦为独立工作流，且【默认关闭】——需仓库变量 vars.E2E_ENABLED=true 才执行，
+# 原因：E2E 依赖“完整全栈 + 已 seed 基线库（含 admin/weng/wxl 账号，密码 admin123）”，
+#       GH 无缓存 chromium、无既有脱敏整库 dump，首版以非阻塞、可手动触发方式落地，
+#       待 fixture 隔离方案成熟后再评估纳入 PR 阻塞门禁（与 e2e/README.md §八 口径一致）。
+#
+# 触发：
+#   - workflow_dispatch：随时手动跑全栈 E2E（含 @write 写库链路由 E2E_RUN_WRITE 控制）。
+#   - schedule(weekly)：每周一次只读链路回归（仅当 E2E_ENABLED=true）。
+#   - push(main)/pull_request：仅当 E2E_ENABLED=true 时作为补充信号（continue-on-error，不阻断）。
+name: E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_write:
+        description: '同时执行写库链路 @write（默认仅只读链路）'
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    # 每周日 18:00(UTC) 跑一次只读 E2E 回归（需 vars.E2E_ENABLED=true 才实际执行）
+    - cron: '0 18 * * 0'
+  push:
+    branches: [main]
+  pull_request:
+
+# 全栈拉起：MySQL/Redis/后端/管理端/门户 五容器，容器健康由 compose healthcheck 保障
+env:
+  DB_PASSWORD: root
+  REDIS_PASSWORD: ""
+  # 组合编排下宿主端口：admin→82、portal→81（对齐 e2e/fixtures/env.js 默认 baseURL）
+  DB_PORT_EXPOSE: "3307"
+  REDIS_PORT_EXPOSE: "6380"
+  BACKEND_PORT_EXPOSE: "8080"
+  FRONTEND_PORT_EXPOSE: "82"
+  PORTAL_PORT_EXPOSE: "81"
+  # 空库首启由后端 Flyway 建基线 schema（无既有整库 dump）
+  FLYWAY_ENABLED: "true"
+  SPRING_PROFILES_ACTIVE: "prod"
+
+jobs:
+  e2e:
+    # 默认关闭：仓库未设置 vars.E2E_ENABLED=true 时整作业跳过，不影响存量 CI
+    if: github.event_name == 'workflow_dispatch' || vars.E2E_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install Playwright + chromium（CI 无本机缓存，需显式下载）
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      # 起栈：mysql/redis/backend/frontend/portal（prometheus/grafana 不参与 E2E，跳过）
+      - name: Launch full stack via docker compose
+        run: |
+          docker compose up -d --build mysql redis backend frontend portal
+          # 等待后端健康（compose 内 backend 依赖 mysql/redis 健康后启动，且镜像自带 HEALTHCHECK）
+          for i in $(seq 1 60); do
+            if [ "$(docker inspect -f '{{.State.Health.Status}}' yu-backend 2>/dev/null)" = "healthy" ]; then
+              echo "backend healthy"; break
+            fi
+            if [ "$i" = "60" ]; then echo "backend not healthy in time"; docker compose logs backend; exit 1; fi
+            sleep 5
+          done
+
+      # 等待前端可达（:82 管理端 / :81 门户），playwright globalSetup 会做健康 fail-fast
+      - name: Wait for web servers
+        run: |
+          for p in 82 81; do
+            for i in $(seq 1 30); do
+              if curl -sf "http://localhost:${p}/" >/dev/null; then echo ":${p} up"; break; fi
+              if [ "$i" = "30" ]; then echo ":${p} not up"; docker compose logs frontend portal; exit 1; fi
+              sleep 3
+            done
+          done
+
+      # 只跑 @write 之外的只读链路（workflow_dispatch 勾选 run_write 时附加写库链路）
+      - name: Run Playwright E2E
+        working-directory: e2e
+        env:
+          E2E_API_BASE: http://localhost:8080
+          E2E_ADMIN_BASE: http://localhost:82
+          E2E_PORTAL_BASE: http://localhost:81
+          E2E_DB_HOST: 127.0.0.1
+          E2E_DB_PORT: "3307"
+          E2E_DB_NAME: yu-cjlujwc
+          E2E_DB_USER: root
+          E2E_DB_PASS: root
+        run: |
+          # 解析 CI 安装的 chromium 可执行路径，覆盖 env.js 默认（本机 Windows chrome-win 路径在 CI 不存在）
+          export E2E_CHROMIUM="$(ls -d "$HOME"/.cache/ms-playwright/chromium-*/chrome-linux/chrome | head -1)"
+          echo "using chromium: $E2E_CHROMIUM"
+          if [ "${{ github.event.inputs.run_write }}" = "true" ]; then
+            npx playwright test
+          else
+            npx playwright test --grep-invert @write
+          fi
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7
