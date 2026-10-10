@@ -96,7 +96,7 @@
           </el-col>
           <el-col :span="24">
             <el-form-item label="是否显示" prop="isVisible">
-              <el-switch v-model="form.isVisible" active-value="1" inactive-value="0" active-text="显示" inactive-text="隐藏"></el-switch>
+              <el-switch aria-label="是否显示" v-model="form.isVisible" active-value="1" inactive-value="0" active-text="显示" inactive-text="隐藏"></el-switch>
             </el-form-item>
           </el-col>
           <el-col :span="24" v-if="form.columnType === '3'">

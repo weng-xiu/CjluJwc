@@ -95,12 +95,12 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="是否置顶" prop="isTop">
-              <el-switch v-model="form.isTop" active-value="1" inactive-value="0" active-text="是" inactive-text="否"></el-switch>
+              <el-switch aria-label="是否置顶" v-model="form.isTop" active-value="1" inactive-value="0" active-text="是" inactive-text="否"></el-switch>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="是否推荐" prop="isFeatured">
-              <el-switch v-model="form.isFeatured" active-value="1" inactive-value="0" active-text="是" inactive-text="否"></el-switch>
+              <el-switch aria-label="是否推荐" v-model="form.isFeatured" active-value="1" inactive-value="0" active-text="是" inactive-text="否"></el-switch>
             </el-form-item>
           </el-col>
           <el-col :span="24">

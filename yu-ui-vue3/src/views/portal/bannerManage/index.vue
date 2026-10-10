@@ -38,7 +38,7 @@
       <el-table-column label="排序" align="center" prop="sortOrder" width="80" />
       <el-table-column label="是否激活" align="center" prop="isActive" width="100">
         <template #default="scope">
-          <el-switch v-model="scope.row.isActive" active-value="1" inactive-value="0" @change="handleActiveChange(scope.row)"></el-switch>
+          <el-switch aria-label="是否激活" v-model="scope.row.isActive" active-value="1" inactive-value="0" @change="handleActiveChange(scope.row)"></el-switch>
         </template>
       </el-table-column>
       <el-table-column label="有效期" align="center" width="320">
@@ -87,7 +87,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="是否激活" prop="isActive">
-              <el-switch v-model="form.isActive" active-value="1" inactive-value="0" active-text="激活" inactive-text="未激活"></el-switch>
+              <el-switch aria-label="是否激活" v-model="form.isActive" active-value="1" inactive-value="0" active-text="激活" inactive-text="未激活"></el-switch>
             </el-form-item>
           </el-col>
           <el-col :span="24">

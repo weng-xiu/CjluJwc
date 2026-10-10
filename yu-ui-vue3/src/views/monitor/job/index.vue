@@ -96,7 +96,7 @@
       <el-table-column label="任务编号" width="100" align="center" prop="jobId" />
       <el-table-column label="任务名称" align="center" :show-overflow-tooltip="true">
         <template #default="scope">
-          <a class="link-type" style="cursor:pointer" @click="handleView(scope.row)">{{ scope.row.jobName }}</a>
+          <a class="link-type" style="cursor:pointer" aria-label="查看任务详情" v-keyclick="() => handleView(scope.row)">{{ scope.row.jobName }}</a>
         </template>
       </el-table-column>
       <el-table-column label="任务组名" align="center" prop="jobGroup">
@@ -108,7 +108,7 @@
       <el-table-column label="cron执行表达式" align="center" prop="cronExpression" :show-overflow-tooltip="true" />
       <el-table-column label="状态" align="center">
         <template #default="scope">
-          <el-switch
+          <el-switch aria-label="启用/停用切换"
             v-model="scope.row.status"
             active-value="0"
             inactive-value="1"

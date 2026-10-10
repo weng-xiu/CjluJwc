@@ -136,7 +136,7 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12"><el-form-item label="每门课班数"><el-input-number v-model="batchForm.classCount" :min="1" :max="50" controls-position="right" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="跳过已存在"><el-switch v-model="batchForm.skipExisting" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="跳过已存在"><el-switch aria-label="跳过已存在" v-model="batchForm.skipExisting" /></el-form-item></el-col>
         </el-row>
       </el-form>
       <el-alert v-if="batchResult" :closable="false" type="success" class="mb8"

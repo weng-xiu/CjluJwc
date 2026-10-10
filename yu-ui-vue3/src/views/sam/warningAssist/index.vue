@@ -94,7 +94,7 @@
     <el-dialog title="完结帮扶任务" v-model="finishOpen" width="520px" append-to-body>
       <el-form ref="finishForm" :model="finishForm" label-width="120px">
         <el-form-item label="完结说明"><el-input v-model="finishForm.finishRemark" type="textarea" :rows="3" placeholder="帮扶成效总结"/></el-form-item>
-        <el-form-item label="同步解除预警"><el-switch v-model="finishForm.resolveWarning"/></el-form-item>
+        <el-form-item label="同步解除预警"><el-switch aria-label="同步解除预警" v-model="finishForm.resolveWarning"/></el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer"><el-button type="primary" @click="submitFinish">确 定</el-button><el-button @click="finishOpen=false">取 消</el-button></div>
