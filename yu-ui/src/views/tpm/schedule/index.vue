@@ -7,14 +7,10 @@
         </el-select>
       </el-form-item>
       <el-form-item label="开课" prop="offeringId">
-        <el-select v-model="queryParams.offeringId" placeholder="请选择开课" clearable filterable>
-          <el-option v-for="item in offeringOptions" :key="item.offeringId" :label="offeringLabel(item)" :value="item.offeringId" />
-        </el-select>
+        <remote-select v-model="queryParams.offeringId" :api="apiListOffering" search-key="courseName" value-key="offeringId" :formatter="offeringLabel" placeholder="输入课程名搜索开课" />
       </el-form-item>
       <el-form-item label="教室" prop="classroomId">
-        <el-select v-model="queryParams.classroomId" placeholder="请选择教室" clearable filterable>
-          <el-option v-for="item in classroomOptions" :key="item.classroomId" :label="item.classroomName" :value="item.classroomId" />
-        </el-select>
+        <remote-select v-model="queryParams.classroomId" :api="apiListClassroom" search-key="classroomName" value-key="classroomId" label-key="classroomName" placeholder="输入教室名搜索" />
       </el-form-item>
       <el-form-item label="状态" prop="status"><el-select v-model="queryParams.status" placeholder="请选择状态" clearable><el-option v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.label" :value="dict.value"/></el-select></el-form-item>
       <el-form-item><el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button><el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button></el-form-item>
@@ -61,14 +57,10 @@
     <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="开课" prop="offeringId">
-          <el-select v-model="form.offeringId" placeholder="请选择开课（课程名-教师名）" filterable clearable style="width:100%">
-            <el-option v-for="item in offeringOptions" :key="item.offeringId" :label="offeringLabel(item)" :value="item.offeringId" />
-          </el-select>
+          <remote-select v-model="form.offeringId" :api="apiListOffering" search-key="courseName" value-key="offeringId" :formatter="offeringLabel" :initial-option="offeringInitial" placeholder="输入课程名搜索开课" style="width:100%" />
         </el-form-item>
         <el-form-item label="教室" prop="classroomId">
-          <el-select v-model="form.classroomId" placeholder="请选择教室" filterable clearable style="width:calc(100% - 90px)">
-            <el-option v-for="item in classroomOptions" :key="item.classroomId" :label="item.classroomName" :value="item.classroomId" />
-          </el-select>
+          <remote-select v-model="form.classroomId" :api="apiListClassroom" search-key="classroomName" value-key="classroomId" label-key="classroomName" :initial-option="classroomInitial" placeholder="输入教室名搜索" style="width:calc(100% - 90px)" />
           <el-button type="primary" plain icon="el-icon-search" style="margin-left:10px" @click="openClassroomRecommend">推荐</el-button>
         </el-form-item>
         <el-row :gutter="20">
@@ -242,14 +234,15 @@ import { listClassroom } from "@/api/brm/classroom"
 import { listSemester } from "@/api/brm/semester"
 import { detectConflicts, findAvailableClassrooms, autoAssignClassrooms, checkSlotConflict, dragAdjust } from "@/api/tpm/scheduleOpt"
 import WeekTimetable from "./components/WeekTimetable"
+import RemoteSelect from "@/components/RemoteSelect"
 export default {
-  name: "Schedule", components: { WeekTimetable }, dicts: ['sys_normal_disable', 'tpm_schedule_type'],
+  name: "Schedule", components: { WeekTimetable, RemoteSelect }, dicts: ['sys_normal_disable', 'tpm_schedule_type'],
   data() {
     return {
       loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0,
       scheduleList: [], title: "", open: false,
       // 下拉选项
-      offeringOptions: [], classroomOptions: [], semesterOptions: [],
+      semesterOptions: [], apiListOffering: listOffering, apiListClassroom: listClassroom,
       // 冲突相关
       conflictIds: new Set(),
       conflictList: [],
@@ -293,7 +286,9 @@ export default {
     failReasonRows() {
       const reasons = (this.autoAssignResult && this.autoAssignResult.failReasons) || []
       return reasons.map(r => ({ reason: r }))
-    }
+    },
+    offeringInitial() { return this.form && this.form.offeringId != null ? { value: this.form.offeringId, label: this.offeringLabel(this.form) } : null },
+    classroomInitial() { return this.form && this.form.classroomId != null ? { value: this.form.classroomId, label: this.form.classroomName } : null }
   },
   created() { this.getList(); this.loadOptions() },
   methods: {
@@ -304,8 +299,6 @@ export default {
       return course + teacher
     },
     loadOptions() {
-      listOffering({ pageNum: 1, pageSize: 1000 }).then(res => { this.offeringOptions = res.rows || [] })
-      listClassroom({ pageNum: 1, pageSize: 1000 }).then(res => { this.classroomOptions = res.rows || [] })
       listSemester({ pageNum: 1, pageSize: 1000 }).then(res => { this.semesterOptions = res.rows || [] })
     },
     weekDayLabel(day) {
@@ -336,7 +329,14 @@ export default {
     handleUpdate(row) {
       this.reset()
       const scheduleId = row.scheduleId || this.ids
-      getSchedule(scheduleId).then(response => { this.form = response.data; this.open = true; this.title = "修改排课" })
+      const src = row.scheduleId ? row : (this.scheduleList.find(s => String(s.scheduleId) === String(this.ids)) || {})
+      getSchedule(scheduleId).then(response => {
+        this.form = response.data
+        this.form.courseName = this.form.courseName || src.courseName
+        this.form.teacherName = this.form.teacherName || src.teacherName
+        this.form.classroomName = this.form.classroomName || src.classroomName
+        this.open = true; this.title = "修改排课"
+      })
     },
     submitForm() {
       this.$refs["form"].validate(valid => {

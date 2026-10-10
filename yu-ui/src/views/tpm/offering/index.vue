@@ -7,14 +7,10 @@
         </el-select>
       </el-form-item>
       <el-form-item label="课程" prop="courseId">
-        <el-select v-model="queryParams.courseId" placeholder="请选择课程" clearable filterable>
-          <el-option v-for="item in courseOptions" :key="item.courseId" :label="item.courseName + (item.courseCode ? '（' + item.courseCode + '）' : '')" :value="item.courseId" />
-        </el-select>
+        <remote-select v-model="queryParams.courseId" :api="apiListCourseLib" search-key="courseName" value-key="courseId" :formatter="fmtCourse" placeholder="输入课程名搜索" />
       </el-form-item>
       <el-form-item label="教师" prop="teacherId">
-        <el-select v-model="queryParams.teacherId" placeholder="请选择教师" clearable filterable>
-          <el-option v-for="item in teacherOptions" :key="item.teacherId" :label="item.teacherName" :value="item.teacherId" />
-        </el-select>
+        <remote-select v-model="queryParams.teacherId" :api="apiListTeacher" search-key="teacherName" value-key="teacherId" :formatter="fmtTeacher" placeholder="输入教师名搜索" />
       </el-form-item>
       <el-form-item label="开课状态" prop="offeringStatus">
         <el-select v-model="queryParams.offeringStatus" placeholder="请选择开课状态" clearable>
@@ -75,18 +71,14 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="课程" prop="courseId">
-              <el-select v-model="form.courseId" placeholder="请选择课程" filterable clearable style="width:100%">
-                <el-option v-for="item in courseOptions" :key="item.courseId" :label="item.courseName" :value="item.courseId" />
-              </el-select>
+              <remote-select v-model="form.courseId" :api="apiListCourseLib" search-key="courseName" value-key="courseId" :formatter="fmtCourse" :initial-option="courseInitial" placeholder="输入课程名搜索" style="width:100%" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="教师" prop="teacherId">
-              <el-select v-model="form.teacherId" placeholder="请选择教师" filterable clearable style="width:100%">
-                <el-option v-for="item in teacherOptions" :key="item.teacherId" :label="item.teacherName + (item.teacherCode ? '（' + item.teacherCode + '）' : '')" :value="item.teacherId" />
-              </el-select>
+              <remote-select v-model="form.teacherId" :api="apiListTeacher" search-key="teacherName" value-key="teacherId" :formatter="fmtTeacher" :initial-option="teacherInitial" placeholder="输入教师名搜索" style="width:100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -162,11 +154,13 @@ import { listTeacher } from "@/api/brm/teacher"
 import { listCampus } from "@/api/brm/campus"
 import { listPlan } from "@/api/tpm/plan"
 import { listDept } from "@/api/brm/dept"
+import RemoteSelect from "@/components/RemoteSelect"
 export default {
   name: "Offering", dicts: ['sys_normal_disable', 'tpm_offering_status'],
+  components: { RemoteSelect },
   data() { return {
     loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, offeringList: [], title: "", open: false,
-    semesterOptions: [], courseOptions: [], teacherOptions: [], campusOptions: [],
+    semesterOptions: [], campusOptions: [], apiListCourseLib: listCourseLib, apiListTeacher: listTeacher,
     planOptions: [], deptOptions: [],
     batchOpen: false, batchLoading: false, batchResult: null,
     batchForm: { planId: null, semesterId: null, semesterOrder: null, campusId: null, teacherDeptId: null, defaultCapacity: null, classCount: 1, skipExisting: true },
@@ -174,12 +168,16 @@ export default {
     queryParams: { pageNum: 1, pageSize: 10, semesterId: null, courseId: null, teacherId: null, offeringStatus: null, status: null },
     form: {}, rules: { semesterId: [{ required: true, message: "学期不能为空", trigger: "change" }], courseId: [{ required: true, message: "课程不能为空", trigger: "change" }] }
   } },
+  computed: {
+    courseInitial() { return this.form && this.form.courseId != null ? { value: this.form.courseId, label: this.fmtCourse(this.form) } : null },
+    teacherInitial() { return this.form && this.form.teacherId != null ? { value: this.form.teacherId, label: this.fmtTeacher(this.form) } : null }
+  },
   created() { this.getList(); this.loadOptions() },
   methods: {
+    fmtCourse(row) { return (row.courseName || '') + (row.courseCode ? '（' + row.courseCode + '）' : '') },
+    fmtTeacher(row) { return (row.teacherName || '') + (row.teacherCode ? '（' + row.teacherCode + '）' : '') },
     loadOptions() {
       listSemester({ pageNum: 1, pageSize: 1000 }).then(res => { this.semesterOptions = res.rows || [] })
-      listCourseLib({ pageNum: 1, pageSize: 1000 }).then(res => { this.courseOptions = res.rows || [] })
-      listTeacher({ pageNum: 1, pageSize: 1000 }).then(res => { this.teacherOptions = res.rows || [] })
       listCampus({ pageNum: 1, pageSize: 1000 }).then(res => { this.campusOptions = res.rows || [] })
       listPlan({ pageNum: 1, pageSize: 1000 }).then(res => { this.planOptions = res.rows || [] })
       listDept().then(res => { this.deptOptions = res.data || [] })
@@ -191,7 +189,7 @@ export default {
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.offeringId); this.single = selection.length !== 1; this.multiple = !selection.length },
     handleAdd() { this.reset(); this.open = true; this.title = "添加开课计划" },
-    handleUpdate(row) { this.reset(); const offeringId = row.offeringId || this.ids; getOffering(offeringId).then(response => { this.form = response.data; this.open = true; this.title = "修改开课计划" }) },
+    handleUpdate(row) { this.reset(); const offeringId = row.offeringId || this.ids; const src = row.offeringId ? row : (this.offeringList.find(o => String(o.offeringId) === String(this.ids)) || {}); getOffering(offeringId).then(response => { this.form = response.data; this.form.courseName = this.form.courseName || src.courseName; this.form.courseCode = this.form.courseCode || src.courseCode; this.form.teacherName = this.form.teacherName || src.teacherName; this.form.teacherCode = this.form.teacherCode || src.teacherCode; this.open = true; this.title = "修改开课计划" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.offeringId != null) { updateOffering(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addOffering(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const offeringIds = row.offeringId || this.ids; this.$modal.confirm('是否确认删除开课计划编号为"' + offeringIds + '"的数据项？').then(function() { return delOffering(offeringIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleConfirm(row) {
