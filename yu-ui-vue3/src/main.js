@@ -12,6 +12,7 @@ import '@/assets/styles/tokens.scss' // U1 设计令牌（--dt-*，含暗色重�
 import '@/assets/styles/responsive.scss' // U2 响应式三档断点（≥1920/1367–1919/≤1366）
 import '@/assets/styles/index.scss'
 import '@/assets/styles/ruoyi.scss'
+import '@/assets/styles/a11y.scss' // U5 无障碍基线（focus-visible/减少动画/skip-link，置于旧样式后覆盖 outline:none）
 import '@/assets/icons' // 构建 svg 雪碧图
 import { initDarkMode } from '@/utils/theme'
 import { applyThemeColor, getStoredThemeColor } from '@/utils/uiTheme'

@@ -105,7 +105,7 @@
       <el-table-column label="显示顺序" prop="roleSort" width="100" />
       <el-table-column label="状态" align="center" width="100">
         <template slot-scope="scope">
-          <el-switch
+          <el-switch aria-label="启用/停用切换"
             v-model="scope.row.status"
             active-value="0"
             inactive-value="1"

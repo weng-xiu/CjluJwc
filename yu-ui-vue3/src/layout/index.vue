@@ -1,5 +1,6 @@
 <template>
   <div :class="classObj" class="app-wrapper" :style="{ '--current-color': theme }">
+    <a class="skip-link" href="#app-main" @click="focusMain">跳到主内容</a>
     <div v-if="device === 'mobile' && sidebar.opened" class="drawer-bg" @click="handleClickOutside" />
     <sidebar v-if="!sidebar.hide" class="sidebar-container" />
     <div :class="{ hasTagsView: needTagsView, sidebarHide: sidebar.hide }" class="main-container">
@@ -45,6 +46,13 @@ export default {
   methods: {
     handleClickOutside() {
       this.$store.dispatch('app/closeSideBar', { withoutAnimation: false })
+    },
+    // U5 无障碍：skip-link 目标为 tabindex=-1 容器，部分浏览器 href 徒标不够，显式聚焦+读屏可靠
+    focusMain() {
+      this.$nextTick(() => {
+        const el = document.getElementById('app-main')
+        if (el) el.focus()
+      })
     },
     setLayout() {
       this.$refs.settingRef.openSetting()

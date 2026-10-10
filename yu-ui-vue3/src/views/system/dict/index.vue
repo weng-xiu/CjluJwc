@@ -54,7 +54,7 @@
       <el-table-column label="字典名称" align="center" prop="dictName" :show-overflow-tooltip="true" />
       <el-table-column label="字典类型" align="center" :show-overflow-tooltip="true">
         <template #default="scope">
-          <a class="link-type" style="cursor: pointer" @click="handleViewData(scope.row)">{{ scope.row.dictType }}</a>
+          <a class="link-type" style="cursor: pointer" aria-label="查看字典详情" v-keyclick="() => handleViewData(scope.row)">{{ scope.row.dictType }}</a>
         </template>
       </el-table-column>
       <el-table-column label="状态" align="center" prop="status">

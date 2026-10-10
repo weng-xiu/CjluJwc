@@ -7,6 +7,7 @@ import './assets/styles/element-variables.scss'
 
 import '@/assets/styles/index.scss' // global css
 import '@/assets/styles/ruoyi.scss' // ruoyi css
+import '@/assets/styles/a11y.scss' // U5 无障碍基线（focus-visible/减少动画/skip-link，置于旧样式后覆盖 outline:none）
 import App from './App'
 import store from './store'
 import router from './router'

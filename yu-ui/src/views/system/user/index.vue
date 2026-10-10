@@ -54,7 +54,7 @@
           <el-table-column label="用户编号" align="center" key="userId" prop="userId" v-if="columns.userId.visible" />
           <el-table-column label="用户名称" align="center" key="userName" v-if="columns.userName.visible" :show-overflow-tooltip="true">
             <template slot-scope="scope">
-              <a class="link-type" style="cursor:pointer" @click="handleViewData(scope.row)">{{ scope.row.userName }}</a>
+              <a class="link-type" style="cursor:pointer" aria-label="查看用户详情" v-keyclick="() => handleViewData(scope.row)">{{ scope.row.userName }}</a>
             </template>
           </el-table-column>
           <el-table-column label="用户昵称" align="center" key="nickName" prop="nickName" v-if="columns.nickName.visible" :show-overflow-tooltip="true" />
@@ -62,7 +62,7 @@
           <el-table-column label="手机号码" align="center" key="phonenumber" prop="phonenumber" v-if="columns.phonenumber.visible" width="120" />
           <el-table-column label="状态" align="center" key="status" v-if="columns.status.visible">
             <template slot-scope="scope">
-              <el-switch v-model="scope.row.status" :loading="statusLoadingMap[scope.row.userId]" active-value="0" inactive-value="1" @change="handleStatusChange(scope.row)"></el-switch>
+              <el-switch aria-label="启用/停用切换" v-model="scope.row.status" :loading="statusLoadingMap[scope.row.userId]" active-value="0" inactive-value="1" @change="handleStatusChange(scope.row)"></el-switch>
             </template>
           </el-table-column>
           <el-table-column label="用户类别" align="center" prop="userCategory" width="100">

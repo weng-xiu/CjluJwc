@@ -71,7 +71,7 @@
           <el-table-column label="命中" align="center" prop="hitCount" width="70" />
           <el-table-column label="状态" align="center" prop="status" width="80">
             <template slot-scope="scope">
-              <el-switch
+              <el-switch aria-label="启用/停用切换"
                 v-model="scope.row.status"
                 active-value="0"
                 inactive-value="1"

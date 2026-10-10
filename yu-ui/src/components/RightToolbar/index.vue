@@ -2,15 +2,15 @@
   <div class="top-right-btn" :style="style">
     <el-row>
       <el-tooltip class="item" effect="dark" :content="showSearch ? '隐藏搜索' : '显示搜索'" placement="top" v-if="search">
-        <el-button size="mini" circle icon="el-icon-search" @click="toggleSearch()" />
+        <el-button size="mini" circle icon="el-icon-search" aria-label="切换搜索条件显隐" @click="toggleSearch()" />
       </el-tooltip>
       <el-tooltip class="item" effect="dark" content="刷新" placement="top">
-        <el-button size="mini" circle icon="el-icon-refresh" @click="refresh()" />
+        <el-button size="mini" circle icon="el-icon-refresh" aria-label="刷新列表" @click="refresh()" />
       </el-tooltip>
       <el-tooltip class="item" effect="dark" content="显隐列" placement="top" v-if="Object.keys(columns).length > 0">
-        <el-button size="mini" circle icon="el-icon-menu" @click="showColumn()" v-if="showColumnsType == 'transfer'"/>
+        <el-button size="mini" circle icon="el-icon-menu" aria-label="设置列显示隐藏" @click="showColumn()" v-if="showColumnsType == 'transfer'"/>
         <el-dropdown trigger="click" :hide-on-click="false" style="padding-left: 12px" v-if="showColumnsType == 'checkbox'">
-          <el-button size="mini" circle icon="el-icon-menu" />
+          <el-button size="mini" circle icon="el-icon-menu" aria-label="设置列显示隐藏" aria-haspopup="true" />
           <el-dropdown-menu slot="dropdown">
             <!-- 全选/反选 按钮 -->
             <el-dropdown-item>

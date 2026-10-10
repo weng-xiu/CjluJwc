@@ -1,5 +1,5 @@
 <template>
-  <section class="app-main">
+  <section class="app-main" id="app-main" role="main" tabindex="-1" aria-label="主要内容区">
     <transition name="fade-transform" mode="out-in">
       <keep-alive :include="cachedViews">
         <router-view v-if="!$route.meta.link" :key="key" />

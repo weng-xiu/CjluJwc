@@ -1,5 +1,5 @@
 <template>
-  <el-dialog :title="title" :visible.sync="dialogVisible" width="600px" append-to-body>
+  <el-dialog :title="title" :visible.sync="dialogVisible" width="600px" append-to-body :before-close="guardedBeforeClose">
     <el-form ref="form" :model="form" :rules="rules" label-width="80px">
       <el-row>
         <el-col :span="12">
@@ -90,7 +90,7 @@
     </el-form>
     <div slot="footer" class="dialog-footer">
       <el-button type="primary" @click="submitForm">确 定</el-button>
-      <el-button @click="cancel">取 消</el-button>
+      <el-button @click="guardedCancel(cancel)">取 消</el-button>
     </div>
   </el-dialog>
 </template>
@@ -100,11 +100,12 @@ import { getUser, addUser, updateUser, deptTreeSelect } from "@/api/system/user"
 import Treeselect from "@riophae/vue-treeselect"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css"
 import passwordRule from "@/utils/passwordRule"
+import dialogGuard from "@/utils/dialogGuard"
 import TeacherForm from "./TeacherForm"
 
 export default {
   name: "UserForm",
-  mixins: [passwordRule],
+  mixins: [passwordRule, dialogGuard],
   dicts: ['sys_normal_disable', 'sys_user_sex', 'sys_user_category'],
   components: { Treeselect, TeacherForm },
   data() {
@@ -175,6 +176,7 @@ export default {
           this.form.password = ""
           this.title = "修改用户"
           this.dialogVisible = true
+          this.captureDialogSnapshot()
         })
       } else {
         // 新增：先获取默认密码，再加载表单选项
@@ -187,6 +189,7 @@ export default {
           this.form.password = this.initPassword
           this.title = "添加用户"
           this.dialogVisible = true
+          this.captureDialogSnapshot()
         })
       }
     },

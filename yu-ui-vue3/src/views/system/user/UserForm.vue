@@ -1,5 +1,5 @@
 <template>
-  <el-dialog :title="title" v-model="dialogVisible" width="600px" append-to-body>
+  <el-dialog :title="title" v-model="dialogVisible" width="600px" append-to-body :before-close="guardedBeforeClose">
     <el-form ref="userFormRef" :model="form" :rules="rules" label-width="80px">
       <el-row>
         <el-col :span="12">
@@ -98,7 +98,7 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </template>
   </el-dialog>
@@ -110,11 +110,12 @@
 // this.$set(form, k, v) → 直接赋值；ref form → userFormRef；子组件导入带 .vue 后缀。业务逻辑不变。
 import { getUser, addUser, updateUser, deptTreeSelect } from '@/api/system/user'
 import passwordRule from '@/utils/passwordRule'
+import dialogGuard from '@/utils/dialogGuard'
 import TeacherForm from './TeacherForm.vue'
 
 export default {
   name: 'UserForm',
-  mixins: [passwordRule],
+  mixins: [passwordRule, dialogGuard],
   dicts: ['sys_normal_disable', 'sys_user_sex', 'sys_user_category'],
   components: { TeacherForm },
   data() {
@@ -185,6 +186,7 @@ export default {
           this.form.password = ''
           this.title = '修改用户'
           this.dialogVisible = true
+          this.captureDialogSnapshot()
         })
       } else {
         // 新增：先获取默认密码，再加载表单选项
@@ -197,6 +199,7 @@ export default {
           this.form.password = this.initPassword
           this.title = '添加用户'
           this.dialogVisible = true
+          this.captureDialogSnapshot()
         })
       }
     },

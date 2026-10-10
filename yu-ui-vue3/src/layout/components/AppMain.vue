@@ -1,5 +1,5 @@
 <template>
-  <section class="app-main" :style="style">
+  <section class="app-main" id="app-main" role="main" tabindex="-1" aria-label="主要内容区" :style="style">
     <router-view v-slot="{ Component, route }">
       <transition name="fade-transform" mode="out-in">
         <keep-alive :include="cachedViews">

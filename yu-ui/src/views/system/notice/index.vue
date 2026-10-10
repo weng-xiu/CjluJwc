@@ -74,7 +74,7 @@
       <el-table-column label="序号" align="center" prop="noticeId" width="100" />
       <el-table-column label="公告标题" align="center" :show-overflow-tooltip="true">
         <template slot-scope="scope">
-          <a class="link-type" style="cursor:pointer" @click="handleViewData(scope.row)">{{ scope.row.noticeTitle }}</a>
+          <a class="link-type" style="cursor:pointer" aria-label="查看公告详情" v-keyclick="() => handleViewData(scope.row)">{{ scope.row.noticeTitle }}</a>
         </template>
       </el-table-column>
       <el-table-column label="公告类型" align="center" prop="noticeType" width="100">
