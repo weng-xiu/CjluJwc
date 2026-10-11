@@ -60,7 +60,8 @@
       <el-col :span="1.5"><el-button type="success" plain icon="UserFilled" size="small" @click="goToAssist" v-hasPermi="['sam:warningAssist:list']">帮扶管理</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
-    <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
+    <app-skeleton :loading="loading && !list.length" :rows="6">
+        <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学生ID" align="center" prop="studentId" />
       <el-table-column label="学期" align="center" prop="semesterId">
@@ -80,6 +81,8 @@
         </template>
       </el-table-column>
     </el-table>
+        <app-empty v-if="!loading && !list.length" description="暂无预警记录，可调整查询条件或先执行预警计算" />
+        </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增/修改对话框 -->

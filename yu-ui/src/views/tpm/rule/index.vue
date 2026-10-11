@@ -44,7 +44,7 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="规则名称" align="center" prop="ruleName" min-width="120" show-overflow-tooltip />
       <el-table-column label="所属轮次" align="center" prop="roundId" min-width="120" show-overflow-tooltip>
-        <template slot-scope="scope">{{ roundFormat(scope.row.roundId) }}</template>
+        <template slot-scope="scope"><span>{{ scope.row.roundName || scope.row.roundId }}</span></template>
       </el-table-column>
       <el-table-column label="规则类型" align="center" prop="ruleType" width="120">
         <template slot-scope="scope"><dict-tag :options="dict.type.tpm_rule_type" :value="scope.row.ruleType"/></template>
@@ -121,11 +121,8 @@ export default {
       listRule(this.queryParams).then(response => { this.ruleList = response.rows; this.total = response.total; this.loading = false })
     },
     getRounds() {
+      // 轮次为小体量业务字典（逐学期递增）保留全量，仅供选择器；表格展示改后端行直接回 roundName（N7 禁全量映射）
       listRound({ pageNum: 1, pageSize: 1000 }).then(response => { this.roundOptions = response.rows || [] })
-    },
-    roundFormat(roundId) {
-      const item = this.roundOptions.find(r => r.roundId === roundId)
-      return item ? item.roundName : roundId
     },
     cancel() { this.open = false; this.reset() },
     reset() {

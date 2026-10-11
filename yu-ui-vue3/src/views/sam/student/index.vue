@@ -14,7 +14,8 @@
       <el-col :span="1.5"><el-button type="info" plain icon="Upload" size="small" @click="handleImport" v-hasPermi="['sam:student:import']">导入</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
-    <el-table v-loading="loading" :data="studentList" @selection-change="handleSelectionChange">
+    <app-skeleton :loading="loading && !studentList.length" :rows="6">
+        <el-table v-loading="loading" :data="studentList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学号" align="center" prop="studentNo" />
       <el-table-column label="姓名" align="center" prop="studentName" />
@@ -29,6 +30,8 @@
         </template>
       </el-table-column>
     </el-table>
+        <app-empty v-if="!loading && !studentList.length" description="暂无学生数据，可调整查询条件、点击「新增」或通过数据对接同步" />
+        </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" v-model="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">

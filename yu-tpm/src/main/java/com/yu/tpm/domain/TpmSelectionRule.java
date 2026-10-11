@@ -52,6 +52,10 @@ public class TpmSelectionRule extends BaseEntity
     /** 删除标志（0代表存在 2代表删除） */
     private String delFlag;
 
+    /** 轮次名称（冗余展示，非本表存储列，由关联查询装配，N7 字典用途页后端行直接回名称） */
+    @Excel(name = "轮次名称")
+    private String roundName;
+
     public Long getRuleId() { return ruleId; }
     public void setRuleId(Long ruleId) { this.ruleId = ruleId; }
 
@@ -84,11 +88,15 @@ public class TpmSelectionRule extends BaseEntity
     public String getDelFlag() { return delFlag; }
     public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
 
+    public String getRoundName() { return roundName; }
+    public void setRoundName(String roundName) { this.roundName = roundName; }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("ruleId", getRuleId())
             .append("roundId", getRoundId())
+            .append("roundName", getRoundName())
             .append("ruleName", getRuleName())
             .append("ruleType", getRuleType())
             .append("restrictTarget", getRestrictTarget())

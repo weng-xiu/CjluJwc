@@ -41,7 +41,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="meetingList" @selection-change="handleSelectionChange">
+    <app-skeleton :loading="loading && !meetingList.length" :rows="6">
+        <el-table v-loading="loading" :data="meetingList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="会议ID" align="center" prop="meetingId" width="80" />
       <el-table-column label="会议主题" align="center" prop="meetingTheme" :show-overflow-tooltip="true" />
@@ -76,6 +77,8 @@
         </template>
       </el-table-column>
     </el-table>
+        <app-empty v-if="!loading && !meetingList.length" description="暂无会议安排，可调整查询条件或点击「新增」创建会议" />
+        </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 

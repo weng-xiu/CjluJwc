@@ -48,7 +48,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="typeList" @selection-change="handleSelectionChange">
+    <app-skeleton :loading="loading && !typeList.length" :rows="6">
+        <el-table v-loading="loading" :data="typeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="字典编号" align="center" prop="dictId" />
       <el-table-column label="字典名称" align="center" prop="dictName" :show-overflow-tooltip="true" />
@@ -76,6 +77,8 @@
         </template>
       </el-table-column>
     </el-table>
+        <app-empty v-if="!loading && !typeList.length" description="暂无字典类型，可调整查询条件或点击「新增」创建字典类型" />
+        </app-skeleton>
 
     <pagination
       v-show="total > 0"

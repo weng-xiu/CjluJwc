@@ -70,9 +70,7 @@
           <el-input v-model="form.equipment" placeholder="请输入设备配置，如投影仪、白板" />
         </el-form-item>
         <el-form-item label="管理员">
-          <el-select v-model="form.adminId" placeholder="请选择管理员" style="width: 100%;" @change="handleAdminChange">
-            <el-option v-for="item in userOptions" :key="item.userId" :label="item.nickName || item.userName" :value="item.userId" />
-          </el-select>
+          <remote-select v-model="form.adminId" :api="apiUser" search-key="nickName" value-key="userId" :formatter="fmtUser" :initial-option="adminInitial" :style="{width: '100%'}" @change="handleAdminChange" />
         </el-form-item>
         <el-form-item label="状态">
           <el-radio-group v-model="form.status">
@@ -125,9 +123,11 @@
 <script>
 import { listMeetingRoom, getMeetingRoom, delMeetingRoom, addMeetingRoom, updateMeetingRoom, exportMeetingRoom, roomOccupancy } from "@/api/oa/meetingRoom"
 import { listUser } from "@/api/system/user"
+import RemoteSelect from "@/components/RemoteSelect"
 
 export default {
   name: "OaMeetingRoom",
+  components: { RemoteSelect },
   dicts: ['sys_normal_disable'],
   data() {
     return {
@@ -140,7 +140,8 @@ export default {
       meetingRoomList: [],
       title: "",
       open: false,
-      userOptions: [],
+      // A7/N7：管理员为用户大实体，改 RemoteSelect 远程搜索（原 listUser pageSize:1000 全量拉取已移除）
+      apiUser: listUser,
       // O2：占用日历
       occupancyOpen: false,
       occupancyLoading: false,
@@ -164,7 +165,15 @@ export default {
   },
   created() {
     this.getList()
-    this.getUserOptions()
+  },
+  computed: {
+    // 编辑回显：选中管理员不在远程结果集时，用已存的冗余列 adminName 合成展示项，避免显裸 ID
+    adminInitial() {
+      if (this.form.adminId != null && this.form.adminName) {
+        return { value: this.form.adminId, label: this.form.adminName }
+      }
+      return null
+    }
   },
   methods: {
     getList() {
@@ -175,14 +184,12 @@ export default {
         this.loading = false
       })
     },
-    getUserOptions() {
-      listUser({ pageSize: 1000 }).then(response => {
-        this.userOptions = response.rows || []
-      })
+    fmtUser(user) {
+      return user.nickName || user.userName
     },
-    handleAdminChange(val) {
-      const user = this.userOptions.find(item => item.userId === val)
-      this.form.adminName = user ? (user.nickName || user.userName) : undefined
+    handleAdminChange(val, opt, label) {
+      // RemoteSelect change 附带选中行展示名（含合成回显项）；清空时 label 为空串，冗余列一并置空
+      this.form.adminName = label || undefined
     },
     cancel() {
       this.open = false

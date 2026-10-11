@@ -116,9 +116,7 @@
           <el-select v-if="batchForm.bizType === 'GRADE'" v-model="batchForm.scopeId" placeholder="请选择学期" filterable style="width: 100%">
             <el-option v-for="s in semesterOptions" :key="s.semesterId" :label="s.semesterName" :value="s.semesterId" />
           </el-select>
-          <el-select v-else v-model="batchForm.scopeId" placeholder="请选择考试" filterable style="width: 100%">
-            <el-option v-for="e in examOptions" :key="e.examId" :label="e.examName" :value="e.examId" />
-          </el-select>
+          <remote-select v-else v-model="batchForm.scopeId" :api="apiExam" search-key="examName" value-key="examId" label-key="examName" placeholder="请输入考试名称搜索" :style="{width: '100%'}" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -159,9 +157,11 @@
 import { listCredential, renderCredential, issueCredential, batchIssueCredential, printCredential, revokeCredential, verifyCredential } from "@/api/system/credential"
 import { listSemester } from "@/api/brm/semester"
 import { listExamPlan } from "@/api/aem/examPlan"
+import RemoteSelect from "@/components/RemoteSelect"
 
 export default {
   name: "Credential",
+  components: { RemoteSelect },
   dicts: ['sys_print_biz_type'],
   data() {
     return {
@@ -170,7 +170,8 @@ export default {
       total: 0,
       recordList: [],
       semesterOptions: [],
-      examOptions: [],
+      // A7/N7：考试计划随学期累积，改 RemoteSelect 远程搜索（原 pageSize:1000 全量拉取已移除）；学期为小体量字典保留全量
+      apiExam: listExamPlan,
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -228,7 +229,6 @@ export default {
   created() {
     this.getList()
     listSemester({ pageNum: 1, pageSize: 1000 }).then(res => { this.semesterOptions = res.rows || [] })
-    listExamPlan({ pageNum: 1, pageSize: 1000 }).then(res => { this.examOptions = res.rows || [] })
   },
   methods: {
     getList() {

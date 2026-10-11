@@ -111,6 +111,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !list.length" :rows="8">
     <el-table ref="tables" v-loading="loading" :data="list" @selection-change="handleSelectionChange" :default-sort="defaultSort" @sort-change="handleSortChange">
       <el-table-column type="selection" width="50" align="center" />
       <el-table-column label="日志编号" align="center" prop="operId" />
@@ -151,6 +152,8 @@
         </template>
       </el-table-column>
     </el-table>
+        <app-empty v-if="!loading && !list.length" description="暂无操作日志，系统运行后将自动记录用户操作" />
+        </app-skeleton>
 
     <pagination
       v-show="total>0"

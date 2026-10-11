@@ -147,7 +147,9 @@ export default {
     },
     handleInput(val) {
       this.$emit('input', val)
-      this.$emit('change', val)
+      // change 附带选中行对象与展示名（合成回显项也能取到 label），供页面需同步冗余名称列的场景消费（如 meetingRoom 管理员 adminName）；未监听的第二/三参向后兼容
+      const opt = Array.isArray(val) ? null : this.displayOptions.find(o => String(o[this.valueKey]) === String(val)) || null
+      this.$emit('change', val, opt, opt ? this.optLabel(opt) : '')
     },
     handleVisibleChange(visible) {
       // 首次展开时预载首页，避免挂载即请求（多表单页可减少并发压力）

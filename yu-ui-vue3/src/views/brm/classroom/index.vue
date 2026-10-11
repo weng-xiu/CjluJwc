@@ -16,6 +16,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="Upload" size="small" @click="handleImport" v-hasPermi="['brm:classroom:import']">导入</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !classroomList.length" :rows="6">
     <el-table v-loading="loading" :data="classroomList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="教室名称" align="center" prop="classroomName" />
@@ -30,6 +31,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !classroomList.length" description="暂无教室数据，可调整查询条件、点击「新增」或「导入」批量录入" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">

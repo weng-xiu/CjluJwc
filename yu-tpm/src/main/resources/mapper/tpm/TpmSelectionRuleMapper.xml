@@ -6,6 +6,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="TpmSelectionRule" id="TpmSelectionRuleResult">
         <result property="ruleId"         column="rule_id"          />
         <result property="roundId"        column="round_id"         />
+        <result property="roundName"      column="round_name"       />
         <result property="ruleName"       column="rule_name"        />
         <result property="ruleType"       column="rule_type"        />
         <result property="restrictTarget" column="restrict_target"  />
@@ -20,21 +21,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"         column="remark"           />
     </resultMap>
     <sql id="selectTpmSelectionRuleVo">
-        select rule_id, round_id, rule_name, rule_type, restrict_target, restrict_value, priority, status, del_flag, create_by, create_time, update_by, update_time, remark from tpm_selection_rule
+        select r.rule_id, r.round_id, r.rule_name, r.rule_type, r.restrict_target, r.restrict_value, r.priority, r.status, r.del_flag, r.create_by, r.create_time, r.update_by, r.update_time, r.remark, rd.round_name as round_name
+        from tpm_selection_rule r
+        left join tpm_selection_round rd on r.round_id = rd.round_id
     </sql>
     <select id="selectTpmSelectionRuleList" parameterType="TpmSelectionRule" resultMap="TpmSelectionRuleResult">
         <include refid="selectTpmSelectionRuleVo"/>
         <where>
-            del_flag = '0'
-            <if test="roundId != null"> and round_id = #{roundId}</if>
-            <if test="ruleName != null and ruleName.trim() != ''"> and rule_name like concat('%', #{ruleName}, '%')</if>
-            <if test="ruleType != null and ruleType.trim() != ''"> and rule_type = #{ruleType}</if>
-            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            r.del_flag = '0'
+            <if test="roundId != null"> and r.round_id = #{roundId}</if>
+            <if test="ruleName != null and ruleName.trim() != ''"> and r.rule_name like concat('%', #{ruleName}, '%')</if>
+            <if test="ruleType != null and ruleType.trim() != ''"> and r.rule_type = #{ruleType}</if>
+            <if test="status != null and status.trim() != ''"> and r.status = #{status}</if>
         </where>
-        order by priority asc
+        order by r.priority asc
     </select>
     <select id="selectTpmSelectionRuleByRuleId" parameterType="Long" resultMap="TpmSelectionRuleResult">
-        <include refid="selectTpmSelectionRuleVo"/> where rule_id = #{ruleId} and del_flag = '0'
+        <include refid="selectTpmSelectionRuleVo"/> where r.rule_id = #{ruleId} and r.del_flag = '0'
     </select>
     <insert id="insertTpmSelectionRule" parameterType="TpmSelectionRule" useGeneratedKeys="true" keyProperty="ruleId">
         insert into tpm_selection_rule
