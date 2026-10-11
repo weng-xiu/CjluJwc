@@ -6,6 +6,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="TpmTeacherForbidden" id="TpmTeacherForbiddenResult">
         <result property="forbiddenId"   column="forbidden_id"   />
         <result property="semesterId"    column="semester_id"    />
+        <result property="semesterName"  column="semester_name"  />
         <result property="teacherId"     column="teacher_id"     />
         <result property="teacherName"   column="teacher_name"   />
         <result property="weekDay"       column="week_day"       />
@@ -22,10 +23,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <select id="selectTpmTeacherForbiddenList" parameterType="TpmTeacherForbidden" resultMap="TpmTeacherForbiddenResult">
-        select f.forbidden_id, f.semester_id, f.teacher_id, t.teacher_name, f.week_day, f.start_period,
+        select f.forbidden_id, f.semester_id, s.semester_name, f.teacher_id, t.teacher_name, f.week_day, f.start_period,
                f.end_period, f.reason, f.status, f.del_flag, f.create_by, f.create_time, f.update_by, f.update_time, f.remark
         from tpm_teacher_forbidden f
         left join brm_teacher t on f.teacher_id = t.teacher_id
+        left join brm_semester s on f.semester_id = s.semester_id
         <where>
             f.del_flag = '0'
             <if test="semesterId != null"> and (f.semester_id = #{semesterId} or f.semester_id is null)</if>
@@ -38,10 +40,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectTpmTeacherForbiddenByForbiddenId" parameterType="Long" resultMap="TpmTeacherForbiddenResult">
-        select f.forbidden_id, f.semester_id, f.teacher_id, t.teacher_name, f.week_day, f.start_period,
+        select f.forbidden_id, f.semester_id, s.semester_name, f.teacher_id, t.teacher_name, f.week_day, f.start_period,
                f.end_period, f.reason, f.status, f.del_flag, f.create_by, f.create_time, f.update_by, f.update_time, f.remark
         from tpm_teacher_forbidden f
         left join brm_teacher t on f.teacher_id = t.teacher_id
+        left join brm_semester s on f.semester_id = s.semester_id
         where f.forbidden_id = #{forbiddenId} and f.del_flag = '0'
     </select>
 

@@ -1,9 +1,9 @@
 <template>
   <div class="login">
     <!-- 语言切换 -->
-    <div class="lang-switch">
-      <span :class="{ active: language === 'en' }" @click="language = 'en'">ENG</span>
-      <span :class="{ active: language === 'zh' }" @click="language = 'zh'">中文</span>
+    <div class="lang-switch" role="group" aria-label="语言切换">
+      <span :class="{ active: language === 'en' }" :aria-pressed="language === 'en' ? 'true' : 'false'" v-keyclick="() => (language = 'en')">ENG</span>
+      <span :class="{ active: language === 'zh' }" :aria-pressed="language === 'zh' ? 'true' : 'false'" v-keyclick="() => (language = 'zh')">中文</span>
     </div>
 
     <!-- 登录主体卡片 -->
@@ -27,16 +27,28 @@
         </div>
 
         <!-- 登录方式切换 -->
-        <div class="login-tabs">
+        <div class="login-tabs" role="tablist" aria-label="登录方式">
           <div
             class="tab-item"
+            id="login-tab-account"
+            role="tab"
             :class="{ active: loginType === 'account' }"
-            @click="loginType = 'account'"
+            :aria-selected="loginType === 'account' ? 'true' : 'false'"
+            :tabindex="loginType === 'account' ? 0 : -1"
+            aria-controls="login-panel-account"
+            v-keyclick="() => (loginType = 'account')"
+            @keydown="onTabKeydown($event, 'account')"
           >账号登录</div>
           <div
             class="tab-item"
+            id="login-tab-sms"
+            role="tab"
             :class="{ active: loginType === 'sms' }"
-            @click="loginType = 'sms'"
+            :aria-selected="loginType === 'sms' ? 'true' : 'false'"
+            :tabindex="loginType === 'sms' ? 0 : -1"
+            aria-controls="login-panel-sms"
+            v-keyclick="() => (loginType = 'sms')"
+            @keydown="onTabKeydown($event, 'sms')"
           >验证码登录</div>
         </div>
 
@@ -44,6 +56,9 @@
         <el-form
           v-show="loginType === 'account'"
           ref="loginForm"
+          id="login-panel-account"
+          role="tabpanel"
+          aria-labelledby="login-tab-account"
           :model="loginForm"
           :rules="loginRules"
           class="login-form"
@@ -81,7 +96,7 @@
               <svg-icon slot="prefix" icon-class="validCode" class="el-input__icon input-icon" />
             </el-input>
             <div class="login-code">
-              <img :src="codeUrl" class="login-code-img" @click="getCode">
+              <img :src="codeUrl" class="login-code-img" alt="点击刷新验证码" v-keyclick="getCode">
             </div>
           </el-form-item>
           <!-- K3 MFA 二次鉴别：账号已启用多因子时由后端提示后浮现 -->
@@ -104,9 +119,9 @@
               <span class="remember-text">7天免登录</span>
             </el-checkbox>
             <div class="option-links">
-              <a class="link-item" @click.prevent="$message.info('功能开发中')">在线帮助</a>
-              <a class="link-item" @click.prevent="$message.info('功能开发中')">账号激活</a>
-              <a class="link-item" @click.prevent="$message.info('功能开发中')">忘记密码</a>
+              <a class="link-item" v-keyclick="() => $message.info('功能开发中')">在线帮助</a>
+              <a class="link-item" v-keyclick="() => $message.info('功能开发中')">账号激活</a>
+              <a class="link-item" v-keyclick="() => $message.info('功能开发中')">忘记密码</a>
             </div>
           </div>
 
@@ -125,7 +140,7 @@
         </el-form>
 
         <!-- 验证码登录表单（占位） -->
-        <div v-show="loginType === 'sms'" class="sms-placeholder">
+        <div v-show="loginType === 'sms'" class="sms-placeholder" id="login-panel-sms" role="tabpanel" aria-labelledby="login-tab-sms">
           <el-form class="login-form">
             <el-form-item>
               <el-input placeholder="请输入手机号">
@@ -143,9 +158,9 @@
                 <span class="remember-text">7天免登录</span>
               </el-checkbox>
               <div class="option-links">
-                <a class="link-item" @click.prevent="$message.info('功能开发中')">在线帮助</a>
-                <a class="link-item" @click.prevent="$message.info('功能开发中')">账号激活</a>
-                <a class="link-item" @click.prevent="$message.info('功能开发中')">忘记密码</a>
+                <a class="link-item" v-keyclick="() => $message.info('功能开发中')">在线帮助</a>
+                <a class="link-item" v-keyclick="() => $message.info('功能开发中')">账号激活</a>
+                <a class="link-item" v-keyclick="() => $message.info('功能开发中')">忘记密码</a>
               </div>
             </div>
             <el-form-item style="width:100%;">
@@ -243,6 +258,27 @@ export default {
           this.loginForm.uuid = res.uuid
         }
       })
+    },
+    switchLoginTab(target) {
+      this.loginType = target
+      this.$nextTick(() => {
+        const el = document.getElementById('login-tab-' + target)
+        if (el) el.focus()
+      })
+    },
+    onTabKeydown(e, current) {
+      const order = ['account', 'sms']
+      const idx = order.indexOf(current)
+      let next = null
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        next = order[(idx + 1) % order.length]
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        next = order[(idx - 1 + order.length) % order.length]
+      }
+      if (next) {
+        e.preventDefault()
+        this.switchLoginTab(next)
+      }
     },
     getCookie() {
       const username = Cookies.get("username")

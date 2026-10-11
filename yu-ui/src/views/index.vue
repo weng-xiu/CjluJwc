@@ -42,7 +42,7 @@
             <span class="panel-title"><i class="el-icon-menu"></i> 快捷入口</span>
           </div>
           <div class="quick-grid">
-            <div class="quick-item" v-for="item in quickEntries" :key="item.name" @click="goQuick(item)">
+            <div class="quick-item" v-for="item in quickEntries" :key="item.name" v-keyclick="() => goQuick(item)">
               <div class="quick-icon" :style="{ background: item.bg, color: item.color }">
                 <i :class="item.icon"></i>
               </div>
@@ -129,16 +129,16 @@
             <span class="panel-title"><i class="el-icon-link"></i> 相关站点</span>
           </div>
           <div class="site-links">
-            <div class="site-link" @click="goTarget('https://www.yangtzeu.edu.cn')">
+            <div class="site-link" v-keyclick="() => goTarget('https://www.yangtzeu.edu.cn')">
               <i class="el-icon-school"></i> 长江大学官网
             </div>
-            <div class="site-link" @click="goTarget('https://jwc.yangtzeu.edu.cn')">
+            <div class="site-link" v-keyclick="() => goTarget('https://jwc.yangtzeu.edu.cn')">
               <i class="el-icon-office-building"></i> 教务处网站
             </div>
-            <div class="site-link" @click="goTarget('https://zs.yangtzeu.edu.cn')">
+            <div class="site-link" v-keyclick="() => goTarget('https://zs.yangtzeu.edu.cn')">
               <i class="el-icon-position"></i> 招生信息网
             </div>
-            <div class="site-link" @click="goTarget(portalUrl)">
+            <div class="site-link" v-keyclick="() => goTarget(portalUrl)">
               <i class="el-icon-monitor"></i> 服务门户
             </div>
           </div>

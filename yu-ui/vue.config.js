@@ -121,6 +121,15 @@ module.exports = {
                 test: /[\\/]node_modules[\\/]_?element-ui(.*)/, // in order to adapt to cnpm
                 priority: 20 // the weight needs to be larger than libs and app or it will be packaged into libs or app
               },
+              echarts: {
+                // N7 包体细化：echarts+zrender 体积大且仅图表页使用，单独拆组后随异步视图按需加载，
+                // 不再与全部初始依赖挤在 chunk-libs 里拖慢首屏（chunks: all 命中原属各异步 chunk 的公共 echarts）
+                name: 'chunk-echarts',
+                test: /[\\/]node_modules[\\/]_?(echarts|zrender)([\\/]|$)/, // 兼容 cnpm 下划线前缀目录
+                priority: 20,
+                chunks: 'all',
+                enforce: true
+              },
               commons: {
                 name: 'chunk-commons',
                 test: resolve('src/components'), // can customize your rules

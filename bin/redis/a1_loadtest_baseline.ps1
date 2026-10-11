@@ -1,7 +1,10 @@
-﻿# A1 高并发选课压测基线（无新依赖版）
-# 目标：对两道防超卖闸门给出可复现的并发证据（直连本地 Redis，等价重放后端原子原语）：
+﻿# A1/F6 高并发选课压测基线（无新依赖版）
+# 目标：对三道选课尖峰闸门给出可复现的并发证据（直连本地 Redis，等价重放后端原子原语）：
 #   1) 容量原子扣减（SelectionCacheManager.decrementCapacity = DECR）：N 并发抢 M 座，放行数恰为 M、不为负
 #   2) 削峰令牌桶（SelectionAdmission Lua：令牌桶+排队号同脚本原子）：放行不超突发容量、排队号严格单调无重复
+#   3) IP 限流闸门（RateLimiterAspect 执行 RedisConfig.limitScript 固定窗口 Lua）：窗口内放行恰为配额 count
+#   4) 令牌桶持续速率恢复（SelectionAdmission 完整 Lua 含时间补充项）：突发耗尽后按 rate/s 回血且封顶 burst
+# 指标：基线 3/4 逐次记录闸门往返延迟，输出 avg/p95/max（含 redis-cli 进程启动开销，量级参考；Lua 本体微秒级）
 # 说明：这是入口级原子性基线（非全栈 HTTP 压测，后者需 JMeter/Gatling 等新外部依赖，离线环境不引入）。
 #       基线 2 以内联命令重放令牌桶语义（不含时间补充项，等价于亚秒窗口内速率增量≈0 的真实尖峰场景）。
 # 用法：需要先拉起本地 Redis；powershell -File a1_loadtest_baseline.ps1 [-Rounds 100] [-Seats 20]
@@ -67,6 +70,66 @@ if ($allowedCnt -ne $burst -or $distinctSeq -ne $N) {
 }
 Write-Host "PASS: 突发窗口内放行恰为桶容量 $burst，$N 个排队号严格单调无重复（Lua 原子发号成立）" -ForegroundColor Green
 
+# ---------- 基线 3：IP 限流闸门（重放 RedisConfig.limitScript 固定窗口 Lua，与 RateLimiterAspect 同判定：返回值>配额即拒绝） ----------
+$limitKey = "loadtest:limit:ip1"
+RedisCmd "DEL $limitKey" | Out-Null
+$limitQuota = 20; $limitN = 40
+# 与 Java 侧 limitScriptText 同一脚本（压平为单行）
+$limitLua = 'local key = KEYS[1] local count = tonumber(ARGV[1]) local time = tonumber(ARGV[2]) local current = redis.call(''get'', key); if current and tonumber(current) > count then return tonumber(current); end current = redis.call(''incr'', key) if tonumber(current) == 1 then redis.call(''expire'', key, time) end return tonumber(current);'
+$limitCmd = 'EVAL "' + $limitLua + '" 1 ' + $limitKey + ' ' + $limitQuota + ' 60'
+$allowedL = 0; $latL = @()
+$sw3 = [System.Diagnostics.Stopwatch]::StartNew()
+for ($i = 0; $i -lt $limitN; $i++) {
+    $t0 = [System.Diagnostics.Stopwatch]::StartNew()
+    $num = [long]((RedisCmd $limitCmd) -replace '\D','')
+    $t0.Stop(); $latL += $t0.Elapsed.TotalMilliseconds
+    if ($num -le $limitQuota) { $allowedL++ }
+}
+$sw3.Stop()
+Write-Host ("[3] IP限流闸门: 窗口内 {0} 请求放行 {1}(配额 {2})，耗时 {3}ms" -f $limitN, $allowedL, $limitQuota, $sw3.ElapsedMilliseconds)
+$sumL = ($latL | Measure-Object -Average -Maximum)
+$p95L = ($latL | Sort-Object)[[Math]::Ceiling(0.95 * $latL.Count) - 1]
+Write-Host ("     闸门延迟: avg {0:F1}ms / p95 {1:F1}ms / max {2:F1}ms" -f $sumL.Average, $p95L, $sumL.Maximum)
+if ($allowedL -ne $limitQuota) {
+    Write-Host "FAIL: 固定窗口放行数($allowedL)不等于配额($limitQuota)" -ForegroundColor Red; exit 1
+}
+Write-Host "PASS: 窗口内放行恰为配额 $limitQuota，超限 $($limitN-$allowedL) 个请求全部被拒" -ForegroundColor Green
+
+# ---------- 基线 4：令牌桶持续速率恢复（SelectionAdmission 完整 Lua 含时间补充项） ----------
+# 说明：now 为后端应用层注入 ARGV 的逻辑时钟，此处同样注入确定性时间戳（A 阶段窗口内共 14ms，
+# 回血≈ 0.14 枚可忽略；B 阶段模拟静默 1.2s，回血 min(burst, 12)=5 封顶），不受 redis-cli 进程开销干扰。
+$admitLua = 'local bucket = KEYS[1] local seqKey = KEYS[2] local rate = tonumber(ARGV[1]) local burst = tonumber(ARGV[2]) local now = tonumber(ARGV[3]) local ttl = tonumber(ARGV[4]) local state = redis.call(''HMGET'', bucket, ''t'', ''ts'') local tokens = tonumber(state[1]) local ts = tonumber(state[2]) if tokens == nil then tokens = burst; ts = now end local elapsed = now - ts; if elapsed < 0 then elapsed = 0 end tokens = math.min(burst, tokens + (elapsed / 1000.0) * rate) local allowed = 0 if tokens >= 1 then tokens = tokens - 1; allowed = 1 end redis.call(''HSET'', bucket, ''t'', tokens, ''ts'', now) redis.call(''PEXPIRE'', bucket, ttl) local seq = redis.call(''INCR'', seqKey) redis.call(''PEXPIRE'', seqKey, ttl) return {allowed, seq}'
+$bucketKey4 = "loadtest:admit:bucket:r4"; $seqKey4 = "loadtest:admit:seq:r4"
+RedisCmd "DEL $bucketKey4 $seqKey4" | Out-Null
+$rate4 = 10; $burst4 = 5; $lat4 = @(); $t0Base = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+function Admit4([long]$nowMs) {
+    $cmd = 'EVAL "' + $admitLua + '" 2 ' + $bucketKey4 + ' ' + $seqKey4 + ' ' + $rate4 + ' ' + $burst4 + ' ' + $nowMs + ' 60000'
+    $out = RedisCmd $cmd
+    return [long]($out[0] -replace '\D','')
+}
+# 阶段 A：突发 8 连发（逻辑时钟步进 2ms，应只放行前 burst4=5 个，桶耗尽）
+$allowedA = 0
+for ($i = 0; $i -lt ($burst4 + 3); $i++) {
+    $t0 = [System.Diagnostics.Stopwatch]::StartNew()
+    if ((Admit4 ($t0Base + $i * 2)) -eq 1) { $allowedA++ }
+    $t0.Stop(); $lat4 += $t0.Elapsed.TotalMilliseconds
+}
+# 阶段 B：逻辑时钟前进 1.2s（回血 min(burst, 0+1.2*rate)=5 枚），再 5 连发应全放行且不超 burst 封顶
+$allowedB = 0
+for ($i = 0; $i -lt $burst4; $i++) {
+    $t0 = [System.Diagnostics.Stopwatch]::StartNew()
+    if ((Admit4 ($t0Base + 1200 + $i * 2)) -eq 1) { $allowedB++ }
+    $t0.Stop(); $lat4 += $t0.Elapsed.TotalMilliseconds
+}
+Write-Host ("[4] 令牌桶持续速率: 突发8连发放行 {0}(应=突发 {1})，逻辑静默1.2s后5连发放行 {2}(回血封顶 {1})" -f $allowedA, $burst4, $allowedB)
+$sum4 = ($lat4 | Measure-Object -Average -Maximum)
+$p954 = ($lat4 | Sort-Object)[[Math]::Ceiling(0.95 * $lat4.Count) - 1]
+Write-Host ("     闸门延迟: avg {0:F1}ms / p95 {1:F1}ms / max {2:F1}ms" -f $sum4.Average, $p954, $sum4.Maximum)
+if ($allowedA -ne $burst4 -or $allowedB -ne $burst4) {
+    Write-Host "FAIL: 令牌桶突发/恢复约束被打破(A=$allowedA!=$burst4 或 B=$allowedB!=$burst4)" -ForegroundColor Red; exit 1
+}
+Write-Host "PASS: 突发窗口恰放 $burst4 枚，回血按 rate=$rate4/s 恢复且封顶 burst，恢复窗口无一漏放" -ForegroundColor Green
+
 # 清理压测键
-RedisCmd "DEL $capKey $bucketKey $seqKey" | Out-Null
-Write-Host "`nSUMMARY: A1 基线 2/2 PASS" -ForegroundColor Cyan
+RedisCmd "DEL $capKey $bucketKey $seqKey $limitKey $bucketKey4 $seqKey4" | Out-Null
+Write-Host "`nSUMMARY: A1/F6 选课压测基线 4/4 PASS（防超卖/削峰发号/IP限流/持续速率）" -ForegroundColor Cyan

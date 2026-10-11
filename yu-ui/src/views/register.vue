@@ -20,7 +20,7 @@
           @keyup.enter.native="handleRegister"
         >
           <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon" />
-          <i slot="suffix" :class="passwordType === 'password' ? 'el-icon-view' : 'el-icon-hide'" class="el-input__icon input-icon" style="cursor: pointer;" @click="togglePasswordType"></i>
+          <i slot="suffix" :class="passwordType === 'password' ? 'el-icon-view' : 'el-icon-hide'" class="el-input__icon input-icon" style="cursor: pointer;" aria-label="显示/隐藏密码" v-keyclick="togglePasswordType"></i>
         </el-input>
       </el-form-item>
       <el-form-item prop="confirmPassword">
@@ -32,7 +32,7 @@
           @keyup.enter.native="handleRegister"
         >
           <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon" />
-          <i slot="suffix" :class="confirmPasswordType === 'password' ? 'el-icon-view' : 'el-icon-hide'" class="el-input__icon input-icon" style="cursor: pointer;" @click="toggleConfirmPasswordType"></i>
+          <i slot="suffix" :class="confirmPasswordType === 'password' ? 'el-icon-view' : 'el-icon-hide'" class="el-input__icon input-icon" style="cursor: pointer;" aria-label="显示/隐藏确认密码" v-keyclick="toggleConfirmPasswordType"></i>
         </el-input>
       </el-form-item>
       <el-form-item prop="code" v-if="captchaEnabled">
@@ -46,7 +46,7 @@
           <svg-icon slot="prefix" icon-class="validCode" class="el-input__icon input-icon" />
         </el-input>
         <div class="register-code">
-          <img :src="codeUrl" @click="getCode" class="register-code-img"/>
+          <img :src="codeUrl" alt="点击刷新验证码" v-keyclick="getCode" class="register-code-img"/>
         </div>
       </el-form-item>
       <el-form-item style="width:100%;">

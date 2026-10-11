@@ -11,9 +11,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="教师" prop="teacherId">
-        <el-select v-model="queryParams.teacherId" placeholder="请选择教师" clearable filterable>
-          <el-option v-for="item in teacherOptions" :key="item.teacherId" :label="item.teacherName" :value="item.teacherId"/>
-        </el-select>
+        <remote-select v-model="queryParams.teacherId" :api="apiTeacher" search-key="teacherName" value-key="teacherId" :formatter="fmtTeacher" placeholder="输入教师名搜索" />
       </el-form-item>
       <el-form-item label="星期" prop="weekDay">
         <el-select v-model="queryParams.weekDay" placeholder="请选择星期" clearable>
@@ -42,10 +40,10 @@
     <el-table v-loading="loading" :data="forbiddenList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="教师" align="center" prop="teacherName" min-width="100" show-overflow-tooltip>
-        <template slot-scope="scope">{{ scope.row.teacherName || teacherFormat(scope.row.teacherId) }}</template>
+        <template slot-scope="scope">{{ scope.row.teacherName || scope.row.teacherId }}</template>
       </el-table-column>
-      <el-table-column label="学期" align="center" prop="semesterId" min-width="140" show-overflow-tooltip>
-        <template slot-scope="scope">{{ semesterFormat(scope.row.semesterId) }}</template>
+      <el-table-column label="学期" align="center" prop="semesterName" min-width="140" show-overflow-tooltip>
+        <template slot-scope="scope">{{ scope.row.semesterName || (scope.row.semesterId ? scope.row.semesterId : '全学期通用') }}</template>
       </el-table-column>
       <el-table-column label="星期" align="center" prop="weekDay" width="90">
         <template slot-scope="scope">{{ weekDayLabel(scope.row.weekDay) }}</template>
@@ -69,9 +67,7 @@
     <el-dialog :title="title" :visible.sync="open" width="620px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="教师" prop="teacherId">
-          <el-select v-model="form.teacherId" placeholder="请选择教师" filterable style="width:100%">
-            <el-option v-for="item in teacherOptions" :key="item.teacherId" :label="item.teacherName + (item.teacherCode ? '（' + item.teacherCode + '）' : '')" :value="item.teacherId"/>
-          </el-select>
+          <remote-select v-model="form.teacherId" :api="apiTeacher" search-key="teacherName" value-key="teacherId" :formatter="fmtTeacher" :initial-option="teacherInitial" placeholder="输入教师名搜索" style="width:100%" />
         </el-form-item>
         <el-form-item label="学期" prop="semesterId">
           <el-select v-model="form.semesterId" placeholder="留空表示全学期通用" clearable filterable style="width:100%">
@@ -111,14 +107,16 @@
 import { listForbidden, getForbidden, delForbidden, addForbidden, updateForbidden } from "@/api/tpm/teacherForbidden"
 import { listSemester } from "@/api/brm/semester"
 import { listTeacher } from "@/api/brm/teacher"
+import RemoteSelect from "@/components/RemoteSelect"
 
 export default {
   name: "TeacherForbidden",
+  components: { RemoteSelect },
   dicts: ['sys_normal_disable'],
   data() {
     return {
       loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0,
-      forbiddenList: [], semesterOptions: [], teacherOptions: [], title: "", open: false,
+      forbiddenList: [], semesterOptions: [], apiTeacher: listTeacher, title: "", open: false,
       weekDayOptions: [
         { value: 1, label: "周一" }, { value: 2, label: "周二" }, { value: 3, label: "周三" },
         { value: 4, label: "周四" }, { value: 5, label: "周五" }, { value: 6, label: "周六" }, { value: 7, label: "周日" }
@@ -133,6 +131,14 @@ export default {
       }
     }
   },
+  computed: {
+    // N7 编辑回显：详情接口已关联回 teacherName，选中项不在远程首页结果集时合成展示项，不显裸 ID
+    teacherInitial() {
+      return this.form && this.form.teacherId != null && this.form.teacherName
+        ? { value: this.form.teacherId, label: this.form.teacherName }
+        : null
+    }
+  },
   created() { this.getList(); this.getOptions() },
   methods: {
     getList() {
@@ -140,18 +146,10 @@ export default {
       listForbidden(this.queryParams).then(response => { this.forbiddenList = response.rows; this.total = response.total; this.loading = false })
     },
     getOptions() {
+      // 学期为小体量字典（逐年递增）保留全量；教师大实体改 RemoteSelect 远程搜索（N7 禁全量拉取）
       listSemester({ pageNum: 1, pageSize: 1000 }).then(res => { this.semesterOptions = res.rows || [] })
-      listTeacher({ pageNum: 1, pageSize: 1000 }).then(res => { this.teacherOptions = res.rows || [] })
     },
-    semesterFormat(id) {
-      if (!id) { return "全学期通用" }
-      const s = this.semesterOptions.find(x => x.semesterId === id)
-      return s ? s.semesterName : id
-    },
-    teacherFormat(id) {
-      const t = this.teacherOptions.find(x => x.teacherId === id)
-      return t ? t.teacherName : id
-    },
+    fmtTeacher(row) { return (row.teacherName || '') + (row.teacherCode ? '（' + row.teacherCode + '）' : '') },
     weekDayLabel(v) { const d = this.weekDayOptions.find(x => x.value === v); return d ? d.label : v },
     cancel() { this.open = false; this.reset() },
     reset() {

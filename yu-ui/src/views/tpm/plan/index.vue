@@ -3,9 +3,7 @@
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="方案名称" prop="planName"><el-input v-model="queryParams.planName" placeholder="请输入方案名称" clearable @keyup.enter.native="handleQuery"/></el-form-item>
       <el-form-item label="所属专业" prop="majorId">
-        <el-select v-model="queryParams.majorId" placeholder="请选择专业" clearable filterable>
-          <el-option v-for="m in majorOptions" :key="m.majorId" :label="m.majorName" :value="m.majorId"/>
-        </el-select>
+        <remote-select v-model="queryParams.majorId" :api="apiMajor" search-key="majorName" value-key="majorId" label-key="majorName" placeholder="输入专业名搜索" />
       </el-form-item>
       <el-form-item label="所属院系" prop="deptId">
         <el-select v-model="queryParams.deptId" placeholder="请选择院系" clearable filterable>
@@ -59,9 +57,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="所属专业" prop="majorId">
-              <el-select v-model="form.majorId" placeholder="请选择专业" filterable clearable style="width:100%">
-                <el-option v-for="m in majorOptions" :key="m.majorId" :label="m.majorName" :value="m.majorId"/>
-              </el-select>
+              <remote-select v-model="form.majorId" :api="apiMajor" search-key="majorName" value-key="majorId" label-key="majorName" :initial-option="majorInitial" placeholder="输入专业名搜索" style="width:100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -211,10 +207,11 @@ import { listCreditStruct, delCreditStruct } from "@/api/tpm/creditStruct"
 import { listMajor } from "@/api/brm/major"
 import { listDept } from "@/api/brm/dept"
 import ExcelImportDialog from "@/components/ExcelImportDialog"
+import RemoteSelect from "@/components/RemoteSelect"
 
 export default {
   name: "Plan",
-  components: { ExcelImportDialog },
+  components: { ExcelImportDialog, RemoteSelect },
   dicts: ['sys_normal_disable', 'tpm_plan_publish_status', 'tpm_course_type', 'tpm_course_category', 'tpm_assessment', 'tpm_credit_type'],
   data() {
     return {
@@ -222,7 +219,7 @@ export default {
       activeTab: 'course',
       courseList: [],
       creditList: [],
-      majorOptions: [], deptOptions: [],
+      apiMajor: listMajor, deptOptions: [],
       educationLevelOptions: [
         { value: '本科', label: '本科' },
         { value: '硕士', label: '硕士' },
@@ -233,18 +230,22 @@ export default {
       rules: { planName: [{ required: true, message: "方案名称不能为空", trigger: "blur" }] }
     }
   },
+  computed: {
+    // N7 编辑回显：详情接口不回专业名，由列表行（后端已关联回 majorName）补齐，选中项不在远程首页结果集时合成展示项
+    majorInitial() {
+      return this.form && this.form.majorId != null && this.form.majorName
+        ? { value: this.form.majorId, label: this.form.majorName }
+        : null
+    }
+  },
   created() {
     this.getList()
-    this.loadMajors()
     this.loadDepts()
   },
   methods: {
     getList() {
       this.loading = true
       listPlan(this.queryParams).then(response => { this.planList = response.rows; this.total = response.total; this.loading = false })
-    },
-    loadMajors() {
-      listMajor({ pageNum: 1, pageSize: 1000 }).then(response => { this.majorOptions = response.rows || [] })
     },
     loadDepts() {
       listDept().then(response => { this.deptOptions = response.data || [] })
@@ -264,8 +265,10 @@ export default {
     handleUpdate(row) {
       this.reset()
       const planId = row.planId || this.ids
+      const src = row.planId ? row : (this.planList.find(p => String(p.planId) === String(this.ids)) || {})
       getPlan(planId).then(response => {
         this.form = response.data
+        this.form.majorName = this.form.majorName || src.majorName
         this.open = true
         this.title = "修改培养方案"
         Promise.all([

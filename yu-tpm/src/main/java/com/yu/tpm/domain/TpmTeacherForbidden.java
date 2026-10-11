@@ -24,6 +24,10 @@ public class TpmTeacherForbidden extends BaseEntity
     @Excel(name = "学期ID")
     private Long semesterId;
 
+    /** 学期名称（冗余展示，非本表存储列，由关联查询装配，N7 字典用途页后端行直接回名称） */
+    @Excel(name = "学期名称")
+    private String semesterName;
+
     /** 教师ID */
     @NotNull(message = "教师不能为空")
     @Excel(name = "教师ID")
@@ -65,6 +69,9 @@ public class TpmTeacherForbidden extends BaseEntity
     public Long getSemesterId() { return semesterId; }
     public void setSemesterId(Long semesterId) { this.semesterId = semesterId; }
 
+    public String getSemesterName() { return semesterName; }
+    public void setSemesterName(String semesterName) { this.semesterName = semesterName; }
+
     public Long getTeacherId() { return teacherId; }
     public void setTeacherId(Long teacherId) { this.teacherId = teacherId; }
 
@@ -94,6 +101,7 @@ public class TpmTeacherForbidden extends BaseEntity
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
             .append("forbiddenId", getForbiddenId())
             .append("semesterId", getSemesterId())
+            .append("semesterName", getSemesterName())
             .append("teacherId", getTeacherId())
             .append("teacherName", getTeacherName())
             .append("weekDay", getWeekDay())

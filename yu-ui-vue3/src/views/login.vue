@@ -33,7 +33,7 @@
               <template #prefix><el-icon><Key /></el-icon></template>
             </el-input>
             <div class="login-code-img">
-              <img :src="codeUrl" @click="getCode" alt="验证码" />
+              <img :src="codeUrl" alt="点击刷新验证码" v-keyclick="getCode" />
             </div>
           </div>
         </el-form-item>
