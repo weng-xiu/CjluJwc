@@ -43,6 +43,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !recordList.length" :rows="6">
     <el-table v-loading="loading" :data="recordList">
       <el-table-column label="凭证ID" align="center" prop="recordId" width="70" />
       <el-table-column label="类型" align="center" prop="bizType" width="100">
@@ -75,6 +76,8 @@
         </template>
       </el-table-column>
     </el-table>
+      <app-empty v-if="!loading && !recordList.length" description="暂无凭证发放记录，可调整查询条件或稍后再试" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 

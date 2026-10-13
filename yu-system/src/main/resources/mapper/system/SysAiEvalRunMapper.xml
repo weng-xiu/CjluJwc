@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.system.mapper.SysAiEvalRunMapper">
+
+    <resultMap type="SysAiEvalRun" id="SysAiEvalRunResult">
+        <id     property="runId"          column="run_id"          />
+        <result property="triggerType"    column="trigger_type"    />
+        <result property="modelVersion"   column="model_version"   />
+        <result property="totalCases"     column="total_cases"     />
+        <result property="passedCases"    column="passed_cases"    />
+        <result property="passRate"       column="pass_rate"       />
+        <result property="avgConfidence"  column="avg_confidence"  />
+        <result property="passThreshold"  column="pass_threshold"  />
+        <result property="result"         column="result"          />
+        <result property="operator"       column="operator"        />
+        <result property="remark"         column="remark"          />
+        <result property="createBy"       column="create_by"       />
+        <result property="createTime"     column="create_time"     />
+    </resultMap>
+
+    <resultMap type="SysAiEvalResult" id="SysAiEvalResultResult">
+        <id     property="resultId"         column="result_id"          />
+        <result property="runId"            column="run_id"             />
+        <result property="caseId"           column="case_id"            />
+        <result property="question"         column="question"           />
+        <result property="answer"           column="answer"             />
+        <result property="answerSource"     column="answer_source"      />
+        <result property="confidence"       column="confidence"         />
+        <result property="moderationResult" column="moderation_result"  />
+        <result property="matched"          column="matched"            />
+        <result property="passed"           column="passed"             />
+        <result property="createTime"       column="create_time"        />
+    </resultMap>
+
+    <sql id="selectSysAiEvalRunVo">
+        select run_id, trigger_type, model_version, total_cases, passed_cases, pass_rate,
+               avg_confidence, pass_threshold, result, operator, remark, create_by, create_time
+        from sys_ai_eval_run
+    </sql>
+
+    <insert id="insertEvalRun" parameterType="SysAiEvalRun" useGeneratedKeys="true" keyProperty="runId">
+        insert into sys_ai_eval_run
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="triggerType != null and triggerType != ''">trigger_type,</if>
+            <if test="modelVersion != null">model_version,</if>
+            <if test="totalCases != null">total_cases,</if>
+            <if test="passedCases != null">passed_cases,</if>
+            <if test="passRate != null">pass_rate,</if>
+            <if test="avgConfidence != null">avg_confidence,</if>
+            <if test="passThreshold != null">pass_threshold,</if>
+            <if test="result != null and result != ''">result,</if>
+            <if test="operator != null">operator,</if>
+            <if test="remark != null">remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="triggerType != null and triggerType != ''">#{triggerType},</if>
+            <if test="modelVersion != null">#{modelVersion},</if>
+            <if test="totalCases != null">#{totalCases},</if>
+            <if test="passedCases != null">#{passedCases},</if>
+            <if test="passRate != null">#{passRate},</if>
+            <if test="avgConfidence != null">#{avgConfidence},</if>
+            <if test="passThreshold != null">#{passThreshold},</if>
+            <if test="result != null and result != ''">#{result},</if>
+            <if test="operator != null">#{operator},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+         </trim>
+    </insert>
+
+    <select id="selectEvalRunList" parameterType="SysAiEvalRun" resultMap="SysAiEvalRunResult">
+        <include refid="selectSysAiEvalRunVo"/>
+        <where>
+            <if test="triggerType != null and triggerType != ''"> and trigger_type = #{triggerType}</if>
+            <if test="result != null and result != ''"> and result = #{result}</if>
+            <if test="operator != null and operator != ''"> and operator like concat('%', #{operator}, '%')</if>
+            <if test="params.beginTime != null and params.beginTime != ''"> and date_format(create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')</if>
+            <if test="params.endTime != null and params.endTime != ''"> and date_format(create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')</if>
+        </where>
+        order by run_id desc
+    </select>
+
+    <select id="selectEvalRunById" parameterType="Long" resultMap="SysAiEvalRunResult">
+        <include refid="selectSysAiEvalRunVo"/>
+        where run_id = #{runId}
+    </select>
+
+    <insert id="insertEvalResult" parameterType="SysAiEvalResult" useGeneratedKeys="true" keyProperty="resultId">
+        insert into sys_ai_eval_result
+        (run_id, case_id, question, answer, answer_source, confidence, moderation_result, matched, passed, create_time)
+        values
+        (#{runId}, #{caseId}, #{question}, #{answer}, #{answerSource}, #{confidence}, #{moderationResult}, #{matched}, #{passed}, #{createTime})
+    </insert>
+
+    <select id="selectResultsByRunId" parameterType="Long" resultMap="SysAiEvalResultResult">
+        select result_id, run_id, case_id, question, answer, answer_source, confidence,
+               moderation_result, matched, passed, create_time
+        from sys_ai_eval_result
+        where run_id = #{runId}
+        order by result_id asc
+    </select>
+</mapper>

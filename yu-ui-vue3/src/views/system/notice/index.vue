@@ -69,6 +69,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !noticeList.length" :rows="6">
     <el-table v-loading="loading" :data="noticeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="序号" align="center" prop="noticeId" width="100" />
@@ -122,6 +123,8 @@
         </template>
       </el-table-column>
     </el-table>
+      <app-empty v-if="!loading && !noticeList.length" description="暂无公告数据，可调整查询条件或点击「新增」创建公告" />
+    </app-skeleton>
 
     <pagination
       v-show="total>0"

@@ -79,6 +79,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !postList.length" :rows="6">
     <el-table v-loading="loading" :data="postList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="岗位编号" align="center" prop="postId" />
@@ -116,6 +117,8 @@
         </template>
       </el-table-column>
     </el-table>
+      <app-empty v-if="!loading && !postList.length" description="暂无岗位数据，可调整查询条件或点击「新增」创建岗位" />
+    </app-skeleton>
 
     <pagination
       v-show="total>0"

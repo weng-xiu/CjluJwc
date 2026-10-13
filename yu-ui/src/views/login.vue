@@ -211,9 +211,12 @@ export default {
       loginType: 'account',
       language: 'zh',
       loginForm: {
-        username: "admin",
-        password: "admin123",
-        rememberMe: true,
+        // V4.0 §7.3/C3：清空硬编码测试凭证（原为 admin / admin123）。
+        // 账号不得写在前端源码里：仓库对外可 Clone 即泄露入口与口令。
+        // 联调需要时用浏览器「记住我」（getCookie/setCookie）或本地 .env.local 自行带入。
+        username: "",
+        password: "",
+        rememberMe: false,
         code: "",
         uuid: "",
         totpCode: ""

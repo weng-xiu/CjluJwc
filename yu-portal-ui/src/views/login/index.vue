@@ -40,7 +40,9 @@ export default {
   name: 'Login',
   data() {
     return {
-      loginForm: { username: 'admin', password: 'admin123', rememberMe: true, code: '', uuid: '', totpCode: '' },
+      // V4.0 §7.3/C3（与 yu-portal-ui-vue3 同步）：清空硬编码测试凭证（原为 admin / admin123）。
+      // 账号不得写在前端源码里；联调需要时用「记住我」或本地 .env.local 自行带入。
+      loginForm: { username: '', password: '', rememberMe: false, code: '', uuid: '', totpCode: '' },
       loginRules: {
         username: [{ required: true, trigger: 'blur', message: '请输入账号' }],
         password: [{ required: true, trigger: 'blur', message: '请输入密码' }],

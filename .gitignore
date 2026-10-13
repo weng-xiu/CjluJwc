@@ -109,3 +109,6 @@ node_modules/.vite/
 /testdata/
 /BOOT-INF/
 /META-INF/
+# 允许 doc/manual 目录下的所有 .md 文件
+!*/doc/manual/*.md
+!*/doc/manual/manual-img/*.png
