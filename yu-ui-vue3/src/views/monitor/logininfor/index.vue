@@ -98,6 +98,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-error-state v-if="loadError && !list.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !list.length" :rows="6">
     <el-table ref="tables" v-loading="loading" :data="list" @selection-change="handleSelectionChange" :default-sort="defaultSort" @sort-change="handleSortChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="访问编号" align="center" prop="infoId" />
@@ -118,6 +120,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无登录日志，可调整查询条件或时段后重试" />
+    </app-skeleton>
 
     <pagination
       v-show="total>0"
@@ -143,6 +147,8 @@ export default {
     return {
       // 遮罩层
       loading: true,
+      // U3 错误态：列表加载失败时展示可重试占位
+      loadError: false,
       // 选中数组
       ids: [],
       // 非单个禁用
@@ -178,12 +184,16 @@ export default {
     /** 查询登录日志列表 */
     getList() {
       this.loading = true
+      this.loadError = false
       list(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
           this.list = response.rows
           this.total = response.total
           this.loading = false
         }
-      )
+      ).catch(() => {
+        this.loadError = true
+        this.loading = false
+      })
     },
     /** 搜索按钮操作 */
     handleQuery() {

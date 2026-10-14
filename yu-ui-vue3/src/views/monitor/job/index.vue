@@ -91,6 +91,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !jobList.length" :rows="6">
     <el-table v-loading="loading" :data="jobList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="任务编号" width="100" align="center" prop="jobId" />
@@ -148,6 +149,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !jobList.length" description="暂无定时任务，可调整查询条件或新增任务" />
+    </app-skeleton>
 
     <pagination
       v-show="total>0"
@@ -158,7 +161,7 @@
     />
 
     <!-- 添加或修改定时任务对话框 -->
-    <el-dialog :title="title" v-model="open" width="800px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="800px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="jobFormRef" :model="form" :rules="rules" label-width="120px">
         <el-row>
           <el-col :span="12">
@@ -239,7 +242,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -263,10 +266,12 @@
 import { listJob, getJob, delJob, addJob, updateJob, runJob, changeJobStatus } from "@/api/monitor/job"
 import JobDetail from './detail.vue'
 import Crontab from '@/components/Crontab/index.vue'
+import dialogGuard from "@/utils/dialogGuard"
 
 export default {
   components: { Crontab, JobDetail },
   name: "Job",
+  mixins: [dialogGuard],
   dicts: ['sys_job_group', 'sys_job_status'],
   data() {
     return {
@@ -431,6 +436,7 @@ export default {
       this.reset()
       this.open = true
       this.title = "添加任务"
+      this.captureDialogSnapshot()
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -440,6 +446,7 @@ export default {
         this.form = response.data
         this.open = true
         this.title = "修改任务"
+        this.captureDialogSnapshot()
       })
     },
     /** 提交按钮 */

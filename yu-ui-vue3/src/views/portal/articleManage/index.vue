@@ -30,6 +30,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !articleList.length" :rows="6">
     <el-table v-loading="loading" :data="articleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="文章标题" align="center" prop="title" show-overflow-tooltip />
@@ -72,11 +73,13 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !articleList.length" description="暂无文章，可调整查询条件或新增文章" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改文章对话框 -->
-    <el-dialog :title="title" v-model="open" width="900px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="900px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="24">
@@ -136,7 +139,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -172,9 +175,11 @@
 // portal_article_status 字典，仅补空值保护，避免字典异步未就绪时取 find 报错。
 import { listArticle, getArticle, delArticle, addArticle, updateArticle, publishArticle, submitArticle, approveArticle, rejectArticle, withdrawArticle } from '@/api/portal/article'
 import { listColumn } from '@/api/portal/column'
+import dialogGuard from "@/utils/dialogGuard"
 
 export default {
   name: 'PortalArticleManage',
+  mixins: [dialogGuard],
   dicts: ['portal_article_status', 'sys_yes_no'],
   data() {
     return {
@@ -280,6 +285,7 @@ export default {
       this.reset()
       this.open = true
       this.title = '添加文章'
+      this.captureDialogSnapshot()
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -289,6 +295,7 @@ export default {
         this.form = response.data
         this.open = true
         this.title = '修改文章'
+        this.captureDialogSnapshot()
       })
     },
     /** 提交按钮 */

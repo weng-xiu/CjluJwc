@@ -39,6 +39,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !dataList.length" :rows="6">
     <el-table v-loading="loading" :data="dataList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="字典编码" align="center" prop="dictCode" />
@@ -68,6 +69,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !dataList.length" description="暂无字典数据，可调整查询条件或新增字典数据" />
+    </app-skeleton>
 
     <pagination
       v-show="total > 0"
@@ -78,7 +81,7 @@
     />
 
     <!-- 添加或修改字典数据对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="字典类型">
           <el-input v-model="form.dictType" :disabled="true" />
@@ -112,7 +115,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -124,9 +127,11 @@
 // 保留 getType 方法与导入同名但作用域不冲突（方法内以裸名调用导入函数）。
 import { listData, getData, delData, addData, updateData } from '@/api/system/dict/data'
 import { optionselect as getDictOptionselect, getType } from '@/api/system/dict/type'
+import dialogGuard from "@/utils/dialogGuard"
 
 export default {
   name: 'Data',
+  mixins: [dialogGuard],
   dicts: ['sys_normal_disable'],
   data() {
     return {
@@ -225,6 +230,7 @@ export default {
       this.open = true
       this.title = '添加字典数据'
       this.form.dictType = this.queryParams.dictType
+      this.captureDialogSnapshot()
     },
     handleSelectionChange(selection) {
       this.ids = selection.map((item) => item.dictCode)
@@ -238,6 +244,7 @@ export default {
         this.form = response.data
         this.open = true
         this.title = '修改字典数据'
+        this.captureDialogSnapshot()
       })
     },
     submitForm() {

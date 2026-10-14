@@ -13,6 +13,9 @@
       <el-col :span="1.5"><el-button type="info" plain icon="Upload" size="small" @click="handleImport" v-hasPermi="['aem:question:import']">导入</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <!-- U3 加载失败态：接口异常时提供重试入口 -->
+    <app-error-state v-if="loadError && !questionList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !questionList.length" :rows="6">
     <el-table v-loading="loading" :data="questionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="问卷ID" align="center" prop="questionnaireId" />
@@ -27,6 +30,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !questionList.length" description="暂无评教题目，可调整查询条件、新增或导入题目" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" v-model="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
@@ -59,13 +64,13 @@ export default {
   name: "Question",
   components: { ImportExcelDialog },
   dicts: ['aem_question_type'],
-  data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, questionList: [], title: "", open: false,
+  data() { return { loading: true, loadError: false, ids: [], single: true, multiple: true, showSearch: true, total: 0, questionList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, questionnaireId: null, questionType: null },
     form: {}, rules: { questionContent: [{ required: true, message: "问题内容不能为空", trigger: "blur" }] } }
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listQuestion(this.queryParams).then(response => { this.questionList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; this.loadError = false; listQuestion(this.queryParams).then(response => { this.questionList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loadError = true; this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { questionId: null, questionnaireId: null, questionType: "0", questionContent: null, sortOrder: null, maxScore: null, optionsJson: null }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

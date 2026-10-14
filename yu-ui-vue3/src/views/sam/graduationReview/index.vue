@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="Cpu" size="small" @click="handleBatchReview" v-hasPermi="['sam:graduationReview:audit']">批量审核</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学生ID" align="center" prop="studentId" />
@@ -29,8 +30,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无毕业审核记录，可调整查询条件或新增审核单" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" v-model="open" width="600px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" label-width="100px">
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="form.studentId" placeholder="请输入学生ID" /></el-form-item>
         <el-form-item label="已获总学分" prop="totalCreditsEarned"><el-input v-model="form.totalCreditsEarned" placeholder="请输入已获总学分" /></el-form-item>
@@ -44,7 +47,7 @@
         <el-form-item label="审核人" prop="reviewer"><el-input v-model="form.reviewer" placeholder="请输入审核人" /></el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
       </template>
     </el-dialog>
     <!-- S1：批量自动审核对话框与结果 -->
@@ -69,6 +72,18 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- U3 批量操作反馈：批量审核进度与结果汇总（单人明细仍可在对话框内查看） -->
+    <app-batch-progress
+      v-model="batchProgressOpen"
+      title="批量自动审核"
+      :running="batchRunning"
+      :indeterminate="batchRunning"
+      :total="batchProgressTotal"
+      :success="batchProgressPassed"
+      :failed="batchProgressRejected"
+      tip-text="正在按毕业审核口径逐人判定，请勿关闭窗口…"
+      @closed="getList" />
   </div>
 </template>
 <script>
@@ -77,10 +92,14 @@
 // el-radio label → value；this.$alert → ElMessageBox.alert。业务逻辑与 Vue2 保持一致。
 import { ElMessageBox } from 'element-plus'
 import { listGraduationReview, getGraduationReview, delGraduationReview, addGraduationReview, updateGraduationReview, autoReviewGraduation, batchReviewGraduation } from "@/api/sam/graduationReview"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
   name: "GraduationReview",
+  mixins: [dialogGuard],
   data() { return { loading: true, ids: [], studentIds: [], single: true, multiple: true, showSearch: true, total: 0, list: [], title: "", open: false,
     batchOpen: false, batchLoading: false, batchStudentIds: "", batchResult: null,
+    // U3 批量审核进度反馈
+    batchProgressOpen: false, batchRunning: false, batchProgressTotal: 0, batchProgressPassed: 0, batchProgressRejected: 0,
     queryParams: { pageNum: 1, pageSize: 10, studentId: null, reviewStatus: null },
     form: {} }
   },
@@ -92,8 +111,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.reviewId); this.studentIds = selection.map(item => item.studentId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加毕业审核" },
-    handleUpdate(row) { this.reset(); const id = row.reviewId || this.ids; getGraduationReview(id).then(response => { this.form = response.data; this.open = true; this.title = "修改毕业审核" }) },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加毕业审核"; this.captureDialogSnapshot() },
+    handleUpdate(row) { this.reset(); const id = row.reviewId || this.ids; getGraduationReview(id).then(response => { this.form = response.data; this.open = true; this.title = "修改毕业审核"; this.captureDialogSnapshot() }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.reviewId != null) { updateGraduationReview(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addGraduationReview(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const ids = row.reviewId || this.ids; this.$modal.confirm('是否确认删除？').then(function() { return delGraduationReview(ids) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('sam/graduationReview/export', { ...this.queryParams }, `graduationReview_${new Date().getTime()}.xlsx`) },
@@ -118,11 +137,22 @@ export default {
     submitBatchReview() {
       const ids = (this.batchStudentIds || "").split(/[,\s\n]+/).filter(s => s !== "").map(s => Number(s));
       if (ids.length === 0 || ids.some(n => isNaN(n))) { this.$modal.msgError("请输入正确的学生ID列表"); return; }
+      // U3 批量反馈：进度层覆盖提交过程，返回后展示通过/不通过汇总
       this.batchLoading = true;
+      this.batchRunning = true;
+      this.batchProgressTotal = ids.length; this.batchProgressPassed = 0; this.batchProgressRejected = 0;
+      this.batchProgressOpen = true;
       batchReviewGraduation(ids).then(response => {
         this.batchResult = response.data;
-        this.$modal.msgSuccess("批量审核完成");
-        this.getList();
+        const r = response.data || {};
+        this.batchProgressTotal = Number(r.total) || ids.length;
+        this.batchProgressPassed = Number(r.passed) || 0;
+        this.batchProgressRejected = Number(r.rejected) || 0;
+        this.batchRunning = false;
+      }).catch(() => {
+        // 失败提示由全局拦截器 toast，这里直接收起进度层
+        this.batchRunning = false;
+        this.batchProgressOpen = false;
       }).finally(() => { this.batchLoading = false; });
     }
   }

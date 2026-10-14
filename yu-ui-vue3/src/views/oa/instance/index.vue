@@ -23,6 +23,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !instanceList.length" :rows="6">
     <el-table v-loading="loading" :data="instanceList">
       <el-table-column label="流程实例ID" align="center" prop="processInstanceId" :show-overflow-tooltip="true" width="200" />
       <el-table-column label="流程名称" align="center" prop="processDefinitionName" />
@@ -50,6 +51,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !instanceList.length" description="暂无在途/已结束的流程实例" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 

@@ -56,6 +56,7 @@
           <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
         </el-row>
 
+        <app-skeleton :loading="loading && !knowledgeList.length" :rows="6">
         <el-table v-loading="loading" :data="knowledgeList" @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="55" align="center" />
           <el-table-column label="ID" align="center" prop="knowledgeId" width="60" />
@@ -87,6 +88,8 @@
             </template>
           </el-table-column>
         </el-table>
+        <app-empty v-if="!loading && !knowledgeList.length" description="暂无知识条目，可调整筛选条件或新增条目" />
+        </app-skeleton>
 
         <pagination v-show="total > 0" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" :total="total" @pagination="getList" />
       </el-tab-pane>
@@ -129,7 +132,7 @@
     </el-tabs>
 
     <!-- 新增或修改知识条目 -->
-    <el-dialog :title="title" v-model="open" width="860px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="860px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="knowledgeFormRef" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="12">
@@ -185,7 +188,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -266,9 +269,11 @@
 // AI 知识库维护/治理统计/问答自测业务逻辑不变。
 import { listAiKnowledge, getAiKnowledge, addAiKnowledge, updateAiKnowledge, delAiKnowledge,
   getAiKnowledgeStat, getAiEngine, askAiKnowledge, suggestAiQuestion } from "@/api/system/aiKnowledge"
+import dialogGuard from "@/utils/dialogGuard"
 
 export default {
   name: "AiKnowledge",
+  mixins: [dialogGuard],
   dicts: ['sys_ai_category', 'sys_ai_answer_source'],
   data() {
     return {
@@ -402,6 +407,7 @@ export default {
       this.reset()
       this.open = true
       this.title = "新增知识条目"
+      this.captureDialogSnapshot()
     },
     handleUpdate(row) {
       this.reset()
@@ -410,6 +416,7 @@ export default {
         this.form = response.data
         this.open = true
         this.title = "修改知识条目"
+        this.captureDialogSnapshot()
       })
     },
     handleDetail(row) {

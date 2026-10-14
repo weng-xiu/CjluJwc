@@ -28,6 +28,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-error-state v-if="loadError && !deptList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !deptList.length" :rows="6">
     <el-table
       v-if="refreshTable"
       v-loading="loading"
@@ -57,6 +59,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !deptList.length" description="暂无院系数据，可新增院系或从部门同步" />
+    </app-skeleton>
 
     <!-- 添加或修改院系对话框 -->
     <el-dialog :title="title" v-model="open" width="600px" append-to-body>
@@ -145,6 +149,8 @@ export default {
   data() {
     return {
       loading: true,
+      // U3 错误态：列表加载失败时展示可重试占位
+      loadError: false,
       showSearch: true,
       deptList: [],
       deptOptions: [],
@@ -169,8 +175,12 @@ export default {
   methods: {
     getList() {
       this.loading = true
+      this.loadError = false
       listDept(this.queryParams).then(response => {
         this.deptList = this.handleTree(response.data, "deptId")
+        this.loading = false
+      }).catch(() => {
+        this.loadError = true
         this.loading = false
       })
     },

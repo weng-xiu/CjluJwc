@@ -15,6 +15,9 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <!-- U3 加载失败态：接口异常时提供重试入口 -->
+    <app-error-state v-if="loadError && !configList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !configList.length" :rows="6">
     <el-table v-loading="loading" :data="configList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="配置名称" align="center" prop="configName" :show-overflow-tooltip="true" />
@@ -33,6 +36,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !configList.length" description="暂无学位审核条件配置，可调整查询条件或新增配置" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
 
     <el-dialog :title="title" v-model="open" width="600px" append-to-body>
@@ -63,7 +68,7 @@ export default {
   dicts: ['sys_normal_disable'],
   data() {
     return {
-      loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0,
+      loading: true, loadError: false, ids: [], single: true, multiple: true, showSearch: true, total: 0,
       configList: [], effective: null, title: "", open: false,
       queryParams: { pageNum: 1, pageSize: 10, configName: null, status: null },
       form: {},
@@ -76,7 +81,7 @@ export default {
   created() { this.getList(); this.getEffective() },
   methods: {
     yn(v) { return v === '1' ? '需合格' : '不强制' },
-    getList() { this.loading = true; listDegreeConfig(this.queryParams).then(response => { this.configList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; this.loadError = false; listDegreeConfig(this.queryParams).then(response => { this.configList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loadError = true; this.loading = false }) },
     getEffective() { getEffectiveDegreeConfig().then(res => { this.effective = res.data }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { configId: null, configName: null, gpaThreshold: 2.0, requireDegreeCourse: "1", requireForeignLanguage: "0", requireThesis: "0", requireAchievement: "0", isDefault: "0", status: "0", remark: null }; this.resetForm("form") },

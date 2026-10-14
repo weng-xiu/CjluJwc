@@ -22,6 +22,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-alert title="总评权重按「课程级 > 课程类别级 > 全局默认」优先级匹配；两者均未配置的科目按平时30% + 考试70% 计算。" type="info" show-icon :closable="false" class="mb8"/>
+    <app-skeleton :loading="loading && !weightList.length" :rows="6">
     <el-table v-loading="loading" :data="weightList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="配置ID" align="center" prop="weightId" width="80" />
@@ -45,6 +46,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !weightList.length" description="暂无权重配置，可调整查询条件或新增配置" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" v-model="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">

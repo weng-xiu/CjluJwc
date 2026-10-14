@@ -29,6 +29,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !equipList.length" :rows="6">
     <el-table v-loading="loading" :data="equipList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="设备名称" align="center" prop="equipName" />
@@ -52,10 +53,12 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !equipList.length" description="暂无设备数据，可调整查询条件或新增设备" />
+    </app-skeleton>
 
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="设备名称" prop="equipName">
           <el-input v-model="form.equipName" placeholder="请输入设备名称" />
@@ -81,7 +84,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -92,10 +95,12 @@
 // Vue3 迁移：el-icon-* → 图标组件名；slot-scope → #default；:visible.sync → v-model；.sync → v-model:xxx；
 // type="text" → link；el-radio :label → :value；size mini → small；value-format yyyy-MM-dd → YYYY-MM-DD。业务逻辑与 Vue2 保持一致。
 import { listEquip, getEquip, delEquip, addEquip, updateEquip } from "@/api/brm/equip"
+import dialogGuard from "@/utils/dialogGuard"
 
 export default {
   name: "Equip",
   dicts: ['sys_normal_disable'],
+  mixins: [dialogGuard],
   data() {
     return {
       loading: true,
@@ -166,6 +171,7 @@ export default {
       this.reset()
       this.open = true
       this.title = "添加设备"
+      this.captureDialogSnapshot()
     },
     handleUpdate(row) {
       this.reset()
@@ -174,6 +180,7 @@ export default {
         this.form = response.data
         this.open = true
         this.title = "修改设备"
+        this.captureDialogSnapshot()
       })
     },
     submitForm() {

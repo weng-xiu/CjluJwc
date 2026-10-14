@@ -21,6 +21,9 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <!-- U3 加载失败态：接口异常时提供重试入口 -->
+    <app-error-state v-if="loadError && !list.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="学号" align="center" prop="studentNo" width="140"/>
@@ -44,6 +47,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无证书补办申请，可调整查询条件或新增申请" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增补办申请对话框 -->
@@ -95,7 +100,7 @@ export default {
   dicts: ['sam_cert_reissue_status'],
   data() {
     return {
-      loading: true, ids: [], multiple: true, showSearch: true, total: 0, list: [],
+      loading: true, loadError: false, ids: [], multiple: true, showSearch: true, total: 0, list: [],
       open: false, certLoading: false, certOptions: [],
       auditOpen: false, auditTitle: '', auditOpinion: '', auditAction: '', auditId: null,
       queryParams: { pageNum: 1, pageSize: 10, studentNo: null, studentName: null, applyStatus: null },
@@ -110,7 +115,7 @@ export default {
   created() { this.getList() },
   methods: {
     certTypeFormat(t) { return { '0': '毕业证书', '1': '学位证书', '2': '结业证书' }[t] || t },
-    getList() { this.loading = true; listCertReissue(this.queryParams).then(res => { this.list = res.rows; this.total = res.total; this.loading = false }).catch(() => { this.loading = false }) },
+    getList() { this.loading = true; this.loadError = false; listCertReissue(this.queryParams).then(res => { this.list = res.rows; this.total = res.total; this.loading = false }).catch(() => { this.loadError = true; this.loading = false }) },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(i => i.applyId); this.multiple = !selection.length },

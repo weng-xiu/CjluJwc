@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['brm:building:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !buildingList.length" :rows="6">
     <el-table v-loading="loading" :data="buildingList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="教学楼名称" align="center" prop="buildingName" />
@@ -27,8 +28,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !buildingList.length" description="暂无教学楼数据，可调整查询条件或新增教学楼" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="教学楼名称" prop="buildingName"><el-input v-model="form.buildingName" placeholder="请输入教学楼名称" /></el-form-item>
         <el-form-item label="教学楼编码" prop="buildingCode"><el-input v-model="form.buildingCode" placeholder="请输入教学楼编码" /></el-form-item>
@@ -37,7 +40,7 @@
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :value="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
       </template>
     </el-dialog>
   </div>
@@ -47,8 +50,10 @@
 // type="text" → link；el-radio :label → :value；size mini → small。业务逻辑与 Vue2 保持一致。
 import { listBuilding, getBuilding, delBuilding, addBuilding, updateBuilding } from "@/api/brm/building"
 import { listCampus } from "@/api/brm/campus"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
   name: "Building", dicts: ['sys_normal_disable'],
+  mixins: [dialogGuard],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, buildingList: [], campusList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, buildingName: null, campusId: null, status: null },
     form: {}, rules: { buildingName: [{ required: true, message: "教学楼名称不能为空", trigger: "blur" }], campusId: [{ required: true, message: "所属校区不能为空", trigger: "change" }] } }
@@ -62,8 +67,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.buildingId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加教学楼" },
-    handleUpdate(row) { this.reset(); const buildingId = row.buildingId || this.ids; getBuilding(buildingId).then(response => { this.form = response.data; this.open = true; this.title = "修改教学楼" }) },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加教学楼"; this.captureDialogSnapshot() },
+    handleUpdate(row) { this.reset(); const buildingId = row.buildingId || this.ids; getBuilding(buildingId).then(response => { this.form = response.data; this.open = true; this.title = "修改教学楼"; this.captureDialogSnapshot() }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.buildingId != null) { updateBuilding(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addBuilding(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const buildingIds = row.buildingId || this.ids; this.$modal.confirm('是否确认删除教学楼编号为"' + buildingIds + '"的数据项？').then(function() { return delBuilding(buildingIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('brm/building/export', { ...this.queryParams }, `building_${new Date().getTime()}.xlsx`) }

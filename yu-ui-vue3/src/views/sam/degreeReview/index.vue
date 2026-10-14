@@ -14,6 +14,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="Cpu" size="small" @click="handleBatchReview" v-hasPermi="['sam:degreeReview:audit']">批量审核</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学生ID" align="center" prop="studentId" />
@@ -30,6 +31,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无学位审核记录，可调整查询条件或新增审核单" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" v-model="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" label-width="120px">

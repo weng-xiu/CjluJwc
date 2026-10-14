@@ -139,8 +139,6 @@
           <el-col :span="12"><el-form-item label="跳过已存在"><el-switch aria-label="跳过已存在" v-model="batchForm.skipExisting" /></el-form-item></el-col>
         </el-row>
       </el-form>
-      <el-alert v-if="batchResult" :closable="false" type="success" class="mb8"
-        :title="'扫描课程 ' + batchResult.scanned + ' 门，生成 ' + batchResult.generated + ' 条，跳过已存在 ' + batchResult.skippedExisting + ' 条，教师预分配 ' + batchResult.teacherAssigned + ' 条（教师池 ' + batchResult.teacherPoolSize + ' 人）'"/>
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" :loading="batchLoading" @click="submitBatchGenerate">开始生成</el-button>
@@ -148,6 +146,22 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- U3 批量操作反馈：批量生成开课进度与结果汇总 -->
+    <app-batch-progress
+      v-model="batchProgressOpen"
+      title="批量生成开课计划"
+      :running="batchRunning"
+      :indeterminate="batchRunning"
+      :total="batchTotal"
+      :success="batchSuccess"
+      :failed="batchFailed"
+      tip-text="正在按培养方案扫描课程并生成开课计划，请勿关闭窗口…"
+      @closed="getList">
+      <template #detail v-if="batchResult">
+        <p style="text-align:center;color:var(--dt-text-secondary);font-size:13px">教师预分配 {{ batchResult.teacherAssigned }} 条（教师池 {{ batchResult.teacherPoolSize }} 人）</p>
+      </template>
+    </app-batch-progress>
   </div>
 </template>
 <script>
@@ -168,6 +182,8 @@ export default {
     semesterOptions: [], courseOptions: [], teacherOptions: [], campusOptions: [],
     planOptions: [], deptOptions: [],
     batchOpen: false, batchLoading: false, batchResult: null,
+    // U3 批量生成进度反馈
+    batchProgressOpen: false, batchRunning: false, batchTotal: 0, batchSuccess: 0, batchFailed: 0,
     batchForm: { planId: null, semesterId: null, semesterOrder: null, campusId: null, teacherDeptId: null, defaultCapacity: null, classCount: 1, skipExisting: true },
     batchRules: { planId: [{ required: true, message: "培养方案不能为空", trigger: "change" }], semesterId: [{ required: true, message: "学期不能为空", trigger: "change" }] },
     queryParams: { pageNum: 1, pageSize: 10, semesterId: null, courseId: null, teacherId: null, offeringStatus: null, status: null },
@@ -210,12 +226,25 @@ export default {
     submitBatchGenerate() {
       this.$refs["batchForm"].validate(valid => {
         if (!valid) return;
+        // U3 批量反馈：同步扫描接口用不定模式进度层，结果回填汇总态
         this.batchLoading = true;
+        this.batchRunning = true;
+        this.batchTotal = 0; this.batchSuccess = 0; this.batchFailed = 0;
+        this.batchProgressOpen = true;
         batchGenerateOffering(this.batchForm).then(response => {
           this.batchResult = response.data;
-          this.$modal.msgSuccess("生成完成：新增 " + (this.batchResult.generated || 0) + " 条开课计划");
+          this.batchOpen = false;
           if (this.batchForm.semesterId) { this.queryParams.semesterId = this.batchForm.semesterId; }
-          this.getList();
+          // 后端契约：data 含 scanned/generated/skippedExisting 统计，转入结果汇总态
+          const r = this.batchResult || {};
+          this.batchTotal = Number(r.scanned) || 0;
+          this.batchSuccess = Number(r.generated) || 0;
+          this.batchFailed = Number(r.skippedExisting) || 0;
+          this.batchRunning = false;
+        }).catch(() => {
+          // 失败提示由全局拦截器 toast，这里直接收起进度层
+          this.batchRunning = false;
+          this.batchProgressOpen = false;
         }).finally(() => { this.batchLoading = false; });
       });
     }

@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['dis:system:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !systemList.length" :rows="6">
     <el-table v-loading="loading" :data="systemList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="系统名称" align="center" prop="systemName" />
@@ -28,8 +29,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !systemList.length" description="暂无外部系统，可调整查询条件或新增系统" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" v-model="open" width="650px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="650px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="系统名称" prop="systemName"><el-input v-model="form.systemName" placeholder="请输入系统名称" /></el-form-item>
         <el-form-item label="系统编码" prop="systemCode"><el-input v-model="form.systemCode" placeholder="请输入系统编码" /></el-form-item>
@@ -45,15 +48,16 @@
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :value="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
       </template>
     </el-dialog>
   </div>
 </template>
 <script>
 import { listSystem, getSystem, delSystem, addSystem, updateSystem } from "@/api/dis/system"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
-  name: "DisSystem", dicts: ['sys_normal_disable', 'dis_system_type', 'dis_auth_type'],
+  name: "DisSystem", dicts: ['sys_normal_disable', 'dis_system_type', 'dis_auth_type'], mixins: [dialogGuard],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, systemList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, systemName: null, systemCode: null, status: null },
     form: {}, rules: { systemName: [{ required: true, message: "系统名称不能为空", trigger: "blur" }], systemCode: [{ required: true, message: "系统编码不能为空", trigger: "blur" }], systemType: [{ required: true, message: "系统类型不能为空", trigger: "change" }] } }
@@ -66,8 +70,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.systemId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加外部系统" },
-    handleUpdate(row) { this.reset(); const systemId = row.systemId || this.ids; getSystem(systemId).then(response => { this.form = response.data; this.open = true; this.title = "修改外部系统" }) },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加外部系统"; this.captureDialogSnapshot() },
+    handleUpdate(row) { this.reset(); const systemId = row.systemId || this.ids; getSystem(systemId).then(response => { this.form = response.data; this.open = true; this.title = "修改外部系统"; this.captureDialogSnapshot() }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.systemId != null) { updateSystem(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addSystem(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const systemIds = row.systemId || this.ids; this.$modal.confirm('是否确认删除外部系统编号为"' + systemIds + '"的数据项？').then(function() { return delSystem(systemIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('dis/system/export', { ...this.queryParams }, `system_${new Date().getTime()}.xlsx`) }

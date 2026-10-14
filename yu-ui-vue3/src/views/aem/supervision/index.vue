@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['aem:supervision:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !supervisionList.length" :rows="6">
     <el-table v-loading="loading" :data="supervisionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="课程ID" align="center" prop="courseId" />
@@ -30,8 +31,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !supervisionList.length" description="暂无督导听课记录，可调整查询条件或新增记录" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" v-model="open" width="650px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="650px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="课程ID" prop="courseId"><el-input v-model="form.courseId" placeholder="请输入课程ID" /></el-form-item>
         <el-form-item label="教师ID" prop="teacherId"><el-input v-model="form.teacherId" placeholder="请输入教师ID" /></el-form-item>
@@ -45,15 +48,17 @@
         <el-form-item label="记录类型" prop="recordType"><el-select v-model="form.recordType" placeholder="请选择记录类型" style="width:100%"><el-option v-for="dict in dict.type.aem_record_type" :key="dict.value" :label="dict.label" :value="dict.value"/></el-select></el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
       </template>
     </el-dialog>
   </div>
 </template>
 <script>
 import { listSupervision, getSupervision, delSupervision, addSupervision, updateSupervision } from "@/api/aem/supervision"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
   name: "Supervision", dicts: ['aem_evaluation_level', 'aem_record_type'],
+  mixins: [dialogGuard],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, supervisionList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, supervisor: null, teacherId: null, recordType: null },
     form: {}, rules: { supervisor: [{ required: true, message: "督导姓名不能为空", trigger: "blur" }] } }
@@ -66,8 +71,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.recordId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加督导听课记录" },
-    handleUpdate(row) { this.reset(); const recordId = row.recordId || this.ids; getSupervision(recordId).then(response => { this.form = response.data; this.open = true; this.title = "修改督导听课记录" }) },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加督导听课记录"; this.captureDialogSnapshot() },
+    handleUpdate(row) { this.reset(); const recordId = row.recordId || this.ids; getSupervision(recordId).then(response => { this.form = response.data; this.open = true; this.title = "修改督导听课记录"; this.captureDialogSnapshot() }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.recordId != null) { updateSupervision(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addSupervision(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const recordIds = row.recordId || this.ids; this.$modal.confirm('是否确认删除督导听课记录编号为"' + recordIds + '"的数据项？').then(function() { return delSupervision(recordIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('aem/supervision/export', { ...this.queryParams }, `supervision_${new Date().getTime()}.xlsx`) }

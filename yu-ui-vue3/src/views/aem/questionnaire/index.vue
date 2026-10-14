@@ -12,6 +12,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['aem:questionnaire:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !questionnaireList.length" :rows="6">
     <el-table ref="questionnaireTable" v-loading="loading" :data="questionnaireList" @selection-change="handleSelectionChange" :row-key="getRowKey" @expand-change="handleExpandChange">
       <el-table-column type="expand">
         <template #default="props">
@@ -51,6 +52,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !questionnaireList.length" description="暂无评教问卷，可调整查询条件或新增问卷" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" v-model="open" width="650px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">

@@ -22,6 +22,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['tpm:credit:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !creditStructList.length" :rows="6">
     <el-table v-loading="loading" :data="creditStructList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="所属方案" align="center" prop="planName" :show-overflow-tooltip="true" />
@@ -41,8 +42,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !creditStructList.length" description="暂无学分结构，可调整查询条件或新增学分结构" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" v-model="open" width="560px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="560px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="所属方案" prop="planId">
           <el-select v-model="form.planId" placeholder="请选择培养方案" filterable clearable style="width:100%">
@@ -61,7 +64,7 @@
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :value="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
       </template>
     </el-dialog>
   </div>
@@ -72,10 +75,12 @@
 // type="text"→link；el-radio :label→:value；<div slot="footer">→<template #footer>。业务逻辑与 Vue2 保持一致。
 import { listCreditStruct, getCreditStruct, delCreditStruct, addCreditStruct, updateCreditStruct } from "@/api/tpm/creditStruct"
 import { listPlan } from "@/api/tpm/plan"
+import dialogGuard from "@/utils/dialogGuard"
 
 export default {
   name: "CreditStruct",
   dicts: ['sys_normal_disable', 'tpm_credit_type'],
+  mixins: [dialogGuard],
   data() {
     return {
       loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, creditStructList: [], title: "", open: false,
@@ -113,8 +118,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.structId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加学分结构" },
-    handleUpdate(row) { this.reset(); const structId = row.structId || this.ids; getCreditStruct(structId).then(response => { this.form = response.data; this.open = true; this.title = "修改学分结构" }) },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加学分结构"; this.captureDialogSnapshot() },
+    handleUpdate(row) { this.reset(); const structId = row.structId || this.ids; getCreditStruct(structId).then(response => { this.form = response.data; this.open = true; this.title = "修改学分结构"; this.captureDialogSnapshot() }) },
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {

@@ -78,6 +78,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !thesisList.length" :rows="6">
     <el-table v-loading="loading" :data="thesisList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="届别" align="center" prop="planYear" width="70" />
@@ -131,6 +132,8 @@
       </el-table-column>
     </el-table>
 
+    <app-empty v-if="!loading && !thesisList.length" description="暂无论文档案，可调整查询条件或新增档案" />
+    </app-skeleton>
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 论文档案详情：环节进度 + 留痕时间线 -->

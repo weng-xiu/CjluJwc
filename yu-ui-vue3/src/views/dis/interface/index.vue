@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['dis:interface:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !interfaceList.length" :rows="6">
     <el-table v-loading="loading" :data="interfaceList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="接口名称" align="center" prop="interfaceName" />
@@ -29,6 +30,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !interfaceList.length" description="暂无接口配置，可调整查询条件或新增接口" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" v-model="open" width="650px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">

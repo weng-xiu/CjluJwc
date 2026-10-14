@@ -12,6 +12,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['brm:year:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !yearList.length" :rows="6">
     <el-table v-loading="loading" :data="yearList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学年名称" align="center" prop="yearName" />
@@ -25,8 +26,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !yearList.length" description="暂无学年数据，可调整查询条件或新增学年" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学年名称" prop="yearName"><el-input v-model="form.yearName" placeholder="请输入学年名称" /></el-form-item>
         <el-form-item label="开始日期" prop="startDate"><el-date-picker clearable v-model="form.startDate" type="date" value-format="YYYY-MM-DD" placeholder="请选择开始日期" /></el-form-item>
@@ -34,7 +37,7 @@
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :value="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
       </template>
     </el-dialog>
   </div>
@@ -43,8 +46,9 @@
 // Vue3 迁移：el-icon-* → 图标组件名；slot-scope → #default；:visible.sync → v-model；.sync → v-model:xxx；
 // type="text" → link；el-radio :label → :value；size mini → small；el-date-picker value-format yyyy-MM-dd → YYYY-MM-DD。业务逻辑与 Vue2 保持一致。
 import { listYear, getYear, delYear, addYear, updateYear } from "@/api/brm/year"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
-  name: "Year", dicts: ['sys_normal_disable'],
+  name: "Year", dicts: ['sys_normal_disable'], mixins: [dialogGuard],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, yearList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, yearName: null, status: null },
     form: {}, rules: { yearName: [{ required: true, message: "学年名称不能为空", trigger: "blur" }] } }
@@ -57,8 +61,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.yearId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加学年" },
-    handleUpdate(row) { this.reset(); const yearId = row.yearId || this.ids; getYear(yearId).then(response => { this.form = response.data; this.open = true; this.title = "修改学年" }) },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加学年"; this.captureDialogSnapshot() },
+    handleUpdate(row) { this.reset(); const yearId = row.yearId || this.ids; getYear(yearId).then(response => { this.form = response.data; this.open = true; this.title = "修改学年"; this.captureDialogSnapshot() }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.yearId != null) { updateYear(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addYear(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const yearIds = row.yearId || this.ids; this.$modal.confirm('是否确认删除学年编号为"' + yearIds + '"的数据项？').then(function() { return delYear(yearIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('brm/year/export', { ...this.queryParams }, `year_${new Date().getTime()}.xlsx`) }

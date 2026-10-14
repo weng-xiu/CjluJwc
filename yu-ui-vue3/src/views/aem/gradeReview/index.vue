@@ -14,6 +14,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="Operation" size="small" @click="showFlowHelp">流程说明</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !gradeReviewList.length" :rows="6">
     <el-table v-loading="loading" :data="gradeReviewList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="reviewId" width="70" />
@@ -43,6 +44,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !gradeReviewList.length" description="暂无成绩复核记录，可调整查询条件或新增复核申请" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
 
     <el-dialog :title="title" v-model="open" width="700px" append-to-body>

@@ -92,6 +92,18 @@
       template-name="gradeRecord_template"
       :extra-data="{}"
       @success="getList"/>
+
+    <!-- U3 批量操作反馈：批量提交/审核/解锁进度与结果汇总 -->
+    <app-batch-progress
+      v-model="batchProgressOpen"
+      :title="batchProgressTitle"
+      :running="batchRunning"
+      :indeterminate="batchRunning"
+      :total="batchTotal"
+      :success="batchSuccess"
+      :failed="batchFailed"
+      tip-text="正在批量处理选中成绩，请勿关闭窗口…"
+      @closed="getList" />
   </div>
 </template>
 <script>
@@ -108,6 +120,8 @@ export default {
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, gradeRecordList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, studentId: null, courseId: null, examType: null, isPass: null },
     form: {}, rules: {},
+    // U3 批量操作进度反馈（提交/审核/解锁共用一个进度层）
+    batchProgressOpen: false, batchProgressTitle: "批量处理", batchRunning: false, batchTotal: 0, batchSuccess: 0, batchFailed: 0,
     reviewColumns: [
       { prop: 'originalScore', label: '原成绩', width: 100, type: 'number', min: 0, max: 100, precision: 1, required: true },
       { prop: 'newScore', label: '新成绩', width: 100, type: 'number', min: 0, max: 100, precision: 1, required: true },
@@ -149,20 +163,36 @@ export default {
     submitStatusTag(s) { return { '0': 'info', '1': 'warning', '2': 'success', '3': 'danger' }[s || '0'] || 'info' },
     handleSubmit() {
       const gradeIds = this.ids;
-      this.$modal.confirm('确认提交选中的 ' + gradeIds.length + ' 条成绩待审核？').then(() => submitGrade(gradeIds))
-        .then(() => { this.getList(); this.$modal.msgSuccess("提交成功") }).catch(() => {});
+      this.$modal.confirm('确认提交选中的 ' + gradeIds.length + ' 条成绩待审核？').then(() => {
+        this.startBatchProgress("批量提交成绩", gradeIds.length)
+        return submitGrade(gradeIds)
+      }).then(() => { this.finishBatchProgress() }).catch(() => { this.failBatchProgress() });
     },
     handleAudit(approved) {
       const gradeIds = this.ids;
       const tip = approved ? '确认审核通过并锁定选中的 ' + gradeIds.length + ' 条成绩？锁定后仅可通过成绩复核流程修改。' : '确认驳回选中的 ' + gradeIds.length + ' 条成绩？';
-      this.$modal.confirm(tip).then(() => auditGrade(gradeIds, approved))
-        .then(() => { this.getList(); this.$modal.msgSuccess(approved ? "已锁定" : "已驳回") }).catch(() => {});
+      this.$modal.confirm(tip).then(() => {
+        this.startBatchProgress(approved ? "批量审核通过" : "批量驳回成绩", gradeIds.length)
+        return auditGrade(gradeIds, approved)
+      }).then(() => { this.finishBatchProgress() }).catch(() => { this.failBatchProgress() });
     },
     handleUnlock() {
       const gradeIds = this.ids;
-      this.$modal.confirm('确认解锁选中的 ' + gradeIds.length + ' 条已锁定成绩？解锁后转为驳回状态，需重新提交。').then(() => unlockGrade(gradeIds))
-        .then(() => { this.getList(); this.$modal.msgSuccess("解锁成功") }).catch(() => {});
-    }
+      this.$modal.confirm('确认解锁选中的 ' + gradeIds.length + ' 条已锁定成绩？解锁后转为驳回状态，需重新提交。').then(() => {
+        this.startBatchProgress("批量解锁成绩", gradeIds.length)
+        return unlockGrade(gradeIds)
+      }).then(() => { this.finishBatchProgress() }).catch(() => { this.failBatchProgress() });
+    },
+    /** U3 批量反馈：开进度层（单请求同步接口用不定模式） */
+    startBatchProgress(title, total) {
+      this.batchProgressTitle = title
+      this.batchTotal = total; this.batchSuccess = 0; this.batchFailed = 0
+      this.batchRunning = true; this.batchProgressOpen = true
+    },
+    /** U3 批量反馈：全部成功计入汇总（后端要么全成要么抛错，failed 恒为 0） */
+    finishBatchProgress() { this.batchSuccess = this.batchTotal; this.batchRunning = false },
+    /** U3 批量反馈：取消确认或接口失败时收起进度层，失败提示由全局拦截器 toast */
+    failBatchProgress() { this.batchRunning = false; this.batchProgressOpen = false }
   }
 }
 </script>

@@ -58,6 +58,9 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <!-- U3 加载失败态：接口异常时提供重试入口 -->
+    <app-error-state v-if="loadError && !menuList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !menuList.length" :rows="6">
     <el-table
       v-if="refreshTable"
       v-loading="loading"
@@ -122,6 +125,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !menuList.length" description="暂无菜单数据，可调整查询条件或新增菜单" />
+    </app-skeleton>
 
     <!-- 添加或修改菜单对话框 -->
     <el-dialog :title="title" v-model="open" width="680px" append-to-body>
@@ -363,6 +368,8 @@ export default {
     return {
       // 遮罩层
       loading: true,
+      // U3 加载失败态
+      loadError: false,
       // 显示搜索条件
       showSearch: true,
       // 菜单表格树数据
@@ -411,12 +418,13 @@ export default {
     /** 查询菜单列表 */
     getList() {
       this.loading = true
+      this.loadError = false
       listMenu(this.queryParams).then(response => {
         this.menuList = this.handleTree(response.data, 'menuId')
         // 记录原始排序值
         this.recordOriginalOrders(this.menuList)
         this.loading = false
-      })
+      }).catch(() => { this.loadError = true; this.loading = false })
     },
     /** 转换菜单树为 el-tree-select 数据结构（menuId/menuName → id/label） */
     buildMenuTreeOptions(list) {

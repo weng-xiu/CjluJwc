@@ -26,6 +26,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['tpm:round:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !roundList.length" :rows="6">
     <el-table v-loading="loading" :data="roundList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学期" align="center" prop="semesterName" />
@@ -58,8 +59,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !roundList.length" description="暂无选课轮次，可调整查询条件或新增轮次" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" v-model="open" width="600px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="学期" prop="semesterId">
           <el-select v-model="form.semesterId" placeholder="请选择学期" style="width:100%">
@@ -83,7 +86,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
       </template>
     </el-dialog>
   </div>
@@ -94,9 +97,11 @@
 // type="text"→link；el-radio :label→:value；value-format yyyy-MM-dd→YYYY-MM-DD；<div slot="footer">→<template #footer>。
 import { listRound, getRound, delRound, addRound, updateRound, startRound, finishRound } from "@/api/tpm/round"
 import { listSemester } from "@/api/brm/semester"
+import dialogGuard from "@/utils/dialogGuard"
 
 export default {
   name: "Round",
+  mixins: [dialogGuard],
   dicts: ['sys_normal_disable', 'tpm_round_status'],
   data() {
     const checkEndTime = (rule, value, callback) => {
@@ -141,11 +146,11 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.roundId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加选课轮次" },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加选课轮次"; this.captureDialogSnapshot() },
     handleUpdate(row) {
       this.reset()
       const roundId = row.roundId || this.ids
-      getRound(roundId).then(response => { this.form = response.data; this.open = true; this.title = "修改选课轮次" })
+      getRound(roundId).then(response => { this.form = response.data; this.open = true; this.title = "修改选课轮次"; this.captureDialogSnapshot() })
     },
     submitForm() {
       this.$refs["form"].validate(valid => {

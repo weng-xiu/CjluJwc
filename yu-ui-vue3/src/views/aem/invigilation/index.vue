@@ -14,6 +14,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="Upload" size="small" @click="handleImport" v-hasPermi="['aem:invigilation:import']">导入</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !invigilationList.length" :rows="6">
     <el-table v-loading="loading" :data="invigilationList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="考试ID" align="center" prop="examId" />
@@ -30,6 +31,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !invigilationList.length" description="暂无监考分配，可调整查询条件或新增分配" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" v-model="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">

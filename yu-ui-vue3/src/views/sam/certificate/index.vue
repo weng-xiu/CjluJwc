@@ -15,6 +15,8 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['sam:certificate:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-error-state v-if="loadError && !list.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学号" align="center" prop="studentNo" width="140"/>
@@ -33,6 +35,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无证书记录，可调整查询条件或批量生成证书" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增/修改对话框 -->
@@ -71,6 +75,19 @@
       </template>
     </el-dialog>
 
+    <!-- U3 批量操作反馈：批量生成证书进度与结果汇总 -->
+    <app-batch-progress
+      v-model="genProgressOpen"
+      title="批量生成证书"
+      :running="genRunning"
+      :indeterminate="genRunning"
+      :total="genTotal"
+      :success="genSuccess"
+      :failed="genFailed"
+      tip-text="正在按审核口径分配证书编号，请勿关闭窗口…"
+      @closed="getList"
+    />
+
     <!-- 发放登记对话框 -->
     <el-dialog title="证书发放登记" v-model="issueOpen" width="460px" append-to-body>
       <el-form label-width="100px">
@@ -93,14 +110,18 @@ export default {
   name: "Certificate",
   dicts: ['sam_cert_reissue_type'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, list: [], title: "", open: false,
+    // U3 错误态：列表加载失败可重试
+    loadError: false,
     genOpen: false, genLoading: false, genForm: { certType: '0', gradYear: null },
+    // U3 批量生成进度反馈
+    genProgressOpen: false, genRunning: false, genTotal: 0, genSuccess: 0, genFailed: 0,
     issueOpen: false, issueForm: { certId: null, receiver: null, issueDate: null },
     queryParams: { pageNum: 1, pageSize: 10, studentNo: null, studentName: null, certType: null, certNumber: null },
     form: {}, rules: { studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }], certType: [{ required: true, message: "证书类型不能为空", trigger: "change" }] } }
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listCertificate(this.queryParams).then(response => { this.list = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
+    getList() { this.loading = true; this.loadError = false; listCertificate(this.queryParams).then(response => { this.list = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loadError = true; this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { certId: null, studentId: null, certType: null, certNumber: null, certDate: null, majorId: null, educationLevel: null, isIssued: "0", issueDate: null, receiver: null, status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
@@ -117,7 +138,22 @@ export default {
     openGenerate() { this.genForm = { certType: '0', gradYear: null }; this.genOpen = true },
     submitGenerate() {
       this.genLoading = true
-      batchGenerate(this.genForm.certType, this.genForm.gradYear).then(res => { this.$modal.msgSuccess(res.msg || "生成完成"); this.genOpen = false; this.getList() }).finally(() => { this.genLoading = false })
+      this.genRunning = true
+      this.genTotal = 0; this.genSuccess = 0; this.genFailed = 0
+      this.genProgressOpen = true
+      batchGenerate(this.genForm.certType, this.genForm.gradYear).then(res => {
+        this.genOpen = false
+        // 后端契约：data 含 candidates/generated 统计，转入结果汇总态
+        const stat = res.data || {}
+        this.genTotal = Number(stat.candidates) || 0
+        this.genSuccess = Number(stat.generated) || 0
+        this.genFailed = Math.max(this.genTotal - this.genSuccess, 0)
+        this.genRunning = false
+      }).catch(() => {
+        // 失败提示由全局拦截器 toast，这里直接收起进度层
+        this.genRunning = false
+        this.genProgressOpen = false
+      }).finally(() => { this.genLoading = false })
     },
     openIssue(row) { this.issueForm = { certId: row.certId, receiver: row.receiver || null, issueDate: null }; this.issueOpen = true },
     submitIssue() { issueCertificate(this.issueForm).then(() => { this.$modal.msgSuccess("发放成功"); this.issueOpen = false; this.getList() }) },

@@ -12,6 +12,7 @@
       <el-col :span="1.5"><el-button type="danger" plain icon="Delete" size="small" :disabled="multiple" @click="handleDelete" v-hasPermi="['dis:fieldMapping:remove']">删除</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !mappingList.length" :rows="6">
     <el-table v-loading="loading" :data="mappingList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="映射ID" align="center" prop="mappingId" width="80" />
@@ -29,8 +30,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !mappingList.length" description="暂无字段映射，可调整查询条件或新增映射" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" v-model="open" width="550px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="550px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="接口ID" prop="interfaceId"><el-input-number v-model="form.interfaceId" placeholder="关联的接口配置ID" :min="1" /></el-form-item>
         <el-form-item label="目标业务表" prop="targetTable"><el-input v-model="form.targetTable" placeholder="请输入落库的目标业务表名" /></el-form-item>
@@ -41,15 +44,16 @@
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :value="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
       </template>
     </el-dialog>
   </div>
 </template>
 <script>
 import { listFieldMapping, getFieldMapping, delFieldMapping, addFieldMapping, updateFieldMapping } from "@/api/dis/fieldMapping"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
-  name: "DisFieldMapping", dicts: ['sys_normal_disable'],
+  name: "DisFieldMapping", dicts: ['sys_normal_disable'], mixins: [dialogGuard],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, mappingList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, interfaceId: null, targetTable: null, status: null },
     form: {}, rules: { interfaceId: [{ required: true, message: "接口ID不能为空", trigger: "blur" }], targetTable: [{ required: true, message: "目标业务表不能为空", trigger: "blur" }], sourceField: [{ required: true, message: "源字段不能为空", trigger: "blur" }], targetColumn: [{ required: true, message: "目标列不能为空", trigger: "blur" }] } }
@@ -62,8 +66,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.mappingId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加字段映射" },
-    handleUpdate(row) { this.reset(); const mappingId = row.mappingId || this.ids; getFieldMapping(mappingId).then(response => { this.form = response.data; this.open = true; this.title = "修改字段映射" }) },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加字段映射"; this.captureDialogSnapshot() },
+    handleUpdate(row) { this.reset(); const mappingId = row.mappingId || this.ids; getFieldMapping(mappingId).then(response => { this.form = response.data; this.open = true; this.title = "修改字段映射"; this.captureDialogSnapshot() }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.mappingId != null) { updateFieldMapping(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addFieldMapping(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const mappingIds = row.mappingId || this.ids; this.$modal.confirm('是否确认删除字段映射编号为"' + mappingIds + '"的数据项？').then(function() { return delFieldMapping(mappingIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) }
   }

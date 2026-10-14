@@ -15,6 +15,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['brm:class:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !clazzList.length" :rows="6">
     <el-table v-loading="loading" :data="clazzList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="班级编码" align="center" prop="classCode" />
@@ -31,8 +32,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !clazzList.length" description="暂无班级数据，可调整查询条件或新增班级" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="班级编码" prop="classCode"><el-input v-model="form.classCode" placeholder="请输入班级编码" /></el-form-item>
         <el-form-item label="班级名称" prop="className"><el-input v-model="form.className" placeholder="请输入班级名称" /></el-form-item>
@@ -51,7 +54,7 @@
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :value="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
       </template>
     </el-dialog>
   </div>
@@ -62,8 +65,11 @@
 import { listClazz, getClazz, delClazz, addClazz, updateClazz } from "@/api/brm/clazz"
 import { listDept } from "@/api/brm/dept"
 import { listMajor, getMajor } from "@/api/brm/major"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
   name: "Clazz", dicts: ['sys_normal_disable', 'brm_grade'],
+  mixins: [dialogGuard],
+  guardWatch: ['selectedDeptId'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, clazzList: [], deptList: [], majorList: [], queryMajorList: [], selectedDeptId: null, queryDeptId: null, title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, className: null, majorId: null, grade: null, status: null },
     form: {}, rules: { classCode: [{ required: true, message: "班级编码不能为空", trigger: "blur" }], className: [{ required: true, message: "班级名称不能为空", trigger: "blur" }], majorId: [{ required: true, message: "请选择专业", trigger: "change" }] } }
@@ -91,7 +97,7 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.queryDeptId = null; this.queryMajorList = []; this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.classId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.selectedDeptId = null; this.majorList = []; this.open = true; this.title = "添加班级" },
+    handleAdd() { this.reset(); this.selectedDeptId = null; this.majorList = []; this.open = true; this.title = "添加班级"; this.captureDialogSnapshot() },
     handleUpdate(row) {
       this.reset(); this.selectedDeptId = null; this.majorList = [];
       const classId = row.classId || this.ids;
@@ -103,10 +109,12 @@ export default {
             listMajor({ deptId: this.selectedDeptId, pageNum: 1, pageSize: 200 }).then(r => {
               this.majorList = r.rows;
               this.open = true; this.title = "修改班级";
+              this.captureDialogSnapshot();
             });
           });
         } else {
           this.open = true; this.title = "修改班级";
+          this.captureDialogSnapshot();
         }
       });
     },

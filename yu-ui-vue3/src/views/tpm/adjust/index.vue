@@ -26,6 +26,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['tpm:adjust:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !adjustList.length" :rows="6">
     <el-table v-loading="loading" :data="adjustList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="调课类型" align="center" prop="adjustType" width="90">
@@ -64,8 +65,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !adjustList.length" description="暂无调停课申请，可调整查询条件或新增申请" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" v-model="open" width="680px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="680px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="排课" prop="scheduleId">
           <el-select v-model="form.scheduleId" placeholder="请选择排课（课程名 教室 周次节次）" filterable clearable style="width:100%">
@@ -132,7 +135,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -146,9 +149,11 @@ import { ElMessageBox } from 'element-plus'
 import { listAdjust, getAdjust, delAdjust, addAdjust, updateAdjust, approveAdjust, rejectAdjust } from "@/api/tpm/adjust"
 import { listSchedule } from "@/api/tpm/schedule"
 import { listClassroom } from "@/api/brm/classroom"
+import dialogGuard from "@/utils/dialogGuard"
 
 export default {
   name: "Adjust",
+  mixins: [dialogGuard],
   dicts: ['tpm_adjust_type', 'tpm_approve_status', 'sys_normal_disable'],
   data() {
     return {
@@ -215,11 +220,11 @@ export default {
       this.single = selection.length !== 1
       this.multiple = !selection.length
     },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加调停课申请" },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加调停课申请"; this.captureDialogSnapshot() },
     handleUpdate(row) {
       this.reset()
       const adjustId = row.adjustId || this.ids
-      getAdjust(adjustId).then(response => { this.form = response.data; this.open = true; this.title = "修改调停课申请" })
+      getAdjust(adjustId).then(response => { this.form = response.data; this.open = true; this.title = "修改调停课申请"; this.captureDialogSnapshot() })
     },
     submitForm() {
       this.$refs["form"].validate(valid => {

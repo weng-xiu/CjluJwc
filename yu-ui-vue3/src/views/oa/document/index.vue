@@ -44,6 +44,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !documentList.length" :rows="6">
     <el-table v-loading="loading" :data="documentList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="公文ID" align="center" prop="documentId" width="80" />
@@ -81,10 +82,12 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !documentList.length" description="暂无公文，可调整查询条件或拟制新公文" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :title="title" v-model="open" width="840px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="840px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="90px">
         <el-row>
           <el-col :span="12">
@@ -156,7 +159,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -217,9 +220,12 @@
 import { listDocument, getDocument, delDocument, addDocument, updateDocument, submitDocument, cancelDocument } from "@/api/oa/document"
 import { listUser, deptTreeSelect } from "@/api/system/user"
 import FileUpload from "@/components/FileUpload"
+import dialogGuard from "@/utils/dialogGuard"
 
 export default {
   name: "OaDocument",
+  mixins: [dialogGuard],
+  guardWatch: ['selectedCopyUserIds'],
   dicts: ['oa_document_type', 'oa_secret_level', 'oa_urgent_level', 'oa_document_status'],
   components: { FileUpload },
   data() {
@@ -351,6 +357,7 @@ export default {
       this.reset()
       this.open = true
       this.title = "添加公文"
+      this.captureDialogSnapshot()
     },
     handleUpdate(row) {
       this.reset()
@@ -365,6 +372,7 @@ export default {
         }
         this.open = true
         this.title = "修改公文"
+        this.captureDialogSnapshot()
       })
     },
     submitForm() {

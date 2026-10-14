@@ -42,6 +42,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !topicList.length" :rows="6">
     <el-table v-loading="loading" :data="topicList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="届别" align="center" prop="planYear" width="70" />
@@ -72,6 +73,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !topicList.length" description="暂无毕业论文选题，可调整查询条件或新增选题" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 

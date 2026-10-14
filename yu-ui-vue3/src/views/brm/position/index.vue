@@ -12,6 +12,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['brm:position:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !positionList.length" :rows="6">
     <el-table v-loading="loading" :data="positionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="教师ID" align="center" prop="teacherId" />
@@ -27,6 +28,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !positionList.length" description="暂无教师任职记录，可调整查询条件或新增任职" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">

@@ -17,6 +17,7 @@
           <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
         </el-row>
 
+        <app-skeleton :loading="loading && !taskList.length" :rows="6">
         <el-table v-loading="loading" :data="taskList">
           <el-table-column label="任务名称" align="center" prop="taskName" min-width="120" />
           <el-table-column label="任务ID" align="center" prop="taskId" :show-overflow-tooltip="true" width="170" />
@@ -48,6 +49,8 @@
           </el-table-column>
         </el-table>
 
+        <app-empty v-if="!loading && !taskList.length" description="当前无待办任务，可切换选项卡或刷新" />
+        </app-skeleton>
         <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
       </el-tab-pane>
 

@@ -40,6 +40,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['tpm:rule:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !ruleList.length" :rows="6">
     <el-table v-loading="loading" :data="ruleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="规则名称" align="center" prop="ruleName" min-width="120" show-overflow-tooltip />
@@ -65,8 +66,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !ruleList.length" description="暂无选课规则，可调整查询条件或新增规则" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" v-model="open" width="600px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="轮次" prop="roundId">
           <el-select v-model="form.roundId" placeholder="请选择轮次" style="width:100%">
@@ -91,7 +94,7 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
       </template>
     </el-dialog>
   </div>
@@ -102,10 +105,12 @@
 // type="text"→link；el-radio :label→:value；<div slot="footer">→<template #footer>。业务逻辑与 Vue2 保持一致。
 import { listRule, getRule, delRule, addRule, updateRule } from "@/api/tpm/rule"
 import { listRound } from "@/api/tpm/round"
+import dialogGuard from "@/utils/dialogGuard"
 
 export default {
   name: "Rule",
   dicts: ['sys_normal_disable', 'tpm_rule_type'],
+  mixins: [dialogGuard],
   data() {
     return {
       loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0,
@@ -140,11 +145,11 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.ruleId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加选课规则" },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加选课规则"; this.captureDialogSnapshot() },
     handleUpdate(row) {
       this.reset()
       const ruleId = row.ruleId || this.ids
-      getRule(ruleId).then(response => { this.form = response.data; this.open = true; this.title = "修改选课规则" })
+      getRule(ruleId).then(response => { this.form = response.data; this.open = true; this.title = "修改选课规则"; this.captureDialogSnapshot() })
     },
     submitForm() {
       this.$refs["form"].validate(valid => {
