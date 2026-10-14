@@ -20,6 +20,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="环节编码" align="center" prop="stepKey" width="150"/>
@@ -41,9 +42,11 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无离校环节，可调整查询条件或新增环节" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
 
-    <el-dialog :title="title" v-model="open" width="600px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="环节编码" prop="stepKey"><el-input v-model="form.stepKey" placeholder="如 LIBRARY / 自定义大写字母" :disabled="form.stepId!=null"/></el-form-item>
         <el-form-item label="环节名称" prop="stepName"><el-input v-model="form.stepName" placeholder="请输入环节名称"/></el-form-item>
@@ -58,7 +61,7 @@
         <el-form-item label="备注" prop="remark"><el-input v-model="form.remark" type="textarea" placeholder="请输入备注"/></el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
       </template>
     </el-dialog>
   </div>
@@ -69,10 +72,12 @@
 // .sync → v-model:xxx；slot="footer" → <template #footer>；type="text" → link；size mini → small；
 // el-radio label → value；@keyup.enter.native → @keyup.enter。业务逻辑与 Vue2 保持一致。
 import { listProcedureStep, getProcedureStep, addProcedureStep, updateProcedureStep, delProcedureStep } from "@/api/sam/procedureStep"
+import dialogGuard from "@/utils/dialogGuard"
 
 export default {
   name: "ProcedureStep",
   dicts: ['sam_step_auto_check'],
+  mixins: [dialogGuard],
   data() {
     return {
       loading: true, ids: [], multiple: true, showSearch: true, total: 0, list: [], title: "", open: false,
@@ -92,8 +97,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(i => i.stepId); this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加离校环节" },
-    handleUpdate(row) { this.reset(); getProcedureStep(row.stepId).then(res => { this.form = res.data; this.open = true; this.title = "修改离校环节" }) },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加离校环节"; this.captureDialogSnapshot() },
+    handleUpdate(row) { this.reset(); getProcedureStep(row.stepId).then(res => { this.form = res.data; this.open = true; this.title = "修改离校环节"; this.captureDialogSnapshot() }) },
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (!valid) return

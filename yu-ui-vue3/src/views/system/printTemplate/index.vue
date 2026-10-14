@@ -40,6 +40,9 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <!-- U3 加载失败态：接口异常时提供重试入口 -->
+    <app-error-state v-if="loadError && !templateList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !templateList.length" :rows="6">
     <el-table v-loading="loading" :data="templateList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="模板ID" align="center" prop="templateId" width="80" />
@@ -68,11 +71,13 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !templateList.length" description="暂无打印模板，可调整查询条件或新增模板" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改打印模板对话框 -->
-    <el-dialog :title="title" v-model="open" width="820px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="820px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="tplFormRef" :model="form" :rules="rules" label-width="90px">
         <el-row>
           <el-col :span="12">
@@ -113,7 +118,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -135,13 +140,17 @@
 // .sync → v-model:xxx；el-radio label → value；slot="footer" → <template #footer>；
 // type="text" → link；size mini → small；ref form → tplFormRef。Velocity 模板业务逻辑不变。
 import { listPrintTemplate, getPrintTemplate, addPrintTemplate, updatePrintTemplate, delPrintTemplate, previewPrintTemplate } from '@/api/system/printTemplate'
+import dialogGuard from '@/utils/dialogGuard'
 
 export default {
   name: 'PrintTemplate',
   dicts: ['sys_print_biz_type'],
+  mixins: [dialogGuard],
   data() {
     return {
       loading: true,
+      // U3 加载失败态
+      loadError: false,
       ids: [],
       single: true,
       multiple: true,
@@ -178,11 +187,12 @@ export default {
   methods: {
     getList() {
       this.loading = true
+      this.loadError = false
       listPrintTemplate(this.queryParams).then(response => {
         this.templateList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loadError = true; this.loading = false })
     },
     cancel() {
       this.open = false
@@ -217,6 +227,7 @@ export default {
       this.reset()
       this.open = true
       this.title = '新增打印模板'
+      this.captureDialogSnapshot()
     },
     handleUpdate(row) {
       this.reset()
@@ -225,6 +236,7 @@ export default {
         this.form = response.data
         this.open = true
         this.title = '修改打印模板'
+        this.captureDialogSnapshot()
       })
     },
     handlePreview(row) {

@@ -24,6 +24,7 @@
           <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
         </el-row>
 
+        <app-skeleton :loading="loading && !procedureList.length" :rows="6">
         <el-table v-loading="loading" :data="procedureList" @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="55" align="center" />
           <el-table-column label="学号" align="center" prop="studentNo" width="140"/>
@@ -43,6 +44,8 @@
             </template>
           </el-table-column>
         </el-table>
+        <app-empty v-if="!loading && !procedureList.length" description="暂无离校手续数据，可调整查询条件或先初始化手续" />
+        </app-skeleton>
         <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
       </el-tab-pane>
 
@@ -81,6 +84,18 @@
         <div class="dialog-footer" style="text-align:right"><el-button type="primary" @click="handleOpen=false">关 闭</el-button></div>
       </template>
     </el-dialog>
+
+    <!-- U3 批量操作反馈：手续初始化/自动判定进度与结果汇总 -->
+    <app-batch-progress
+      v-model="batchProgressOpen"
+      :title="batchProgressTitle"
+      :running="batchRunning"
+      :indeterminate="batchRunning"
+      :total="batchTotal"
+      :success="batchSuccess"
+      :failed="batchFailed"
+      :tip-text="batchTipText"
+      @closed="onBatchClosed" />
   </div>
 </template>
 
@@ -98,6 +113,8 @@ export default {
       loading: true, statLoading: false, ids: [], multiple: true, showSearch: true, total: 0,
       procedureList: [], activeTab: 'manage', overview: {}, stepStat: [],
       handleOpen: false, itemLoading: false, items: [], curProcedureId: null,
+      // U3 批量操作进度反馈（初始化/自动判定共用一个进度层）
+      batchProgressOpen: false, batchProgressTitle: '批量处理', batchRunning: false, batchTotal: 0, batchSuccess: 0, batchFailed: 0, batchTipText: '',
       queryParams: { pageNum: 1, pageSize: 10, studentNo: undefined, studentName: undefined, procedureStatus: undefined }
     }
   },
@@ -119,13 +136,30 @@ export default {
     resetQuery() { this.resetForm('queryForm'); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.procedureId); this.multiple = !selection.length },
     handleInit() {
-      this.$modal.confirm('将为全部已毕业（学籍状态=毕业）且尚无离校手续的学生初始化手续及环节明细（已存在自动跳过），是否继续？').then(() => initProcedure(null))
-        .then(res => { this.$modal.msgSuccess(res.msg || '初始化完成'); this.getList() }).catch(() => {})
+      this.$modal.confirm('将为全部已毕业（学籍状态=毕业）且尚无离校手续的学生初始化手续及环节明细（已存在自动跳过），是否继续？').then(() => {
+        this.startBatchProgress('初始化离校手续', '正在为已毕业学生批量初始化离校手续，请勿关闭窗口…')
+        return initProcedure(null)
+      }).then(res => { this.finishBatchProgress(res) }).catch(() => { this.failBatchProgress() })
     },
     handleAutoCheck() {
-      this.$modal.confirm('将按各环节配置的数据源自动判定办理状态并重算手续完成度，是否继续？').then(() => autoCheckProcedure(null))
-        .then(res => { this.$modal.msgSuccess(res.msg || '自动判定完成'); this.getList(); if (this.activeTab === 'stat') this.loadStat() }).catch(() => {})
+      this.$modal.confirm('将按各环节配置的数据源自动判定办理状态并重算手续完成度，是否继续？').then(() => {
+        this.startBatchProgress('自动判定环节状态', '正在按数据源自动判定各环节办理状态，请勿关闭窗口…')
+        return autoCheckProcedure(null)
+      }).then(res => { this.finishBatchProgress(res) }).catch(() => { this.failBatchProgress() })
     },
+    // U3 进度层辅助：后端单请求同步返回影响行数（data），无逐条失败契约，全部计入成功
+    startBatchProgress(title, tipText) {
+      this.batchProgressTitle = title; this.batchTipText = tipText
+      this.batchTotal = 0; this.batchSuccess = 0; this.batchFailed = 0
+      this.batchRunning = true; this.batchProgressOpen = true
+    },
+    finishBatchProgress(res) {
+      const rows = Number((res && res.data) || 0)
+      this.batchTotal = rows; this.batchSuccess = rows; this.batchFailed = 0
+      this.batchRunning = false
+    },
+    failBatchProgress() { this.batchRunning = false; this.batchProgressOpen = false },
+    onBatchClosed() { this.getList(); if (this.activeTab === 'stat') this.loadStat() },
     openHandle(row) {
       this.curProcedureId = row.procedureId; this.handleOpen = true; this.itemLoading = true; this.items = []
       listProcedureItems(row.procedureId).then(res => { this.items = res.data || [] }).finally(() => { this.itemLoading = false })

@@ -13,6 +13,9 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['aem:evaluationResult:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <!-- U3 加载失败态：接口异常时提供重试入口 -->
+    <app-error-state v-if="loadError && !evaluationResultList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !evaluationResultList.length" :rows="6">
     <el-table v-loading="loading" :data="evaluationResultList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="问卷ID" align="center" prop="questionnaireId" />
@@ -29,6 +32,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !evaluationResultList.length" description="暂无评教结果数据，可调整查询条件或新增评教结果" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" v-model="open" width="650px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
@@ -50,13 +55,13 @@
 import { listEvaluationResult, getEvaluationResult, delEvaluationResult, addEvaluationResult, updateEvaluationResult } from "@/api/aem/evaluationResult"
 export default {
   name: "EvaluationResult", dicts: [],
-  data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, evaluationResultList: [], title: "", open: false,
+  data() { return { loading: true, loadError: false, ids: [], single: true, multiple: true, showSearch: true, total: 0, evaluationResultList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, questionnaireId: null, courseId: null, teacherId: null },
     form: {}, rules: {} }
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listEvaluationResult(this.queryParams).then(response => { this.evaluationResultList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; this.loadError = false; listEvaluationResult(this.queryParams).then(response => { this.evaluationResultList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loadError = true; this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { resultId: null, questionnaireId: null, courseId: null, teacherId: null, studentId: null, totalScore: null, evalDate: null, comment: null }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

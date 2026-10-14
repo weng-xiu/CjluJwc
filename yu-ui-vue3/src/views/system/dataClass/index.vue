@@ -57,6 +57,7 @@
       title="登记口径即落地口径：台账与运行期的 @Sensitive 脱敏、字段加密相互印证，导出即为等保数据安全交付物。"
     />
 
+    <app-skeleton :loading="loading && !dataClassList.length" :rows="6">
     <el-table v-loading="loading" :data="dataClassList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="classId" width="70" />
@@ -96,6 +97,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !dataClassList.length" description="暂无数据分类分级台账，可调整查询条件或新增登记" />
+    </app-skeleton>
 
     <pagination
       v-show="total > 0"
@@ -106,7 +109,7 @@
     />
 
     <!-- 添加或修改台账登记对话框 -->
-    <el-dialog :title="title" v-model="open" width="620px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="620px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="12">
@@ -174,7 +177,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -185,10 +188,12 @@
 // 数据分类分级台账（K1 等保数据新规 · 管理端页面）
 // Vue3 约定：dicts 声明依赖字典；dict-tag/#default 插槽；v-hasPermi 按钮权限；this.download 导出；this.$modal 提示确认。
 import { listDataClass, getDataClass, delDataClass, addDataClass, updateDataClass } from '@/api/system/dataClass'
+import dialogGuard from '@/utils/dialogGuard'
 
 export default {
   name: 'DataClass',
   dicts: ['sys_data_category', 'sys_data_security_level', 'sys_data_protection', 'sys_yes_no', 'sys_normal_disable'],
+  mixins: [dialogGuard],
   data() {
     return {
       loading: true,
@@ -268,6 +273,7 @@ export default {
       this.reset()
       this.open = true
       this.title = '添加数据分类分级登记'
+      this.captureDialogSnapshot()
     },
     handleUpdate(row) {
       this.reset()
@@ -276,6 +282,7 @@ export default {
         this.form = response.data
         this.open = true
         this.title = '修改数据分类分级登记'
+        this.captureDialogSnapshot()
       })
     },
     submitForm() {

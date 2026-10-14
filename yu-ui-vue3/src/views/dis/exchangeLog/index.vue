@@ -12,6 +12,9 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['dis:exchangeLog:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <!-- U3 加载失败态：接口异常时提供重试入口 -->
+    <app-error-state v-if="loadError && !logList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !logList.length" :rows="6">
     <el-table v-loading="loading" :data="logList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="日志ID" align="center" prop="logId" width="80" />
@@ -33,6 +36,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !logList.length" description="暂无交换日志数据，可调整查询条件或等待同步任务写入" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
     <el-dialog title="交换日志详情" v-model="open" width="800px" append-to-body>
       <el-form :model="form" label-width="100px" disabled>
@@ -61,13 +66,13 @@
 import { listExchangeLog, getExchangeLog, delExchangeLog, cleanExchangeLog } from "@/api/dis/exchangeLog"
 export default {
   name: "DisExchangeLog", dicts: ['sys_common_status'],
-  data() { return { loading: true, ids: [], multiple: true, showSearch: true, total: 0, logList: [], open: false,
+  data() { return { loading: true, loadError: false, ids: [], multiple: true, showSearch: true, total: 0, logList: [], open: false,
     queryParams: { pageNum: 1, pageSize: 10, systemId: null, requestMethod: null, status: null },
     form: {} }
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listExchangeLog(this.queryParams).then(response => { this.logList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; this.loadError = false; listExchangeLog(this.queryParams).then(response => { this.logList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loadError = true; this.loading = false }) },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.logId); this.multiple = !selection.length },

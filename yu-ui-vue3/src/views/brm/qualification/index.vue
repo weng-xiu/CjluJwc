@@ -12,6 +12,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['brm:qualification:export']">导出</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !qualificationList.length" :rows="6">
     <el-table v-loading="loading" :data="qualificationList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="教师ID" align="center" prop="teacherId" />
@@ -27,8 +28,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !qualificationList.length" description="暂无授课资格数据，可调整查询条件或新增资格" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="教师ID" prop="teacherId"><el-input v-model="form.teacherId" placeholder="请输入教师ID" /></el-form-item>
         <el-form-item label="可授课程类别" prop="courseCategory"><el-input v-model="form.courseCategory" placeholder="请输入可授课程类别" /></el-form-item>
@@ -38,7 +41,7 @@
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :value="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
       </template>
     </el-dialog>
   </div>
@@ -47,8 +50,10 @@
 // Vue3 迁移：el-icon-* → 图标组件名；slot-scope → #default；:visible.sync → v-model；.sync → v-model:xxx；
 // type="text" → link；el-radio :label → :value；size mini → small；value-format yyyy-MM-dd → YYYY-MM-DD。业务逻辑与 Vue2 保持一致。
 import { listQualification, getQualification, delQualification, addQualification, updateQualification } from "@/api/brm/qualification"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
   name: "Qualification", dicts: ['sys_normal_disable'],
+  mixins: [dialogGuard],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, qualificationList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, courseCategory: null, status: null },
     form: {}, rules: { teacherId: [{ required: true, message: "教师ID不能为空", trigger: "blur" }], courseCategory: [{ required: true, message: "可授课程类别不能为空", trigger: "blur" }] } }
@@ -61,8 +66,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.qualId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加授课资格" },
-    handleUpdate(row) { this.reset(); const qualId = row.qualId || this.ids; getQualification(qualId).then(response => { this.form = response.data; this.open = true; this.title = "修改授课资格" }) },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加授课资格"; this.captureDialogSnapshot() },
+    handleUpdate(row) { this.reset(); const qualId = row.qualId || this.ids; getQualification(qualId).then(response => { this.form = response.data; this.open = true; this.title = "修改授课资格"; this.captureDialogSnapshot() }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.qualId != null) { updateQualification(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addQualification(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const qualIds = row.qualId || this.ids; this.$modal.confirm('是否确认删除资格编号为"' + qualIds + '"的数据项？').then(function() { return delQualification(qualIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('brm/qualification/export', { ...this.queryParams }, `qualification_${new Date().getTime()}.xlsx`) }

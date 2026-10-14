@@ -39,6 +39,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !scheduleList.length" :rows="6">
     <el-table v-loading="loading" :data="scheduleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="日程ID" align="center" prop="scheduleId" width="80" />
@@ -81,6 +82,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !scheduleList.length" description="暂无日程数据，可调整查询条件或新增日程" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
