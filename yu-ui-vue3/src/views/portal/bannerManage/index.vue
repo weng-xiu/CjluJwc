@@ -26,6 +26,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !bannerList.length" :rows="6">
     <el-table v-loading="loading" :data="bannerList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="缩略图" align="center" prop="imageUrl" width="140">
@@ -58,11 +59,13 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !bannerList.length" description="暂无轮播数据，可调整查询条件或新增轮播" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改轮播对话框 -->
-    <el-dialog :title="title" v-model="open" width="600px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="24">
@@ -113,7 +116,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -128,9 +131,11 @@
 // 并保留二次确认，取消或失败时回滚开关值；写操作仍受后端 portal:banner:edit 权限约束。
 // 缩略图/图片上传依赖本轮补齐的 ImagePreview / ImageUpload 全局组件。
 import { listBanner, getBanner, delBanner, addBanner, updateBanner } from '@/api/portal/banner'
+import dialogGuard from '@/utils/dialogGuard'
 
 export default {
   name: 'PortalBannerManage',
+  mixins: [dialogGuard],
   data() {
     return {
       loading: true,
@@ -210,6 +215,7 @@ export default {
       this.reset()
       this.open = true
       this.title = '添加轮播'
+      this.captureDialogSnapshot()
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -225,6 +231,7 @@ export default {
         }
         this.open = true
         this.title = '修改轮播'
+        this.captureDialogSnapshot()
       })
     },
     /** 提交按钮 */

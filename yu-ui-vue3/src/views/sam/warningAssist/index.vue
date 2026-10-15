@@ -26,6 +26,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-error-state v-if="loadError && !list.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list">
       <el-table-column label="学号" align="center" prop="studentNo" width="130"/>
       <el-table-column label="姓名" align="center" prop="studentName" width="100"/>
@@ -51,10 +53,12 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无帮扶任务，可手动派发或调整查询条件" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 手动派发对话框 -->
-    <el-dialog title="手动派发帮扶任务" v-model="dispatchOpen" width="560px" append-to-body>
+    <el-dialog title="手动派发帮扶任务" v-model="dispatchOpen" width="560px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="dispatchForm" :model="dispatchForm" :rules="dispatchRules" label-width="100px">
         <el-form-item label="关联预警ID" prop="warningId"><el-input v-model="dispatchForm.warningId" placeholder="请输入 sam_warning 的预警ID"/></el-form-item>
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="dispatchForm.studentId" placeholder="请输入学生ID"/></el-form-item>
@@ -71,7 +75,7 @@
         <el-form-item label="帮扶措施"><el-input v-model="dispatchForm.measure" type="textarea" :rows="2" placeholder="派发说明/初步措施"/></el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer"><el-button type="primary" @click="submitDispatch">确 定</el-button><el-button @click="dispatchOpen=false">取 消</el-button></div>
+        <div class="dialog-footer"><el-button type="primary" @click="submitDispatch">确 定</el-button><el-button @click="guardedCancel(() => dispatchOpen = false)">取 消</el-button></div>
       </template>
     </el-dialog>
 
@@ -131,13 +135,19 @@
 
 <script>
 import { listWarningAssist, getWarningAssist, dispatchWarningAssist, claimWarningAssist, followWarningAssist, finishWarningAssist, delWarningAssist } from "@/api/sam/warningAssist"
+import dialogGuard from "@/utils/dialogGuard"
 
 export default {
   name: "WarningAssist",
   dicts: ['sam_assist_status', 'sam_follow_type'],
+  mixins: [dialogGuard],
+  // 派发对话框模型为 dispatchForm（非默认 form），显式纳入脏检查基线
+  guardWatch: ['dispatchForm'],
   data() {
     return {
       loading: true, total: 0, list: [], showSearch: true,
+      // U3 加载失败态
+      loadError: false,
       warningTypeOptions: [
         { value: '0', label: '成绩预警' }, { value: '1', label: '学分预警' },
         { value: '2', label: '出勤预警' }, { value: '3', label: '综合预警' }
@@ -163,7 +173,8 @@ export default {
   methods: {
     getList() {
       this.loading = true
-      listWarningAssist(this.queryParams).then(r => { this.list = r.rows; this.total = r.total; this.loading = false })
+      this.loadError = false
+      listWarningAssist(this.queryParams).then(r => { this.list = r.rows; this.total = r.total; this.loading = false }).catch(() => { this.loadError = true; this.loading = false })
     },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.queryParams.helperUserId = null; this.resetForm("queryForm"); this.handleQuery() },
@@ -176,6 +187,7 @@ export default {
     handleDispatch() {
       this.dispatchForm = { warningId: null, studentId: null, studentNo: null, studentName: null, warningType: null, warningLevel: null, helperUserId: null, helperName: null, measure: null }
       this.dispatchOpen = true
+      this.captureDialogSnapshot()
     },
     submitDispatch() {
       this.$refs.dispatchForm.validate(valid => {

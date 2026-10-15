@@ -56,6 +56,9 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <!-- U3 加载失败态：接口异常时提供重试入口 -->
+    <app-error-state v-if="loadError && !list.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list">
       <el-table-column label="流水号" align="center" prop="auditId" width="90" />
       <el-table-column label="实体名称" align="center" prop="entityTypeLabel" width="110" />
@@ -71,6 +74,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无数据变更流水，可调整查询条件或等待业务操作留痕" />
+    </app-skeleton>
 
     <pagination
       v-show="total>0"
@@ -94,6 +99,8 @@ export default {
     return {
       // 遮罩层
       loading: true,
+      // U3 加载失败态
+      loadError: false,
       // 显示搜索条件
       showSearch: true,
       // 总条数
@@ -125,11 +132,12 @@ export default {
     /** 查询变更流水列表 */
     getList() {
       this.loading = true
+      this.loadError = false
       listDataAudit(this.addDateRange(this.queryParams, this.dateRange)).then(response => {
         this.list = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loadError = true; this.loading = false })
     },
     /** 搜索按钮操作 */
     handleQuery() {

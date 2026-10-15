@@ -22,6 +22,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-error-state v-if="loadError && !borrowList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !borrowList.length" :rows="6">
     <el-table v-loading="loading" :data="borrowList">
       <el-table-column label="教室" align="center" prop="classroomName" show-overflow-tooltip>
         <template #default="scope">
@@ -59,11 +61,13 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !borrowList.length" description="暂无借用申请，可发起新的申请" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 借用申请表单 -->
-    <el-dialog title="教室借用申请" v-model="open" width="620px" append-to-body>
+    <el-dialog title="教室借用申请" v-model="open" width="620px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="借用教室" prop="classroomId">
           <el-select v-model="form.classroomId" placeholder="请选择教室" filterable style="width: 100%" :loading="classroomLoading">
@@ -97,7 +101,7 @@
         <div class="dialog-footer">
           <el-button @click="handleCheckConflict" :loading="conflictLoading">冲突预检</el-button>
           <el-button type="primary" @click="submitForm">提交申请</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -136,14 +140,18 @@
 // 防越权与状态收敛均在后端强制（applicantUserId 绑定登录用户），前端不重复传递。
 import { listMyBorrow, listBorrowClassrooms, applyBorrow, cancelBorrow, checkBorrowConflict } from '@/api/portal/borrow'
 import { PORTAL_BORROW_APPROVE_STATUS } from '@/views/portal/dicts'
+import dialogGuard from '@/utils/dialogGuard'
 
 const CLASSROOM_FETCH_SIZE = 500
 
 export default {
   name: 'PortalBorrow',
+  mixins: [dialogGuard],
   data() {
     return {
       loading: true,
+      // U3 加载失败态
+      loadError: false,
       showSearch: true,
       total: 0,
       borrowList: [],
@@ -175,9 +183,13 @@ export default {
   methods: {
     getList() {
       this.loading = true
+      this.loadError = false
       listMyBorrow(this.queryParams).then((response) => {
         this.borrowList = response.rows
         this.total = response.total
+        this.loading = false
+      }).catch(() => {
+        this.loadError = true
         this.loading = false
       })
     },
@@ -237,6 +249,7 @@ export default {
       this.reset()
       this.open = true
       this.loadClassrooms()
+      this.captureDialogSnapshot()
     },
     handleTrace(row) {
       this.traceRow = row

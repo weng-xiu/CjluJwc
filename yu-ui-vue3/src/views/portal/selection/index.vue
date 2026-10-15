@@ -17,6 +17,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-error-state v-if="loadError && !courseList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !courseList.length" :rows="6">
     <el-table v-loading="loading" :data="courseList">
       <el-table-column label="课程名称" align="center" prop="courseName" show-overflow-tooltip />
       <el-table-column label="课程代码" align="center" prop="courseCode" width="120" />
@@ -39,6 +41,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !courseList.length" description="暂无可选课程，可调整查询条件或稍后再试" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
   </div>
@@ -62,6 +66,8 @@ export default {
   data() {
     return {
       loading: true,
+      // U3 加载失败态
+      loadError: false,
       showSearch: true,
       total: 0,
       courseList: [],
@@ -80,9 +86,13 @@ export default {
     /** 查询可选课程列表 */
     getList() {
       this.loading = true
+      this.loadError = false
       listCourse(this.queryParams).then((response) => {
         this.courseList = response.rows
         this.total = response.total
+        this.loading = false
+      }).catch(() => {
+        this.loadError = true
         this.loading = false
       })
     },

@@ -61,6 +61,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !deptList.length" :rows="6">
     <el-table
       v-if="refreshTable"
       v-loading="loading"
@@ -115,9 +116,11 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !deptList.length" description="暂无部门数据，可调整查询条件或新增部门" />
+    </app-skeleton>
 
     <!-- 添加或修改部门对话框 -->
-    <el-dialog :title="title" v-model="open" width="600px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
         <el-row>
           <el-col :span="24" v-if="form.parentId !== 0">
@@ -179,7 +182,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -193,10 +196,12 @@
 //  type="text" → link；el-radio :label → :value；size mini → small）。业务逻辑与 Vue2 保持一致。
 import { listDept, getDept, delDept, addDept, updateDept, updateDeptSort, listDeptExcludeChild } from '@/api/system/dept'
 import { syncFromSys } from '@/api/brm/dept'
+import dialogGuard from '@/utils/dialogGuard'
 
 export default {
   name: 'Dept',
   dicts: ['sys_normal_disable'],
+  mixins: [dialogGuard],
   data() {
     return {
       // 遮罩层
@@ -311,6 +316,7 @@ export default {
       }
       this.open = true
       this.title = '添加部门'
+      this.captureDialogSnapshot()
       listDept().then(response => {
         this.deptOptions = this.buildDeptTreeOptions(this.handleTree(response.data, 'deptId'))
       })
@@ -338,6 +344,7 @@ export default {
         this.form = response.data
         this.open = true
         this.title = '修改部门'
+        this.captureDialogSnapshot()
         listDeptExcludeChild(row.deptId).then(response => {
           this.deptOptions = this.buildDeptTreeOptions(this.handleTree(response.data, 'deptId'))
           if (this.deptOptions.length == 0) {

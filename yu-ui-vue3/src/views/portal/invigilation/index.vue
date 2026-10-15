@@ -13,6 +13,8 @@
       </el-form-item>
     </el-form>
 
+    <app-error-state v-if="loadError && !invigilationList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !invigilationList.length" :rows="6">
     <el-table v-loading="loading" :data="invigilationList">
       <el-table-column label="考试名称" align="center" prop="examName" show-overflow-tooltip />
       <el-table-column label="教室" align="center" prop="classroomName" />
@@ -32,6 +34,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !invigilationList.length" description="暂无监考安排，可调整查询条件" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
   </div>
@@ -50,6 +54,8 @@ export default {
   data() {
     return {
       loading: true,
+      // U3 加载失败态
+      loadError: false,
       showSearch: true,
       total: 0,
       invigilationList: [],
@@ -69,9 +75,13 @@ export default {
     /** 查询监考安排列表（教师端） */
     getList() {
       this.loading = true
+      this.loadError = false
       listInvigilation(this.queryParams).then((response) => {
         this.invigilationList = response.rows
         this.total = response.total
+        this.loading = false
+      }).catch(() => {
+        this.loadError = true
         this.loading = false
       })
     },

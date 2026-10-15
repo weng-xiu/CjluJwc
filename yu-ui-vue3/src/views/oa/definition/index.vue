@@ -18,6 +18,9 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <!-- U3 加载失败态：接口异常时提供重试入口 -->
+    <app-error-state v-if="loadError && !definitionList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !definitionList.length" :rows="6">
     <el-table v-loading="loading" :data="definitionList">
       <el-table-column label="流程定义ID" align="center" prop="id" :show-overflow-tooltip="true" width="200" />
       <el-table-column label="流程标识" align="center" prop="key" />
@@ -39,6 +42,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !definitionList.length" description="暂无流程定义，部署流程后可在此查看与管理" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
@@ -162,6 +167,8 @@ export default {
   data() {
     return {
       loading: true,
+      // U3 加载失败态
+      loadError: false,
       showSearch: false,
       total: 0,
       definitionList: [],
@@ -208,11 +215,12 @@ export default {
   methods: {
     getList() {
       this.loading = true
+      this.loadError = false
       listDefinition(this.queryParams).then(response => {
         this.definitionList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loadError = true; this.loading = false })
     },
     handleUpload(option) {
       const data = new FormData()

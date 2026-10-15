@@ -15,6 +15,8 @@
       </el-form-item>
     </el-form>
 
+    <app-error-state v-if="loadError && !questionnaireList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !questionnaireList.length" :rows="6">
     <el-table v-loading="loading" :data="questionnaireList">
       <el-table-column label="问卷标题" align="center" prop="title" show-overflow-tooltip />
       <el-table-column label="问卷说明" align="center" prop="description" min-width="180" show-overflow-tooltip>
@@ -64,6 +66,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !questionnaireList.length" description="暂无评教问卷，可调整查询条件" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
   </div>
@@ -89,6 +93,8 @@ export default {
   data() {
     return {
       loading: true,
+      // U3 加载失败态
+      loadError: false,
       showSearch: true,
       total: 0,
       questionnaireList: [],
@@ -110,9 +116,13 @@ export default {
     /** 查询待评教问卷列表（学生端） */
     getList() {
       this.loading = true
+      this.loadError = false
       listQuestionnaire(this.queryParams).then((response) => {
         this.questionnaireList = response.rows
         this.total = response.total
+        this.loading = false
+      }).catch(() => {
+        this.loadError = true
         this.loading = false
       })
     },

@@ -21,6 +21,8 @@
       show-icon
     />
 
+    <app-error-state v-if="loadError && !filterItem.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !filterItem.length" :rows="6">
     <el-table v-loading="loading" :data="filterItem">
       <el-table-column label="课程名称" align="center" prop="courseName" show-overflow-tooltip />
       <el-table-column label="学期" align="center" prop="semesterName" width="140" show-overflow-tooltip>
@@ -53,6 +55,7 @@
         <div class="eval-empty">暂无评教结果。若已有学生提交，请确认课程是否已归档到任课教师档案。</div>
       </template>
     </el-table>
+    </app-skeleton>
 
     <!-- 真实评语列表 -->
     <el-dialog title="学生评语" v-model="detailOpen" width="640px" append-to-body>
@@ -97,6 +100,8 @@ export default {
   data() {
     return {
       loading: true,
+      // U3 加载失败态
+      loadError: false,
       showSearch: true,
       resultList: [],
       detailOpen: false,
@@ -126,9 +131,13 @@ export default {
     /** 查询本人评教聚合结果 */
     getList() {
       this.loading = true
+      this.loadError = false
       getTeacherResults()
         .then((response) => {
           this.resultList = response.data || []
+        })
+        .catch(() => {
+          this.loadError = true
         })
         .finally(() => {
           this.loading = false

@@ -25,6 +25,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !columnList.length" :rows="6">
     <el-table v-loading="loading" :data="columnList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="栏目名称" align="center" prop="columnName" />
@@ -52,11 +53,13 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !columnList.length" description="暂无栏目数据，可调整查询条件或新增栏目" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改栏目对话框 -->
-    <el-dialog :title="title" v-model="open" width="600px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="24">
@@ -114,7 +117,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -128,10 +131,12 @@
 // portal_column_type / sys_yes_no 字典已在 sys_dict_data 入库，故沿用 dicts 声明；
 // 图标占位提示由 el-icon-menu 改为 Element Plus 组件名，避免误导录入旧字体类。
 import { listColumn, getColumn, delColumn, addColumn, updateColumn } from '@/api/portal/column'
+import dialogGuard from '@/utils/dialogGuard'
 
 export default {
   name: 'PortalColumnManage',
   dicts: ['portal_column_type', 'sys_yes_no'],
+  mixins: [dialogGuard],
   data() {
     return {
       loading: true,
@@ -220,6 +225,7 @@ export default {
       this.getColumnOptions()
       this.open = true
       this.title = '添加栏目'
+      this.captureDialogSnapshot()
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -230,6 +236,7 @@ export default {
         this.form = response.data
         this.open = true
         this.title = '修改栏目'
+        this.captureDialogSnapshot()
       })
     },
     /** 提交按钮 */

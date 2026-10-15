@@ -51,6 +51,7 @@
     />
 
     <template v-else>
+      <app-skeleton :loading="loading && !scheduleList.length" :rows="6">
       <el-table v-loading="loading" :data="scheduleList">
         <el-table-column label="课程名称" align="center" prop="courseName" show-overflow-tooltip />
         <el-table-column label="教师" align="center" prop="teacherName" width="100" />
@@ -82,6 +83,8 @@
           </template>
         </el-table-column>
       </el-table>
+      <app-empty v-if="!loading && !scheduleList.length" description="本学期暂无课表，可切换学期或刷新" />
+      </app-skeleton>
 
       <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
     </template>

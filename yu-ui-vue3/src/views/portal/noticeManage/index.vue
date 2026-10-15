@@ -36,6 +36,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !noticeList.length" :rows="6">
     <el-table v-loading="loading" :data="noticeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="通知标题" align="center" prop="noticeTitle" show-overflow-tooltip />
@@ -78,11 +79,13 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !noticeList.length" description="暂无教务通知，可调整查询条件或新增通知" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改教务通知对话框 -->
-    <el-dialog :title="title" v-model="open" width="700px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="700px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="通知标题" prop="noticeTitle">
           <el-input v-model="form.noticeTitle" placeholder="请输入通知标题" />
@@ -130,7 +133,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -145,10 +148,12 @@
 // （对应 dict_key 未入 sys_dict_data）。增删改查与导出逻辑与 Vue2 一致。
 import { listNoticeManage, getNoticeManage, delNotice, addNotice, updateNotice } from '@/api/portal/notice'
 import { PORTAL_NOTICE_TYPE, PORTAL_PUBLISH_STATUS, PORTAL_TARGET_ROLE } from '@/views/portal/dicts'
+import dialogGuard from '@/utils/dialogGuard'
 
 export default {
   name: 'PortalNoticeManage',
   dicts: ['sys_normal_disable', 'sys_yes_no'],
+  mixins: [dialogGuard],
   data() {
     return {
       loading: true,
@@ -235,6 +240,7 @@ export default {
       this.reset()
       this.open = true
       this.title = '添加教务通知'
+      this.captureDialogSnapshot()
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -244,6 +250,7 @@ export default {
         this.form = response.data
         this.open = true
         this.title = '修改教务通知'
+        this.captureDialogSnapshot()
       })
     },
     /** 提交按钮 */

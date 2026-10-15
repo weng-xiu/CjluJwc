@@ -31,6 +31,8 @@
       <template #header>
         <span>我的异动申请</span>
       </template>
+      <app-error-state v-if="changeError && !changeList.length" @retry="getChangeList" />
+      <app-skeleton v-else :loading="changeLoading && !changeList.length" :rows="6">
       <el-table v-loading="changeLoading" :data="changeList">
         <el-table-column label="异动类型" align="center" prop="changeType" width="110">
           <template #default="scope">
@@ -64,6 +66,8 @@
           </template>
         </el-table-column>
       </el-table>
+      <app-empty v-if="!changeLoading && !changeList.length" description="暂无异动申请记录，可点击异动申请发起" />
+      </app-skeleton>
       <pagination
         v-show="changeTotal > 0"
         :total="changeTotal"
@@ -74,7 +78,7 @@
     </el-card>
 
     <!-- 学籍异动申请 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="异动类型" prop="changeType">
           <el-select v-model="form.changeType" placeholder="请选择异动类型" style="width: 100%">
@@ -92,7 +96,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -112,10 +116,12 @@
 // 但 Vue2 页面未消费，学生提交后无法看到进度，属于申请闭环缺失。
 import { listStudentStatus, addStatusChange, listMyStatusChanges } from '@/api/portal/studentStatus'
 import { PORTAL_STATUS_CHANGE_TYPE_SELF_SERVICE, PORTAL_APPROVE_STATUS, PORTAL_STUDENT_STATUS } from '@/views/portal/dicts'
+import dialogGuard from '@/utils/dialogGuard'
 
 export default {
   name: 'PortalStudentStatus',
   dicts: ['sys_user_sex'],
+  mixins: [dialogGuard],
   data() {
     return {
       loading: true,
@@ -123,6 +129,8 @@ export default {
       title: '',
       open: false,
       changeLoading: false,
+      // U3 加载失败态
+      changeError: false,
       changeList: [],
       changeTotal: 0,
       changeParams: { pageNum: 1, pageSize: 10 },
@@ -154,10 +162,14 @@ export default {
     /** 查询本人异动申请记录 */
     getChangeList() {
       this.changeLoading = true
+      this.changeError = false
       listMyStatusChanges(this.changeParams)
         .then((response) => {
           this.changeList = response.rows || []
           this.changeTotal = response.total || 0
+        })
+        .catch(() => {
+          this.changeError = true
         })
         .finally(() => {
           this.changeLoading = false
@@ -168,6 +180,7 @@ export default {
       this.reset()
       this.open = true
       this.title = '学籍异动申请'
+      this.captureDialogSnapshot()
     },
     // 取消按钮
     cancel() {

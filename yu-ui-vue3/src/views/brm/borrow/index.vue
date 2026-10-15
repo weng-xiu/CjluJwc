@@ -31,6 +31,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !borrowList.length" :rows="6">
     <el-table v-loading="loading" :data="borrowList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="教室" align="center" min-width="150" show-overflow-tooltip>
@@ -70,8 +71,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !borrowList.length" description="暂无借用申请，可调整查询条件或新增申请" />
 
     <pagination v-show="total>0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList"/>
+    </app-skeleton>
 
     <!-- 新增/修改申请 -->
     <el-dialog :title="title" v-model="open" width="620px" append-to-body>

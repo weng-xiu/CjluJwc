@@ -26,6 +26,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-error-state v-if="loadError && !gradeList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !gradeList.length" :rows="6">
     <el-table v-loading="loading" :data="gradeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学生姓名" align="center" prop="studentName" />
@@ -51,11 +53,13 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !gradeList.length" description="暂无成绩录入记录，可录入成绩或使用批量录入" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 单条成绩录入/修改 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="课程" prop="courseName">
           <el-input v-model="form.courseName" placeholder="请输入课程名称" />
@@ -81,7 +85,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -103,14 +107,18 @@
 import { listGradeEntry, addGradeEntry, updateGradeEntry } from '@/api/portal/grade'
 import { GRADE_EXAM_TYPE, PORTAL_SUBMIT_STATUS } from '@/views/portal/dicts'
 import GradeEntryMatrix from '@/components/GradeEntryMatrix'
+import dialogGuard from '@/utils/dialogGuard'
 
 export default {
   name: 'PortalGradeEntry',
   components: { GradeEntryMatrix },
   dicts: ['sys_normal_disable'],
+  mixins: [dialogGuard],
   data() {
     return {
       loading: true,
+      // U3 加载失败态
+      loadError: false,
       ids: [],
       single: true,
       showSearch: true,
@@ -141,9 +149,13 @@ export default {
     /** 查询成绩录入列表（教师端） */
     getList() {
       this.loading = true
+      this.loadError = false
       listGradeEntry(this.queryParams).then((response) => {
         this.gradeList = response.rows
         this.total = response.total
+        this.loading = false
+      }).catch(() => {
+        this.loadError = true
         this.loading = false
       })
     },
@@ -187,6 +199,7 @@ export default {
       this.reset()
       this.open = true
       this.title = '录入成绩'
+      this.captureDialogSnapshot()
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -198,6 +211,7 @@ export default {
         }
         this.open = true
         this.title = '修改成绩'
+        this.captureDialogSnapshot()
       })
     },
     /** 打开成绩录入矩阵 */

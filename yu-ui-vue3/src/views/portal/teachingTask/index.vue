@@ -24,6 +24,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-error-state v-if="loadError && !taskList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !taskList.length" :rows="6">
     <el-table v-loading="loading" :data="taskList">
       <el-table-column label="课程名称" align="center" prop="courseName" show-overflow-tooltip />
       <el-table-column label="课程代码" align="center" prop="courseCode" width="120" />
@@ -38,6 +40,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !taskList.length" description="暂无教学任务，可调整查询条件" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
   </div>
@@ -63,6 +67,8 @@ export default {
   data() {
     return {
       loading: true,
+      // U3 加载失败态
+      loadError: false,
       showSearch: true,
       total: 0,
       taskList: [],
@@ -101,9 +107,13 @@ export default {
     /** 查询教学任务列表（教师端） */
     getList() {
       this.loading = true
+      this.loadError = false
       listTeachingTask(this.queryParams).then((response) => {
         this.taskList = response.rows
         this.total = response.total
+        this.loading = false
+      }).catch(() => {
+        this.loadError = true
         this.loading = false
       })
     },

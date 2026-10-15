@@ -27,6 +27,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-error-state v-if="loadError && !adjustmentList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !adjustmentList.length" :rows="6">
     <el-table v-loading="loading" :data="adjustmentList">
       <el-table-column label="课程名称" align="center" prop="courseName" show-overflow-tooltip />
       <el-table-column label="调整类型" align="center" prop="adjustType" width="90">
@@ -76,11 +78,13 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !adjustmentList.length" description="暂无调停课申请，可调整查询条件或提交新申请" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 调停课申请：必须挂在本人任课的排课上（后端 /apply 校验 scheduleId 归属） -->
-    <el-dialog :title="title" v-model="open" width="620px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="620px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="选择课程" prop="scheduleId">
           <el-select v-model="form.scheduleId" placeholder="请选择本人任课的排课" filterable style="width: 100%" @change="handleSourceChange">
@@ -129,7 +133,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">提 交</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button @click="guardedCancel(cancel)">取 消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -151,14 +155,18 @@
 // 审批状态枚举补 '3'=已撤销（sql/phase24 起门户撤销申请会落该值），与撤销按钮形成闭环。
 import { listAdjustment, addAdjustment, cancelAdjustment, listMyAdjustSources } from '@/api/portal/adjustment'
 import { PORTAL_ADJUST_TYPE, PORTAL_APPROVE_STATUS } from '@/views/portal/dicts'
+import dialogGuard from '@/utils/dialogGuard'
 
 const SOURCE_FETCH_SIZE = 200
 
 export default {
   name: 'PortalAdjustment',
+  mixins: [dialogGuard],
   data() {
     return {
       loading: true,
+      // U3 加载失败态
+      loadError: false,
       showSearch: true,
       total: 0,
       adjustmentList: [],
@@ -212,9 +220,13 @@ export default {
     /** 查询调停课申请列表（教师端，后端强制收敛为本人申请） */
     getList() {
       this.loading = true
+      this.loadError = false
       listAdjustment(this.queryParams).then((response) => {
         this.adjustmentList = response.rows
         this.total = response.total
+        this.loading = false
+      }).catch(() => {
+        this.loadError = true
         this.loading = false
       })
     },
@@ -308,6 +320,7 @@ export default {
       this.open = true
       this.title = '调停课申请'
       this.loadSources()
+      this.captureDialogSnapshot()
     },
     /** 撤销本人待审申请 */
     handleCancel(row) {
