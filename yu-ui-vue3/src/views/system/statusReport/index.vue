@@ -122,6 +122,8 @@
           </el-form-item>
         </el-form>
 
+        <app-error-state v-if="batchError && !batchList.length" @retry="loadBatch" />
+        <app-skeleton v-else :loading="batchLoading && !batchList.length" :rows="6">
         <el-table v-loading="batchLoading" :data="batchList" border size="small">
           <el-table-column label="批次号" prop="batchId" width="80" align="center" />
           <el-table-column label="上报类型" width="120" align="center">
@@ -185,6 +187,8 @@
             </template>
           </el-table-column>
         </el-table>
+        <app-empty v-if="!batchLoading && !batchList.length" description="暂无上报批次，可在「数据预览与生成」页签生成上报批次" />
+        </app-skeleton>
         <pagination
           v-show="batchTotal > 0"
           v-model:page="batchQuery.pageNum"
@@ -269,6 +273,8 @@ export default {
       fieldQueryType: '01',
       // 批次
       batchLoading: false,
+      // U3 加载失败态
+      batchError: false,
       batchList: [],
       batchTotal: 0,
       batchQuery: {
@@ -402,9 +408,12 @@ export default {
     },
     loadBatch() {
       this.batchLoading = true
+      this.batchError = false
       listReportBatch(this.batchQuery).then(res => {
         this.batchList = res.rows || []
         this.batchTotal = res.total || 0
+      }).catch(() => {
+        this.batchError = true
       }).finally(() => {
         this.batchLoading = false
       })

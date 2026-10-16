@@ -114,6 +114,8 @@
       </el-col>
     </el-row>
 
+    <app-error-state v-if="loadError && !chatList.length" @retry="getList" />
+    <app-skeleton v-else :loading="loading && !chatList.length" :rows="6">
     <el-table v-loading="loading" :data="chatList">
       <el-table-column label="记录ID" align="center" prop="recordId" width="80" />
       <el-table-column label="提问用户" align="center" width="140">
@@ -151,6 +153,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !chatList.length" description="暂无问答留痕，可调整筛选条件或稍后刷新" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" :total="total" @pagination="getList" />
 
@@ -211,6 +215,8 @@ export default {
       loading: true,
       total: 0,
       chatList: [],
+      // U3 加载失败态
+      loadError: false,
       daterange: [],
       queryParams: {
         pageNum: 1,
@@ -262,12 +268,13 @@ export default {
     },
     getList() {
       this.loading = true
+      this.loadError = false
       const q = this.buildQuery()
       listAiChat(q).then(response => {
         this.chatList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loadError = true; this.loading = false })
     },
     loadStat() {
       this.statLoading = true

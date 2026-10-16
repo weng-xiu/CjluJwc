@@ -29,7 +29,8 @@
     <!-- 明细表 -->
     <el-tabs type="border-card" style="margin-top:12px">
       <el-tab-pane label="教室利用率">
-        <el-table :data="utilList" v-loading="utilLoading" size="small" max-height="420">
+        <app-skeleton :loading="utilLoading && !utilList.length" :rows="6">
+        <el-table v-if="utilList.length" :data="utilList" v-loading="utilLoading" size="small" max-height="420">
           <el-table-column label="教室" prop="classroomName" show-overflow-tooltip/>
           <el-table-column label="教学楼" prop="buildingName" width="140" show-overflow-tooltip/>
           <el-table-column label="类型" prop="typeName" width="120" show-overflow-tooltip/>
@@ -40,9 +41,12 @@
             <template #default="scope"><el-tag :type="rateTag(scope.row.utilizationRate)" size="small">{{ scope.row.utilizationRate }}%</el-tag></template>
           </el-table-column>
         </el-table>
+        <app-empty v-else description="暂无教室利用率数据，可输入学期ID后点击「生成分析」" />
+        </app-skeleton>
       </el-tab-pane>
       <el-tab-pane label="教师工作量">
-        <el-table :data="workloadList" v-loading="workLoading" size="small" max-height="420">
+        <app-skeleton :loading="workLoading && !workloadList.length" :rows="6">
+        <el-table v-if="workloadList.length" :data="workloadList" v-loading="workLoading" size="small" max-height="420">
           <el-table-column label="排名" type="index" width="55" align="center"/>
           <el-table-column label="教师" prop="teacherName" width="120" show-overflow-tooltip/>
           <el-table-column label="工号" prop="teacherCode" width="120" show-overflow-tooltip/>
@@ -52,10 +56,13 @@
           <el-table-column label="排课数" prop="scheduleCount" width="80" align="center"/>
           <el-table-column label="周课时" prop="weeklySessions" width="90" align="center"/>
         </el-table>
+        <app-empty v-else description="暂无教师工作量数据，可输入学期ID后点击「生成分析」" />
+        </app-skeleton>
       </el-tab-pane>
       <el-tab-pane>
         <template #label>维保到期提醒 <el-badge v-if="dueList.length" :value="dueList.length" class="item"/></template>
-        <el-table :data="dueList" v-loading="dueLoading" size="small" max-height="420">
+        <app-skeleton :loading="dueLoading && !dueList.length" :rows="6">
+        <el-table v-if="dueList.length" :data="dueList" v-loading="dueLoading" size="small" max-height="420">
           <el-table-column label="设备" prop="equipName" show-overflow-tooltip/>
           <el-table-column label="类型" prop="equipType" width="120" show-overflow-tooltip/>
           <el-table-column label="型号" prop="model" width="140" show-overflow-tooltip/>
@@ -68,6 +75,8 @@
             </template>
           </el-table-column>
         </el-table>
+        <app-empty v-else description="暂无近期维保到期设备" />
+        </app-skeleton>
       </el-tab-pane>
     </el-tabs>
   </div>

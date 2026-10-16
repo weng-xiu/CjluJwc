@@ -13,6 +13,7 @@
             <el-button type="primary" icon="Search" @click="loadTopics">搜索</el-button>
           </el-form-item>
         </el-form>
+        <app-skeleton :loading="topicLoading && !topicList.length" :rows="6">
         <el-table v-loading="topicLoading" :data="topicList" border>
           <el-table-column label="论文题目" prop="topicName" min-width="220" show-overflow-tooltip />
           <el-table-column label="来源" prop="topicSource" width="120">
@@ -32,6 +33,8 @@
             </template>
           </el-table-column>
         </el-table>
+        <app-empty v-if="!topicLoading && !topicList.length" description="暂无可选题目，可稍后刷新或联系指导教师发布题目" />
+        </app-skeleton>
         <pagination v-show="topicTotal > 0" :total="topicTotal" v-model:page="topicQuery.pageNum" v-model:limit="topicQuery.pageSize" @pagination="loadTopics" />
       </div>
 
@@ -92,6 +95,8 @@
 
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" />
 
+      <app-error-state v-if="loadError && !thesisList.length" @retry="getList" />
+      <app-skeleton v-else :loading="loading && !thesisList.length" :rows="6">
       <el-table v-loading="loading" :data="thesisList" border>
         <el-table-column label="学号" prop="studentNo" width="120" />
         <el-table-column label="学生" prop="studentName" width="100" />
@@ -117,11 +122,13 @@
           </template>
         </el-table-column>
       </el-table>
+      <app-empty v-if="!loading && !thesisList.length" description="暂无名下毕业论文（设计），可调整查询条件或稍后刷新" />
+      </app-skeleton>
       <pagination v-show="total > 0" :total="total" v-model:page="queryParams.pageNum" v-model:limit="queryParams.pageSize" @pagination="getList" />
     </template>
 
     <!-- 学生提交环节材料 -->
-    <el-dialog title="提交环节材料" v-model="submitOpen" width="560px" append-to-body>
+    <el-dialog title="提交环节材料" v-model="submitOpen" width="560px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="submitFormRef" :model="submitForm" :rules="submitRules" label-width="90px">
         <el-form-item label="环节">
           <el-input :model-value="stageLabel(myThesis && myThesis.currentStage)" disabled />
@@ -138,7 +145,7 @@
       </el-form>
       <template #footer>
         <el-button type="primary" @click="doSubmit">提 交</el-button>
-        <el-button @click="submitOpen = false">取 消</el-button>
+        <el-button @click="guardedCancel(() => submitOpen = false)">取 消</el-button>
       </template>
     </el-dialog>
 
@@ -241,12 +248,16 @@ import {
 import {
   THESIS_STAGE, THESIS_STAGE_STATUS, THESIS_GRADE_LEVEL, THESIS_TOPIC_SOURCE, THESIS_DIFFICULTY
 } from '@/views/portal/dicts'
+import dialogGuard from '@/utils/dialogGuard'
 
 const SUBMITTABLE_STAGES = ['2', '3', '5']
 
 export default {
   name: 'PortalThesis',
   components: { ProcessTable, DegreePreview },
+  mixins: [dialogGuard],
+  // 提交环节材料对话框模型为 submitForm（非默认 form），显式纳入脏检查基线
+  guardWatch: ['submitForm'],
   data() {
     return {
       stageOptions: THESIS_STAGE,
@@ -269,6 +280,8 @@ export default {
       degreeData: {},
       // 教师
       loading: false,
+      // U3 加载失败态
+      loadError: false,
       showSearch: true,
       thesisList: [],
       total: 0,
@@ -355,6 +368,7 @@ export default {
     openSubmit() {
       this.submitForm = { title: this.stageLabel(this.myThesis.currentStage) + '材料', content: undefined, attachment: undefined }
       this.submitOpen = true
+      this.captureDialogSnapshot()
     },
     doSubmit() {
       this.$refs.submitFormRef.validate((valid) => {
@@ -381,10 +395,14 @@ export default {
     /* ---------- 教师 ---------- */
     getList() {
       this.loading = true
+      this.loadError = false
       listAdvisorThesis(this.queryParams)
         .then((response) => {
           this.thesisList = response.rows
           this.total = response.total
+        })
+        .catch(() => {
+          this.loadError = true
         })
         .finally(() => {
           this.loading = false

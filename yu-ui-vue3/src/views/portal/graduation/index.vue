@@ -9,7 +9,8 @@
       class="grad-alert"
     />
 
-    <div v-loading="loading">
+    <app-error-state v-if="loadError" @retry="load" />
+    <div v-else v-loading="loading">
       <el-row :gutter="16">
         <el-col :span="24">
           <el-card shadow="never" class="grad-summary">
@@ -101,6 +102,8 @@ export default {
   data() {
     return {
       loading: false,
+      // U3 加载失败态
+      loadError: false,
       data: {}
     }
   },
@@ -128,9 +131,13 @@ export default {
     },
     load() {
       this.loading = true
+      this.loadError = false
       getGraduationPreReview()
         .then((response) => {
           this.data = response.data || {}
+        })
+        .catch(() => {
+          this.loadError = true
         })
         .finally(() => {
           this.loading = false

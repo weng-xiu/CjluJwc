@@ -1,8 +1,9 @@
 <template>
   <div class="app-container" v-loading="loading">
-    <el-alert v-if="!data.available && data.note" :title="data.note" type="warning" :closable="false" show-icon class="rc-alert" />
+    <el-alert v-if="!loadError && !data.available && data.note" :title="data.note" type="warning" :closable="false" show-icon class="rc-alert" />
+    <app-error-state v-if="loadError" @retry="load" />
 
-    <template v-if="data.available">
+    <template v-else-if="data.available">
       <el-card shadow="never" class="rc-card">
         <div class="rc-student">
           <div>
@@ -90,6 +91,8 @@ export default {
   data() {
     return {
       loading: false,
+      // U3 加载失败态
+      loadError: false,
       data: {}
     }
   },
@@ -110,9 +113,13 @@ export default {
     },
     load() {
       this.loading = true
+      this.loadError = false
       aiRecommend()
         .then((res) => {
           this.data = res.data || {}
+        })
+        .catch(() => {
+          this.loadError = true
         })
         .finally(() => {
           this.loading = false
