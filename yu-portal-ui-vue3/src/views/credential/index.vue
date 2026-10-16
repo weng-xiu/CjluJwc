@@ -16,8 +16,7 @@
             </el-form-item>
             <el-form-item label="学期" v-if="bizType === 'GRADE' || bizType === 'SCHEDULE'">
               <el-select v-model="semesterId" placeholder="全部学期" clearable>
-                <el-option label="2025-2026第二学期" :value="2" />
-                <el-option label="2025-2026第一学期" :value="1" />
+                <el-option v-for="s in semesterOptions" :key="s.semesterId" :label="s.semesterName" :value="s.semesterId" />
               </el-select>
             </el-form-item>
             <el-form-item v-if="bizType === 'GRADE' || bizType === 'SCHEDULE'">
@@ -143,9 +142,12 @@ export default {
   },
   computed: {
     roles() { return this.$store.state.user.roles || [] },
-    userId() { return this.$store.state.user.userId }
+    userId() { return this.$store.state.user.userId },
+    // E2 学期改全局 store 供给（brm_semester 数据），换学期零发版
+    semesterOptions() { return this.$store.getters['semester/semesterOptions'] }
   },
   created() {
+    this.$store.dispatch('semester/load')
     const opts = []
     if (this.roles.includes('student') || this.roles.includes('admin')) {
       opts.push({ value: 'GRADE', label: '成绩证明单' })

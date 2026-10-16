@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +28,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "用户信息管理")
 @RestController
 @RequestMapping("/test/user")
+// G2 攻击面收敛：RuoYi 遗留演示接口原无任何权限注解，登录即可增删改查内存用户；
+// 保留端点供接口演示/压测参考，但整体收紧为仅 admin 角色可访问。
+@PreAuthorize("@ss.hasRole('admin')")
 public class TestController extends BaseController
 {
     private final static Map<Integer, UserEntity> users = new LinkedHashMap<Integer, UserEntity>();
