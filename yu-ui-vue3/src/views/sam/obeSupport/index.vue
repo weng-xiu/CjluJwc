@@ -95,6 +95,7 @@
 import { listSupport, getSupport, delSupport, addSupport, updateSupport, listIndicator } from "@/api/sam/obe"
 import { listPlan } from "@/api/tpm/plan"
 import { listCourseLib } from "@/api/tpm/courseLib"
+import { reqChange } from "@/utils/validate"
 
 export default {
   name: "ObeSupport",
@@ -109,9 +110,9 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, planId: null, ipId: null },
       form: {},
       rules: {
-        planId: [{ required: true, message: "培养方案不能为空", trigger: "change" }],
-        ipId: [{ required: true, message: "支撑指标点不能为空", trigger: "change" }],
-        courseId: [{ required: true, message: "支撑课程不能为空", trigger: "change" }]
+        planId: [reqChange("培养方案")],
+        ipId: [reqChange("支撑指标点")],
+        courseId: [reqChange("支撑课程")]
       }
     }
   },

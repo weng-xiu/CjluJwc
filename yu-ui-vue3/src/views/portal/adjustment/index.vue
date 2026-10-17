@@ -156,6 +156,7 @@
 import { listAdjustment, addAdjustment, cancelAdjustment, listMyAdjustSources } from '@/api/portal/adjustment'
 import { PORTAL_ADJUST_TYPE, PORTAL_APPROVE_STATUS } from '@/views/portal/dicts'
 import dialogGuard from '@/utils/dialogGuard'
+import { req, reqChange } from '@/utils/validate'
 
 const SOURCE_FETCH_SIZE = 200
 
@@ -197,8 +198,8 @@ export default {
       form: {},
       rules: {
         scheduleId: [{ required: true, message: '请选择要调整的课程', trigger: 'change' }],
-        adjustType: [{ required: true, message: '调整类型不能为空', trigger: 'change' }],
-        reason: [{ required: true, message: '申请原因不能为空', trigger: 'blur' }]
+        adjustType: [reqChange('调整类型')],
+        reason: [req('申请原因')]
       }
     }
   },

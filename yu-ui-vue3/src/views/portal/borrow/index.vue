@@ -141,6 +141,7 @@
 import { listMyBorrow, listBorrowClassrooms, applyBorrow, cancelBorrow, checkBorrowConflict } from '@/api/portal/borrow'
 import { PORTAL_BORROW_APPROVE_STATUS } from '@/views/portal/dicts'
 import dialogGuard from '@/utils/dialogGuard'
+import { req } from '@/utils/validate'
 
 const CLASSROOM_FETCH_SIZE = 500
 
@@ -173,7 +174,7 @@ export default {
         classroomId: [{ required: true, message: '请选择借用教室', trigger: 'change' }],
         borrowDate: [{ required: true, message: '请选择借用日期', trigger: 'change' }],
         startTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
-        purpose: [{ required: true, message: '借用用途不能为空', trigger: 'blur' }]
+        purpose: [req('借用用途')]
       }
     }
   },

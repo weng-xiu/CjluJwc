@@ -58,12 +58,13 @@
 import { listMajor, getMajor, delMajor, addMajor, updateMajor } from "@/api/brm/major"
 import { listDept } from "@/api/brm/dept"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   name: "Major", dicts: ['sys_normal_disable', 'brm_education_level'],
   mixins: [dialogGuard],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, majorList: [], deptList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, majorName: null, deptId: null, educationLevel: null, status: null },
-    form: {}, rules: { majorCode: [{ required: true, message: "专业编码不能为空", trigger: "blur" }], majorName: [{ required: true, message: "专业名称不能为空", trigger: "blur" }], deptId: [{ required: true, message: "请选择院系", trigger: "change" }] } }
+    form: {}, rules: { majorCode: [req("专业编码")], majorName: [req("专业名称")], deptId: [{ required: true, message: "请选择院系", trigger: "change" }] } }
   },
   created() { this.getList(); this.loadDepts() },
   methods: {

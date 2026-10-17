@@ -136,6 +136,7 @@
 <script>
 import { listWarningAssist, getWarningAssist, dispatchWarningAssist, claimWarningAssist, followWarningAssist, finishWarningAssist, delWarningAssist } from "@/api/sam/warningAssist"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 
 export default {
   name: "WarningAssist",
@@ -159,12 +160,12 @@ export default {
       dispatchOpen: false,
       dispatchForm: {},
       dispatchRules: {
-        warningId: [{ required: true, message: "关联预警ID不能为空", trigger: "blur" }],
-        studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }],
-        helperUserId: [{ required: true, message: "帮扶人ID不能为空", trigger: "blur" }]
+        warningId: [req("关联预警ID")],
+        studentId: [req("学生ID")],
+        helperUserId: [req("帮扶人ID")]
       },
       followOpen: false, followForm: {},
-      followRules: { followContent: [{ required: true, message: "跟踪内容不能为空", trigger: "blur" }] },
+      followRules: { followContent: [req("跟踪内容")] },
       finishOpen: false, finishForm: { assistId: null, finishRemark: "", resolveWarning: false },
       detailOpen: false, detail: {}
     }

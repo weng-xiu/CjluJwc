@@ -117,6 +117,7 @@
 import { listStudentStatus, addStatusChange, listMyStatusChanges } from '@/api/portal/studentStatus'
 import { PORTAL_STATUS_CHANGE_TYPE_SELF_SERVICE, PORTAL_APPROVE_STATUS, PORTAL_STUDENT_STATUS } from '@/views/portal/dicts'
 import dialogGuard from '@/utils/dialogGuard'
+import { req, reqChange } from '@/utils/validate'
 
 export default {
   name: 'PortalStudentStatus',
@@ -139,8 +140,8 @@ export default {
       statusOptions: PORTAL_STUDENT_STATUS,
       form: {},
       rules: {
-        changeType: [{ required: true, message: '异动类型不能为空', trigger: 'change' }],
-        reason: [{ required: true, message: '申请原因不能为空', trigger: 'blur' }]
+        changeType: [reqChange('异动类型')],
+        reason: [req('申请原因')]
       }
     }
   },

@@ -117,3 +117,26 @@ export function isArray(arg) {
   }
   return Array.isArray(arg)
 }
+
+/* ===== 表单校验规则工厂（E5 表单校验统一）=====
+ * 生成与手写 `{ required: true, message: `${label}不能为空`, trigger }` 完全等价的必填规则，
+ * 用于消除全站重复的「XX不能为空」模板、统一提示口径与必填语义。
+ * 与旧写法逐字节等价，属行为不变的重构，可按页面渐进迁移。
+ */
+
+/**
+ * 必填规则（默认 blur 触发，适用输入框）
+ * @param {string} label 字段中文名，提示语固定为 `${label}不能为空`
+ * @param {string} [trigger='blur'] 触发时机
+ */
+export function req(label, trigger = 'blur') {
+  return { required: true, message: `${label}不能为空`, trigger }
+}
+
+/**
+ * 必填规则简写（change 触发，适用下拉/单选/日期等选择型控件）
+ * @param {string} label 字段中文名
+ */
+export function reqChange(label) {
+  return req(label, 'change')
+}

@@ -57,12 +57,13 @@
 import { listSemester, getSemester, delSemester, addSemester, updateSemester } from "@/api/brm/semester"
 import { listYear } from "@/api/brm/year"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   name: "Semester", dicts: ['sys_normal_disable'],
   mixins: [dialogGuard],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, semesterList: [], yearList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, semesterName: null, academicYearId: null, status: null },
-    form: {}, rules: { semesterName: [{ required: true, message: "学期名称不能为空", trigger: "blur" }], academicYearId: [{ required: true, message: "请选择学年", trigger: "change" }] } }
+    form: {}, rules: { semesterName: [req("学期名称")], academicYearId: [{ required: true, message: "请选择学年", trigger: "change" }] } }
   },
   created() { this.getList(); this.loadYears() },
   methods: {

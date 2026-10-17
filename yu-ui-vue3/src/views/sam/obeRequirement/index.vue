@@ -91,6 +91,7 @@
 <script>
 import { listRequirement, getRequirement, delRequirement, addRequirement, updateRequirement } from "@/api/sam/obe"
 import { listPlan } from "@/api/tpm/plan"
+import { req, reqChange } from "@/utils/validate"
 
 export default {
   name: "ObeRequirement",
@@ -103,9 +104,9 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, planId: null, grCode: null, grName: null, status: null },
       form: {},
       rules: {
-        planId: [{ required: true, message: "培养方案不能为空", trigger: "change" }],
-        grCode: [{ required: true, message: "毕业要求编号不能为空", trigger: "blur" }],
-        grName: [{ required: true, message: "毕业要求名称不能为空", trigger: "blur" }]
+        planId: [reqChange("培养方案")],
+        grCode: [req("毕业要求编号")],
+        grName: [req("毕业要求名称")]
       }
     }
   },

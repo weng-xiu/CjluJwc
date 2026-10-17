@@ -46,11 +46,12 @@
 // Vue3 迁移：el-icon-* → 图标组件名；@keyup.enter.native → @keyup.enter；slot-scope → #default；
 // :visible.sync → v-model；.sync → v-model:xxx；type="text" → link；el-radio :label → :value；size mini → small。业务逻辑与 Vue2 保持一致。
 import { listCampus, getCampus, delCampus, addCampus, updateCampus } from "@/api/brm/campus"
+import { req } from "@/utils/validate"
 export default {
   name: "Campus", dicts: ['sys_normal_disable'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, campusList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, campusName: null, status: null },
-    form: {}, rules: { campusName: [{ required: true, message: "校区名称不能为空", trigger: "blur" }] } }
+    form: {}, rules: { campusName: [req("校区名称")] } }
   },
   created() { this.getList() },
   methods: {

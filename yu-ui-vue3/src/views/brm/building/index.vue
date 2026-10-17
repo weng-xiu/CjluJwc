@@ -51,12 +51,13 @@
 import { listBuilding, getBuilding, delBuilding, addBuilding, updateBuilding } from "@/api/brm/building"
 import { listCampus } from "@/api/brm/campus"
 import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 export default {
   name: "Building", dicts: ['sys_normal_disable'],
   mixins: [dialogGuard],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, buildingList: [], campusList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, buildingName: null, campusId: null, status: null },
-    form: {}, rules: { buildingName: [{ required: true, message: "教学楼名称不能为空", trigger: "blur" }], campusId: [{ required: true, message: "所属校区不能为空", trigger: "change" }] } }
+    form: {}, rules: { buildingName: [req("教学楼名称")], campusId: [reqChange("所属校区")] } }
   },
   created() { this.getList(); this.loadCampus() },
   methods: {

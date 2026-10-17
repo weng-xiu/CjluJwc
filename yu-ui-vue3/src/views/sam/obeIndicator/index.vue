@@ -100,6 +100,7 @@
 <script>
 import { listIndicator, getIndicator, delIndicator, addIndicator, updateIndicator, listRequirement } from "@/api/sam/obe"
 import { listPlan } from "@/api/tpm/plan"
+import { req, reqChange } from "@/utils/validate"
 
 export default {
   name: "ObeIndicator",
@@ -113,10 +114,10 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, planId: null, grId: null, ipCode: null, ipName: null },
       form: {},
       rules: {
-        planId: [{ required: true, message: "培养方案不能为空", trigger: "change" }],
-        grId: [{ required: true, message: "所属毕业要求不能为空", trigger: "change" }],
-        ipCode: [{ required: true, message: "指标点编号不能为空", trigger: "blur" }],
-        ipName: [{ required: true, message: "指标点名称不能为空", trigger: "blur" }]
+        planId: [reqChange("培养方案")],
+        grId: [reqChange("所属毕业要求")],
+        ipCode: [req("指标点编号")],
+        ipName: [req("指标点名称")]
       }
     }
   },

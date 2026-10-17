@@ -118,6 +118,7 @@
 import { listForbidden, getForbidden, delForbidden, addForbidden, updateForbidden } from "@/api/tpm/teacherForbidden"
 import { listSemester } from "@/api/brm/semester"
 import { listTeacher } from "@/api/brm/teacher"
+import { req, reqChange } from "@/utils/validate"
 
 export default {
   name: "TeacherForbidden",
@@ -134,10 +135,10 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, semesterId: null, teacherId: null, weekDay: null, status: null },
       form: {},
       rules: {
-        teacherId: [{ required: true, message: "教师不能为空", trigger: "change" }],
-        weekDay: [{ required: true, message: "星期不能为空", trigger: "change" }],
-        startPeriod: [{ required: true, message: "开始节次不能为空", trigger: "blur" }],
-        endPeriod: [{ required: true, message: "结束节次不能为空", trigger: "blur" }]
+        teacherId: [reqChange("教师")],
+        weekDay: [reqChange("星期")],
+        startPeriod: [req("开始节次")],
+        endPeriod: [req("结束节次")]
       }
     }
   },

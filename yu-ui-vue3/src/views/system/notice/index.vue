@@ -193,6 +193,7 @@
 import NoticeDetailView from '@/layout/components/HeaderNotice/DetailView.vue'
 import ReadUsersDialog from './ReadUsers'
 import { listNotice, getNotice, delNotice, addNotice, updateNotice } from '@/api/system/notice'
+import { req, reqChange } from '@/utils/validate'
 
 export default {
   name: 'Notice',
@@ -230,12 +231,8 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        noticeTitle: [
-          { required: true, message: '公告标题不能为空', trigger: 'blur' }
-        ],
-        noticeType: [
-          { required: true, message: '公告类型不能为空', trigger: 'change' }
-        ]
+        noticeTitle: [req('公告标题')],
+        noticeType: [reqChange('公告类型')]
       }
     }
   },

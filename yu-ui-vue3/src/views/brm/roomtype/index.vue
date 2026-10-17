@@ -81,6 +81,7 @@
 // Vue3 迁移：el-icon-* → 图标组件名；slot-scope → #default；:visible.sync → v-model；.sync → v-model:xxx；
 // type="text" → link；el-radio :label → :value；size mini → small。业务逻辑与 Vue2 保持一致。
 import { listRoomtype, getRoomtype, delRoomtype, addRoomtype, updateRoomtype } from "@/api/brm/roomtype"
+import { req } from "@/utils/validate"
 import dialogGuard from "@/utils/dialogGuard"
 
 export default {
@@ -106,9 +107,7 @@ export default {
       },
       form: {},
       rules: {
-        typeName: [
-          { required: true, message: "类型名称不能为空", trigger: "blur" }
-        ]
+        typeName: [req("类型名称")]
       }
     }
   },

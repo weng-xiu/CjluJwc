@@ -66,13 +66,14 @@ import { listClazz, getClazz, delClazz, addClazz, updateClazz } from "@/api/brm/
 import { listDept } from "@/api/brm/dept"
 import { listMajor, getMajor } from "@/api/brm/major"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   name: "Clazz", dicts: ['sys_normal_disable', 'brm_grade'],
   mixins: [dialogGuard],
   guardWatch: ['selectedDeptId'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, clazzList: [], deptList: [], majorList: [], queryMajorList: [], selectedDeptId: null, queryDeptId: null, title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, className: null, majorId: null, grade: null, status: null },
-    form: {}, rules: { classCode: [{ required: true, message: "班级编码不能为空", trigger: "blur" }], className: [{ required: true, message: "班级名称不能为空", trigger: "blur" }], majorId: [{ required: true, message: "请选择专业", trigger: "change" }] } }
+    form: {}, rules: { classCode: [req("班级编码")], className: [req("班级名称")], majorId: [{ required: true, message: "请选择专业", trigger: "change" }] } }
   },
   created() { this.loadDepts(); this.getList() },
   methods: {
