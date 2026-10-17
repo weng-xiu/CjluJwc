@@ -25,6 +25,7 @@ import com.yu.tpm.domain.dto.PlanImportRow;
 import com.yu.tpm.service.ITpmTrainingPlanService;
 import com.yu.tpm.service.ITpmCourseLibraryService;
 import com.yu.tpm.service.ITpmCreditStructureService;
+import com.yu.tpm.service.ITpmPlanSnapshotService;
 
 /**
  * 人才培养方案Service业务层处理
@@ -49,6 +50,9 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
 
     @Autowired
     private ITpmCreditStructureService tpmCreditStructureService;
+
+    @Autowired
+    private ITpmPlanSnapshotService tpmPlanSnapshotService;
 
     @Override
     public TpmTrainingPlan selectTpmTrainingPlanByPlanId(Long planId)
@@ -178,7 +182,29 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
         {
             plan.setVersion("V1");
         }
-        return tpmTrainingPlanMapper.updateTpmTrainingPlan(plan);
+        int rows = tpmTrainingPlanMapper.updateTpmTrainingPlan(plan);
+        // F2：发布成功即生成不可变版本快照（实质内容指纹 + 学分结构/课程清单定格 JSON），
+        //     供毕业审核按历史版本比对。快照构建失败不阻断发布主流程，仅记录。
+        if (rows > 0)
+        {
+            try
+            {
+                db.setPublishStatus("1");
+                db.setPublishDate(plan.getPublishDate());
+                if (StringUtils.isBlank(db.getVersion()))
+                {
+                    db.setVersion("V1");
+                }
+                tpmPlanSnapshotService.createSnapshotOnPublish(db);
+            }
+            catch (Exception e)
+            {
+                // 发布事实已落库，快照为可追溯附加物；异常吞掉并保留堆栈，避免回滚发布
+                org.slf4j.LoggerFactory.getLogger(TpmTrainingPlanServiceImpl.class)
+                        .error("F2 方案版本快照生成失败 planId={}", planId, e);
+            }
+        }
+        return rows;
     }
 
     @Transactional

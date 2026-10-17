@@ -25,8 +25,10 @@ import com.yu.common.utils.SecurityUtils;
 import com.yu.tpm.domain.TpmTrainingPlan;
 import com.yu.tpm.domain.TpmCourseLibrary;
 import com.yu.tpm.domain.TpmCreditStructure;
+import com.yu.tpm.domain.TpmPlanSnapshot;
 import com.yu.tpm.domain.dto.PlanImportRow;
 import com.yu.tpm.service.ITpmTrainingPlanService;
+import com.yu.tpm.service.ITpmPlanSnapshotService;
 import com.yu.common.utils.poi.ExcelUtil;
 import com.yu.common.core.page.TableDataInfo;
 
@@ -42,6 +44,9 @@ public class TpmTrainingPlanController extends BaseController
 {
     @Autowired
     private ITpmTrainingPlanService tpmTrainingPlanService;
+
+    @Autowired
+    private ITpmPlanSnapshotService tpmPlanSnapshotService;
 
     /** Jackson 对象映射（静态实例，无需 Spring Bean） */
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -196,5 +201,26 @@ public class TpmTrainingPlanController extends BaseController
         List<PlanImportRow> rows = util.importExcel(file.getInputStream());
         String message = tpmTrainingPlanService.importPlan(rows, getUsername(), updateSupport);
         return success(message);
+    }
+
+    /**
+     * F2：查询某培养方案的全部历史版本快照（最新版本在前）。
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:plan:query')")
+    @GetMapping("/snapshots/{planId}")
+    public AjaxResult snapshots(@PathVariable("planId") Long planId)
+    {
+        List<TpmPlanSnapshot> list = tpmPlanSnapshotService.selectSnapshotsByPlanId(planId);
+        return success(list);
+    }
+
+    /**
+     * F2：按快照ID查看版本快照详情（含学分结构/课程清单定格 JSON）。
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:plan:query')")
+    @GetMapping(value = "/snapshot/{snapshotId}")
+    public AjaxResult snapshotDetail(@PathVariable("snapshotId") Long snapshotId)
+    {
+        return success(tpmPlanSnapshotService.selectSnapshotBySnapshotId(snapshotId));
     }
 }

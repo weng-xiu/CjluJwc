@@ -38,8 +38,10 @@ import com.yu.common.core.domain.entity.SysUser;
 import com.yu.common.core.domain.model.LoginUser;
 import com.yu.tpm.domain.TpmCourseLibrary;
 import com.yu.tpm.domain.TpmCreditStructure;
+import com.yu.tpm.domain.TpmPlanSnapshot;
 import com.yu.tpm.domain.TpmTrainingPlan;
 import com.yu.tpm.service.ITpmTrainingPlanService;
+import com.yu.tpm.service.ITpmPlanSnapshotService;
 
 /**
  * 培养方案接口层测试（Q1 第四批：MockMvc standalone）。
@@ -53,6 +55,9 @@ class TpmTrainingPlanControllerMockMvcTest {
 
     @Mock
     private ITpmTrainingPlanService tpmTrainingPlanService;
+
+    @Mock
+    private ITpmPlanSnapshotService tpmPlanSnapshotService;
 
     @InjectMocks
     private TpmTrainingPlanController controller;
@@ -197,5 +202,42 @@ class TpmTrainingPlanControllerMockMvcTest {
         ArgumentCaptor<TpmTrainingPlan> captor = ArgumentCaptor.forClass(TpmTrainingPlan.class);
         verify(tpmTrainingPlanService).selectTpmTrainingPlanList(captor.capture());
         org.junit.jupiter.api.Assertions.assertEquals("2026", captor.getValue().getPlanName());
+    }
+
+    @Test
+    @DisplayName("snapshots：按 planId 返回历史版本快照列表（F2）")
+    void snapshots_returnsListByPlanId() throws Exception {
+        TpmPlanSnapshot s = new TpmPlanSnapshot();
+        s.setSnapshotId(9L);
+        s.setPlanId(3L);
+        s.setVersion("V2");
+        s.setContentHash("abc123");
+        when(tpmPlanSnapshotService.selectSnapshotsByPlanId(eq(3L))).thenReturn(List.of(s));
+
+        mockMvc.perform(get("/tpm/plan/snapshots/3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data[0].snapshotId").value(9))
+                .andExpect(jsonPath("$.data[0].version").value("V2"));
+
+        verify(tpmPlanSnapshotService).selectSnapshotsByPlanId(eq(3L));
+    }
+
+    @Test
+    @DisplayName("snapshotDetail：按 snapshotId 返回单条快照详情（F2）")
+    void snapshotDetail_returnsOneSnapshot() throws Exception {
+        TpmPlanSnapshot s = new TpmPlanSnapshot();
+        s.setSnapshotId(9L);
+        s.setPlanId(3L);
+        s.setCreditStructureJson("[]");
+        when(tpmPlanSnapshotService.selectSnapshotBySnapshotId(eq(9L))).thenReturn(s);
+
+        mockMvc.perform(get("/tpm/plan/snapshot/9"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.snapshotId").value(9))
+                .andExpect(jsonPath("$.data.creditStructureJson").value("[]"));
+
+        verify(tpmPlanSnapshotService).selectSnapshotBySnapshotId(eq(9L));
     }
 }
