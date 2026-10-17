@@ -219,6 +219,7 @@ import { listCourseLib, delCourseLib } from "@/api/tpm/courseLib"
 import { listCreditStruct, delCreditStruct } from "@/api/tpm/creditStruct"
 import { listMajor } from "@/api/brm/major"
 import { listDept } from "@/api/brm/dept"
+import { req } from "@/utils/validate"
 import ExcelImportDialog from "@/components/ExcelImportDialog"
 
 export default {
@@ -239,7 +240,7 @@ export default {
       ],
       queryParams: { pageNum: 1, pageSize: 10, planName: null, majorId: null, deptId: null, publishStatus: null, status: null },
       form: {},
-      rules: { planName: [{ required: true, message: "方案名称不能为空", trigger: "blur" }] }
+      rules: { planName: [req("方案名称")] }
     }
   },
   created() {

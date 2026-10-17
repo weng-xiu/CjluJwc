@@ -117,6 +117,7 @@
 // type="text"→link；el-radio :label→:value；<div slot="footer">→<template #footer>。业务逻辑与 Vue2 保持一致。
 import { listCourseLib, getCourseLib, delCourseLib, addCourseLib, updateCourseLib } from "@/api/tpm/courseLib"
 import { listPlan } from "@/api/tpm/plan"
+import { req } from "@/utils/validate"
 import ExcelImportDialog from "@/components/ExcelImportDialog"
 
 export default {
@@ -130,8 +131,8 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, courseName: null, courseCode: null, planId: null, courseType: null, status: null },
       form: {},
       rules: {
-        courseCode: [{ required: true, message: "课程编码不能为空", trigger: "blur" }],
-        courseName: [{ required: true, message: "课程名称不能为空", trigger: "blur" }]
+        courseCode: [req("课程编码")],
+        courseName: [req("课程名称")]
       }
     }
   },

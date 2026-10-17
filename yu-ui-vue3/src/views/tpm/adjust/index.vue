@@ -150,6 +150,7 @@ import { listAdjust, getAdjust, delAdjust, addAdjust, updateAdjust, approveAdjus
 import { listSchedule } from "@/api/tpm/schedule"
 import { listClassroom } from "@/api/brm/classroom"
 import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 
 export default {
   name: "Adjust",
@@ -167,9 +168,9 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, adjustType: null, approveStatus: null, courseName: null },
       form: {},
       rules: {
-        scheduleId: [{ required: true, message: "排课不能为空", trigger: "change" }],
-        adjustType: [{ required: true, message: "调课类型不能为空", trigger: "change" }],
-        reason: [{ required: true, message: "申请原因不能为空", trigger: "blur" }]
+        scheduleId: [reqChange("排课")],
+        adjustType: [reqChange("调课类型")],
+        reason: [req("申请原因")]
       }
     }
   },

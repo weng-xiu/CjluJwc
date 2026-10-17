@@ -138,6 +138,7 @@ import { listEnroll, getEnroll, delEnroll, addEnroll, updateEnroll, runLottery, 
 import { listRound } from "@/api/tpm/round"
 import { listOffering } from "@/api/tpm/offering"
 import { listStudent } from "@/api/sam/student"
+import { reqChange } from "@/utils/validate"
 
 export default {
   name: "Enroll",
@@ -151,9 +152,9 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, roundId: null, studentId: null, resultStatus: null, lotteryResult: null },
       form: {},
       rules: {
-        roundId: [{ required: true, message: "轮次不能为空", trigger: "change" }],
-        studentId: [{ required: true, message: "学生不能为空", trigger: "change" }],
-        courseOfferingId: [{ required: true, message: "开课不能为空", trigger: "change" }]
+        roundId: [reqChange("轮次")],
+        studentId: [reqChange("学生")],
+        courseOfferingId: [reqChange("开课")]
       }
     }
   },

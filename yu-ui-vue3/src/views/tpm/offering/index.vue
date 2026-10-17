@@ -175,6 +175,7 @@ import { listTeacher } from "@/api/brm/teacher"
 import { listCampus } from "@/api/brm/campus"
 import { listPlan } from "@/api/tpm/plan"
 import { listDept } from "@/api/brm/dept"
+import { reqChange } from "@/utils/validate"
 export default {
   name: "Offering", dicts: ['sys_normal_disable', 'tpm_offering_status'],
   data() { return {
@@ -185,9 +186,9 @@ export default {
     // U3 批量生成进度反馈
     batchProgressOpen: false, batchRunning: false, batchTotal: 0, batchSuccess: 0, batchFailed: 0,
     batchForm: { planId: null, semesterId: null, semesterOrder: null, campusId: null, teacherDeptId: null, defaultCapacity: null, classCount: 1, skipExisting: true },
-    batchRules: { planId: [{ required: true, message: "培养方案不能为空", trigger: "change" }], semesterId: [{ required: true, message: "学期不能为空", trigger: "change" }] },
+    batchRules: { planId: [reqChange("培养方案")], semesterId: [reqChange("学期")] },
     queryParams: { pageNum: 1, pageSize: 10, semesterId: null, courseId: null, teacherId: null, offeringStatus: null, status: null },
-    form: {}, rules: { semesterId: [{ required: true, message: "学期不能为空", trigger: "change" }], courseId: [{ required: true, message: "课程不能为空", trigger: "change" }] }
+    form: {}, rules: { semesterId: [reqChange("学期")], courseId: [reqChange("课程")] }
   } },
   created() { this.getList(); this.loadOptions() },
   methods: {

@@ -261,6 +261,7 @@ import { listSemester } from "@/api/brm/semester"
 import { detectConflicts, findAvailableClassrooms, autoAssignClassrooms, checkSlotConflict, dragAdjust } from "@/api/tpm/scheduleOpt"
 import WeekTimetable from "./components/WeekTimetable"
 import dialogGuard from "@/utils/dialogGuard"
+import { reqChange } from "@/utils/validate"
 export default {
   name: "Schedule", components: { WeekTimetable }, dicts: ['sys_normal_disable', 'tpm_schedule_type'],
   mixins: [dialogGuard],
@@ -307,7 +308,7 @@ export default {
       ],
       queryParams: { pageNum: 1, pageSize: 10, semesterId: null, offeringId: null, classroomId: null, status: null },
       form: {},
-      rules: { offeringId: [{ required: true, message: "开课不能为空", trigger: "change" }] }
+      rules: { offeringId: [reqChange("开课")] }
     }
   },
   computed: {

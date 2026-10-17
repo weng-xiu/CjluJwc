@@ -98,6 +98,7 @@
 import { listRound, getRound, delRound, addRound, updateRound, startRound, finishRound } from "@/api/tpm/round"
 import { listSemester } from "@/api/brm/semester"
 import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 
 export default {
   name: "Round",
@@ -117,11 +118,11 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, roundName: null, roundStatus: null, semesterId: null },
       form: {},
       rules: {
-        semesterId: [{ required: true, message: "学期不能为空", trigger: "change" }],
-        roundName: [{ required: true, message: "轮次名称不能为空", trigger: "blur" }],
-        startTime: [{ required: true, message: "开始时间不能为空", trigger: "change" }],
+        semesterId: [reqChange("学期")],
+        roundName: [req("轮次名称")],
+        startTime: [reqChange("开始时间")],
         endTime: [
-          { required: true, message: "结束时间不能为空", trigger: "change" },
+          reqChange("结束时间"),
           { validator: checkEndTime, trigger: "change" }
         ]
       }
