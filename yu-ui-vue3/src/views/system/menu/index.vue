@@ -357,6 +357,7 @@
 // type="text" → link；size mini → small；@keyup.enter.native → @keyup.enter；ref form → menuFormRef。
 // 业务逻辑（列表/保存排序/增删改）与 Vue2 完全一致。
 import { listMenu, getMenu, delMenu, addMenu, updateMenu, updateMenuSort } from '@/api/system/menu'
+import { req } from '@/utils/validate'
 import { Search, QuestionFilled } from '@element-plus/icons-vue'
 import IconSelect from '@/components/IconSelect'
 
@@ -395,15 +396,9 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        menuName: [
-          { required: true, message: '菜单名称不能为空', trigger: 'blur' }
-        ],
-        orderNum: [
-          { required: true, message: '菜单顺序不能为空', trigger: 'blur' }
-        ],
-        path: [
-          { required: true, message: '路由地址不能为空', trigger: 'blur' }
-        ]
+        menuName: [req('菜单名称')],
+        orderNum: [req('菜单顺序')],
+        path: [req('路由地址')]
       }
     }
   },

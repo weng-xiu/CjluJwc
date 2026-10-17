@@ -109,11 +109,12 @@
 import { ElMessageBox } from 'element-plus'
 import { listGradeReview, getGradeReview, delGradeReview, addGradeReview, updateGradeReview,
          approveReview, submitReview, cancelReview, traceReview } from "@/api/aem/gradeReview"
+import { req } from "@/utils/validate"
 export default {
   name: "GradeReview", dicts: ['aem_review_type', 'aem_approve_status'],
   data() { return { loading: true, ids: [], multiple: true, showSearch: true, total: 0, gradeReviewList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, studentId: null, courseId: null, reviewType: null, approveStatus: null },
-    form: {}, rules: { gradeId: [{ required: true, message: "成绩ID不能为空", trigger: "blur" }], studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }], reviewReason: [{ required: true, message: "复核原因不能为空", trigger: "blur" }] },
+    form: {}, rules: { gradeId: [req("成绩ID")], studentId: [req("学生ID")], reviewReason: [req("复核原因")] },
     // 审批
     approveOpen: false, approveRow: {}, approveForm: { approved: true, opinion: null },
     // 追溯

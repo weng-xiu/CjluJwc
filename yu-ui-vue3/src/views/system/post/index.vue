@@ -168,6 +168,7 @@
 // slot-scope → #default；:visible.sync → v-model；.sync → v-model:xxx；type="text" → link；
 // el-radio :label 值 → :value；size mini → small。业务逻辑与 Vue2 保持一致。
 import { listPost, getPost, delPost, addPost, updatePost } from '@/api/system/post'
+import { req } from '@/utils/validate'
 
 export default {
   name: 'Post',
@@ -204,15 +205,9 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        postName: [
-          { required: true, message: '岗位名称不能为空', trigger: 'blur' }
-        ],
-        postCode: [
-          { required: true, message: '岗位编码不能为空', trigger: 'blur' }
-        ],
-        postSort: [
-          { required: true, message: '岗位顺序不能为空', trigger: 'blur' }
-        ]
+        postName: [req('岗位名称')],
+        postCode: [req('岗位编码')],
+        postSort: [req('岗位顺序')]
       }
     }
   },

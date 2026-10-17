@@ -227,6 +227,7 @@ import {
   listEvalCase, getEvalCase, addEvalCase, updateEvalCase, delEvalCase,
   runEval, publishCheck, listEvalRun, listEvalResult
 } from '@/api/system/aiEval'
+import { req } from '@/utils/validate'
 
 export default {
   name: 'AiEval',
@@ -263,7 +264,7 @@ export default {
       },
       form: {},
       rules: {
-        question: [{ required: true, message: '评测提问不能为空', trigger: 'blur' }]
+        question: [req('评测提问')]
       }
     }
   },

@@ -79,6 +79,7 @@
 <script>
 import { listGradeWeight, getGradeWeight, delGradeWeight, addGradeWeight, updateGradeWeight } from "@/api/aem/gradeWeight"
 import { listCourseLib } from "@/api/tpm/courseLib"
+import { req } from "@/utils/validate"
 export default {
   name: "GradeWeight",
   dicts: ['sys_normal_disable', 'tpm_course_category'],
@@ -97,8 +98,8 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, courseId: null, courseCategory: null, status: null },
       form: {},
       rules: {
-        regularRatio: [{ required: true, message: "平时占比不能为空", trigger: "blur" }],
-        examRatio: [{ required: true, message: "考试占比不能为空", trigger: "blur" }]
+        regularRatio: [req("平时占比")],
+        examRatio: [req("考试占比")]
       }
     }
   },

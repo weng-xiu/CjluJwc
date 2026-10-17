@@ -126,6 +126,7 @@
 // Vue3 迁移：破坏点同 config 页；另外将原自定义“字典数据抽屉(detail 组件)”改为跳转动态路由 dict-data 页，
 // 减少一次组件搬迁；slot="label" → <template #label>；<i class="el-icon-question"> → <el-icon><QuestionFilled/></el-icon>。
 import { listType, getType, delType, addType, updateType, refreshCache } from '@/api/system/dict/type'
+import { req } from '@/utils/validate'
 import { QuestionFilled } from '@element-plus/icons-vue'
 
 export default {
@@ -153,8 +154,8 @@ export default {
       },
       form: {},
       rules: {
-        dictName: [{ required: true, message: '字典名称不能为空', trigger: 'blur' }],
-        dictType: [{ required: true, message: '字典类型不能为空', trigger: 'blur' }]
+        dictName: [req('字典名称')],
+        dictType: [req('字典类型')]
       }
     }
   },

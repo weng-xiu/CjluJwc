@@ -53,6 +53,7 @@ import { ElMessageBox } from 'element-plus'
 import { listGpaConfig, getGpaConfig, delGpaConfig, addGpaConfig, updateGpaConfig, setDefault, recalculateGpa } from "@/api/aem/gpaConfig"
 import MappingDialog from "./mappingDialog"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   name: "GpaConfig",
   dicts: ['sys_yes_no', 'sys_normal_disable'],
@@ -74,8 +75,8 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, algorithmCode: null, algorithmName: null, status: null },
       form: {},
       rules: {
-        algorithmCode: [{ required: true, message: "算法代码不能为空", trigger: "blur" }],
-        algorithmName: [{ required: true, message: "算法名称不能为空", trigger: "blur" }]
+        algorithmCode: [req("算法代码")],
+        algorithmName: [req("算法名称")]
       }
     }
   },

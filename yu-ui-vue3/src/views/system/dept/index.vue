@@ -196,6 +196,7 @@
 //  type="text" → link；el-radio :label → :value；size mini → small）。业务逻辑与 Vue2 保持一致。
 import { listDept, getDept, delDept, addDept, updateDept, updateDeptSort, listDeptExcludeChild } from '@/api/system/dept'
 import { syncFromSys } from '@/api/brm/dept'
+import { req } from '@/utils/validate'
 import dialogGuard from '@/utils/dialogGuard'
 
 export default {
@@ -231,15 +232,9 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        parentId: [
-          { required: true, message: '上级部门不能为空', trigger: 'blur' }
-        ],
-        deptName: [
-          { required: true, message: '部门名称不能为空', trigger: 'blur' }
-        ],
-        orderNum: [
-          { required: true, message: '显示排序不能为空', trigger: 'blur' }
-        ],
+        parentId: [req('上级部门')],
+        deptName: [req('部门名称')],
+        orderNum: [req('显示排序')],
         email: [
           {
             type: 'email',

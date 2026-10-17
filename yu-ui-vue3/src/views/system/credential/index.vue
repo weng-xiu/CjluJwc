@@ -175,6 +175,7 @@ import { ElMessageBox } from 'element-plus'
 import { listCredential, renderCredential, issueCredential, batchIssueCredential, printCredential, revokeCredential, verifyCredential } from '@/api/system/credential'
 import { listSemester } from '@/api/brm/semester'
 import { listExamPlan } from '@/api/aem/examPlan'
+import { req, reqChange } from '@/utils/validate'
 
 export default {
   name: 'Credential',
@@ -202,16 +203,16 @@ export default {
       previewLoading: false,
       issueForm: { bizType: null, bizId: null, semesterId: null },
       issueRules: {
-        bizType: [{ required: true, message: '凭证类型不能为空', trigger: 'change' }],
-        bizId: [{ required: true, message: '业务主键不能为空', trigger: 'blur' }]
+        bizType: [reqChange('凭证类型')],
+        bizId: [req('业务主键')]
       },
       // 批量发放
       batchOpen: false,
       batchLoading: false,
       batchForm: { bizType: 'GRADE', scopeId: null },
       batchRules: {
-        bizType: [{ required: true, message: '凭证类型不能为空', trigger: 'change' }],
-        scopeId: [{ required: true, message: '发放范围不能为空', trigger: 'change' }]
+        bizType: [reqChange('凭证类型')],
+        scopeId: [reqChange('发放范围')]
       },
       // 预览
       previewOpen: false,

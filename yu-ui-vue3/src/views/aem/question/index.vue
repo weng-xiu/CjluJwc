@@ -59,6 +59,7 @@
 </template>
 <script>
 import { listQuestion, getQuestion, delQuestion, addQuestion, updateQuestion, importQuestion } from "@/api/aem/evaluationQuestion"
+import { req } from "@/utils/validate"
 import ImportExcelDialog from "../components/ImportExcelDialog"
 export default {
   name: "Question",
@@ -66,7 +67,7 @@ export default {
   dicts: ['aem_question_type'],
   data() { return { loading: true, loadError: false, ids: [], single: true, multiple: true, showSearch: true, total: 0, questionList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, questionnaireId: null, questionType: null },
-    form: {}, rules: { questionContent: [{ required: true, message: "问题内容不能为空", trigger: "blur" }] } }
+    form: {}, rules: { questionContent: [req("问题内容")] } }
   },
   created() { this.getList() },
   methods: {

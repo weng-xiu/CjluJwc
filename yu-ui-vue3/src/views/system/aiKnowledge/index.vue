@@ -269,6 +269,7 @@
 // AI 知识库维护/治理统计/问答自测业务逻辑不变。
 import { listAiKnowledge, getAiKnowledge, addAiKnowledge, updateAiKnowledge, delAiKnowledge,
   getAiKnowledgeStat, getAiEngine, askAiKnowledge, suggestAiQuestion } from "@/api/system/aiKnowledge"
+import { req, reqChange } from "@/utils/validate"
 import dialogGuard from "@/utils/dialogGuard"
 
 export default {
@@ -307,12 +308,12 @@ export default {
       },
       form: {},
       rules: {
-        category: [{ required: true, message: "知识分类不能为空", trigger: "change" }],
+        category: [reqChange("知识分类")],
         title: [
-          { required: true, message: "条目名称不能为空", trigger: "blur" },
+          req("条目名称"),
           { max: 200, message: "条目名称长度不能超过200个字符", trigger: "blur" }
         ],
-        content: [{ required: true, message: "解答正文不能为空", trigger: "blur" }]
+        content: [req("解答正文")]
       }
     }
   },

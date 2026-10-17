@@ -278,6 +278,7 @@
 // store.nodesMap / setCheckedNodes / setCheckedKeys / setChecked API，无需改动）。
 import { listRole, getRole, delRole, addRole, updateRole, dataScope, changeRoleStatus, deptTreeSelect } from '@/api/system/role'
 import { treeselect as menuTreeselect, roleMenuTreeselect } from '@/api/system/menu'
+import { req } from '@/utils/validate'
 import { QuestionFilled } from '@element-plus/icons-vue'
 
 export default {
@@ -365,15 +366,9 @@ export default {
       },
       // 表单校验
       rules: {
-        roleName: [
-          { required: true, message: '角色名称不能为空', trigger: 'blur' }
-        ],
-        roleKey: [
-          { required: true, message: '权限字符不能为空', trigger: 'blur' }
-        ],
-        roleSort: [
-          { required: true, message: '角色顺序不能为空', trigger: 'blur' }
-        ]
+        roleName: [req('角色名称')],
+        roleKey: [req('权限字符')],
+        roleSort: [req('角色顺序')]
       }
     }
   },

@@ -188,6 +188,7 @@
 // 数据分类分级台账（K1 等保数据新规 · 管理端页面）
 // Vue3 约定：dicts 声明依赖字典；dict-tag/#default 插槽；v-hasPermi 按钮权限；this.download 导出；this.$modal 提示确认。
 import { listDataClass, getDataClass, delDataClass, addDataClass, updateDataClass } from '@/api/system/dataClass'
+import { req, reqChange } from '@/utils/validate'
 import dialogGuard from '@/utils/dialogGuard'
 
 export default {
@@ -217,10 +218,10 @@ export default {
       },
       form: {},
       rules: {
-        tableName: [{ required: true, message: '业务表名不能为空', trigger: 'blur' }],
-        columnName: [{ required: true, message: '字段名不能为空', trigger: 'blur' }],
-        dataCategory: [{ required: true, message: '数据类别不能为空', trigger: 'change' }],
-        securityLevel: [{ required: true, message: '安全等级不能为空', trigger: 'change' }]
+        tableName: [req('业务表名')],
+        columnName: [req('字段名')],
+        dataCategory: [reqChange('数据类别')],
+        securityLevel: [reqChange('安全等级')]
       }
     }
   },

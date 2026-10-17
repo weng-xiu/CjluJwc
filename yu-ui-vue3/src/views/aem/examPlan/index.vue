@@ -118,6 +118,7 @@ import { ElMessageBox } from 'element-plus'
 import { listExamPlan, getExamPlan, delExamPlan, addExamPlan, updateExamPlan, getExamPlanDetail, autoArrangeSeat, autoDispatch, autoArrangeExam, detectExamConflicts } from "@/api/aem/examPlan"
 import { listExamSeat, addExamSeat, updateExamSeat, delExamSeat } from "@/api/aem/examSeat"
 import { listInvigilation, addInvigilation, updateInvigilation, delInvigilation } from "@/api/aem/invigilation"
+import { req } from "@/utils/validate"
 import MasterDetailPanel from "../components/MasterDetailPanel"
 export default {
   name: "ExamPlan",
@@ -129,7 +130,7 @@ export default {
       activeTab: {}, conflictOpen: false, conflictList: [],
       queryParams: { pageNum: 1, pageSize: 10, examName: null, examType: null, planStatus: null },
       form: {},
-      rules: { examName: [{ required: true, message: "考试名称不能为空", trigger: "blur" }] },
+      rules: { examName: [req("考试名称")] },
       seatColumns: [
         { prop: 'classroomId', label: '教室ID', width: 90, type: 'number', required: true },
         { prop: 'studentId', label: '学生ID', width: 110, type: 'number', required: true },

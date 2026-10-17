@@ -127,6 +127,7 @@
 // 保留 getType 方法与导入同名但作用域不冲突（方法内以裸名调用导入函数）。
 import { listData, getData, delData, addData, updateData } from '@/api/system/dict/data'
 import { optionselect as getDictOptionselect, getType } from '@/api/system/dict/type'
+import { req } from '@/utils/validate'
 import dialogGuard from "@/utils/dialogGuard"
 
 export default {
@@ -163,9 +164,9 @@ export default {
       },
       form: {},
       rules: {
-        dictLabel: [{ required: true, message: '数据标签不能为空', trigger: 'blur' }],
-        dictValue: [{ required: true, message: '数据键值不能为空', trigger: 'blur' }],
-        dictSort: [{ required: true, message: '数据顺序不能为空', trigger: 'blur' }]
+        dictLabel: [req('数据标签')],
+        dictValue: [req('数据键值')],
+        dictSort: [req('数据顺序')]
       }
     }
   },

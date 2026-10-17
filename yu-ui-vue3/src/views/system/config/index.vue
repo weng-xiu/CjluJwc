@@ -138,6 +138,7 @@
 // pagination/right-toolbar 的 .sync → v-model:xxx；type="text" → link；el-radio :label 值 → :value；
 // value-format="yyyy-MM-dd" → "YYYY-MM-DD"。业务逻辑与 Vue2 保持一致。
 import { listConfig, getConfig, delConfig, addConfig, updateConfig, refreshCache } from '@/api/system/config'
+import { req } from '@/utils/validate'
 
 export default {
   name: 'Config',
@@ -163,9 +164,9 @@ export default {
       },
       form: {},
       rules: {
-        configName: [{ required: true, message: '参数名称不能为空', trigger: 'blur' }],
-        configKey: [{ required: true, message: '参数键名不能为空', trigger: 'blur' }],
-        configValue: [{ required: true, message: '参数键值不能为空', trigger: 'blur' }]
+        configName: [req('参数名称')],
+        configKey: [req('参数键名')],
+        configValue: [req('参数键值')]
       }
     }
   },
