@@ -1,0 +1,1 @@
+{"sequenceNumber":0,"timestamp":1791848655625,"nanoseconds":625637500,"level":"INFO","threadName":"main","loggerName":"org.hibernate.validator.internal.util.Version","context":{"name":"default","birthdate":1791848651949,"properties":{}},"mdc": {},"message":"HV000001: Hibernate Validator 9.0.1.Final","throwable":null}

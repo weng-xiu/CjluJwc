@@ -235,10 +235,10 @@ export default {
 
 <style scoped>
 .kpi-row { margin-bottom: 16px; }
-.kpi-card { display: flex; align-items: center; background: var(--dt-bg-2, #fff); border: 1px solid var(--dt-border, #ebeef5); border-radius: 8px; padding: 16px; }
+.kpi-card { display: flex; align-items: center; background: var(--dt-bg-container, #fff); border: 1px solid var(--dt-border-color-weak, #ebeef5); border-radius: 8px; padding: 16px; }
 .kpi-icon { width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; margin-right: 12px; flex-shrink: 0; }
-.kpi-value { font-size: 22px; font-weight: 600; color: var(--dt-text-1, #303133); line-height: 1.2; }
-.kpi-label { font-size: 13px; color: var(--dt-text-3, #909399); }
+.kpi-value { font-size: 22px; font-weight: 600; color: var(--dt-text-primary, #303133); line-height: 1.2; }
+.kpi-label { font-size: 13px; color: var(--dt-text-secondary, #6b7280); }
 .chart-row { margin-bottom: 16px; }
 .chart-row .el-col { margin-bottom: 12px; }
 :deep(.el-card__header) { padding: 12px 16px; font-weight: 600; }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import com.yu.common.constant.HttpStatus;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.core.text.Convert;
@@ -141,5 +142,19 @@ public class GlobalExceptionHandler
     public AjaxResult handleDemoModeException(DemoModeException e)
     {
         return AjaxResult.error("演示模式，不允许操作");
+    }
+
+    /**
+     * 上传文件超过容器限制异常（G3/D8）
+     * <p>当单次上传超过 {@code spring.servlet.multipart.max-file-size} 时，Spring 在参数绑定阶段抛出本异常。
+     * 此前由通用 Exception 处理器直接回传内部原始信息，行为不可预期；现收敛为明确的业务提示，
+     * 与 {@code FileUploadUtils.DEFAULT_MAX_SIZE}（10MB）口径一致。</p>
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public AjaxResult handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e, HttpServletRequest request)
+    {
+        String requestURI = request.getRequestURI();
+        log.error("请求地址'{}',上传文件超过大小限制'{}'", requestURI, e.getMessage());
+        return AjaxResult.error("上传文件过大，单个文件不得超过 10MB，请压缩后重试");
     }
 }

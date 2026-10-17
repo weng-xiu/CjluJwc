@@ -164,5 +164,5 @@ export default {
 </script>
 
 <style scoped>
-.form-tip { color: var(--el-text-color-secondary, #909399); font-size: 12px; line-height: 1.5; }
+.form-tip { color: var(--dt-text-secondary, #6b7280); font-size: 12px; line-height: 1.5; }
 </style>

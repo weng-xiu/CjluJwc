@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  CjluJwc 师生互动服务门户 站点地图（V5/D15）
+  仅收录面向游客的公开门户静态入口；栏目(column)/文章(article)为参数化动态页，
+  由后端列表接口驱动，需接入 CMS 文章清单后由发布流程增量补录，此处不硬编码。
+  说明：<loc> 使用站点域名占位（https://jwc.yangtzeu.edu.cn），部署时由运维替换为实际域名（与 robots.txt 的 Sitemap 指向保持一致）。
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://jwc.yangtzeu.edu.cn/public/home</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://jwc.yangtzeu.edu.cn/public/search</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://jwc.yangtzeu.edu.cn/public/verify</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+</urlset>

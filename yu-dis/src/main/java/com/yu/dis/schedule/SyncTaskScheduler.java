@@ -5,7 +5,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import com.yu.dis.domain.DisSyncTask;
 import com.yu.dis.mapper.DisSyncTaskMapper;
@@ -18,9 +17,14 @@ import com.yu.dis.service.IDisSyncTaskService;
  * 每次执行的完整链路（调用—解析—落库—留痕）与下次执行时间计算由
  * {@link IDisSyncTaskService#executeSyncTask(Long)} 负责。
  *
+ * <p>G7 调度双轨收敛：原 {@code @Scheduled(fixedDelay=60s)} 与 Quartz 并存，任务入口不统一、
+ * 存在监控盲区。现移除 Spring {@code @Scheduled}，改由 Quartz 统一调度——本类以 bean 名
+ * {@code syncTaskJob} 暴露 {@link #scanAndExecute()}，由 sys_job（invoke_target={@code syncTaskJob.scanAndExecute()}）
+ * 按 cron 触发，可在定时任务管理页统一启停/查看执行日志。</p>
+ *
  * @author ruoyi
  */
-@Component
+@Component("syncTaskJob")
 public class SyncTaskScheduler
 {
     private static final Logger log = LoggerFactory.getLogger(SyncTaskScheduler.class);
@@ -31,8 +35,9 @@ public class SyncTaskScheduler
     @Autowired
     private IDisSyncTaskService disSyncTaskService;
 
-    /** 每 60 秒扫描一次到期任务 */
-    @Scheduled(fixedDelayString = "${dis.sync.scan-interval-ms:60000}", initialDelay = 30000)
+    /**
+     * 扫描并执行到期同步任务（由 Quartz 调度，建议每分钟一次；禁止并发执行避免同轮重复触发）。
+     */
     public void scanAndExecute()
     {
         List<DisSyncTask> dueTasks;

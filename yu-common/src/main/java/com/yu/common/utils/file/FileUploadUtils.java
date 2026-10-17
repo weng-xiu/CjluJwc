@@ -24,9 +24,12 @@ import com.yu.common.utils.uuid.Seq;
 public class FileUploadUtils
 {
     /**
-     * 默认大小 50M
+     * 默认大小 10M
+     * <p>G3/D8 口径统一：与 {@code application.yml} 的 {@code spring.servlet.multipart.max-file-size=10MB}
+     * 保持一致。原值 50M 高于容器限制，导致 &gt;10M 的请求在 Spring multipart 绑定阶段即被拦截，
+     * 本守卫永不触发且异常提示的限额（50M）与实际生效限额（10M）不符，行为不可预期。</p>
      */
-    public static final long DEFAULT_MAX_SIZE = 50 * 1024 * 1024L;
+    public static final long DEFAULT_MAX_SIZE = 10 * 1024 * 1024L;
 
     /**
      * 默认的文件名最大长度 100

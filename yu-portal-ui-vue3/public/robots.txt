@@ -1,0 +1,34 @@
+# CjluJwc 师生互动服务门户（yu-portal-ui-vue3）
+# V5/D15：仅放开面向游客的公开门户路径，登录态业务页与接口代理一律禁止抓取。
+User-agent: *
+Disallow: /login
+Disallow: /home
+Disallow: /schedule
+Disallow: /grade
+Disallow: /exam
+Disallow: /notice
+Disallow: /selection
+Disallow: /gradeEntry
+Disallow: /evaluation
+Disallow: /evalResult
+Disallow: /studentStatus
+Disallow: /adjustment
+Disallow: /borrow
+Disallow: /graduation
+Disallow: /myCredential
+Disallow: /thesis
+Disallow: /aiChat
+Disallow: /aiRecommend
+Disallow: /aiProfile
+Disallow: /teacherSchedule
+Disallow: /teachingTask
+Disallow: /invigilation
+Disallow: /mobile
+Disallow: /m/
+Disallow: /prod-api/
+
+# 公开门户 5 页允许抓取（见 sitemap.xml）
+Allow: /public/
+
+# 站点地图（Sitemap 须为绝对 URL；部署时由运维按实际域名替换，与 sitemap.xml 的 <loc> 保持一致）
+Sitemap: https://jwc.yangtzeu.edu.cn/sitemap.xml
