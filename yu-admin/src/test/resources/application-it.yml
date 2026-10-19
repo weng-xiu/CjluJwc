@@ -1,0 +1,25 @@
+# ============================================================================
+# G4 集成测试 profile（it）：真实容器上下文 —— 本地 MySQL(3306/yu-cjlujwc) + Redis(6379)，
+# 完整 Security / MyBatis / Redis 装配（@SpringBootTest + MockMvc，不起业务端口）。
+# 数据前置：先执行 testdata/apply.ps1 复位 97xx fixture 基线（选课/成绩/审批可重复跑）。
+# 显式入口（默认 test 运行会排除 integration 标签，见 yu-admin/pom.xml surefire）：
+#   mvn -o -pl yu-admin test -Dexcluded.groups= -Dgroups=integration
+# ============================================================================
+spring:
+  # 测试上下文不需要热部署重启器
+  devtools:
+    restart:
+      enabled: false
+  # Quartz 不自动起跑，避免集成测试期间定时任务干扰断言
+  quartz:
+    auto-startup: false
+
+# Flowable 在 it 下自管 schema：CI 重建库（db/ci/01-schema.sql 只有 ACT_* 结构无版本数据行）
+# 时自动补齐版本属性；存量业务库已含版本行，等价于无害校验。
+flowable:
+  database-schema-update: true
+
+# 集成测试日志降噪（业务明细由 MockMvc/断言输出兜底）
+logging:
+  level:
+    com.yu: warn

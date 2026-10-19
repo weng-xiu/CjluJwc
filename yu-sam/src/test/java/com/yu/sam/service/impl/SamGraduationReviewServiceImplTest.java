@@ -2,6 +2,7 @@ package com.yu.sam.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -23,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.yu.common.exception.ServiceException;
 import com.yu.sam.domain.SamGraduationReview;
 import com.yu.sam.mapper.SamGraduationReviewMapper;
 import com.yu.sam.mapper.SamWarningDataMapper;
@@ -189,5 +191,78 @@ class SamGraduationReviewServiceImplTest {
 
         assertEquals("1", r.getReviewStatus());
         assertTrue(r.getReviewOpinion().contains("通识教育:60.0/60.0✓"), "应附分项达成明细");
+    }
+
+    @Test
+    @DisplayName("F2：按版审核—应修取快照总学分，学分达标且附快照分项定格比对")
+    void autoReviewBySnapshot_passWithFrozenRequirement() {
+        Map<String, Object> snap = new HashMap<>();
+        snap.put("planId", 9L);
+        snap.put("version", "V1");
+        snap.put("totalCredit", 160.0);
+        snap.put("creditStructureJson",
+                "[{\"creditType\":\"GENERAL\",\"creditTypeName\":\"通识\",\"requiredCredit\":60.0,\"minCredit\":50.0}]");
+        when(samWarningDataMapper.selectPlanSnapshotForReview(eq(99L))).thenReturn(snap);
+        when(samWarningDataMapper.selectStudentEarnedCredits(eq(1L), isNull())).thenReturn(160.0);
+        when(samWarningDataMapper.selectStudentFailCourseCount(eq(1L), isNull())).thenReturn(0);
+        when(samWarningDataMapper.countCoursesByCourseCategory(eq(1L), isNull(), any())).thenReturn(0);
+        when(samWarningDataMapper.countCoursesByNameKeyword(eq(1L), isNull(), any())).thenReturn(0);
+        when(samWarningDataMapper.sumEarnedCreditByCourseCategory(eq(1L), isNull(), eq("GENERAL"))).thenReturn(60.0);
+
+        SamGraduationReview r = service.autoReviewBySnapshot(1L, 99L);
+
+        assertEquals("1", r.getReviewStatus());
+        assertEquals("1", r.getIsCreditQualified());
+        assertEquals(160.0, r.getRequiredCredits(), 0.001);
+        assertTrue(r.getReviewOpinion().contains("版本快照(snapshotId=99, version=V1)"), "应标注快照来源");
+        assertTrue(r.getReviewOpinion().contains("通识:60.0/60.0✓"), "应按快照定格分项比对");
+        verify(samGraduationReviewMapper, times(1)).insertSamGraduationReview(any(SamGraduationReview.class));
+    }
+
+    @Test
+    @DisplayName("F2：按版审核—总学分为空时回退汇总快照分项要求学分，学分不达标则不通过")
+    void autoReviewBySnapshot_fallbackSumAndFail() {
+        Map<String, Object> snap = new HashMap<>();
+        snap.put("planId", 9L);
+        snap.put("version", "V2");
+        snap.put("totalCredit", null);
+        snap.put("creditStructureJson",
+                "[{\"creditType\":\"GENERAL\",\"creditTypeName\":\"通识\",\"requiredCredit\":100.0}]");
+        when(samWarningDataMapper.selectPlanSnapshotForReview(eq(98L))).thenReturn(snap);
+        when(samWarningDataMapper.selectStudentEarnedCredits(eq(1L), isNull())).thenReturn(80.0);
+        when(samWarningDataMapper.selectStudentFailCourseCount(eq(1L), isNull())).thenReturn(0);
+        when(samWarningDataMapper.countCoursesByCourseCategory(eq(1L), isNull(), any())).thenReturn(0);
+        when(samWarningDataMapper.countCoursesByNameKeyword(eq(1L), isNull(), any())).thenReturn(0);
+        when(samWarningDataMapper.sumEarnedCreditByCourseCategory(eq(1L), isNull(), eq("GENERAL"))).thenReturn(80.0);
+
+        SamGraduationReview r = service.autoReviewBySnapshot(1L, 98L);
+
+        assertEquals("2", r.getReviewStatus());
+        assertEquals("0", r.getIsCreditQualified());
+        assertEquals(100.0, r.getRequiredCredits(), 0.001, "总学分为空时应汇总分项要求学分");
+        assertTrue(r.getReviewOpinion().contains("学分不达标(80.0/100.0)"), "应给出学分差距");
+    }
+
+    @Test
+    @DisplayName("F2：按版审核—快照不存在应报错，不落库")
+    void autoReviewBySnapshot_missingSnapshot() {
+        when(samWarningDataMapper.selectPlanSnapshotForReview(eq(7L))).thenReturn(null);
+
+        assertThrows(ServiceException.class, () -> service.autoReviewBySnapshot(1L, 7L));
+        verify(samGraduationReviewMapper, times(0)).insertSamGraduationReview(any());
+    }
+
+    @Test
+    @DisplayName("F2：按版复核联动—透传学生所属方案快照清单，无快照时返回空列表而非 null")
+    void planSnapshotsForStudent_delegatesAndNullSafe() {
+        Map<String, Object> row = new HashMap<>();
+        row.put("snapshotId", 5L);
+        row.put("version", "V1");
+        when(samWarningDataMapper.selectSnapshotsByStudent(eq(1L))).thenReturn(Arrays.asList(row));
+        assertEquals(1, service.planSnapshotsForStudent(1L).size());
+
+        when(samWarningDataMapper.selectSnapshotsByStudent(eq(2L))).thenReturn(null);
+        assertNotNull(service.planSnapshotsForStudent(2L));
+        assertTrue(service.planSnapshotsForStudent(2L).isEmpty());
     }
 }

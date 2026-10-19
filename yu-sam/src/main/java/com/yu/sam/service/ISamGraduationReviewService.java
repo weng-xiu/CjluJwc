@@ -23,6 +23,24 @@ public interface ISamGraduationReviewService
     public SamGraduationReview autoReview(Long studentId);
 
     /**
+     * F2 按版自动审核：应修学分口径取自方案版本快照（发布时刻定格），
+     * 已修学分/不及格/英语/体育取实时成绩，支撑“政策变更后按旧版方案追溯核验”。
+     *
+     * @param studentId  学生ID
+     * @param snapshotId 方案版本快照ID
+     * @return 审核结果（已落库）
+     */
+    public SamGraduationReview autoReviewBySnapshot(Long studentId, Long snapshotId);
+
+    /**
+     * F2 按版复核联动：返回某学生所属已发布方案的历史版本快照清单（供前端下拉选择）。
+     *
+     * @param studentId 学生ID
+     * @return 快照清单（无匹配方案或无快照时为空）
+     */
+    public List<Map<String, Object>> planSnapshotsForStudent(Long studentId);
+
+    /**
      * 批量自动审核毕业资格
      *
      * @param studentIds 学生ID列表

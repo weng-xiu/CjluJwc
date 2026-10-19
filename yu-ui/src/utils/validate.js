@@ -117,3 +117,20 @@ export function isArray(arg) {
   }
   return Array.isArray(arg)
 }
+
+/**
+ * 必填规则（默认 blur 触发，适用输入框）
+ * @param {string} label 字段中文名，提示语固定为「label不能为空」
+ * @param {string} [trigger='blur'] 触发时机
+ */
+export function req(label, trigger = 'blur') {
+  return { required: true, message: label + '不能为空', trigger }
+}
+
+/**
+ * 必填规则简写（change 触发，适用下拉/单选/日期等选择型控件）
+ * @param {string} label 字段中文名
+ */
+export function reqChange(label) {
+  return req(label, 'change')
+}

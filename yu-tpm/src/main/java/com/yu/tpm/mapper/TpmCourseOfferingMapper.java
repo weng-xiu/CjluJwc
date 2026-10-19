@@ -2,6 +2,7 @@ package com.yu.tpm.mapper;
 
 import java.util.List;
 import com.yu.tpm.domain.TpmCourseOffering;
+import com.yu.tpm.domain.dto.OfferingCapacityStat;
 import com.yu.tpm.domain.dto.ScheduleCandidate;
 import org.apache.ibatis.annotations.Param;
 
@@ -48,4 +49,13 @@ public interface TpmCourseOfferingMapper
      * @return 排课候选列表
      */
     public List<ScheduleCandidate> selectCandidatesByOfferingIds(@Param("offeringIds") List<Long> offeringIds);
+
+    /**
+     * P2 选课容量水位告警：统计指定轮次下各开课的已选中/候补人数。
+     * 仅返回该轮次存在报名记录的开课，按已选人数降序（水位最紧张的在前）。
+     *
+     * @param roundId 轮次ID
+     * @return 容量水位统计列表
+     */
+    public List<OfferingCapacityStat> selectRoundCapacityStats(@Param("roundId") Long roundId);
 }

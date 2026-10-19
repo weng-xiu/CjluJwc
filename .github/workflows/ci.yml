@@ -50,6 +50,14 @@ jobs:
       - name: Run yu-admin tests (system user/notice/role/menu/dept/dictType/post/config/dictData/profile/login/register/aiChat/credential/msgCenter/printTemplate MockMvc contract)
         run: mvn -B -o -pl yu-admin test
 
+      # G4 集成测试（@SpringBootTest 真实栈）已入库但未接入本 CI：
+      #   用例：yu-admin src/test/java/com/yu/integration/（登录链路/选课容量扣减/成绩审批回写，6 例）
+      #   默认套件由 surefire excludedGroups=integration 自动跳过（未起本地栈不会红）。
+      #   本地执行（需 MySQL3306+Redis6379+testdata/apply.ps1 基线）：
+      #     mvn -o -pl yu-admin test -Dexcluded.groups= -Dgroups=integration -Dtest=*IntegrationTest
+      #   CI 接入前置阻塞：空库重建需重放 sql/ 历史脚本，存在 64 处 sys_menu 撞号（见 bin/db-baseline.ps1 头部披露），
+      #   schema 撞号治理完成后再增 integration job（services: mysql+redis）。
+
       - name: Upload surefire reports on failure
         if: failure()
         uses: actions/upload-artifact@v4

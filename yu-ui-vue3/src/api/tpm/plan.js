@@ -44,3 +44,13 @@ export function savePlanWithChildren(data) {
 export function copyPlan(planId) {
   return request({ url: '/tpm/plan/copy/' + planId, method: 'post' })
 }
+
+// F2：查询某方案的全部历史版本快照（最新版本在前）
+export function listPlanSnapshots(planId) {
+  return request({ url: '/tpm/plan/snapshots/' + planId, method: 'get' })
+}
+
+// F2：按快照ID查看版本快照详情（含学分结构/课程清单定格 JSON）
+export function getPlanSnapshot(snapshotId) {
+  return request({ url: '/tpm/plan/snapshot/' + snapshotId, method: 'get' })
+}

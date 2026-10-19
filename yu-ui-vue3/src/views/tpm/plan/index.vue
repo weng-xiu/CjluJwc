@@ -48,6 +48,7 @@
           <el-button v-if="scope.row.publishStatus !== '1'" link size="small" icon="Upload" @click="handlePublish(scope.row)" v-hasPermi="['tpm:plan:edit']">发布</el-button>
           <el-button v-if="scope.row.publishStatus === '1'" link size="small" icon="SwitchButton" @click="handleDeprecate(scope.row)" v-hasPermi="['tpm:plan:edit']">废止</el-button>
           <el-button link size="small" icon="CopyDocument" @click="handleCopy(scope.row)" v-hasPermi="['tpm:plan:add']">复制版本</el-button>
+          <el-button v-if="scope.row.publishStatus === '1'" link size="small" icon="Files" @click="handleViewSnapshots(scope.row)" v-hasPermi="['tpm:plan:query']">版本快照</el-button>
           <el-button v-if="scope.row.publishStatus !== '1'" link size="small" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['tpm:plan:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -208,13 +209,57 @@
       template-file-name="plan_template"
       update-support-label="是否覆盖已存在方案（按 专业+年份+学历层次 匹配，仅未发布方案可覆盖）"
       @success="getList" />
+
+    <!-- F2：方案版本快照（发布时刻定格的不可变历史版本，供按版追溯） -->
+    <el-dialog :title="'版本快照 - ' + snapshotPlanName" v-model="snapshotOpen" width="960px" append-to-body>
+      <app-skeleton :loading="snapshotLoading && !snapshotList.length" :rows="4">
+        <el-alert :closable="false" type="info" class="mb8"
+          title="每次「发布」生成一条不可变快照：内容指纹锁定实质字段，学分结构/课程清单为发布时刻定格，可作毕业按版审核的应修依据。"/>
+        <el-table :data="snapshotList" size="small" :row-key="r => r.snapshotId">
+          <el-table-column type="expand">
+            <template #default="props">
+              <div class="snapshot-detail">
+                <div class="snapshot-subtitle">学分结构（要求学分）</div>
+                <el-table :data="parseSnapshotJson(props.row.creditStructureJson)" size="small" border empty-text="无">
+                  <el-table-column label="学分类型" prop="creditType" width="140"/>
+                  <el-table-column label="类型名称" prop="creditTypeName" min-width="140"/>
+                  <el-table-column label="要求学分" prop="requiredCredit" width="100" align="center"/>
+                  <el-table-column label="最低学分" prop="minCredit" width="100" align="center"/>
+                </el-table>
+                <div class="snapshot-subtitle">课程清单</div>
+                <el-table :data="parseSnapshotJson(props.row.courseListJson)" size="small" border empty-text="无">
+                  <el-table-column label="课程编码" prop="courseCode" width="130"/>
+                  <el-table-column label="课程名称" prop="courseName" min-width="150"/>
+                  <el-table-column label="学分" prop="credit" width="80" align="center"/>
+                  <el-table-column label="课程类型" prop="courseType" width="120"/>
+                  <el-table-column label="修读学期" prop="semesterOrder" width="90" align="center"/>
+                </el-table>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="快照ID" prop="snapshotId" width="80" align="center"/>
+          <el-table-column label="版本号" prop="version" width="80" align="center"/>
+          <el-table-column label="要求总学分" prop="totalCredit" width="100" align="center"/>
+          <el-table-column label="发布日期" width="120" align="center"><template #default="scope"><span>{{ parseTime(scope.row.publishDate, '{y}-{m}-{d}') }}</span></template></el-table-column>
+          <el-table-column label="快照生成时间" prop="snapshotTime" width="160" align="center"/>
+          <el-table-column label="内容指纹" prop="contentHash" min-width="160" show-overflow-tooltip>
+            <template #default="scope"><span class="snapshot-hash">{{ (scope.row.contentHash || '').slice(0, 16) }}…</span></template>
+          </el-table-column>
+          <el-table-column label="快照人" prop="createBy" width="100" align="center"/>
+        </el-table>
+        <app-empty v-if="!snapshotLoading && !snapshotList.length" description="该方案暂无版本快照（发布时将自动生成）" />
+      </app-skeleton>
+      <template #footer>
+        <div class="dialog-footer"><el-button @click="snapshotOpen = false">关 闭</el-button></div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script>
 // Vue2→Vue3 迁移：@keyup.enter.native→@keyup.enter；el-icon-*→PascalCase 图标名；size mini→small；
 // :showSearch.sync/:page.sync/:limit.sync→v-model:*；:visible.sync→v-model；slot-scope→#default；type="text"→link；
 // el-radio :label→:value；<div slot="footer">→<template #footer>；this.$set(obj,k,v)→直接赋值（Vue3 响应式代理无需 $set）。
-import { listPlan, getPlan, delPlan, savePlanWithChildren, publishPlan, deprecatePlan, copyPlan } from "@/api/tpm/plan"
+import { listPlan, getPlan, delPlan, savePlanWithChildren, publishPlan, deprecatePlan, copyPlan, listPlanSnapshots } from "@/api/tpm/plan"
 import { listCourseLib, delCourseLib } from "@/api/tpm/courseLib"
 import { listCreditStruct, delCreditStruct } from "@/api/tpm/creditStruct"
 import { listMajor } from "@/api/brm/major"
@@ -232,6 +277,8 @@ export default {
       activeTab: 'course',
       courseList: [],
       creditList: [],
+      // F2 版本快照对话框
+      snapshotOpen: false, snapshotLoading: false, snapshotList: [], snapshotPlanName: "",
       majorOptions: [], deptOptions: [],
       educationLevelOptions: [
         { value: '本科', label: '本科' },
@@ -313,6 +360,27 @@ export default {
     handleCopy(row) {
       this.$modal.confirm('将基于"' + row.planName + '（' + (row.version || 'V1') + '）"复制新的草稿版本，是否继续？').then(function() { return copyPlan(row.planId) }).then(() => { this.getList(); this.$modal.msgSuccess("复制成功，已生成新草稿版本") }).catch(() => {})
     },
+    /** F2：打开并加载某方案的历史版本快照 */
+    handleViewSnapshots(row) {
+      this.snapshotPlanName = row.planName
+      this.snapshotList = []
+      this.snapshotOpen = true
+      this.snapshotLoading = true
+      listPlanSnapshots(row.planId).then(response => {
+        this.snapshotList = response.data || []
+        this.snapshotLoading = false
+      }).catch(() => { this.snapshotLoading = false })
+    },
+    /** F2：解析快照定格的 JSON（学分结构/课程清单），非法或空时返回空数组 */
+    parseSnapshotJson(str) {
+      if (!str) return []
+      try {
+        const arr = JSON.parse(str)
+        return Array.isArray(arr) ? arr : []
+      } catch (e) {
+        return []
+      }
+    },
     handleExport() { this.download('tpm/plan/export', { ...this.queryParams }, `plan_${new Date().getTime()}.xlsx`) },
     /** P7：打开导入对话框 */
     handleImport() { this.$refs.importPlanRef.open() },
@@ -375,5 +443,17 @@ export default {
 .sub-table :deep(.el-input__inner),
 .sub-table :deep(.el-textarea__inner) {
   padding: 0 6px;
+}
+.snapshot-detail {
+  padding: 8px 16px;
+}
+.snapshot-subtitle {
+  margin: 8px 0 6px;
+  font-weight: 600;
+  color: var(--dt-text-secondary);
+  font-size: 13px;
+}
+.snapshot-hash {
+  font-family: Consolas, Monaco, monospace;
 }
 </style>

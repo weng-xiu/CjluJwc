@@ -133,6 +133,22 @@ public interface SamWarningDataMapper
     List<java.util.Map<String, Object>> selectPlanCreditSections(@Param("planId") Long planId);
 
     /**
+     * F2 按版比对：读取方案版本快照的定格应修口径（跨模块查 tpm_plan_snapshot）。
+     *
+     * @param snapshotId 快照ID
+     * @return 含 planId/version/totalCredit/creditStructureJson，无则返回 null
+     */
+    java.util.Map<String, Object> selectPlanSnapshotForReview(@Param("snapshotId") Long snapshotId);
+
+    /**
+     * F2 按版复核联动：按学生匹配其所属已发布方案，返回该方案的历史版本快照清单。
+     *
+     * @param studentId 学生ID
+     * @return 每项含 snapshotId/planId/version/totalCredit/publishDate/snapshotTime/contentHash
+     */
+    List<java.util.Map<String, Object>> selectSnapshotsByStudent(@Param("studentId") Long studentId);
+
+    /**
      * 按课程属性分类统计学生已获得学分（course_category 匹配）。
      *
      * @param studentId  学生ID

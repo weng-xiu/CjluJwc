@@ -14,6 +14,9 @@
     <properties>
         <!-- JaCoCo 行覆盖率防回归棘轮（仅统计 yu-admin 自有 com.yu.web 代码，Q1⑫批后实测 ~33.8%，下限保守取 0.30） -->
         <jacoco.line.minimum>0.30</jacoco.line.minimum>
+        <!-- G4 集成测试隔离：默认套件排除 integration 标签（未起本地栈不会红）；
+             显式执行：mvn -o -pl yu-admin test -Dexcluded.groups= -Dgroups=integration -->
+        <excluded.groups>integration</excluded.groups>
     </properties>
 
     <description>
@@ -143,6 +146,14 @@
 
     <build>
         <plugins>
+            <!-- G4：surefire 支持集成标签隔离（配置与父 pom pluginManagement 的 argLine 合并） -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludedGroups>${excluded.groups}</excludedGroups>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

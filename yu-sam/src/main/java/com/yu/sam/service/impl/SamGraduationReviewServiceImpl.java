@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +23,9 @@ import com.yu.sam.service.ISamGraduationReviewService;
 public class SamGraduationReviewServiceImpl implements ISamGraduationReviewService
 {
     private static final Logger log = LoggerFactory.getLogger(SamGraduationReviewServiceImpl.class);
+
+    /** F2 按版比对：解析快照定格 JSON（静态实例，无需 Spring Bean） */
+    private static final ObjectMapper SNAPSHOT_MAPPER = new ObjectMapper();
 
     @Autowired
     private SamGraduationReviewMapper samGraduationReviewMapper;
@@ -149,6 +154,115 @@ public class SamGraduationReviewServiceImpl implements ISamGraduationReviewServi
     }
 
     /**
+     * F2 按版自动审核：应修学分口径取自方案版本快照（发布时刻定格），
+     * 已修学分/不及格/英语/体育仍取实时成绩——即“政策变更后按旧版方案追溯核验”。
+     *
+     * @param studentId  学生ID
+     * @param snapshotId 方案版本快照ID
+     * @return 审核结果（已落库）
+     */
+    @Override
+    @Transactional
+    public SamGraduationReview autoReviewBySnapshot(Long studentId, Long snapshotId)
+    {
+        Map<String, Object> snap = samWarningDataMapper.selectPlanSnapshotForReview(snapshotId);
+        if (snap == null)
+        {
+            throw new ServiceException("方案版本快照不存在(snapshotId=" + snapshotId + ")，无法按版审核");
+        }
+
+        Double earnedCredits = samWarningDataMapper.selectStudentEarnedCredits(studentId, null);
+        Integer failCount = samWarningDataMapper.selectStudentFailCourseCount(studentId, null);
+
+        // 定格应修口径：优先快照总学分，为空则汇总快照分项要求学分
+        String version = snap.get("version") != null ? snap.get("version").toString() : null;
+        List<Map<String, Object>> sections = parseSnapshotSections(snap.get("creditStructureJson"));
+        Double snapTotal = snap.get("totalCredit") != null ? Double.parseDouble(snap.get("totalCredit").toString()) : null;
+        Double requiredCredits;
+        if (snapTotal != null && snapTotal > 0)
+        {
+            requiredCredits = snapTotal;
+        }
+        else
+        {
+            double sum = 0.0;
+            for (Map<String, Object> s : sections)
+            {
+                sum += s.get("requiredCredit") != null ? Double.parseDouble(s.get("requiredCredit").toString()) : 0.0;
+            }
+            requiredCredits = sum > 0 ? sum : null;
+        }
+        String creditSource = "版本快照(snapshotId=" + snapshotId + (version != null ? ", version=" + version : "") + ")";
+
+        Integer englishFail = countFailByAttributeOrKeyword(studentId, "FOREIGN_LANGUAGE", "英语");
+        Integer peFail = countFailByAttributeOrKeyword(studentId, "PE", "体育");
+
+        double earned = earnedCredits != null ? earnedCredits : 0.0;
+        double required = requiredCredits != null ? requiredCredits : 0.0;
+
+        SamGraduationReview review = new SamGraduationReview();
+        review.setStudentId(studentId);
+        review.setTotalCreditsEarned(earned);
+        review.setRequiredCredits(required);
+
+        boolean creditQualified = requiredCredits != null && earned >= required;
+        review.setIsCreditQualified(creditQualified ? "1" : "0");
+        boolean courseQualified = failCount == null || failCount == 0;
+        review.setIsCourseQualified(courseQualified ? "1" : "0");
+        boolean englishQualified = englishFail == null || englishFail == 0;
+        review.setIsEnglishQualified(englishQualified ? "1" : "0");
+        boolean peQualified = peFail == null || peFail == 0;
+        review.setIsPeQualified(peQualified ? "1" : "0");
+
+        boolean allQualified = creditQualified && courseQualified && englishQualified && peQualified;
+        review.setReviewStatus(allQualified ? "1" : "2");
+        review.setReviewDate(new Date());
+        review.setReviewer("系统按版审核");
+
+        StringBuilder opinion = new StringBuilder();
+        opinion.append("[").append(creditSource).append("] ");
+        if (requiredCredits == null)
+        {
+            opinion.append("快照未提供应修学分(总学分与分项皆空)，学分无法判定；");
+        }
+        else if (allQualified)
+        {
+            opinion.append("按版审核通过：学分达标").append(earned).append("/").append(required)
+                   .append("，无不及格课程，英语/体育合格");
+        }
+        else
+        {
+            opinion.append("按版审核不通过：");
+            if (!creditQualified) opinion.append("学分不达标(").append(earned).append("/").append(required).append(")；");
+            if (!courseQualified) opinion.append("有").append(failCount).append("门不及格课程；");
+            if (!englishQualified) opinion.append("英语课程未通过；");
+            if (!peQualified) opinion.append("体育课程未通过；");
+        }
+        String breakdown = appendSectionBreakdown(studentId, sections);
+        if (breakdown != null && !breakdown.isEmpty())
+        {
+            opinion.append(" 分项(按版)：").append(breakdown);
+        }
+        review.setReviewOpinion(opinion.toString());
+        review.setStatus("0");
+        review.setCreateTime(DateUtils.getNowDate());
+
+        samGraduationReviewMapper.insertSamGraduationReview(review);
+        log.info("学生[{}]毕业按版审核完成(snapshotId={})：{}", studentId, snapshotId, allQualified ? "通过" : "不通过");
+        return review;
+    }
+
+    /**
+     * F2 按版复核联动：委托跨模块查询，返回学生所属已发布方案的历史版本快照清单。
+     */
+    @Override
+    public List<Map<String, Object>> planSnapshotsForStudent(Long studentId)
+    {
+        List<Map<String, Object>> list = samWarningDataMapper.selectSnapshotsByStudent(studentId);
+        return list != null ? list : new ArrayList<>();
+    }
+
+    /**
      * 批量自动审核（S1：一键审核全年级/多学生）。
      * 每个学生独立执行审核并落库，单个失败不影响其他学生。
      *
@@ -213,7 +327,14 @@ public class SamGraduationReviewServiceImpl implements ISamGraduationReviewServi
      * 拼接培养方案学分结构分项达成情况（已获/要求）。
      */
     private String buildCreditSectionBreakdown(Long studentId, Long planId) {
-        List<Map<String, Object>> sections = samWarningDataMapper.selectPlanCreditSections(planId);
+        return appendSectionBreakdown(studentId, samWarningDataMapper.selectPlanCreditSections(planId));
+    }
+
+    /**
+     * 拼接学分结构分项达成情况（已获实时 vs 要求）。要求分项可来自实时表或快照定格 JSON，
+     * 两者结构一致（creditType/creditTypeName/requiredCredit），故共用此渲染。
+     */
+    private String appendSectionBreakdown(Long studentId, List<Map<String, Object>> sections) {
         if (sections == null || sections.isEmpty()) return "";
         StringBuilder sb = new StringBuilder();
         for (Map<String, Object> s : sections) {
@@ -226,6 +347,21 @@ public class SamGraduationReviewServiceImpl implements ISamGraduationReviewServi
               .append(earnedSec >= req ? "✓" : "✗").append(" ");
         }
         return sb.toString().trim();
+    }
+
+    /**
+     * F2：解析快照定格的学分结构 JSON 为分项列表（元素含 creditType/creditTypeName/requiredCredit）。
+     */
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> parseSnapshotSections(Object json) {
+        if (json == null) return new ArrayList<>();
+        String s = json.toString().trim();
+        if (s.isEmpty()) return new ArrayList<>();
+        try {
+            return SNAPSHOT_MAPPER.readValue(s, List.class);
+        } catch (Exception e) {
+            throw new ServiceException("方案版本快照学分结构 JSON 解析失败：" + e.getMessage());
+        }
     }
 
     /**

@@ -3,7 +3,7 @@
     <el-card>
       <div slot="header" class="card-header"><i class="el-icon-date"></i> 课表查询</div>
       <el-form :model="queryParams" :inline="true" size="small" label-width="70px">
-        <el-form-item label="学期"><el-select v-model="queryParams.semesterId" placeholder="请选择" clearable><el-option label="2025-2026第二学期" :value="2" /><el-option label="2025-2026第一学期" :value="1" /></el-select></el-form-item>
+        <el-form-item label="学期"><el-select v-model="queryParams.semesterId" placeholder="请选择" clearable><el-option v-for="s in semesterOptions" :key="s.semesterId" :label="s.semesterName" :value="s.semesterId" /></el-select></el-form-item>
         <el-form-item label="周次"><el-input-number v-model="queryParams.weekNo" :min="1" :max="20" controls-position="right" placeholder="周次"/></el-form-item>
         <el-form-item><el-button type="primary" icon="el-icon-search" @click="handleQuery">查询</el-button><el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button></el-form-item>
       </el-form>
@@ -26,7 +26,9 @@ import { listSchedule } from '@/api/portal/schedule'
 export default {
   name: 'StudentSchedule',
   data() { return { loading: false, total: 0, scheduleList: [], queryParams: { pageNum: 1, pageSize: 10, semesterId: null, weekNo: null } } },
-  created() { this.getList() },
+  // E2 学期改全局 store 供给（brm_semester 数据），换学期零发版
+  computed: { semesterOptions() { return this.$store.getters['semester/semesterOptions'] } },
+  created() { this.$store.dispatch('semester/load'); this.getList() },
   methods: {
     getList() { this.loading = true; listSchedule(this.queryParams).then(r => { this.scheduleList = r.rows || []; this.total = r.total || 0 }).finally(() => { this.loading = false }) },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

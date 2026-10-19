@@ -11,6 +11,7 @@
       <el-col :span="1.5"><el-button type="danger" plain icon="Delete" size="small" :disabled="multiple" @click="handleDelete" v-hasPermi="['sam:graduationReview:remove']">删除</el-button></el-col>
       <el-col :span="1.5"><el-button type="warning" plain icon="Download" size="small" @click="handleExport" v-hasPermi="['sam:graduationReview:export']">导出</el-button></el-col>
       <el-col :span="1.5"><el-button type="info" plain icon="Cpu" size="small" @click="handleBatchReview" v-hasPermi="['sam:graduationReview:audit']">批量审核</el-button></el-col>
+      <el-col :span="1.5"><el-button type="primary" plain icon="Histogram" size="small" @click="handleVersionReview" v-hasPermi="['sam:graduationReview:audit']">按版复核</el-button></el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <app-skeleton :loading="loading && !list.length" :rows="6">
@@ -84,6 +85,26 @@
       :failed="batchProgressRejected"
       tip-text="正在按毕业审核口径逐人判定，请勿关闭窗口…"
       @closed="getList" />
+
+    <!-- F2：按版复核（应修口径取指定方案版本快照的定格内容） -->
+    <el-dialog title="按版复核" v-model="versionReviewOpen" width="560px" append-to-body>
+      <el-alert :closable="false" type="info" class="mb8"
+        title="选择方案版本快照后，应修学分按该历史版本定格口径判定，已修/不及格/英语/体育仍取实时成绩（政策变更可按旧版追溯）。"/>
+      <el-form :model="versionReviewForm" label-width="110px">
+        <el-form-item label="学生ID"><el-input v-model="versionReviewForm.studentId" placeholder="请输入学生ID（失焦自动加载其方案快照）" @change="loadVersionSnapshots"/></el-form-item>
+        <el-form-item label="版本快照">
+          <el-select v-model="versionReviewForm.snapshotId" placeholder="输入学生ID后自动加载，或手动选择" :loading="versionSnapshotLoading" filterable clearable style="width:100%" no-data-text="该学生所属方案暂无版本快照">
+            <el-option v-for="s in versionSnapshotOptions" :key="s.snapshotId" :label="formatSnapshotLabel(s)" :value="s.snapshotId"/>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" :loading="versionReviewLoading" @click="submitVersionReview">开始复核</el-button>
+          <el-button @click="versionReviewOpen = false">关 闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script>
@@ -91,7 +112,7 @@
 // .sync → v-model:xxx；slot="footer" → <template #footer>；type="text" → link；size mini → small；
 // el-radio label → value；this.$alert → ElMessageBox.alert。业务逻辑与 Vue2 保持一致。
 import { ElMessageBox } from 'element-plus'
-import { listGraduationReview, getGraduationReview, delGraduationReview, addGraduationReview, updateGraduationReview, autoReviewGraduation, batchReviewGraduation } from "@/api/sam/graduationReview"
+import { listGraduationReview, getGraduationReview, delGraduationReview, addGraduationReview, updateGraduationReview, autoReviewGraduation, batchReviewGraduation, autoReviewGraduationByVersion, getPlanSnapshotsByStudent } from "@/api/sam/graduationReview"
 import dialogGuard from "@/utils/dialogGuard"
 export default {
   name: "GraduationReview",
@@ -100,6 +121,9 @@ export default {
     batchOpen: false, batchLoading: false, batchStudentIds: "", batchResult: null,
     // U3 批量审核进度反馈
     batchProgressOpen: false, batchRunning: false, batchProgressTotal: 0, batchProgressPassed: 0, batchProgressRejected: 0,
+    // F2 按版复核
+    versionReviewOpen: false, versionReviewLoading: false, versionReviewForm: { studentId: null, snapshotId: null },
+    versionSnapshotOptions: [], versionSnapshotLoading: false,
     queryParams: { pageNum: 1, pageSize: 10, studentId: null, reviewStatus: null },
     form: {} }
   },
@@ -154,6 +178,47 @@ export default {
         this.batchRunning = false;
         this.batchProgressOpen = false;
       }).finally(() => { this.batchLoading = false; });
+    },
+    /** F2：打开按版复核对话框 */
+    handleVersionReview() {
+      this.versionReviewForm = { studentId: null, snapshotId: null };
+      this.versionSnapshotOptions = [];
+      this.versionReviewOpen = true;
+    },
+    /** F2：根据学生ID加载其所属已发布方案的历史快照，供下拉选择 */
+    loadVersionSnapshots() {
+      const sid = Number(this.versionReviewForm.studentId);
+      this.versionSnapshotOptions = [];
+      this.versionReviewForm.snapshotId = null;
+      if (!sid || isNaN(sid)) return;
+      this.versionSnapshotLoading = true;
+      getPlanSnapshotsByStudent(sid).then(response => {
+        this.versionSnapshotOptions = response.data || [];
+        this.versionSnapshotLoading = false;
+      }).catch(() => { this.versionSnapshotLoading = false; });
+    },
+    /** F2：快照下拉标签：版本 · 总学分 · 快照时间 · #ID */
+    formatSnapshotLabel(s) {
+      const parts = [];
+      if (s.version) parts.push(s.version);
+      if (s.totalCredit != null) parts.push('总学分' + s.totalCredit);
+      if (s.snapshotTime) parts.push(String(s.snapshotTime).slice(0, 10));
+      parts.push('#' + s.snapshotId);
+      return parts.join(' · ');
+    },
+    /** F2：提交按版复核 */
+    submitVersionReview() {
+      const sid = Number(this.versionReviewForm.studentId);
+      const snapId = Number(this.versionReviewForm.snapshotId);
+      if (!sid || isNaN(sid) || !snapId || isNaN(snapId)) { this.$modal.msgError("请选择学生与版本快照"); return; }
+      this.versionReviewLoading = true;
+      autoReviewGraduationByVersion(sid, snapId).then(response => {
+        const r = response.data;
+        this.$modal.msgSuccess("按版复核完成：" + (r.reviewStatus === "1" ? "通过" : "不通过"));
+        ElMessageBox.alert(r.reviewOpinion || "无审核意见", "按版复核结果（学生ID " + r.studentId + "）", { customClass: "msg-box", confirmButtonText: "知道了" });
+        this.versionReviewOpen = false;
+        this.getList();
+      }).finally(() => { this.versionReviewLoading = false; });
     }
   }
 }

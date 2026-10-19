@@ -66,6 +66,22 @@ public class SamGraduationReviewController extends BaseController
         return success(samGraduationReviewService.autoReview(studentId));
     }
 
+    /** F2：按方案版本快照审核（应修口径取指定历史版本定格内容） */
+    @PreAuthorize("@ss.hasPermi('sam:graduationReview:audit')")
+    @Log(title = "毕业按版审核", businessType = BusinessType.INSERT)
+    @PostMapping("/autoReview/{studentId}/version/{snapshotId}")
+    public AjaxResult autoReviewByVersion(@PathVariable("studentId") Long studentId,
+                                          @PathVariable("snapshotId") Long snapshotId) {
+        return success(samGraduationReviewService.autoReviewBySnapshot(studentId, snapshotId));
+    }
+
+    /** F2：按版复核联动—返回学生所属方案的历史版本快照清单（供前端选择） */
+    @PreAuthorize("@ss.hasPermi('sam:graduationReview:query')")
+    @GetMapping("/planSnapshots/{studentId}")
+    public AjaxResult planSnapshots(@PathVariable("studentId") Long studentId) {
+        return success(samGraduationReviewService.planSnapshotsForStudent(studentId));
+    }
+
     /** S1：批量自动审核（传 studentIds） */
     @PreAuthorize("@ss.hasPermi('sam:graduationReview:audit')")
     @Log(title = "毕业批量审核", businessType = BusinessType.INSERT)

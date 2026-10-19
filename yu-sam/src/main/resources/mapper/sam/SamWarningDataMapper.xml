@@ -150,6 +150,35 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by cs.struct_id
     </select>
 
+    <!-- F2 按版比对：读取方案版本快照的定格应修口径 -->
+    <select id="selectPlanSnapshotForReview" resultType="java.util.HashMap">
+        select ps.plan_id as planId, ps.version as version, ps.total_credit as totalCredit,
+               ps.credit_structure_json as creditStructureJson
+        from tpm_plan_snapshot ps
+        where ps.snapshot_id = #{snapshotId}
+    </select>
+
+    <!-- F2 按版复核联动：按学生匹配其所属已发布方案，返回该方案的历史版本快照清单（供前端下拉选择） -->
+    <select id="selectSnapshotsByStudent" resultType="java.util.HashMap">
+        select ps.snapshot_id as snapshotId, ps.plan_id as planId, ps.version as version,
+               ps.total_credit as totalCredit, ps.publish_date as publishDate,
+               ps.snapshot_time as snapshotTime, ps.content_hash as contentHash
+        from tpm_plan_snapshot ps
+        where ps.plan_id = (
+            select tp.plan_id
+            from sam_student st
+            join tpm_training_plan tp
+              on tp.major_id = st.major_id
+             and tp.del_flag = '0'
+             and tp.publish_status = '1'
+             and (tp.plan_year = st.enrollment_year or st.enrollment_year is null or tp.plan_year is null)
+            where st.student_id = #{studentId}
+            order by tp.plan_year desc, tp.plan_id desc
+            limit 1
+        )
+        order by ps.snapshot_id desc
+    </select>
+
     <!-- 按课程属性分类统计已获学分 -->
     <select id="sumEarnedCreditByCourseCategory" resultType="java.lang.Double">
         select coalesce(sum(cl.credit), 0)
