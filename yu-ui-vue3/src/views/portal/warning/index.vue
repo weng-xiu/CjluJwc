@@ -160,5 +160,5 @@ export default {
 <style scoped>
 .stat-card .stat-item { text-align: center; }
 .stat-num { font-size: 24px; font-weight: 600; }
-.stat-label { color: var(--dt-text-secondary, #909399); font-size: 13px; margin-top: 4px; }
+.stat-label { color: var(--dt-text-secondary); font-size: 13px; margin-top: 4px; }
 </style>

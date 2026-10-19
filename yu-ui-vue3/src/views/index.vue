@@ -253,8 +253,8 @@ export default {
     margin-bottom: 16px;
     padding: 16px;
     border-radius: 10px;
-    background: var(--dt-bg-container, #fff);
-    border: 1px solid var(--dt-border-color, #ebeef5);
+    background: var(--dt-bg-container);
+    border: 1px solid var(--dt-border-color);
     transition: box-shadow 0.2s, transform 0.2s;
     &:hover {
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
@@ -270,12 +270,12 @@ export default {
       font-size: 22px;
       color: #fff;
       flex-shrink: 0;
-      &.offer { background: #409eff; }
+      &.offer { background: var(--el-color-primary); }
       &.schedule { background: #12a3e6; }
-      &.todo { background: #909399; }
-      &.warn { background: #e6a23c; }
-      &.pass { background: #67c23a; }
-      &.excellent { background: #f56c6c; }
+      &.todo { background: var(--dt-text-secondary); }
+      &.warn { background: var(--el-color-warning); }
+      &.pass { background: var(--el-color-success); }
+      &.excellent { background: var(--el-color-danger); }
     }
     .stat-value {
       font-size: 24px;
@@ -297,7 +297,7 @@ export default {
       gap: 8px;
       padding: 12px 16px;
       border-radius: 8px;
-      background: var(--dt-bg-page, #f5f7fa);
+      background: var(--dt-bg-page);
       .mini-val {
         font-size: 20px;
         font-weight: 700;
@@ -335,7 +335,7 @@ export default {
       font-size: 13px;
       transition: background 0.2s, color 0.2s;
       &:hover {
-        background: var(--dt-bg-page, #f5f7fa);
+        background: var(--dt-bg-page);
         color: var(--el-color-primary);
       }
       .quick-icon {
