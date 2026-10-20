@@ -376,7 +376,7 @@ export default {
 .popup-main {
   position: relative;
   margin: 10px auto;
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 5px;
   font-size: 12px;
   overflow: hidden;
@@ -404,7 +404,7 @@ export default {
   margin-left: -70px;
   text-align: center;
   line-height: 30px;
-  background: #fff;
+  background: var(--dt-bg-container);
 }
 .popup-result table {
   text-align: center;

@@ -238,7 +238,7 @@ export default {
 
 <style scoped>
 .mobile-schedule {
-  background: #f5f7fa;
+  background: var(--dt-fill-light);
   min-height: 100%;
 }
 
@@ -247,9 +247,9 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fff;
+  background: var(--dt-bg-container);
   padding: 10px 16px;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid var(--dt-border-color-light);
 }
 .week-nav {
   width: 36px;
@@ -258,32 +258,32 @@ export default {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #f0f2f5;
+  background: var(--dt-bg-page);
   cursor: pointer;
   font-size: 14px;
-  color: #606266;
+  color: var(--dt-text-regular);
 }
-.week-nav:active { background: #e4e7ed; }
+.week-nav:active { background: var(--dt-border-color-light); }
 .week-label {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--dt-text-primary);
   cursor: pointer;
 }
-.week-label i { font-size: 12px; margin-left: 4px; color: #909399; }
+.week-label i { font-size: 12px; margin-left: 4px; color: var(--dt-text-secondary); }
 
 /* 周视图 */
 .day-header {
   display: flex;
-  background: #fff;
-  border-bottom: 1px solid #ebeef5;
+  background: var(--dt-bg-container);
+  border-bottom: 1px solid var(--dt-border-color-light);
 }
 .day-header .time-col {
   width: 44px;
   flex-shrink: 0;
   text-align: center;
   font-size: 10px;
-  color: #909399;
+  color: var(--dt-text-secondary);
   padding: 4px 0;
   display: flex;
   align-items: center;
@@ -293,18 +293,18 @@ export default {
   flex: 1;
   text-align: center;
   padding: 6px 0;
-  border-left: 1px solid #f0f2f5;
+  border-left: 1px solid var(--dt-bg-page);
 }
-.day-name { font-size: 12px; color: #606266; }
-.day-date { font-size: 10px; color: #909399; }
-.day-col.today .day-name { color: #007ab8; font-weight: 600; }
-.day-col.today { background: #ecf5ff; }
+.day-name { font-size: 12px; color: var(--dt-text-regular); }
+.day-date { font-size: 10px; color: var(--dt-text-secondary); }
+.day-col.today .day-name { color: var(--dt-color-primary); font-weight: 600; }
+.day-col.today { background: var(--el-color-primary-light-9); }
 
-.schedule-grid { background: #fff; }
+.schedule-grid { background: var(--dt-bg-container); }
 .period-row {
   display: flex;
   min-height: 60px;
-  border-top: 1px solid #f0f2f5;
+  border-top: 1px solid var(--dt-bg-page);
 }
 .period-label {
   width: 44px;
@@ -313,11 +313,11 @@ export default {
   align-items: center;
   justify-content: center;
   font-size: 10px;
-  color: #909399;
+  color: var(--dt-text-secondary);
 }
 .period-cell {
   flex: 1;
-  border-left: 1px solid #f0f2f5;
+  border-left: 1px solid var(--dt-bg-page);
   padding: 2px;
   min-height: 60px;
 }
@@ -338,7 +338,7 @@ export default {
 .day-view { padding: 12px; }
 .empty-state {
   text-align: center;
-  color: #c0c4cc;
+  color: var(--dt-text-placeholder);
   padding: 60px 0;
 }
 .empty-state i { font-size: 48px; display: block; margin-bottom: 12px; }
@@ -346,7 +346,7 @@ export default {
 
 .day-course-card {
   display: flex;
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 8px;
   margin-bottom: 10px;
   overflow: hidden;
@@ -367,21 +367,21 @@ export default {
   align-items: flex-start;
   margin-bottom: 8px;
 }
-.card-course-name { font-size: 15px; font-weight: 600; color: #303133; flex: 1; }
-.card-period { font-size: 12px; color: #909399; white-space: nowrap; margin-left: 8px; }
+.card-course-name { font-size: 15px; font-weight: 600; color: var(--dt-text-primary); flex: 1; }
+.card-period { font-size: 12px; color: var(--dt-text-secondary); white-space: nowrap; margin-left: 8px; }
 .card-bottom { display: flex; gap: 16px; }
-.card-info { font-size: 12px; color: #909399; }
+.card-info { font-size: 12px; color: var(--dt-text-secondary); }
 .card-info i { margin-right: 2px; }
 
 /* 详情弹窗 */
 .detail-row {
   font-size: 14px;
-  color: #606266;
+  color: var(--dt-text-regular);
   padding: 8px 0;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--dt-bg-page);
 }
 .detail-row:last-child { border-bottom: none; }
-.detail-row i { color: #007ab8; margin-right: 6px; }
+.detail-row i { color: var(--dt-color-primary); margin-right: 6px; }
 
 ::v-deep .mobile-dialog {
   border-radius: 12px;

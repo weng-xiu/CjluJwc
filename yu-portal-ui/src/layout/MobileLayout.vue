@@ -111,7 +111,7 @@ export default {
   height: 100vh;
   max-width: 768px;
   margin: 0 auto;
-  background: #f5f7fa;
+  background: var(--dt-fill-light);
 }
 
 /* 顶部标题栏 */
@@ -163,8 +163,8 @@ export default {
   align-items: center;
   justify-content: space-around;
   height: 52px;
-  background: #fff;
-  border-top: 1px solid #e4e7ed;
+  background: var(--dt-bg-container);
+  border-top: 1px solid var(--dt-border-color-light);
   flex-shrink: 0;
   position: fixed;
   bottom: 0;
@@ -188,7 +188,7 @@ export default {
   padding-top: 4px;
 }
 .tab-item.active {
-  color: #007ab8;
+  color: var(--dt-color-primary);
 }
 .tab-icon {
   font-size: 20px;

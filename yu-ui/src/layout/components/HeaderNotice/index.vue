@@ -108,7 +108,7 @@ export default {
     position: absolute;
     top: 7px;
     right: -3px;
-    background: #f56c6c;
+    background: var(--el-color-danger);
     color: #fff;
     border-radius: 10px;
     font-size: 10px;
@@ -130,14 +130,14 @@ export default {
   justify-content: space-between;
   padding: 10px 14px;
   background: #f7f9fb;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--dt-fill-light);
   font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: var(--dt-text-primary);
 }
 .notice-popover .notice-mark-all {
   font-size: 12px;
-  color: #007ab8;
+  color: var(--dt-color-primary);
   font-weight: normal;
   cursor: pointer;
 }
@@ -168,7 +168,7 @@ export default {
 .notice-popover .notice-item-title {
   flex: 1;
   font-size: 12px;
-  color: #333;
+  color: var(--dt-text-primary);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;

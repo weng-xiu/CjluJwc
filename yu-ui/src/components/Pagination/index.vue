@@ -105,7 +105,7 @@ export default {
 
 <style scoped>
 .pagination-container {
-  background: #fff;
+  background: var(--dt-bg-container);
 }
 .pagination-container.hidden {
   display: none;

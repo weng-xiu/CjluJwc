@@ -213,11 +213,11 @@ export default {
     input {
       height: 48px;
       border-radius: 10px;
-      border: 1.5px solid #e4e7ed;
+      border: 1.5px solid var(--dt-border-color-light);
       padding-left: 40px;
       transition: all 0.3s ease;
       &:focus {
-        border-color: #007ab8;
+        border-color: var(--dt-color-primary);
         box-shadow: 0 0 0 3px rgba(0, 122, 184, 0.1);
       }
     }
@@ -226,7 +226,7 @@ export default {
     height: 48px;
     width: 16px;
     margin-left: 4px;
-    color: #909399;
+    color: var(--dt-text-secondary);
   }
 }
 
@@ -240,7 +240,7 @@ export default {
   height: 64px;
   margin: 0 auto 16px;
   border-radius: 50%;
-  background: #007ab8;
+  background: var(--dt-color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -254,7 +254,7 @@ export default {
 .title {
   margin: 0px auto 6px auto;
   text-align: center;
-  color: #303133;
+  color: var(--dt-text-primary);
   font-size: 24px;
   font-weight: 600;
   letter-spacing: 2px;
@@ -263,7 +263,7 @@ export default {
 .subtitle {
   margin: 0px auto 0px auto;
   text-align: center;
-  color: #909399;
+  color: var(--dt-text-secondary);
   font-size: 13px;
   letter-spacing: 1px;
 }
@@ -274,7 +274,7 @@ export default {
 }
 
 .link-type {
-  color: #007ab8;
+  color: var(--dt-color-primary);
   font-size: 13px;
   text-decoration: none;
   &:hover {
@@ -297,7 +297,7 @@ export default {
     cursor: pointer;
     vertical-align: middle;
     border-radius: 8px;
-    border: 1px solid #e4e7ed;
+    border: 1px solid var(--dt-border-color-light);
   }
 }
 

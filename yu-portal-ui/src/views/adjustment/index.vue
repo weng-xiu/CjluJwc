@@ -24,13 +24,13 @@
         <el-table-column label="审批结果" min-width="130" show-overflow-tooltip>
           <template slot-scope="scope">
             <span v-if="scope.row.approveStatus !== '0' && scope.row.approveStatus !== '3'">{{ scope.row.approveBy }} · {{ parseTime(scope.row.approveTime, '{y}-{m}-{d} {h}:{i}') }}</span>
-            <span v-else style="color:#909399">{{ scope.row.approveTime ? '已撤销 ' + parseTime(scope.row.approveTime, '{y}-{m}-{d}') : '待教务处审批' }}</span>
-            <div v-if="scope.row.approveComment" style="color:#606266;font-size:12px">{{ scope.row.approveComment }}</div>
+            <span v-else style="color:var(--dt-text-secondary)">{{ scope.row.approveTime ? '已撤销 ' + parseTime(scope.row.approveTime, '{y}-{m}-{d}') : '待教务处审批' }}</span>
+            <div v-if="scope.row.approveComment" style="color:var(--dt-text-regular);font-size:12px">{{ scope.row.approveComment }}</div>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="80" align="center">
           <template slot-scope="scope">
-            <el-button v-if="scope.row.approveStatus === '0'" size="mini" type="text" icon="el-icon-delete" style="color:#F56C6C" @click="handleCancel(scope.row)">撤销</el-button>
+            <el-button v-if="scope.row.approveStatus === '0'" size="mini" type="text" icon="el-icon-delete" style="color:var(--el-color-danger)" @click="handleCancel(scope.row)">撤销</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -61,7 +61,7 @@
             <span style="margin:0 3%">至</span>
             <el-input-number v-model="applyForm.newEndPeriod" :min="1" :max="12" controls-position="right" style="width:47%" />
           </el-form-item>
-          <div style="margin:0 0 14px 110px;color:#909399;font-size:12px">教室默认沿用原教室，如需更换请在申请原因中说明，由教务处审批时调整</div>
+          <div style="margin:0 0 14px 110px;color:var(--dt-text-secondary);font-size:12px">教室默认沿用原教室，如需更换请在申请原因中说明，由教务处审批时调整</div>
         </template>
         <el-form-item label="申请日期" prop="newDate" v-if="applyForm.adjustType === '3'">
           <el-date-picker v-model="applyForm.newDate" type="date" value-format="yyyy-MM-dd" placeholder="选择补课日期" style="width:100%" />

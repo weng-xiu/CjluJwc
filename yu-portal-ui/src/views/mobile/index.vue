@@ -225,22 +225,22 @@ export default {
   display: flex;
   align-items: center;
   padding: 10px 16px;
-  background: #fdf6ec;
-  color: #e6a23c;
+  background: var(--el-color-warning-light-9);
+  color: var(--el-color-warning);
   font-size: 13px;
   border-bottom: 1px solid #faecd8;
   cursor: pointer;
 }
 .warning-banner i:first-child { font-size: 16px; margin-right: 8px; }
 .warning-banner span { flex: 1; }
-.warning-banner i:last-child { font-size: 14px; color: #c0c4cc; }
+.warning-banner i:last-child { font-size: 14px; color: var(--dt-text-placeholder); }
 
 /* 宫格导航 */
 .grid-nav {
   display: flex;
   flex-wrap: wrap;
   padding: 16px 12px 8px;
-  background: #fff;
+  background: var(--dt-bg-container);
   margin-bottom: 12px;
 }
 .grid-item {
@@ -289,25 +289,25 @@ export default {
 }
 .grid-label {
   font-size: 12px;
-  color: #606266;
+  color: var(--dt-text-regular);
 }
 
 /* 快捷信息 */
 .quick-info { padding: 0 12px; }
 .info-card { border-radius: 8px; }
-.info-header { font-size: 14px; font-weight: 600; color: #303133; }
-.empty-tip { font-size: 13px; color: #c0c4cc; text-align: center; padding: 20px 0; }
+.info-header { font-size: 14px; font-weight: 600; color: var(--dt-text-primary); }
+.empty-tip { font-size: 13px; color: var(--dt-text-placeholder); text-align: center; padding: 20px 0; }
 .today-list { font-size: 13px; }
 .today-item {
   display: flex;
   align-items: center;
   padding: 8px 0;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--dt-bg-page);
 }
 .today-item:last-child { border-bottom: none; }
-.course-time { color: #007ab8; font-weight: 500; margin-right: 10px; white-space: nowrap; }
-.course-name { flex: 1; color: #303133; }
-.course-room { color: #909399; margin-left: 8px; }
+.course-time { color: var(--dt-color-primary); font-weight: 500; margin-right: 10px; white-space: nowrap; }
+.course-name { flex: 1; color: var(--dt-text-primary); }
+.course-room { color: var(--dt-text-secondary); margin-left: 8px; }
 
 /* 切换PC版 */
 .switch-pc {

@@ -20,11 +20,12 @@
 # =============================================================
 param(
   [switch]$DryRun,
+  [string]$Project = 'yu-ui-vue3',
   [string[]]$Dirs = @('views', 'components', 'layout')
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$src = Join-Path $root 'yu-ui-vue3\src'
+$src = Join-Path $root "$Project\src"
 $skip = @('login.vue', 'lock.vue')
 
 # 只映射 tokens.scss / Element Plus 中确实存在的令牌，避免产出无效声明

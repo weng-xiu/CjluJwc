@@ -40,6 +40,9 @@
             <a href="https://jwc.yangtzeu.edu.cn" target="_blank">教务处</a>
             <span class="divider">|</span>
             <router-link to="/login" class="login-link"><i class="el-icon-user"></i> 登录</router-link>
+            <span class="theme-toggle" :title="isDark ? '切换亮色' : '切换暗色'" @click="toggleTheme">
+              <i :class="isDark ? 'el-icon-sunny' : 'el-icon-moon'"></i>
+            </span>
             <router-link to="/public/search" class="search-btn" title="搜索">
               <i class="el-icon-search"></i>
             </router-link>
@@ -107,11 +110,14 @@
 </template>
 
 <script>
+import { isDarkEnabled, toggleDarkMode } from '@/utils/theme'
+
 export default {
   name: 'PublicLayout',
   data() {
     return {
       mobileMenuOpen: false,
+      isDark: isDarkEnabled(),
       navItems: [
         { name: '首页', code: 'home', path: '/public/home' },
         { name: '新闻资讯', code: 'news', path: '/public/column/news' },
@@ -145,6 +151,9 @@ export default {
     }
   },
   methods: {
+    toggleTheme() {
+      this.isDark = toggleDarkMode()
+    }
   }
 }
 </script>
@@ -169,8 +178,8 @@ export default {
 
 /* ========== 顶部工具条 ========== */
 .top-bar {
-  background: #f0f2f5;
-  border-bottom: 1px solid #e4e7ed;
+  background: var(--dt-bg-page);
+  border-bottom: 1px solid var(--dt-border-color-light);
   font-size: 12px;
   color: #666;
   flex-shrink: 0;
@@ -201,7 +210,7 @@ export default {
 }
 
 .top-links a:hover {
-  color: #007ab8;
+  color: var(--dt-color-primary);
 }
 
 .tb-divider {
@@ -292,6 +301,18 @@ export default {
   padding: 4px;
 }
 
+.theme-toggle {
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  font-size: 15px;
+  padding: 4px;
+  transition: color 0.3s;
+}
+
+.theme-toggle:hover {
+  color: #fff;
+}
+
 .login-link {
   padding: 3px 12px;
   border: 1px solid rgba(255, 255, 255, 0.4);
@@ -345,7 +366,7 @@ export default {
   right: 18px;
   bottom: 0;
   height: 3px;
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 2px;
 }
 
@@ -376,7 +397,7 @@ export default {
   top: 0;
   bottom: 0;
   width: 260px;
-  background: #fff;
+  background: var(--dt-bg-container);
   padding: 20px 0;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
   overflow-y: auto;
@@ -387,7 +408,7 @@ export default {
 .mobile-nav-item {
   display: block;
   padding: 14px 24px;
-  color: #333;
+  color: var(--dt-text-primary);
   text-decoration: none;
   font-size: 15px;
   border-left: 3px solid transparent;
@@ -396,9 +417,9 @@ export default {
 
 .mobile-nav-item:hover,
 .mobile-nav-item.active {
-  color: #007ab8;
-  background: #edf3f9;
-  border-left-color: #007ab8;
+  color: var(--dt-color-primary);
+  background: var(--el-color-primary-light-9);
+  border-left-color: var(--dt-color-primary);
 }
 
 /* ========== 内容区 ========== */
@@ -450,7 +471,7 @@ export default {
   text-align: center;
   padding-top: 20px;
   margin-top: 20px;
-  border-top: 1px solid #333;
+  border-top: 1px solid var(--dt-text-primary);
   font-size: 13px;
   color: #888;
 }

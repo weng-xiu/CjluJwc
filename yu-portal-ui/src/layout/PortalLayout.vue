@@ -6,6 +6,9 @@
         <h1 class="logo" @click="$router.push('/home')">师生互动服务门户</h1>
       </div>
       <div class="header-nav">
+        <div class="theme-toggle" :title="isDark ? '切换亮色' : '切换暗色'" @click="toggleTheme">
+          <i :class="isDark ? 'el-icon-sunny' : 'el-icon-moon'"></i>
+        </div>
         <div class="role-tag">
           <el-tag size="small" type="info">{{ roleTagText }}</el-tag>
         </div>
@@ -49,11 +52,14 @@
 
 <script>
 import { getGroupedMenus } from '@/utils/permission'
+import { isDarkEnabled, toggleDarkMode } from '@/utils/theme'
 
 export default {
   name: 'PortalLayout',
   data() {
-    return {}
+    return {
+      isDark: isDarkEnabled()
+    }
   },
   computed: {
     userName() { return this.$store.state.user.nickName || this.$store.state.user.name || '用户' },
@@ -69,6 +75,9 @@ export default {
   },
   methods: {
     handleMenuSelect() {},
+    toggleTheme() {
+      this.isDark = toggleDarkMode()
+    },
     async handleLogout() {
       await this.$store.dispatch('LogOut')
       this.$router.push('/login')
@@ -88,11 +97,12 @@ export default {
 .logo { font-size: 20px; margin: 0; cursor: pointer; font-weight: 600; letter-spacing: 1px; }
 .header-nav { display: flex; align-items: center; gap: 20px; }
 .user-info { color: #fff; cursor: pointer; font-size: 14px; }
+.theme-toggle { color: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; }
 .portal-body { display: flex; flex: 1; overflow: hidden; }
-.portal-sidebar { width: 220px; background: #f5f7fa; border-right: 1px solid #e4e7ed; overflow-y: auto; flex-shrink: 0; }
+.portal-sidebar { width: 220px; background: var(--dt-fill-light); border-right: 1px solid var(--dt-border-color-light); overflow-y: auto; flex-shrink: 0; }
 .sidebar-menu { border-right: none; }
-.portal-main { flex: 1; padding: 16px 24px; overflow-y: auto; background: #f0f2f5; }
+.portal-main { flex: 1; padding: 16px 24px; overflow-y: auto; background: var(--dt-bg-page); }
 .breadcrumb { margin-bottom: 16px; }
-.sidebar-menu /deep/ .el-menu-item.is-active { color: #007ab8; background-color: #edf3f9; }
-.sidebar-menu /deep/ .el-submenu.is-active > .el-submenu__title { color: #007ab8; }
+.sidebar-menu /deep/ .el-menu-item.is-active { color: var(--dt-color-primary); background-color: var(--el-color-primary-light-9); }
+.sidebar-menu /deep/ .el-submenu.is-active > .el-submenu__title { color: var(--dt-color-primary); }
 </style>

@@ -294,7 +294,7 @@ export default {
 
 <style scoped>
 .mobile-evaluation {
-  background: #f5f7fa;
+  background: var(--dt-fill-light);
   min-height: 100%;
   padding-bottom: 20px;
 }
@@ -304,7 +304,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #909399;
+  color: var(--dt-text-secondary);
   font-size: 12px;
   overflow: hidden;
 }
@@ -318,7 +318,7 @@ export default {
 
 .loading-state, .empty-state {
   text-align: center;
-  color: #c0c4cc;
+  color: var(--dt-text-placeholder);
   padding: 40px 0;
   font-size: 14px;
 }
@@ -331,7 +331,7 @@ export default {
 /* 问卷卡片 */
 .questionnaire-list { padding: 12px; }
 .eval-card {
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 10px;
   padding: 14px;
   margin-bottom: 10px;
@@ -349,7 +349,7 @@ export default {
 .q-title {
   font-size: 15px;
   font-weight: 600;
-  color: #303133;
+  color: var(--dt-text-primary);
   flex: 1;
   margin-right: 8px;
   word-break: break-all;
@@ -361,13 +361,13 @@ export default {
   white-space: nowrap;
   flex-shrink: 0;
 }
-.status-todo { background: #fdf6ec; color: #e6a23c; }
-.status-done { background: #f0f9eb; color: #67c23a; }
-.status-notstart { background: #f4f4f5; color: #909399; }
-.status-closed { background: #fef0f0; color: #f56c6c; }
+.status-todo { background: var(--el-color-warning-light-9); color: var(--el-color-warning); }
+.status-done { background: var(--el-color-success-light-9); color: var(--el-color-success); }
+.status-notstart { background: #f4f4f5; color: var(--dt-text-secondary); }
+.status-closed { background: var(--el-color-danger-light-9); color: var(--el-color-danger); }
 
 .card-info {
-  background: #fafbfc;
+  background: var(--dt-fill-light);
   border-radius: 8px;
   padding: 6px 12px;
   margin-bottom: 12px;
@@ -377,22 +377,22 @@ export default {
   align-items: center;
   font-size: 13px;
   padding: 5px 0;
-  color: #606266;
+  color: var(--dt-text-regular);
 }
 .info-row i {
-  color: #007ab8;
+  color: var(--dt-color-primary);
   margin-right: 8px;
   width: 16px;
   text-align: center;
   flex-shrink: 0;
 }
 .info-label {
-  color: #909399;
+  color: var(--dt-text-secondary);
   width: 64px;
   flex-shrink: 0;
 }
 .info-value {
-  color: #303133;
+  color: var(--dt-text-primary);
   flex: 1;
   word-break: break-all;
 }
@@ -426,7 +426,7 @@ export default {
 
 .question-list { padding: 12px; }
 .question-item, .suggestion-item {
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 10px;
   padding: 14px;
   margin-bottom: 10px;
@@ -436,7 +436,7 @@ export default {
   display: flex;
   align-items: flex-start;
   font-size: 14px;
-  color: #303133;
+  color: var(--dt-text-primary);
   font-weight: 500;
   margin-bottom: 12px;
   line-height: 1.5;
@@ -447,8 +447,8 @@ export default {
   justify-content: center;
   min-width: 20px;
   height: 20px;
-  background: #edf3f9;
-  color: #007ab8;
+  background: var(--el-color-primary-light-9);
+  color: var(--dt-color-primary);
   border-radius: 4px;
   font-size: 12px;
   margin-right: 8px;
@@ -471,12 +471,12 @@ export default {
 .list-footer {
   text-align: center;
   padding: 16px;
-  color: #c0c4cc;
+  color: var(--dt-text-placeholder);
   font-size: 13px;
 }
 .list-footer i { margin-right: 4px; }
 .load-more {
-  color: #007ab8;
+  color: var(--dt-color-primary);
   cursor: pointer;
 }
 </style>

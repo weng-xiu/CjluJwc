@@ -294,14 +294,14 @@ export default {
 <style scoped>
 .risk-box { text-align:center;padding:10px 0; }
 .risk-tag { font-size:20px;padding:14px 24px; }
-.risk-tip { color:#909399;font-size:12px;margin-top:14px;line-height:1.6; }
-.sug-list { margin:0;padding-left:20px;color:#606266;font-size:13px;line-height:1.9; }
-.stat-cards .stat-card { background:#f5f7fa;border-radius:6px;padding:14px;text-align:center;margin-bottom:12px; }
-.stat-cards .stat-card.danger { background:#fef0f0; }
-.stat-cards .stat-card.warn { background:#fdf6ec; }
+.risk-tip { color:var(--dt-text-secondary);font-size:12px;margin-top:14px;line-height:1.6; }
+.sug-list { margin:0;padding-left:20px;color:var(--dt-text-regular);font-size:13px;line-height:1.9; }
+.stat-cards .stat-card { background:var(--dt-fill-light);border-radius:6px;padding:14px;text-align:center;margin-bottom:12px; }
+.stat-cards .stat-card.danger { background:var(--el-color-danger-light-9); }
+.stat-cards .stat-card.warn { background:var(--el-color-warning-light-9); }
 .stat-cards .stat-card.watch { background:#f4f4f5; }
-.stat-cards .stat-card.pass { background:#f0f9eb; }
-.stat-label { color:#909399;font-size:13px; }
-.stat-value { font-size:22px;font-weight:600;color:#303133;margin-top:6px; }
-.board-total { color:#909399;font-size:13px;margin-top:10px;text-align:right; }
+.stat-cards .stat-card.pass { background:var(--el-color-success-light-9); }
+.stat-label { color:var(--dt-text-secondary);font-size:13px; }
+.stat-value { font-size:22px;font-weight:600;color:var(--dt-text-primary);margin-top:6px; }
+.board-total { color:var(--dt-text-secondary);font-size:13px;margin-top:10px;text-align:right; }
 </style>

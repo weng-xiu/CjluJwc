@@ -38,7 +38,7 @@
         <el-form-item label="请求方式"><el-select v-model="form.requestMethod" placeholder="请选择请求方式"><el-option label="GET" value="GET"/><el-option label="POST" value="POST"/><el-option label="PUT" value="PUT"/><el-option label="DELETE" value="DELETE"/></el-select></el-form-item>
         <el-form-item label="请求路径" prop="requestPath"><el-input v-model="form.requestPath" placeholder="绝对URL(http/https)或相对路径(自动拼接所属系统baseUrl)，支持 ${batchNo} 等变量" /></el-form-item>
         <el-form-item label="请求模板"><el-input v-model="form.requestTemplate" type="textarea" :rows="4" placeholder="POST 请求体(JSON)，支持变量占位符" />
-          <div style="font-size:12px;color:#909399;line-height:1.6">可用变量：${batchNo} 批次号、${taskId} 任务ID、${timestamp} 时间戳、${date}/${datetime} 执行时间、${watermark} 增量水位（仅增量模式任务）</div>
+          <div style="font-size:12px;color:var(--dt-text-secondary);line-height:1.6">可用变量：${batchNo} 批次号、${taskId} 任务ID、${timestamp} 时间戳、${date}/${datetime} 执行时间、${watermark} 增量水位（仅增量模式任务）</div>
         </el-form-item>
         <el-form-item label="超时时间(秒)"><el-input-number v-model="form.timeoutSeconds" :min="1" :max="300" /></el-form-item>
         <el-form-item label="重试次数"><el-input-number v-model="form.retryCount" :min="0" :max="10" /></el-form-item>

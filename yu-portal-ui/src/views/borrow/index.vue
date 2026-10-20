@@ -91,9 +91,9 @@
         <el-timeline-item v-for="(t, i) in traceTasks" :key="i"
                           :timestamp="parseTime(t.endTime || t.startTime, '{y}-{m}-{d} {h}:{i}')"
                           :type="t.endTime ? 'success' : 'primary'" :hollow="!t.endTime">
-          <b>{{ t.taskName }}</b><span v-if="t.assignee" style="color:#909399;margin-left:8px">{{ t.assignee }}</span>
-          <div v-if="t.comments && t.comments.length" style="color:#606266">{{ t.comments.join(' / ') }}</div>
-          <div v-if="!t.endTime" style="color:#E6A23C">进行中…</div>
+          <b>{{ t.taskName }}</b><span v-if="t.assignee" style="color:var(--dt-text-secondary);margin-left:8px">{{ t.assignee }}</span>
+          <div v-if="t.comments && t.comments.length" style="color:var(--dt-text-regular)">{{ t.comments.join(' / ') }}</div>
+          <div v-if="!t.endTime" style="color:var(--el-color-warning)">进行中…</div>
         </el-timeline-item>
       </el-timeline>
     </el-dialog>
@@ -218,5 +218,5 @@ export default {
 
 <style scoped>
 .card-header { display: flex; justify-content: space-between; align-items: center; }
-.trace-line { font-size: 12px; color: #606266; line-height: 1.6; }
+.trace-line { font-size: 12px; color: var(--dt-text-regular); line-height: 1.6; }
 </style>

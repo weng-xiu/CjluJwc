@@ -1,0 +1,392 @@
+/**
+ * V2 element-ui 暗色覆盖层 —— 长江大学教务管理系统 · 管理端 yu-ui（Vue2 主入口）
+ *
+ * 背景：element-ui 2.x 无官方暗色主题（不像 element-plus 自带 dark css-vars），
+ *   故本文件在 html.dark 下集中覆盖高频组件表面（背景/边框/文字），令业务页无需逐页改动即可换肤。
+ * 取值一律走 --dt-* 令牌（tokens.scss 的暗色段），与全局视觉同源；
+ *   仅少量结构性细节（阴影、遮罩透明度）用字面量。带 type 的按钮/标签保留其语义色。
+ * 加载顺序：本文件必须在 element-variables.scss（编译 element-ui 全量 CSS）之后引入方能覆盖。
+ */
+html.dark {
+  /* ---------- 内容区底色与文字 ---------- */
+  .app-main,
+  .app-container {
+    background-color: var(--dt-bg-page);
+    color: var(--dt-text-primary);
+  }
+
+  aside {
+    background-color: var(--dt-fill-light);
+    color: var(--dt-text-regular);
+  }
+
+  /* ---------- 卡片 ---------- */
+  .el-card {
+    background-color: var(--dt-bg-container);
+    border-color: var(--dt-border-color-light);
+    color: var(--dt-text-regular);
+
+    .el-card__header {
+      border-bottom-color: var(--dt-border-color-light);
+      color: var(--dt-text-primary);
+    }
+  }
+
+  /* ---------- 表格 ---------- */
+  .el-table {
+    background-color: var(--dt-bg-container);
+    color: var(--dt-text-regular);
+    border-color: var(--dt-border-color-light);
+
+    tr,
+    .el-table__row {
+      background-color: var(--dt-bg-container);
+    }
+
+    th.el-table__cell {
+      background-color: var(--dt-table-header-bg);
+      color: var(--dt-table-header-text);
+      border-bottom-color: var(--dt-border-color-light);
+    }
+
+    td.el-table__cell {
+      border-bottom-color: var(--dt-border-color-light);
+    }
+
+    .el-table__body tr:hover > td.el-table__cell,
+    .el-table__body tr.hover-row > td.el-table__cell {
+      background-color: var(--dt-fill-light);
+    }
+
+    &--border {
+      border-color: var(--dt-border-color-light);
+
+      .el-table__cell {
+        border-right-color: var(--dt-border-color-light);
+      }
+    }
+
+    &--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+      background-color: var(--dt-surface-weak);
+    }
+
+    .el-table__empty-block {
+      background-color: var(--dt-bg-container);
+    }
+
+    &::before,
+    &--border::after,
+    &--group::after {
+      background-color: var(--dt-border-color-light);
+    }
+
+    .el-table__fixed,
+    .el-table__fixed-right {
+      background-color: var(--dt-bg-container);
+
+      &::before {
+        background-color: var(--dt-border-color-light);
+      }
+    }
+  }
+
+  /* ---------- 输入框 / 文本域 / 数字框 ---------- */
+  .el-input__inner,
+  .el-textarea__inner {
+    background-color: var(--dt-bg-container);
+    border-color: var(--dt-border-color);
+    color: var(--dt-text-primary);
+
+    &::placeholder {
+      color: var(--dt-text-placeholder);
+    }
+  }
+
+  .el-input.is-disabled .el-input__inner,
+  .el-textarea.is-disabled .el-textarea__inner {
+    background-color: var(--dt-fill-light);
+    border-color: var(--dt-border-color-light);
+    color: var(--dt-text-placeholder);
+  }
+
+  .el-input .el-input__prefix,
+  .el-input .el-input__suffix,
+  .el-input__icon,
+  .el-select .el-input .el-select__caret {
+    color: var(--dt-text-placeholder);
+  }
+
+  /* ---------- 表单标签 ---------- */
+  .el-form-item__label {
+    color: var(--dt-text-regular);
+  }
+
+  .el-form-item__error {
+    color: var(--el-color-danger);
+  }
+
+  /* ---------- 下拉 / 选择面板 / 浮层 ---------- */
+  .el-select-dropdown,
+  .el-dropdown-menu,
+  .el-popover,
+  .el-picker-panel {
+    background-color: var(--dt-bg-container);
+    border-color: var(--dt-border-color-light);
+    color: var(--dt-text-regular);
+  }
+
+  .el-select-dropdown__item {
+    color: var(--dt-text-regular);
+
+    &.hover,
+    &:hover {
+      background-color: var(--dt-fill-light);
+    }
+
+    &.selected {
+      color: var(--el-color-primary);
+    }
+  }
+
+  .el-dropdown-menu__item {
+    color: var(--dt-text-regular);
+
+    &:not(.is-disabled):hover {
+      background-color: var(--dt-fill-light);
+      color: var(--dt-text-primary);
+    }
+  }
+
+  /* ---------- 按钮：default（带 type 者保留语义色） ---------- */
+  .el-button {
+    background-color: var(--dt-bg-container);
+    border-color: var(--dt-border-color);
+    color: var(--dt-text-regular);
+
+    &:hover,
+    &:focus {
+      background-color: var(--dt-bg-container);
+      border-color: var(--el-color-primary);
+      color: var(--el-color-primary);
+    }
+  }
+
+  .el-button--text {
+    background: transparent;
+    border-color: transparent;
+
+    &:hover,
+    &:focus {
+      background: transparent;
+    }
+  }
+
+  .el-button.is-plain {
+    background-color: var(--dt-fill-light);
+  }
+
+  /* ---------- 对话框 / 抽屉 ---------- */
+  .el-dialog {
+    background-color: var(--dt-bg-container);
+
+    .el-dialog__title {
+      color: var(--dt-text-primary);
+    }
+
+    .el-dialog__body {
+      color: var(--dt-text-regular);
+    }
+
+    .el-dialog__header {
+      border-bottom: 1px solid var(--dt-border-color-light);
+    }
+
+    .el-dialog__footer {
+      border-top: 1px solid var(--dt-border-color-light);
+    }
+  }
+
+  .el-drawer,
+  .el-drawer__content {
+    background-color: var(--dt-bg-container);
+    color: var(--dt-text-regular);
+  }
+
+  .el-drawer__header {
+    color: var(--dt-text-primary);
+    border-bottom: 1px solid var(--dt-border-color-light);
+    margin-bottom: 0;
+  }
+
+  /* ---------- Tabs ---------- */
+  .el-tabs__item {
+    color: var(--dt-text-regular);
+
+    &.is-active {
+      color: var(--el-color-primary);
+    }
+
+    &:hover {
+      color: var(--el-color-primary);
+    }
+  }
+
+  .el-tabs__nav-wrap::after {
+    background-color: var(--dt-border-color-light);
+  }
+
+  .el-tabs__header {
+    border-bottom-color: var(--dt-border-color-light);
+  }
+
+  /* ---------- Descriptions（学生画像/详情卡） ---------- */
+  .el-descriptions__body {
+    background-color: var(--dt-bg-container);
+  }
+
+  .el-descriptions .is-bordered .el-descriptions-item__cell {
+    border-color: var(--dt-border-color-light);
+  }
+
+  .el-descriptions-item__label.is-bordered-label {
+    background-color: var(--dt-surface-weak);
+    color: var(--dt-text-regular);
+  }
+
+  /* ---------- 面包屑 / 页头 ---------- */
+  .el-breadcrumb__inner {
+    color: var(--dt-text-secondary);
+
+    &.is-link,
+    &.is-link:hover {
+      color: var(--dt-text-primary);
+    }
+  }
+
+  .el-breadcrumb__separator {
+    color: var(--dt-text-placeholder);
+  }
+
+  .el-page-header__content {
+    color: var(--dt-text-primary);
+  }
+
+  .el-page-header__left::after {
+    background-color: var(--dt-border-color);
+  }
+
+  /* ---------- 分页 ---------- */
+  .el-pagination {
+    color: var(--dt-text-regular);
+
+    button,
+    .el-pager li:not(.disabled) {
+      background-color: var(--dt-bg-container);
+      color: var(--dt-text-regular);
+    }
+
+    .el-pager li:not(.disabled).active {
+      color: var(--el-color-primary);
+    }
+
+    .el-pager li:not(.disabled):hover {
+      color: var(--el-color-primary);
+    }
+
+    &.is-background .el-pager li:not(.disabled).active {
+      color: var(--dt-text-primary);
+    }
+  }
+
+  .pagination-container {
+    background-color: var(--dt-bg-page);
+  }
+
+  /* ---------- Tag：info 走中性，彩色语义保留 ---------- */
+  .el-tag--info {
+    background-color: var(--dt-fill-light);
+    border-color: var(--dt-border-color-light);
+    color: var(--dt-text-regular);
+  }
+
+  /* ---------- Progress ---------- */
+  .el-progress__text {
+    color: var(--dt-text-regular);
+  }
+
+  .el-progress-bar__outer {
+    background-color: var(--dt-fill-light);
+  }
+
+  /* ---------- 浮层消息 / 通知 / 弹框确认 ---------- */
+  .el-message {
+    background-color: var(--dt-bg-container);
+    border-color: var(--dt-border-color-light);
+
+    .el-message__content {
+      color: var(--dt-text-primary);
+    }
+  }
+
+  .el-notification {
+    background-color: var(--dt-bg-container);
+    border-color: var(--dt-border-color-light);
+
+    .el-notification__title {
+      color: var(--dt-text-primary);
+    }
+
+    .el-notification__content {
+      color: var(--dt-text-regular);
+    }
+  }
+
+  .el-message-box {
+    background-color: var(--dt-bg-container);
+    border-color: var(--dt-border-color-light);
+
+    .el-message-box__title {
+      color: var(--dt-text-primary);
+    }
+
+    .el-message-box__content {
+      color: var(--dt-text-regular);
+    }
+  }
+
+  /* ---------- 树 ---------- */
+  .el-tree {
+    background-color: var(--dt-bg-container);
+    color: var(--dt-text-regular);
+
+    .el-tree-node__content:hover {
+      background-color: var(--dt-fill-light);
+    }
+  }
+
+  /* ---------- Checkbox / Radio 文字 ---------- */
+  .el-checkbox__label,
+  .el-radio__label {
+    color: var(--dt-text-regular);
+  }
+
+  /* ---------- Divider / Empty ---------- */
+  .el-divider {
+    background-color: var(--dt-border-color-light);
+  }
+
+  .el-divider__text {
+    background-color: var(--dt-bg-container);
+    color: var(--dt-text-primary);
+  }
+
+  .el-empty__description p {
+    color: var(--dt-text-secondary);
+  }
+
+  /* ---------- 遮罩加深 ---------- */
+  .el-loading-mask,
+  .el-image-viewer__wrapper {
+    background-color: rgba(0, 0, 0, 0.55);
+  }
+}

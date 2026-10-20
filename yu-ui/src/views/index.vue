@@ -363,7 +363,7 @@ export default {
 
 <style scoped lang="scss">
 .home {
-  background: #f5f7fa;
+  background: var(--dt-fill-light);
 }
 
 /* ========== 欢迎横幅 ========== */
@@ -416,7 +416,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 8px;
   padding: 18px 20px;
   margin-bottom: 12px;
@@ -442,13 +442,13 @@ export default {
   .stat-value {
     font-size: 22px;
     font-weight: 700;
-    color: #303133;
+    color: var(--dt-text-primary);
     line-height: 1.2;
   }
 
   .stat-label {
     font-size: 13px;
-    color: #909399;
+    color: var(--dt-text-secondary);
     margin-top: 2px;
   }
 }
@@ -478,7 +478,7 @@ export default {
   .btn-bigscreen {
     padding: 0;
     font-size: 13px;
-    color: #007ab8;
+    color: var(--dt-color-primary);
 
     &:hover {
       color: #008ed6;
@@ -491,21 +491,21 @@ export default {
     color: #003366;
 
     i {
-      color: #007ab8;
+      color: var(--dt-color-primary);
       margin-right: 6px;
     }
   }
 
   .panel-sub {
     font-size: 12px;
-    color: #909399;
+    color: var(--dt-text-secondary);
   }
 }
 
 /* ========== 驾驶舱图表 ========== */
 .chart-title {
   font-size: 13px;
-  color: #606266;
+  color: var(--dt-text-regular);
   margin: 6px 0 4px;
 }
 
@@ -555,7 +555,7 @@ export default {
 
   .quick-name {
     font-size: 13px;
-    color: #606266;
+    color: var(--dt-text-regular);
   }
 }
 
@@ -578,18 +578,18 @@ export default {
     flex-shrink: 0;
 
     &.dot-published {
-      background: #67c23a;
+      background: var(--el-color-success);
     }
 
     &.dot-draft {
-      background: #c0c4cc;
+      background: var(--dt-text-placeholder);
     }
   }
 
   .list-title {
     flex: 1;
     font-size: 14px;
-    color: #303133;
+    color: var(--dt-text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -597,7 +597,7 @@ export default {
 
   .list-date {
     font-size: 12px;
-    color: #909399;
+    color: var(--dt-text-secondary);
     flex-shrink: 0;
   }
 }
@@ -613,7 +613,7 @@ export default {
 
   .notice-title {
     font-size: 13px;
-    color: #303133;
+    color: var(--dt-text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -622,7 +622,7 @@ export default {
 
   .notice-date {
     font-size: 12px;
-    color: #c0c4cc;
+    color: var(--dt-text-placeholder);
   }
 }
 
@@ -638,7 +638,7 @@ export default {
     justify-content: space-between;
     padding: 9px 4px;
     font-size: 13px;
-    color: #303133;
+    color: var(--dt-text-primary);
     border-bottom: 1px dashed #f0f0f0;
 
     &:last-child {
@@ -647,7 +647,7 @@ export default {
   }
 
   .sys-label {
-    color: #909399;
+    color: var(--dt-text-secondary);
     flex-shrink: 0;
     margin-right: 16px;
   }
@@ -673,12 +673,12 @@ export default {
   transition: all 0.3s;
 
   i {
-    color: #007ab8;
+    color: var(--dt-color-primary);
   }
 
   &:hover {
-    background: #edf3f9;
-    color: #007ab8;
+    background: var(--el-color-primary-light-9);
+    color: var(--dt-color-primary);
   }
 }
 

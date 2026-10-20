@@ -152,34 +152,34 @@ export default {
 <style scoped>
 .bind-time {
   margin-left: 12px;
-  color: #909399;
+  color: var(--dt-text-secondary);
   font-size: 12px;
 }
 .mfa-desc {
-  color: #909399;
+  color: var(--dt-text-secondary);
   font-size: 12px;
   line-height: 1.6;
 }
 .qr-img {
   width: 220px;
   height: 220px;
-  border: 1px solid #ebeef5;
+  border: 1px solid var(--dt-border-color-light);
   border-radius: 4px;
 }
 .qr-loading {
   height: 220px;
   line-height: 220px;
-  color: #909399;
+  color: var(--dt-text-secondary);
 }
 .secret-row {
   margin-top: 8px;
   font-size: 12px;
-  color: #606266;
+  color: var(--dt-text-regular);
 }
 .secret {
   font-family: Consolas, Monaco, monospace;
   letter-spacing: 1px;
   user-select: all;
-  color: #303133;
+  color: var(--dt-text-primary);
 }
 </style>

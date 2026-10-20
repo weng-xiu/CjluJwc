@@ -482,7 +482,7 @@ export default {
     margin-left: 6px;
   }
   .el-icon-plus{
-    color: #007ab8;
+    color: var(--dt-color-primary);
   }
   .el-icon-delete{
     color: #157a0c;
@@ -598,13 +598,13 @@ $lighterBlue: #007ab8;
   border-top: none;
   border-left: none;
   .delete-btn{
-    color: #F56C6C;
+    color: var(--el-color-danger);
   }
 }
 .logo-wrapper{
   position: relative;
   height: 42px;
-  background: #fff;
+  background: var(--dt-bg-container);
   border-bottom: 1px solid #f1e8e8;
   box-sizing: border-box;
 }
@@ -755,7 +755,7 @@ $lighterBlue: #007ab8;
     right: 56px;
     border-color: $lighterBlue;
     color: $lighterBlue;
-    background: #fff;
+    background: var(--dt-bg-container);
     &:hover{
       background: $lighterBlue;
       color: #fff;
@@ -763,11 +763,11 @@ $lighterBlue: #007ab8;
   }
   & > .drawing-item-delete{
     right: 24px;
-    border-color: #F56C6C;
-    color: #F56C6C;
-    background: #fff;
+    border-color: var(--el-color-danger);
+    color: var(--el-color-danger);
+    background: var(--dt-bg-container);
     &:hover{
-      background: #F56C6C;
+      background: var(--el-color-danger);
       color: #fff;
     }
   }

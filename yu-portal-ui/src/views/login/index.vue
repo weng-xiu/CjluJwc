@@ -129,7 +129,7 @@ export default {
 }
 .login-header h2 {
   font-size: 24px;
-  color: #007ab8;
+  color: var(--dt-color-primary);
   margin: 0 0 8px 0;
   font-weight: 600;
 }

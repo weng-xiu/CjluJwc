@@ -53,7 +53,7 @@
       <div class="rec-meta">申请 {{ fmtDate(row.createTime) }}<template v-if="row.approveOpinion"> · 审批意见：{{ row.approveOpinion }}</template></div>
       <div class="rec-actions">
         <el-button v-if="row.approveStatus !== '3'" size="mini" type="text" @click="openTrace(row)">审批进度</el-button>
-        <el-button v-if="row.approveStatus === '0'" size="mini" type="text" style="color:#f56c6c" @click="cancelRow(row)">撤销</el-button>
+        <el-button v-if="row.approveStatus === '0'" size="mini" type="text" style="color:var(--el-color-danger)" @click="cancelRow(row)">撤销</el-button>
       </div>
     </div>
     <div v-if="!loading && list.length < total" class="load-more" @click="loadMore">点击加载更多</div>
@@ -179,47 +179,47 @@ export default {
 <style scoped>
 .mobile-status { padding: 12px; }
 .stu-card { background: linear-gradient(135deg, #003366, #007ab8); color: #fff; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
-.stu-card.empty { background: #e4e7ed; color: #909399; }
+.stu-card.empty { background: var(--dt-border-color-light); color: var(--dt-text-secondary); }
 .stu-name { font-size: 17px; font-weight: 600; }
 .stu-no { font-size: 12px; opacity: 0.85; margin-left: 8px; font-weight: 400; }
 .stu-meta { font-size: 12px; opacity: 0.9; margin-top: 4px; }
-.block-title { display: flex; align-items: center; justify-content: space-between; font-size: 15px; font-weight: 600; color: #303133; margin-bottom: 8px; }
-.apply-block { background: #fff; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
-.apply-form { border-top: 1px solid #f0f2f5; padding-top: 10px; }
+.block-title { display: flex; align-items: center; justify-content: space-between; font-size: 15px; font-weight: 600; color: var(--dt-text-primary); margin-bottom: 8px; }
+.apply-block { background: var(--dt-bg-container); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.apply-form { border-top: 1px solid var(--dt-bg-page); padding-top: 10px; }
 .fi { margin-bottom: 10px; }
-.fi label { display: block; font-size: 13px; color: #606266; margin-bottom: 4px; }
+.fi label { display: block; font-size: 13px; color: var(--dt-text-regular); margin-bottom: 4px; }
 .submit-btn { width: 100%; }
 .record-title { margin-top: 4px; }
-.loading-state, .empty-state { text-align: center; color: #c0c4cc; padding: 30px 0; font-size: 13px; }
+.loading-state, .empty-state { text-align: center; color: var(--dt-text-placeholder); padding: 30px 0; font-size: 13px; }
 .empty-state i { font-size: 36px; display: block; margin-bottom: 6px; }
-.rec-card { background: #fff; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+.rec-card { background: var(--dt-bg-container); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
 .rec-top { display: flex; justify-content: space-between; align-items: center; }
-.rec-type { font-size: 15px; font-weight: 600; color: #303133; }
+.rec-type { font-size: 15px; font-weight: 600; color: var(--dt-text-primary); }
 .rec-status { font-size: 12px; padding: 2px 8px; border-radius: 10px; }
-.st-0 { background: #fdf6ec; color: #e6a23c; }
-.st-1 { background: #f0f9ec; color: #67c23a; }
-.st-2 { background: #fef0f0; color: #f56c6c; }
-.st-3 { background: #f4f4f5; color: #909399; }
-.rec-reason { font-size: 13px; color: #606266; margin: 6px 0; }
-.rec-meta { font-size: 12px; color: #909399; }
-.rec-actions { border-top: 1px solid #f5f7fa; margin-top: 6px; text-align: right; }
-.load-more { text-align: center; font-size: 13px; color: #007ab8; padding: 10px 0 20px; cursor: pointer; }
+.st-0 { background: var(--el-color-warning-light-9); color: var(--el-color-warning); }
+.st-1 { background: #f0f9ec; color: var(--el-color-success); }
+.st-2 { background: var(--el-color-danger-light-9); color: var(--el-color-danger); }
+.st-3 { background: #f4f4f5; color: var(--dt-text-secondary); }
+.rec-reason { font-size: 13px; color: var(--dt-text-regular); margin: 6px 0; }
+.rec-meta { font-size: 12px; color: var(--dt-text-secondary); }
+.rec-actions { border-top: 1px solid var(--dt-fill-light); margin-top: 6px; text-align: right; }
+.load-more { text-align: center; font-size: 13px; color: var(--dt-color-primary); padding: 10px 0 20px; cursor: pointer; }
 .mask { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 999; display: flex; align-items: center; justify-content: center; }
-.dialog { width: 88%; max-height: 74vh; overflow-y: auto; background: #fff; border-radius: 10px; padding: 16px; }
+.dialog { width: 88%; max-height: 74vh; overflow-y: auto; background: var(--dt-bg-container); border-radius: 10px; padding: 16px; }
 .dialog-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
 .steps { display: flex; margin-bottom: 14px; }
-.step-item { flex: 1; text-align: center; font-size: 11px; color: #c0c4cc; position: relative; }
-.step-dot { display: block; width: 12px; height: 12px; border-radius: 50%; background: #dcdfe6; margin: 0 auto 4px; }
-.step-item.done .step-dot, .step-item.current .step-dot { background: #007ab8; }
-.step-item.done .step-label, .step-item.current .step-label { color: #007ab8; }
+.step-item { flex: 1; text-align: center; font-size: 11px; color: var(--dt-text-placeholder); position: relative; }
+.step-dot { display: block; width: 12px; height: 12px; border-radius: 50%; background: var(--dt-border-color); margin: 0 auto 4px; }
+.step-item.done .step-dot, .step-item.current .step-dot { background: var(--dt-color-primary); }
+.step-item.done .step-label, .step-item.current .step-label { color: var(--dt-color-primary); }
 .tl-item { display: flex; padding: 6px 0; }
-.tl-dot { width: 10px; height: 10px; border-radius: 50%; background: #dcdfe6; margin: 4px 10px 0 2px; flex-shrink: 0; }
-.tl-dot.done { background: #67c23a; }
+.tl-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--dt-border-color); margin: 4px 10px 0 2px; flex-shrink: 0; }
+.tl-dot.done { background: var(--el-color-success); }
 .tl-body { flex: 1; }
-.tl-name { font-size: 13px; color: #303133; }
-.tl-assignee { color: #007ab8; }
-.tl-time { font-size: 11px; color: #909399; }
-.tl-comment { font-size: 12px; color: #606266; background: #f5f7fa; border-radius: 4px; padding: 4px 8px; margin-top: 4px; }
-.trace-fallback { font-size: 13px; color: #909399; padding: 16px 0; text-align: center; }
+.tl-name { font-size: 13px; color: var(--dt-text-primary); }
+.tl-assignee { color: var(--dt-color-primary); }
+.tl-time { font-size: 11px; color: var(--dt-text-secondary); }
+.tl-comment { font-size: 12px; color: var(--dt-text-regular); background: var(--dt-fill-light); border-radius: 4px; padding: 4px 8px; margin-top: 4px; }
+.trace-fallback { font-size: 13px; color: var(--dt-text-secondary); padding: 16px 0; text-align: center; }
 .dialog-actions { text-align: right; margin-top: 12px; }
 </style>

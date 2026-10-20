@@ -106,7 +106,7 @@
 
     <!-- 预览对话框 -->
     <el-dialog title="凭证预览" :visible.sync="previewOpen" width="860px" append-to-body>
-      <iframe :srcdoc="previewHtml" style="width: 100%; height: 520px; border: 1px solid #e4e7ed;"></iframe>
+      <iframe :srcdoc="previewHtml" style="width: 100%; height: 520px; border: 1px solid var(--dt-border-color-light);"></iframe>
       <div slot="footer"><el-button @click="previewOpen = false">关 闭</el-button></div>
     </el-dialog>
   </div>

@@ -12,6 +12,12 @@
       <template v-if="device!=='mobile'">
         <search id="header-search" class="right-menu-item" />
 
+        <el-tooltip :content="isDark ? '切换亮色' : '切换暗色'" effect="dark" placement="bottom">
+          <div class="right-menu-item hover-effect theme-toggle" @click="toggleTheme">
+            <i :class="isDark ? 'el-icon-sunny' : 'el-icon-moon'"></i>
+          </div>
+        </el-tooltip>
+
         <el-tooltip content="源码地址" effect="dark" placement="bottom">
           <ruo-yi-git id="ruoyi-git" class="right-menu-item hover-effect" />
         </el-tooltip>
@@ -74,6 +80,7 @@ import RuoYiGit from '@/components/RuoYi/Git'
 import RuoYiDoc from '@/components/RuoYi/Doc'
 import HeaderNotice from './HeaderNotice'
 import HeaderMsg from './HeaderMsg'
+import { isDarkEnabled, toggleDarkMode } from '@/utils/theme'
 
 export default {
   components: {
@@ -89,6 +96,11 @@ export default {
     RuoYiDoc,
     HeaderNotice,
     HeaderMsg
+  },
+  data() {
+    return {
+      isDark: isDarkEnabled()
+    }
   },
   computed: {
     ...mapGetters([
@@ -116,6 +128,9 @@ export default {
   methods: {
     toggleSideBar() {
       this.$store.dispatch('app/toggleSideBar')
+    },
+    toggleTheme() {
+      this.isDark = toggleDarkMode()
     },
     setLayout(event) {
       this.$emit('setLayout')
@@ -152,8 +167,9 @@ export default {
   height: 50px;
   overflow: hidden;
   position: relative;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0,21,41,.08);
+  background: var(--dt-bg-container);
+  box-shadow: var(--dt-shadow-light, 0 1px 4px rgba(0,21,41,.08));
+  color: var(--dt-text-primary);
   display: flex;
   align-items: center;
   // padding: 0 8px;
@@ -209,7 +225,7 @@ export default {
       padding: 0 8px;
       height: 100%;
       font-size: 18px;
-      color: #5a5e66;
+      color: var(--dt-text-regular);
       vertical-align: text-bottom;
 
       &.hover-effect {

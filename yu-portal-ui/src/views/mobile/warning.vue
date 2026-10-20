@@ -144,17 +144,17 @@ export default {
 
 <style scoped>
 .mobile-warning {
-  background: #f5f7fa;
+  background: var(--dt-fill-light);
   min-height: 100%;
 }
 
 /* 统计栏 */
 .stats-bar {
   display: flex;
-  background: #fff;
+  background: var(--dt-bg-container);
   padding: 16px;
   gap: 12px;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid var(--dt-border-color-light);
 }
 .stat-item {
   flex: 1;
@@ -164,24 +164,24 @@ export default {
 }
 .stat-count { display: block; font-size: 22px; font-weight: 700; }
 .stat-label { font-size: 11px; }
-.stat-danger { background: #fef0f0; color: #f56c6c; }
-.stat-warning { background: #fdf6ec; color: #e6a23c; }
-.stat-info { background: #fdf6ec; color: #f0c78a; }
+.stat-danger { background: var(--el-color-danger-light-9); color: var(--el-color-danger); }
+.stat-warning { background: var(--el-color-warning-light-9); color: var(--el-color-warning); }
+.stat-info { background: var(--el-color-warning-light-9); color: #f0c78a; }
 
 /* 预警列表 */
 .warning-list { padding: 12px; }
 .loading-state, .empty-state {
   text-align: center;
-  color: #c0c4cc;
+  color: var(--dt-text-placeholder);
   padding: 40px 0;
   font-size: 14px;
 }
 .loading-state i, .empty-state i { font-size: 32px; display: block; margin-bottom: 8px; }
-.empty-state i { color: #67c23a; }
+.empty-state i { color: var(--el-color-success); }
 
 .warning-card {
   display: flex;
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 8px;
   margin-bottom: 10px;
   overflow: hidden;
@@ -191,8 +191,8 @@ export default {
   width: 4px;
   flex-shrink: 0;
 }
-.card-high .card-level-bar { background: #f56c6c; }
-.card-medium .card-level-bar { background: #e6a23c; }
+.card-high .card-level-bar { background: var(--el-color-danger); }
+.card-medium .card-level-bar { background: var(--el-color-warning); }
 .card-low .card-level-bar { background: #f0c78a; }
 
 .card-content {
@@ -205,19 +205,19 @@ export default {
   align-items: center;
   margin-bottom: 8px;
 }
-.card-type { font-size: 15px; font-weight: 600; color: #303133; }
+.card-type { font-size: 15px; font-weight: 600; color: var(--dt-text-primary); }
 .card-level-tag {
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 10px;
 }
-.tag-high { background: #fef0f0; color: #f56c6c; }
-.tag-medium { background: #fdf6ec; color: #e6a23c; }
+.tag-high { background: var(--el-color-danger-light-9); color: var(--el-color-danger); }
+.tag-medium { background: var(--el-color-warning-light-9); color: var(--el-color-warning); }
 .tag-low { background: #fef9e7; color: #d4a017; }
 
 .card-reason {
   font-size: 13px;
-  color: #606266;
+  color: var(--dt-text-regular);
   line-height: 1.5;
   margin-bottom: 10px;
 }
@@ -226,20 +226,20 @@ export default {
   justify-content: space-between;
   align-items: center;
 }
-.card-date { font-size: 11px; color: #909399; }
+.card-date { font-size: 11px; color: var(--dt-text-secondary); }
 .card-date i { margin-right: 2px; }
 .card-status {
   font-size: 11px;
-  color: #f56c6c;
+  color: var(--el-color-danger);
   font-weight: 500;
 }
-.card-status.read { color: #909399; font-weight: normal; }
+.card-status.read { color: var(--dt-text-secondary); font-weight: normal; }
 
 /* 加载更多 */
 .load-more {
   text-align: center;
   padding: 16px;
-  color: #007ab8;
+  color: var(--dt-color-primary);
   font-size: 13px;
   cursor: pointer;
 }

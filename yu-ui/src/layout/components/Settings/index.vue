@@ -384,7 +384,7 @@ export default {
     width: 56px;
     height: 48px;
     border-radius: 4px;
-    background: #f0f2f5;
+    background: var(--dt-bg-page);
     border: 2px solid transparent;
   }
 
@@ -392,7 +392,7 @@ export default {
     b:first-child {
       display: block;
       height: 30%;
-      background: #fff;
+      background: var(--dt-bg-container);
     }
     b:last-child {
       width: 30%;

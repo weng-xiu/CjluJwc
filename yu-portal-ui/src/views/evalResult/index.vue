@@ -60,9 +60,9 @@
     <el-dialog title="课程评教评语" :visible.sync="detailVisible" width="700px">
       <div v-if="currentDetail">
         <el-alert :title="currentDetail.courseName + ' | 平均分 ' + currentDetail.avgScore + ' | 满意度 ' + currentDetail.satisfactionRate + '%'" type="info" :closable="false" style="margin-bottom:16px" />
-        <div v-if="commentsLoading" style="text-align:center;color:#909399;padding:12px"><i class="el-icon-loading"></i> 加载中...</div>
+        <div v-if="commentsLoading" style="text-align:center;color:var(--dt-text-secondary);padding:12px"><i class="el-icon-loading"></i> 加载中...</div>
         <div v-else-if="currentDetail.comments && currentDetail.comments.length > 0">
-          <div v-for="(c, idx) in currentDetail.comments" :key="idx" style="padding:8px;margin-bottom:4px;background:#f5f7fa;border-radius:4px">{{ idx + 1 }}. {{ c }}</div>
+          <div v-for="(c, idx) in currentDetail.comments" :key="idx" style="padding:8px;margin-bottom:4px;background:var(--dt-fill-light);border-radius:4px">{{ idx + 1 }}. {{ c }}</div>
         </div>
         <el-empty v-else description="暂无评语" />
       </div>
@@ -129,17 +129,17 @@ export default {
 .page-container { max-width: 1200px; margin: 0 auto; }
 .card-header { font-size: 16px; font-weight: 600; }
 .mb16 { margin-bottom: 16px; }
-.sum-row .sum-card { background: #f5f7fa; border-radius: 6px; padding: 14px; text-align: center; margin-bottom: 8px; }
-.sum-row .sum-card.pass { background: #f0f9eb; }
-.s-label { color: #909399; font-size: 13px; }
-.s-value { font-size: 22px; font-weight: 600; color: #303133; margin-top: 6px; }
-.block-title { font-size: 14px; font-weight: 600; color: #303133; margin: 16px 0 8px; border-left: 3px solid #409eff; padding-left: 8px; }
+.sum-row .sum-card { background: var(--dt-fill-light); border-radius: 6px; padding: 14px; text-align: center; margin-bottom: 8px; }
+.sum-row .sum-card.pass { background: var(--el-color-success-light-9); }
+.s-label { color: var(--dt-text-secondary); font-size: 13px; }
+.s-value { font-size: 22px; font-weight: 600; color: var(--dt-text-primary); margin-top: 6px; }
+.block-title { font-size: 14px; font-weight: 600; color: var(--dt-text-primary); margin: 16px 0 8px; border-left: 3px solid var(--el-color-primary); padding-left: 8px; }
 .dist-list .dist-item { display: flex; align-items: center; margin-bottom: 8px; }
-.dist-list .d-name { width: 100px; font-size: 13px; color: #606266; }
-.dist-list .d-count { width: 60px; text-align: right; font-size: 13px; color: #909399; }
+.dist-list .d-name { width: 100px; font-size: 13px; color: var(--dt-text-regular); }
+.dist-list .d-count { width: 60px; text-align: right; font-size: 13px; color: var(--dt-text-secondary); }
 .word-group { margin-bottom: 8px; }
-.w-tag-label { font-size: 13px; color: #606266; }
+.w-tag-label { font-size: 13px; color: var(--dt-text-regular); }
 .w-tag { margin: 2px 4px 2px 0; }
-.empty-inline { color: #c0c4cc; }
-.empty-tip { color: #909399; font-size: 13px; padding: 8px 0; }
+.empty-inline { color: var(--dt-text-placeholder); }
+.empty-tip { color: var(--dt-text-secondary); font-size: 13px; padding: 8px 0; }
 </style>

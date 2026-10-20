@@ -164,6 +164,6 @@ export default {
 </script>
 
 <style scoped>
-.form-tip { color: var(--dt-text-secondary, #6b7280); font-size: 12px; line-height: 1.5; }
-.table-empty { color: var(--dt-text-secondary, #909399); font-size: 13px; padding: 20px 0; }
+.form-tip { color: var(--dt-text-secondary); font-size: 12px; line-height: 1.5; }
+.table-empty { color: var(--dt-text-secondary); font-size: 13px; padding: 20px 0; }
 </style>

@@ -168,26 +168,26 @@ export default {
 <style scoped>
 .page-container { max-width: 960px; margin: 0 auto; }
 .card-header { font-size: 16px; font-weight: 600; }
-.header-tip { float: right; font-size: 12px; font-weight: 400; color: #909399; max-width: 60%; }
-.talk-box { min-height: 300px; max-height: 46vh; overflow-y: auto; background: #fafafa; border-radius: 6px; padding: 14px; }
-.talk-empty { text-align: center; color: #909399; padding: 60px 10px; }
+.header-tip { float: right; font-size: 12px; font-weight: 400; color: var(--dt-text-secondary); max-width: 60%; }
+.talk-box { min-height: 300px; max-height: 46vh; overflow-y: auto; background: var(--dt-fill-light); border-radius: 6px; padding: 14px; }
+.talk-empty { text-align: center; color: var(--dt-text-secondary); padding: 60px 10px; }
 .talk-empty-title { font-size: 14px; margin: 0 0 8px; }
-.talk-empty-sub { font-size: 12px; margin: 0; color: #c0c4cc; }
+.talk-empty-sub { font-size: 12px; margin: 0; color: var(--dt-text-placeholder); }
 .msg { margin-bottom: 16px; }
-.msg-user .msg-question { background: #409eff; color: #fff; border-radius: 8px 8px 2px 8px; padding: 8px 12px; display: inline-block; max-width: 80%; float: right; clear: both; }
+.msg-user .msg-question { background: var(--el-color-primary); color: #fff; border-radius: 8px 8px 2px 8px; padding: 8px 12px; display: inline-block; max-width: 80%; float: right; clear: both; }
 .msg-ai { clear: both; }
 .msg-ai .msg-question { display: none; }
 .msg-meta { margin-bottom: 4px; }
-.msg-confidence, .msg-time { font-size: 12px; color: #909399; margin-left: 8px; }
-.msg-answer { background: #fff; border: 1px solid #ebeef5; border-radius: 2px 8px 8px 8px; padding: 10px 12px; line-height: 1.8; white-space: pre-wrap; color: #303133; font-size: 14px; }
-.msg-error { margin-top: 6px; font-size: 12px; color: #e6a23c; }
-.msg-refs { margin-top: 8px; border-top: 1px dashed #dcdfe6; padding-top: 6px; }
-.refs-title { font-size: 12px; color: #606266; margin-bottom: 4px; }
-.ref-line { font-size: 12px; line-height: 20px; color: #606266; }
-.ref-name { color: #303133; }
-.ref-source { margin-left: 8px; color: #909399; }
+.msg-confidence, .msg-time { font-size: 12px; color: var(--dt-text-secondary); margin-left: 8px; }
+.msg-answer { background: var(--dt-bg-container); border: 1px solid var(--dt-border-color-light); border-radius: 2px 8px 8px 8px; padding: 10px 12px; line-height: 1.8; white-space: pre-wrap; color: var(--dt-text-primary); font-size: 14px; }
+.msg-error { margin-top: 6px; font-size: 12px; color: var(--el-color-warning); }
+.msg-refs { margin-top: 8px; border-top: 1px dashed var(--dt-border-color); padding-top: 6px; }
+.refs-title { font-size: 12px; color: var(--dt-text-regular); margin-bottom: 4px; }
+.ref-line { font-size: 12px; line-height: 20px; color: var(--dt-text-regular); }
+.ref-name { color: var(--dt-text-primary); }
+.ref-source { margin-left: 8px; color: var(--dt-text-secondary); }
 .suggest-box { margin-top: 12px; line-height: 26px; }
-.suggest-label { font-size: 12px; color: #909399; }
+.suggest-label { font-size: 12px; color: var(--dt-text-secondary); }
 .suggest-tag { margin: 0 6px 6px 0; cursor: pointer; }
 .input-box { margin-top: 12px; }
 .input-actions { margin-top: 10px; text-align: right; }

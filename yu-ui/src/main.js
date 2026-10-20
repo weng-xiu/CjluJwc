@@ -4,10 +4,14 @@ import Cookies from 'js-cookie'
 
 import Element from 'element-ui'
 import './assets/styles/element-variables.scss'
+import '@/assets/styles/tokens.scss' // V2/U1 设计令牌（--dt-* + --el-* 兼容），须在使用前定义
 
 import '@/assets/styles/index.scss' // global css
 import '@/assets/styles/ruoyi.scss' // ruoyi css
 import '@/assets/styles/a11y.scss' // U5 无障碍基线（focus-visible/减少动画/skip-link，置于旧样式后覆盖 outline:none）
+import '@/assets/styles/element-dark.scss' // V2 element-ui 暗色覆盖（须在 element-variables 编译出的全量 CSS 之后引入方能覆盖）
+import { initDarkMode } from '@/utils/theme' // V2 暗色模式：按已存偏好初始化 html.dark，避免首屏闪白
+initDarkMode()
 import App from './App'
 import store from './store'
 import router from './router'

@@ -194,14 +194,14 @@ export default {
 .blk { margin-bottom: 0; }
 .blk-header { font-weight: 600; }
 .profile-skeleton { min-height: 300px; }
-.mini-stat .ms { text-align: center; padding: 10px 0; border-radius: 6px; background: var(--dt-fill-light, #f5f7fa); margin-bottom: 8px; }
-.mini-stat .ms b { display: block; font-size: 20px; color: var(--dt-text-primary, #303133); }
-.mini-stat .ms span { font-size: 12px; color: var(--dt-text-secondary, #6b7280); }
-.mini-stat .ms.warn b { color: #f56c6c; }
-.plan-line { margin-top: 8px; font-size: 13px; color: var(--dt-text-regular, #606266); }
+.mini-stat .ms { text-align: center; padding: 10px 0; border-radius: 6px; background: var(--dt-fill-light); margin-bottom: 8px; }
+.mini-stat .ms b { display: block; font-size: 20px; color: var(--dt-text-primary); }
+.mini-stat .ms span { font-size: 12px; color: var(--dt-text-secondary); }
+.mini-stat .ms.warn b { color: var(--el-color-danger); }
+.plan-line { margin-top: 8px; font-size: 13px; color: var(--dt-text-regular); }
 .radar-box { height: 300px; }
-.blk-empty { color: var(--dt-text-secondary, #909399); font-size: 13px; padding: 16px 0; text-align: center; }
-.page-empty { color: var(--dt-text-secondary, #909399); font-size: 14px; padding: 60px 0; text-align: center; }
+.blk-empty { color: var(--dt-text-secondary); font-size: 13px; padding: 16px 0; text-align: center; }
+.page-empty { color: var(--dt-text-secondary); font-size: 14px; padding: 60px 0; text-align: center; }
 .el-row { margin-bottom: 0; }
 .el-col { margin-bottom: 12px; }
 </style>

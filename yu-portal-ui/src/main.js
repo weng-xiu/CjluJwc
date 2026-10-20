@@ -1,11 +1,16 @@
 import Vue from 'vue'
 import Element from 'element-ui'
 import './assets/styles/element-variables.scss'
+import './assets/styles/tokens.scss' // V2/U1 设计令牌（--dt-* + --el-* 兼容），须在使用前定义
 import './assets/styles/index.scss'
+import './assets/styles/element-dark.scss' // V2 element-ui 暗色覆盖（须在 element-variables 编译出的全量 CSS 之后引入）
+import { initDarkMode } from '@/utils/theme' // V2 暗色模式：按已存偏好初始化 html.dark，避免首屏闪白
 import App from './App'
 import store from './store'
 import router from './router'
 import { cancelPendingRequests } from '@/utils/request'
+
+initDarkMode()
 
 Vue.use(Element, { size: 'medium' })
 Vue.config.productionTip = false

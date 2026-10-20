@@ -61,7 +61,7 @@ export default {
     position: absolute;
     top: 8px;
     right: 2px;
-    background: #f56c6c;
+    background: var(--el-color-danger);
     color: #fff;
     border-radius: 10px;
     font-size: 10px;
@@ -73,6 +73,6 @@ export default {
     white-space: nowrap;
     pointer-events: none;
   }
-  .msg-count { color: #f56c6c; font-size: 12px; margin-left: 4px; }
+  .msg-count { color: var(--el-color-danger); font-size: 12px; margin-left: 4px; }
 }
 </style>

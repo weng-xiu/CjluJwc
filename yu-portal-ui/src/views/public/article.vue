@@ -132,7 +132,7 @@ export default {
 }
 
 .article-detail {
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 8px;
   /* U2 流式化：外层容器拉宽，但正文阅读列限宽居中，避免行宽过长损害可读性 */
   max-width: 900px;
@@ -159,8 +159,8 @@ export default {
   justify-content: center;
   gap: 20px;
   padding: 12px 0;
-  border-top: 1px solid #eee;
-  border-bottom: 1px solid #eee;
+  border-top: 1px solid var(--dt-fill-light);
+  border-bottom: 1px solid var(--dt-fill-light);
   margin-bottom: 24px;
 }
 
@@ -176,7 +176,7 @@ export default {
 /* ========== 摘要 ========== */
 .article-summary {
   background: #f9f9f9;
-  border-left: 3px solid #007ab8;
+  border-left: 3px solid var(--dt-color-primary);
   padding: 12px 16px;
   margin-bottom: 24px;
 }
@@ -191,7 +191,7 @@ export default {
 /* ========== 正文内容 ========== */
 .article-content {
   font-size: 16px;
-  color: #333;
+  color: var(--dt-text-primary);
   line-height: 1.8;
 }
 
@@ -230,7 +230,7 @@ export default {
 }
 
 .article-content >>> a {
-  color: #007ab8;
+  color: var(--dt-color-primary);
   text-decoration: none;
 }
 
@@ -258,7 +258,7 @@ export default {
 }
 
 .article-content >>> blockquote {
-  border-left: 4px solid #007ab8;
+  border-left: 4px solid var(--dt-color-primary);
   padding: 8px 16px;
   margin: 16px 0;
   background: #f9f9f9;
@@ -301,7 +301,7 @@ export default {
   gap: 20px;
   margin-top: 40px;
   padding-top: 20px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--dt-fill-light);
 }
 
 .nav-prev,
@@ -320,20 +320,20 @@ export default {
 
 .nav-prev:hover,
 .nav-next:hover {
-  background: #f0f7ff;
+  background: var(--el-color-primary-light-9);
 }
 
 .nav-label {
   display: block;
   font-size: 12px;
-  color: #007ab8;
+  color: var(--dt-color-primary);
   margin-bottom: 4px;
 }
 
 .nav-title {
   display: block;
   font-size: 14px;
-  color: #333;
+  color: var(--dt-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

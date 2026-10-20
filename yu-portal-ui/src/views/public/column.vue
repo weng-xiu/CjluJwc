@@ -150,7 +150,7 @@ export default {
 }
 
 .page-header {
-  border-bottom: 2px solid #007ab8;
+  border-bottom: 2px solid var(--dt-color-primary);
   margin-bottom: 24px;
   padding-bottom: 12px;
 }
@@ -169,7 +169,7 @@ export default {
 .article-item {
   display: flex;
   gap: 20px;
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 16px;
@@ -207,7 +207,7 @@ export default {
 
 .item-content .item-title {
   font-size: 17px;
-  color: #333;
+  color: var(--dt-text-primary);
   margin: 0 0 8px;
   line-height: 1.5;
   font-weight: 600;
@@ -219,7 +219,7 @@ export default {
 }
 
 .article-item:hover .item-title {
-  color: #007ab8;
+  color: var(--dt-color-primary);
 }
 
 .item-summary {

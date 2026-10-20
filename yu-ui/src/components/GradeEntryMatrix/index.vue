@@ -239,10 +239,10 @@ export default {
   align-items: center;
   margin-top: 12px;
   font-size: 12px;
-  color: #909399;
+  color: var(--dt-text-secondary);
 }
 .gem-dirty {
-  color: #e6a23c;
+  color: var(--el-color-warning);
   font-weight: 600;
 }
 </style>

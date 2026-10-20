@@ -219,7 +219,7 @@ export default {
 
 <style scoped>
 .mobile-selection {
-  background: #f5f7fa;
+  background: var(--dt-fill-light);
   min-height: 100%;
   padding-bottom: 60px;
 }
@@ -229,37 +229,37 @@ export default {
   display: flex;
   align-items: center;
   padding: 10px 16px;
-  background: #ecf5ff;
-  color: #409eff;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
   font-size: 12px;
   border-bottom: 1px solid #d9ecff;
 }
 .round-banner i { margin-right: 6px; font-size: 14px; }
 .round-closed {
-  background: #fef0f0;
-  color: #f56c6c;
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
   border-bottom-color: #fde2e2;
 }
 
 /* 搜索栏 */
 .search-bar {
   padding: 12px;
-  background: #fff;
-  border-bottom: 1px solid #ebeef5;
+  background: var(--dt-bg-container);
+  border-bottom: 1px solid var(--dt-border-color-light);
 }
 
 /* 课程列表 */
 .course-list { padding: 12px; }
 .loading-state, .empty-state {
   text-align: center;
-  color: #c0c4cc;
+  color: var(--dt-text-placeholder);
   padding: 40px 0;
   font-size: 14px;
 }
 .loading-state i, .empty-state i { font-size: 32px; display: block; margin-bottom: 8px; }
 
 .course-card {
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 8px;
   padding: 14px;
   margin-bottom: 10px;
@@ -271,11 +271,11 @@ export default {
   align-items: center;
   margin-bottom: 8px;
 }
-.card-course-name { font-size: 15px; font-weight: 600; color: #303133; flex: 1; }
+.card-course-name { font-size: 15px; font-weight: 600; color: var(--dt-text-primary); flex: 1; }
 .card-credit {
   font-size: 11px;
-  color: #007ab8;
-  background: #ecf5ff;
+  color: var(--dt-color-primary);
+  background: var(--el-color-primary-light-9);
   padding: 2px 8px;
   border-radius: 10px;
   white-space: nowrap;
@@ -286,7 +286,7 @@ export default {
   gap: 16px;
   margin-bottom: 10px;
 }
-.info-item { font-size: 12px; color: #909399; }
+.info-item { font-size: 12px; color: var(--dt-text-secondary); }
 .info-item i { margin-right: 2px; }
 
 .card-footer-row {
@@ -295,26 +295,26 @@ export default {
   align-items: center;
 }
 .capacity-info { flex: 1; margin-right: 12px; }
-.capacity-text { font-size: 11px; color: #909399; display: block; margin-bottom: 4px; }
+.capacity-text { font-size: 11px; color: var(--dt-text-secondary); display: block; margin-bottom: 4px; }
 .capacity-bar {
   height: 4px;
-  background: #f0f2f5;
+  background: var(--dt-bg-page);
   border-radius: 2px;
   overflow: hidden;
 }
 .capacity-fill {
   height: 100%;
-  background: #409eff;
+  background: var(--el-color-primary);
   border-radius: 2px;
   transition: width 0.3s;
 }
-.capacity-fill.full { background: #f56c6c; }
+.capacity-fill.full { background: var(--el-color-danger); }
 
 /* 加载更多 */
 .load-more {
   text-align: center;
   padding: 16px;
-  color: #007ab8;
+  color: var(--dt-color-primary);
   font-size: 13px;
   cursor: pointer;
 }
@@ -333,7 +333,7 @@ export default {
   justify-content: center;
 }
 .conflict-sheet {
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 12px 12px 0 0;
   width: 100%;
   max-width: 768px;
@@ -348,20 +348,20 @@ export default {
   padding: 16px;
   font-size: 16px;
   font-weight: 600;
-  color: #e6a23c;
-  border-bottom: 1px solid #ebeef5;
+  color: var(--el-color-warning);
+  border-bottom: 1px solid var(--dt-border-color-light);
   text-align: center;
 }
 .sheet-header i { margin-right: 6px; }
 .sheet-body { padding: 16px; max-height: 40vh; overflow-y: auto; }
 .conflict-item {
   padding: 10px 12px;
-  background: #fdf6ec;
+  background: var(--el-color-warning-light-9);
   border-radius: 6px;
   font-size: 13px;
-  color: #e6a23c;
+  color: var(--el-color-warning);
   margin-bottom: 8px;
-  border-left: 3px solid #e6a23c;
+  border-left: 3px solid var(--el-color-warning);
 }
 .sheet-footer { text-align: center; padding: 0 16px; }
 </style>

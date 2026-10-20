@@ -394,8 +394,8 @@ $tags-bar-height: 34px;
 .tags-view-container {
   height: $tags-bar-height;
   width: 100%;
-  background: #fff;
-  border-bottom: 1px solid #d8dce5;
+  background: var(--dt-bg-container);
+  border-bottom: 1px solid var(--dt-border-color);
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -445,9 +445,9 @@ $tags-bar-height: 34px;
       cursor: pointer;
       height: 26px;
       line-height: 26px;
-      border: 1px solid #d8dce5;
-      color: #495060;
-      background: #fff;
+      border: 1px solid var(--dt-border-color);
+      color: var(--dt-text-regular);
+      background: var(--dt-bg-container);
       padding: 0 8px;
       font-size: 12px;
       margin-left: 5px;
@@ -463,7 +463,7 @@ $tags-bar-height: 34px;
     border-color: #42b983;
     &::before {
       content: '';
-      background: #fff;
+      background: var(--dt-bg-container);
       display: inline-block;
       width: 8px;
       height: 8px;
@@ -508,7 +508,7 @@ $tags-bar-height: 34px;
 
   .contextmenu {
     margin: 0;
-    background: #fff;
+    background: var(--dt-bg-container);
     z-index: 3000;
     position: fixed;
     list-style-type: none;
@@ -516,7 +516,7 @@ $tags-bar-height: 34px;
     border-radius: 4px;
     font-size: 12px;
     font-weight: 400;
-    color: #333;
+    color: var(--dt-text-primary);
     box-shadow: 2px 2px 3px 0 rgba(0, 0, 0, .3);
 
     li {
@@ -524,7 +524,7 @@ $tags-bar-height: 34px;
       padding: 7px 16px;
       cursor: pointer;
       &:hover {
-        background: #eee;
+        background: var(--dt-fill-light);
       }
     }
   }
@@ -602,14 +602,14 @@ $tags-bar-height: 34px;
         &:last-of-type  { margin-right: 10px; }
 
         &:not(.active) + .tags-view-item:not(.active) {
-          border-left: 1px solid #e4e7ed;
+          border-left: 1px solid var(--dt-border-color-light);
           padding-left: 11px;
         }
 
         &:hover:not(.active) {
-          background: #f5f7fa !important;
+          background: var(--dt-fill-light) !important;
           border-radius: 6px 6px 0 0;
-          color: #303133 !important;
+          color: var(--dt-text-primary) !important;
         }
 
         &.active {

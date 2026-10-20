@@ -30,7 +30,7 @@
       <el-table-column label="封面" align="center" prop="coverUrl" width="110">
         <template slot-scope="scope">
           <image-preview v-if="scope.row.coverUrl" :src="scope.row.coverUrl" :width="90" :height="50"/>
-          <span v-else style="color: #c0c4cc">无</span>
+          <span v-else style="color: var(--dt-text-placeholder)">无</span>
         </template>
       </el-table-column>
       <el-table-column label="所属栏目" align="center" prop="columnName" width="120" />

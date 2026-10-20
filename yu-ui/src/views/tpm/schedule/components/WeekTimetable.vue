@@ -3,7 +3,17 @@
     <div v-if="!schedules || schedules.length === 0" class="empty-tip">
       <el-empty description="当前筛选条件下暂无排课数据" />
     </div>
-    <div v-else class="grid-wrapper">
+    <div v-else>
+      <div class="tt-toolbar">
+        <el-radio-group v-model="viewMode" size="mini">
+          <el-radio-button label="week">周视图</el-radio-button>
+          <el-radio-button label="term">学期视图</el-radio-button>
+        </el-radio-group>
+        <span class="tt-toolbar-tip">{{ viewMode === 'week' ? '按 星期 × 节次 展示课程块' + (editable ? '，可拖拽调课' : '') : '按 课程 × 教学周 概览开课周期（第 1 - ' + maxWeek + ' 周）' }}</span>
+      </div>
+
+      <!-- 周视图：星期 × 节次网格（保持原行为） -->
+      <div v-show="viewMode === 'week'" class="grid-wrapper">
       <table class="tt-table">
         <thead>
           <tr>
@@ -50,6 +60,36 @@
         <span><i class="lg-dot lg-conflict"></i>冲突课程（{{ conflictCount }} 节次命中）</span>
         <span class="lg-tip">{{ editable ? '提示：拖拽课程块可调整上课时间，松手后自动校验冲突' : '提示：点击课程块可查看详情' }}</span>
       </div>
+      </div>
+
+      <!-- 学期视图：课程 × 教学周 概览（只读，随 schedules 自动重算） -->
+      <div v-show="viewMode === 'term'" class="grid-wrapper">
+        <table class="tt-table tt-term-table">
+          <thead>
+            <tr>
+              <th class="tt-term-course-col">课程 \ 周次</th>
+              <th v-for="w in weekList" :key="w" class="tt-term-week-col">{{ w }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="s in sortedSchedules" :key="s.scheduleId">
+              <td class="tt-term-course-col">
+                <div class="tt-course">{{ s.courseName || '未命名课程' }}</div>
+                <div class="tt-meta">{{ s.teacherName || '-' }} · {{ weekDayLabel(Number(s.weekDay)) }} 第{{ s.startPeriod }}-{{ s.endPeriod }}节</div>
+              </td>
+              <td v-for="w in weekList" :key="w" class="tt-term-cell"
+                  :class="{ 'tt-term-active': inWeek(s, w), 'tt-conflict': inWeek(s, w) && isConflict(s.scheduleId) }"
+                  :style="inWeek(s, w) ? { background: 'hsl(' + blockHue(s) + ', 78%, 90%)', boxShadow: 'inset 0 0 0 1px hsl(' + blockHue(s) + ', 55%, 55%)' } : null"
+                  @click="$emit('cell-click', s)"></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="tt-legend">
+          <span><i class="lg-dot lg-normal"></i>该课程当周有课</span>
+          <span><i class="lg-dot lg-conflict"></i>冲突课程</span>
+          <span class="lg-tip">提示：横向即为开课周期，点击单元格查看课程详情</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -69,7 +109,9 @@ export default {
     return {
       weekDays: [1, 2, 3, 4, 5, 6, 7],
       dragging: null,
-      hoverCell: null
+      hoverCell: null,
+      // V3 双视图：'week' 星期×节次网格（默认，保持原行为） | 'term' 课程×教学周概览
+      viewMode: 'week'
     }
   },
   computed: {
@@ -91,11 +133,38 @@ export default {
     },
     conflictCount() {
       return (this.schedules || []).filter(s => this.conflictSet.has(s.scheduleId)).length
+    },
+    // 学期视图最大周次：取所有课程 endWeek 最大值（默认 16，上限 30）
+    maxWeek() {
+      let m = 16
+      ;(this.schedules || []).forEach(s => {
+        const e = Number(s.endWeek) || 0
+        if (e > m) m = e
+      })
+      if (m > 30) m = 30
+      return m
+    },
+    weekList() {
+      const arr = []
+      for (let i = 1; i <= this.maxWeek; i++) arr.push(i)
+      return arr
+    },
+    // 学期视图行序：按星期、节次稳定排序
+    sortedSchedules() {
+      return (this.schedules || []).slice().sort((x, y) =>
+        (Number(x.weekDay) || 0) - (Number(y.weekDay) || 0)
+        || (Number(x.startPeriod) || 0) - (Number(y.startPeriod) || 0))
     }
   },
   methods: {
     weekDayLabel(d) {
       return { 1: '周一', 2: '周二', 3: '周三', 4: '周四', 5: '周五', 6: '周六', 7: '周日' }[d] || ('周' + d)
+    },
+    // 学期视图：课程 s 在第 w 周是否有课
+    inWeek(s, w) {
+      const a = Number(s.startWeek) || 1
+      const b = Number(s.endWeek) || a
+      return w >= a && w <= b
     },
     isConflict(id) {
       return this.conflictSet.has(id)
@@ -174,18 +243,18 @@ export default {
 .empty-tip { padding: 30px 0; }
 .grid-wrapper { overflow-x: auto; }
 .tt-table { border-collapse: collapse; width: 100%; min-width: 900px; table-layout: fixed; }
-.tt-table th, .tt-table td { border: 1px solid #ebeef5; padding: 4px; vertical-align: top; }
-.tt-table th { background: #f5f7fa; color: #606266; font-weight: 600; height: 40px; }
-.tt-time-col { width: 90px; text-align: center; color: #909399; background: #fafafa; font-size: 13px; }
+.tt-table th, .tt-table td { border: 1px solid var(--dt-border-color-light); padding: 4px; vertical-align: top; }
+.tt-table th { background: var(--dt-fill-light); color: var(--dt-text-regular); font-weight: 600; height: 40px; }
+.tt-time-col { width: 90px; text-align: center; color: var(--dt-text-secondary); background: var(--dt-fill-light); font-size: 13px; }
 .tt-cell { height: 64px; }
-.tt-empty { color: #dcdfe6; }
+.tt-empty { color: var(--dt-border-color); }
 .tt-block {
   border-radius: 4px;
   padding: 4px 6px;
   font-size: 12px;
   line-height: 1.4;
   cursor: pointer;
-  color: #303133;
+  color: var(--dt-text-primary);
   background: hsl(var(--hue, 210), 80%, 95%);
   border-left: 3px solid hsl(var(--hue, 210), 60%, 55%);
   transition: box-shadow .2s;
@@ -196,20 +265,29 @@ export default {
 .tt-block[draggable="true"]:active { cursor: grabbing; }
 .tt-droppable { position: relative; }
 .tt-drop-hover {
-  background: #ecf5ff !important;
-  box-shadow: inset 0 0 0 2px #409eff;
+  background: var(--el-color-primary-light-9) !important;
+  box-shadow: inset 0 0 0 2px var(--el-color-primary);
 }
 .tt-course { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tt-meta { color: #606266; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tt-weeks { color: #909399; font-size: 11px; }
+.tt-meta { color: var(--dt-text-regular); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt-weeks { color: var(--dt-text-secondary); font-size: 11px; }
 .tt-conflict {
-  background: #fef0f0 !important;
-  border-left: 3px solid #f56c6c !important;
-  color: #f56c6c !important;
+  background: var(--el-color-danger-light-9) !important;
+  border-left: 3px solid var(--el-color-danger) !important;
+  color: var(--el-color-danger) !important;
 }
-.tt-legend { margin-top: 10px; display: flex; gap: 24px; align-items: center; font-size: 12px; color: #909399; }
+.tt-legend { margin-top: 10px; display: flex; gap: 24px; align-items: center; font-size: 12px; color: var(--dt-text-secondary); }
 .lg-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
 .lg-normal { background: hsl(210, 60%, 55%); }
-.lg-conflict { background: #f56c6c; }
+.lg-conflict { background: var(--el-color-danger); }
 .lg-tip { margin-left: auto; }
+/* V3 视图切换工具条 */
+.tt-toolbar { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+.tt-toolbar-tip { font-size: 12px; color: var(--dt-text-secondary); }
+/* V3 学期视图：课程 × 教学周 */
+.tt-term-table { min-width: 1080px; }
+.tt-term-course-col { width: 180px; text-align: left; padding: 4px 8px; background: var(--dt-fill-light); }
+.tt-term-week-col { width: 40px; min-width: 40px; text-align: center; font-size: 12px; padding: 4px 2px; }
+.tt-term-cell { height: 34px; text-align: center; cursor: pointer; padding: 2px; }
+.tt-term-cell.tt-conflict { background: var(--el-color-danger-light-9) !important; box-shadow: inset 0 0 0 1px var(--el-color-danger) !important; }
 </style>

@@ -38,25 +38,25 @@
       <el-row :gutter="16" class="kpi-row" v-loading="loading">
         <el-col :xs="12" :sm="6">
           <div class="kpi-card">
-            <div class="kpi-icon" style="background:#409eff"><i class="el-icon-document"></i></div>
+            <div class="kpi-icon" style="background:var(--el-color-primary)"><i class="el-icon-document"></i></div>
             <div class="kpi-body"><div class="kpi-value">{{ summary.totalRequirements }}</div><div class="kpi-label">毕业要求总数</div></div>
           </div>
         </el-col>
         <el-col :xs="12" :sm="6">
           <div class="kpi-card">
-            <div class="kpi-icon" style="background:#67c23a"><i class="el-icon-circle-check"></i></div>
+            <div class="kpi-icon" style="background:var(--el-color-success)"><i class="el-icon-circle-check"></i></div>
             <div class="kpi-body"><div class="kpi-value">{{ summary.achievedRequirements }}</div><div class="kpi-label">已达成要求</div></div>
           </div>
         </el-col>
         <el-col :xs="12" :sm="6">
           <div class="kpi-card">
-            <div class="kpi-icon" style="background:#e6a23c"><i class="el-icon-data-line"></i></div>
+            <div class="kpi-icon" style="background:var(--el-color-warning)"><i class="el-icon-data-line"></i></div>
             <div class="kpi-body"><div class="kpi-value">{{ pct(summary.achievedRate) }}</div><div class="kpi-label">达成率</div></div>
           </div>
         </el-col>
         <el-col :xs="12" :sm="6">
           <div class="kpi-card">
-            <div class="kpi-icon" style="background:#909399"><i class="el-icon-odometer"></i></div>
+            <div class="kpi-icon" style="background:var(--dt-text-secondary)"><i class="el-icon-odometer"></i></div>
             <div class="kpi-body"><div class="kpi-value">{{ summary.averageAttainment != null ? summary.averageAttainment.toFixed(3) : '—' }}</div><div class="kpi-label">平均达成度</div></div>
           </div>
         </el-col>
@@ -253,14 +253,14 @@ export default {
 
 <style scoped>
 .kpi-row { margin-bottom: 16px; }
-.kpi-card { display: flex; align-items: center; background: var(--dt-bg-container, #fff); border: 1px solid var(--dt-border-color-weak, #ebeef5); border-radius: 8px; padding: 16px; margin-bottom: 8px; }
+.kpi-card { display: flex; align-items: center; background: var(--dt-bg-container); border: 1px solid var(--dt-border-color-weak); border-radius: 8px; padding: 16px; margin-bottom: 8px; }
 .kpi-icon { width: 44px; height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; margin-right: 12px; flex-shrink: 0; }
-.kpi-value { font-size: 22px; font-weight: 600; color: var(--dt-text-primary, #303133); line-height: 1.2; }
-.kpi-label { font-size: 13px; color: var(--dt-text-secondary, #6b7280); }
+.kpi-value { font-size: 22px; font-weight: 600; color: var(--dt-text-primary); line-height: 1.2; }
+.kpi-label { font-size: 13px; color: var(--dt-text-secondary); }
 .chart-row { margin-bottom: 16px; }
 .chart-card { margin-bottom: 12px; }
 .chart-header { font-weight: 600; }
 .chart-box { height: 340px; }
-.chart-empty { height: 340px; display: flex; align-items: center; justify-content: center; color: var(--dt-text-secondary, #909399); font-size: 13px; }
-.table-empty { color: var(--dt-text-secondary, #909399); font-size: 13px; padding: 20px 0; }
+.chart-empty { height: 340px; display: flex; align-items: center; justify-content: center; color: var(--dt-text-secondary); font-size: 13px; }
+.table-empty { color: var(--dt-text-secondary); font-size: 13px; padding: 20px 0; }
 </style>

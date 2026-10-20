@@ -420,18 +420,18 @@ export default {
 .page-container { max-width: 1120px; margin: 0 auto; }
 .toolbar { margin-bottom: 12px; }
 .toolbar >>> .el-input, .toolbar >>> .el-select { margin-right: 8px; }
-.sub-title { font-size: 14px; font-weight: 600; margin: 18px 0 10px; color: #303133; }
-.summary-row .stat-box { background: #f5f7fa; border-radius: 6px; padding: 12px; text-align: center; }
-.stat-label { font-size: 13px; color: #909399; margin-bottom: 4px; }
-.stat-value { font-size: 20px; font-weight: 600; color: #303133; }
-.stat-value.warn { color: #E6A23C; }
-.stat-value.danger { color: #F56C6C; }
+.sub-title { font-size: 14px; font-weight: 600; margin: 18px 0 10px; color: var(--dt-text-primary); }
+.summary-row .stat-box { background: var(--dt-fill-light); border-radius: 6px; padding: 12px; text-align: center; }
+.stat-label { font-size: 13px; color: var(--dt-text-secondary); margin-bottom: 4px; }
+.stat-value { font-size: 20px; font-weight: 600; color: var(--dt-text-primary); }
+.stat-value.warn { color: var(--el-color-warning); }
+.stat-value.danger { color: var(--el-color-danger); }
 .process-title { font-size: 14px; }
 .process-action { margin: 0 6px; font-weight: 600; }
-.process-score { margin-left: 8px; color: #409EFF; }
-.process-content { margin-top: 4px; font-size: 13px; color: #606266; white-space: pre-wrap; }
-.process-opinion { color: #E6A23C; }
-.process-meta { margin-top: 4px; font-size: 12px; color: #909399; }
-.form-tip { margin-left: 10px; font-size: 12px; color: #909399; }
-.degree-tip { margin-top: 8px; font-size: 12px; color: #909399; }
+.process-score { margin-left: 8px; color: var(--el-color-primary); }
+.process-content { margin-top: 4px; font-size: 13px; color: var(--dt-text-regular); white-space: pre-wrap; }
+.process-opinion { color: var(--el-color-warning); }
+.process-meta { margin-top: 4px; font-size: 12px; color: var(--dt-text-secondary); }
+.form-tip { margin-left: 10px; font-size: 12px; color: var(--dt-text-secondary); }
+.degree-tip { margin-top: 8px; font-size: 12px; color: var(--dt-text-secondary); }
 </style>

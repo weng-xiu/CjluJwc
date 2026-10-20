@@ -74,14 +74,14 @@ export default {
 }
 .welcome-banner h2 { margin: 0 0 8px; font-size: 22px; }
 .welcome-banner p { margin: 0; font-size: 14px; opacity: 0.9; }
-.section-title { font-size: 16px; color: #303133; margin: 0 0 16px; padding-bottom: 8px; border-bottom: 2px solid #007ab8; display: flex; justify-content: space-between; align-items: center; }
-.more-link { font-size: 13px; color: #007ab8; cursor: pointer; font-weight: normal; }
+.section-title { font-size: 16px; color: var(--dt-text-primary); margin: 0 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--dt-color-primary); display: flex; justify-content: space-between; align-items: center; }
+.more-link { font-size: 13px; color: var(--dt-color-primary); cursor: pointer; font-weight: normal; }
 .entry-card {
-  background: #fff; border-radius: 8px; padding: 28px 16px; text-align: center;
+  background: var(--dt-bg-container); border-radius: 8px; padding: 28px 16px; text-align: center;
   cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 .entry-card:hover { transform: translateY(-4px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
-.entry-card i { font-size: 36px; color: #007ab8; display: block; margin-bottom: 12px; }
-.entry-card span { font-size: 14px; color: #606266; }
-.notice-section { margin-top: 24px; background: #fff; border-radius: 8px; padding: 20px; }
+.entry-card i { font-size: 36px; color: var(--dt-color-primary); display: block; margin-bottom: 12px; }
+.entry-card span { font-size: 14px; color: var(--dt-text-regular); }
+.notice-section { margin-top: 24px; background: var(--dt-bg-container); border-radius: 8px; padding: 20px; }
 </style>

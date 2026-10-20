@@ -107,7 +107,7 @@ export default {
 
 .pan-info p a {
   display: block;
-  color: #333;
+  color: var(--dt-text-primary);
   width: 80px;
   height: 80px;
   background: rgba(255, 255, 255, 0.3);

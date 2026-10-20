@@ -440,13 +440,13 @@ export default {
 
 .section-subtitle {
   font-size: 13px;
-  color: #007ab8;
+  color: var(--dt-color-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
 .more-link {
-  color: #007ab8;
+  color: var(--dt-color-primary);
   font-size: 14px;
   text-decoration: none;
   transition: opacity 0.3s;
@@ -465,7 +465,7 @@ export default {
 }
 
 .news-featured {
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -511,7 +511,7 @@ export default {
 }
 
 .news-featured:hover .featured-title {
-  color: #007ab8;
+  color: var(--dt-color-primary);
 }
 
 .featured-summary {
@@ -557,12 +557,12 @@ export default {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #007ab8;
+  background: var(--dt-color-primary);
 }
 
 .side-title {
   flex: 1;
-  color: #333;
+  color: var(--dt-text-primary);
   font-size: 15px;
   line-height: 1.6;
   overflow: hidden;
@@ -572,7 +572,7 @@ export default {
 }
 
 .news-side-list li:hover .side-title {
-  color: #007ab8;
+  color: var(--dt-color-primary);
 }
 
 .news-side-list li:hover .side-dot {
@@ -587,7 +587,7 @@ export default {
 
 /* ========== 双栏布局 ========== */
 .dual-section {
-  background: #fff;
+  background: var(--dt-bg-container);
 }
 
 .dual-container {
@@ -618,7 +618,7 @@ export default {
 }
 
 .article-list li:hover .item-title {
-  color: #007ab8;
+  color: var(--dt-color-primary);
 }
 
 .article-list.with-date li {
@@ -629,8 +629,8 @@ export default {
   flex-shrink: 0;
   width: 44px;
   text-align: center;
-  background: #f0f7ff;
-  color: #007ab8;
+  background: var(--el-color-primary-light-9);
+  color: var(--dt-color-primary);
   font-size: 14px;
   font-weight: 600;
   padding: 4px 0;
@@ -641,7 +641,7 @@ export default {
 
 .article-list .item-title {
   flex: 1;
-  color: #333;
+  color: var(--dt-text-primary);
   font-size: 14px;
   line-height: 1.6;
   overflow: hidden;
@@ -760,7 +760,7 @@ export default {
 
 /* ========== 长大人 ========== */
 .people-section {
-  background: #fff;
+  background: var(--dt-bg-container);
 }
 
 .people-card {
@@ -814,7 +814,7 @@ export default {
 }
 
 .people-readmore {
-  color: #007ab8;
+  color: var(--dt-color-primary);
   font-size: 14px;
 }
 
@@ -845,7 +845,7 @@ export default {
   cursor: pointer;
   overflow: hidden;
   border-radius: 8px;
-  background: #fff;
+  background: var(--dt-bg-container);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   scroll-snap-align: start;
   transition: transform 0.3s, box-shadow 0.3s;
@@ -865,7 +865,7 @@ export default {
 
 .topic-card .topic-title {
   font-size: 13px;
-  color: #333;
+  color: var(--dt-text-primary);
   padding: 10px 12px;
   margin: 0;
   text-align: center;
@@ -878,7 +878,7 @@ export default {
 
 /* ========== 快速通道 ========== */
 .links-section {
-  background: #fff;
+  background: var(--dt-bg-container);
 }
 
 .links-grid {
@@ -896,13 +896,13 @@ export default {
   background: #f9f9f9;
   border-radius: 8px;
   text-decoration: none;
-  color: #333;
+  color: var(--dt-text-primary);
   transition: all 0.3s;
 }
 
 .link-item i {
   font-size: 28px;
-  color: #007ab8;
+  color: var(--dt-color-primary);
   margin-bottom: 8px;
   transition: transform 0.3s;
 }
@@ -913,7 +913,7 @@ export default {
 }
 
 .link-item:hover {
-  background: #f0f7ff;
+  background: var(--el-color-primary-light-9);
   box-shadow: 0 2px 12px rgba(0, 102, 204, 0.1);
 }
 

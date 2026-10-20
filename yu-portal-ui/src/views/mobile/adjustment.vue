@@ -23,7 +23,7 @@
         <div class="rec-reason">{{ row.reason }}</div>
         <div v-if="row.approveBy" class="rec-audit">{{ row.approveBy }} {{ fmt(row.approveTime) }}<template v-if="row.approveComment"> · {{ row.approveComment }}</template></div>
         <div class="rec-actions">
-          <el-button v-if="row.approveStatus === '0'" size="mini" type="text" style="color:#f56c6c" @click="cancelRow(row)">撤销</el-button>
+          <el-button v-if="row.approveStatus === '0'" size="mini" type="text" style="color:var(--el-color-danger)" @click="cancelRow(row)">撤销</el-button>
         </div>
       </div>
       <div v-if="!loading && list.length < total" class="load-more" @click="loadMore">点击加载更多</div>
@@ -223,36 +223,36 @@ export default {
 
 <style scoped>
 .mobile-adjust { padding: 12px; }
-.seg-bar { display: flex; background: #fff; border-radius: 8px; padding: 4px; margin-bottom: 10px; }
-.seg-item { flex: 1; text-align: center; line-height: 32px; font-size: 14px; color: #606266; border-radius: 6px; cursor: pointer; }
+.seg-bar { display: flex; background: var(--dt-bg-container); border-radius: 8px; padding: 4px; margin-bottom: 10px; }
+.seg-item { flex: 1; text-align: center; line-height: 32px; font-size: 14px; color: var(--dt-text-regular); border-radius: 6px; cursor: pointer; }
 .seg-item.active { background: linear-gradient(135deg, #003366, #007ab8); color: #fff; }
 .apply-entry { margin-bottom: 10px; }
 .submit-btn { width: 100%; }
-.loading-state, .empty-state { text-align: center; color: #c0c4cc; padding: 30px 0; font-size: 13px; }
+.loading-state, .empty-state { text-align: center; color: var(--dt-text-placeholder); padding: 30px 0; font-size: 13px; }
 .empty-state i { font-size: 36px; display: block; margin-bottom: 6px; }
-.rec-card { background: #fff; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+.rec-card { background: var(--dt-bg-container); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
 .rec-top { display: flex; justify-content: space-between; align-items: center; }
-.rec-title { font-size: 15px; font-weight: 600; color: #303133; }
+.rec-title { font-size: 15px; font-weight: 600; color: var(--dt-text-primary); }
 .rec-status { font-size: 12px; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
-.st-0 { background: #fdf6ec; color: #e6a23c; }
-.st-1 { background: #f0f9ec; color: #67c23a; }
-.st-2 { background: #fef0f0; color: #f56c6c; }
-.st-3 { background: #f4f4f5; color: #909399; }
-.rec-line { font-size: 12px; color: #606266; margin-top: 6px; }
-.rec-line.new { color: #007ab8; }
-.tag-type { display: inline-block; background: #eef5fb; color: #007ab8; border-radius: 4px; font-size: 11px; padding: 1px 6px; margin-right: 6px; }
-.rec-reason { font-size: 13px; color: #606266; margin-top: 6px; }
-.rec-audit { font-size: 12px; color: #909399; margin-top: 4px; }
-.rec-actions { border-top: 1px solid #f5f7fa; margin-top: 6px; text-align: right; }
-.audit-btns { border-top: 1px solid #f5f7fa; margin-top: 8px; padding-top: 8px; }
+.st-0 { background: var(--el-color-warning-light-9); color: var(--el-color-warning); }
+.st-1 { background: #f0f9ec; color: var(--el-color-success); }
+.st-2 { background: var(--el-color-danger-light-9); color: var(--el-color-danger); }
+.st-3 { background: #f4f4f5; color: var(--dt-text-secondary); }
+.rec-line { font-size: 12px; color: var(--dt-text-regular); margin-top: 6px; }
+.rec-line.new { color: var(--dt-color-primary); }
+.tag-type { display: inline-block; background: #eef5fb; color: var(--dt-color-primary); border-radius: 4px; font-size: 11px; padding: 1px 6px; margin-right: 6px; }
+.rec-reason { font-size: 13px; color: var(--dt-text-regular); margin-top: 6px; }
+.rec-audit { font-size: 12px; color: var(--dt-text-secondary); margin-top: 4px; }
+.rec-actions { border-top: 1px solid var(--dt-fill-light); margin-top: 6px; text-align: right; }
+.audit-btns { border-top: 1px solid var(--dt-fill-light); margin-top: 8px; padding-top: 8px; }
 .audit-comment { margin-bottom: 6px; }
 .audit-ops { display: flex; justify-content: flex-end; gap: 8px; }
-.load-more { text-align: center; font-size: 13px; color: #007ab8; padding: 10px 0 20px; cursor: pointer; }
+.load-more { text-align: center; font-size: 13px; color: var(--dt-color-primary); padding: 10px 0 20px; cursor: pointer; }
 .mask { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 999; display: flex; align-items: center; justify-content: center; }
-.dialog { width: 90%; max-height: 80vh; overflow-y: auto; background: #fff; border-radius: 10px; padding: 16px; }
+.dialog { width: 90%; max-height: 80vh; overflow-y: auto; background: var(--dt-bg-container); border-radius: 10px; padding: 16px; }
 .dialog-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
 .fi { margin-bottom: 10px; }
-.fi label { display: block; font-size: 13px; color: #606266; margin-bottom: 4px; }
+.fi label { display: block; font-size: 13px; color: var(--dt-text-regular); margin-bottom: 4px; }
 .fi-row { display: flex; gap: 10px; }
 .fi-half { flex: 1; }
 .period-row { display: flex; align-items: center; gap: 4px; }

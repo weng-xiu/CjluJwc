@@ -34,7 +34,7 @@
             </el-form-item>
             <el-form-item>
               <el-button type="primary" :loading="applying" @click="submitApply">提交申请</el-button>
-              <span style="margin-left:12px;color:#909399;font-size:12px">提交后进入院系、教务处两级审批，可在"申请记录"中查看进度</span>
+              <span style="margin-left:12px;color:var(--dt-text-secondary);font-size:12px">提交后进入院系、教务处两级审批，可在"申请记录"中查看进度</span>
             </el-form-item>
           </el-form>
         </el-tab-pane>
@@ -54,7 +54,7 @@
             <el-table-column label="操作" width="140" align="center">
               <template slot-scope="scope">
                 <el-button size="mini" type="text" icon="el-icon-view" @click="openTrace(scope.row)">进度</el-button>
-                <el-button v-if="scope.row.approveStatus === '0'" size="mini" type="text" icon="el-icon-delete" style="color:#F56C6C" @click="handleCancel(scope.row)">撤销</el-button>
+                <el-button v-if="scope.row.approveStatus === '0'" size="mini" type="text" icon="el-icon-delete" style="color:var(--el-color-danger)" @click="handleCancel(scope.row)">撤销</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -76,9 +76,9 @@
           <el-timeline-item v-for="(t, i) in traceTasks" :key="i"
                             :timestamp="parseTime(t.endTime || t.startTime, '{y}-{m}-{d} {h}:{i}')"
                             :type="t.endTime ? 'success' : 'primary'" :hollow="!t.endTime">
-            <b>{{ t.taskName }}</b><span v-if="t.assignee" style="color:#909399;margin-left:8px">{{ t.assignee }}</span>
-            <div v-if="t.comments && t.comments.length" style="color:#606266">{{ t.comments.join(' / ') }}</div>
-            <div v-if="!t.endTime" style="color:#E6A23C">进行中…</div>
+            <b>{{ t.taskName }}</b><span v-if="t.assignee" style="color:var(--dt-text-secondary);margin-left:8px">{{ t.assignee }}</span>
+            <div v-if="t.comments && t.comments.length" style="color:var(--dt-text-regular)">{{ t.comments.join(' / ') }}</div>
+            <div v-if="!t.endTime" style="color:var(--el-color-warning)">进行中…</div>
           </el-timeline-item>
         </el-timeline>
       </template>

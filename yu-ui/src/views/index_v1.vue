@@ -84,7 +84,7 @@ export default {
   position: relative;
 
   .chart-wrapper {
-    background: #fff;
+    background: var(--dt-bg-container);
     padding: 16px 16px 0;
     margin-bottom: 32px;
   }

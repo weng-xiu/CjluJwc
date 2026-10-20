@@ -251,7 +251,7 @@ export default {
 
 .search-box >>> .el-input__icon {
   line-height: 50px;
-  color: #007ab8;
+  color: var(--dt-color-primary);
 }
 
 .search-btn {
@@ -296,8 +296,8 @@ export default {
 
 .hot-word:hover,
 .hot-word.active {
-  background: #fff;
-  color: #007ab8;
+  background: var(--dt-bg-container);
+  color: var(--dt-color-primary);
 }
 
 /* ========== 结果统计 ========== */
@@ -313,7 +313,7 @@ export default {
 }
 
 .result-count strong {
-  color: #007ab8;
+  color: var(--dt-color-primary);
   font-size: 18px;
 }
 
@@ -325,7 +325,7 @@ export default {
 .article-item {
   display: flex;
   gap: 18px;
-  background: #fff;
+  background: var(--dt-bg-container);
   border-radius: 8px;
   padding: 18px 22px;
   margin-bottom: 14px;
@@ -369,7 +369,7 @@ export default {
 }
 
 .article-item:hover .item-title {
-  color: #007ab8;
+  color: var(--dt-color-primary);
 }
 
 .article-item .item-summary {

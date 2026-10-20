@@ -36,4 +36,4 @@ export default {
   }
 }
 </script>
-<style scoped>.page-container { max-width: 1200px; margin: 0 auto; }.card-header { font-size: 16px; font-weight: 600; }.notice-meta { color: #909399; font-size: 13px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #ebeef5; }.notice-content { line-height: 1.8; min-height: 100px; }</style>
+<style scoped>.page-container { max-width: 1200px; margin: 0 auto; }.card-header { font-size: 16px; font-weight: 600; }.notice-meta { color: var(--dt-text-secondary); font-size: 13px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--dt-border-color-light); }.notice-content { line-height: 1.8; min-height: 100px; }</style>

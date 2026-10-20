@@ -17,7 +17,7 @@
         <el-col :span="6"><div class="stat-box"><div class="stat-label">不及格课程</div><div class="stat-value warn">{{ (data.summary && data.summary.failCourseCount) || 0 }}</div></div></el-col>
       </el-row>
       <div v-if="data.summary" style="margin:8px 0 20px">
-        <span style="font-size:13px;color:#909399">总学分完成率（{{ data.summary.creditSource }}）</span>
+        <span style="font-size:13px;color:var(--dt-text-secondary)">总学分完成率（{{ data.summary.creditSource }}）</span>
         <el-progress :percentage="data.summary.creditPercent || 0" :status="data.summary.creditPercent >= 100 ? 'success' : undefined" />
       </div>
 
@@ -73,11 +73,11 @@ export default {
 <style scoped>
 .page-container { max-width: 1000px; margin: 0 auto; }
 .card-header { font-size: 16px; font-weight: 600; }
-.sub-title { font-size: 14px; font-weight: 600; margin: 20px 0 10px; color: #303133; }
-.summary-row .stat-box { background: #f5f7fa; border-radius: 6px; padding: 14px; text-align: center; }
-.stat-label { font-size: 13px; color: #909399; margin-bottom: 6px; }
-.stat-value { font-size: 22px; font-weight: 600; color: #303133; }
-.stat-value.warn, .warn { color: #E6A23C; }
+.sub-title { font-size: 14px; font-weight: 600; margin: 20px 0 10px; color: var(--dt-text-primary); }
+.summary-row .stat-box { background: var(--dt-fill-light); border-radius: 6px; padding: 14px; text-align: center; }
+.stat-label { font-size: 13px; color: var(--dt-text-secondary); margin-bottom: 6px; }
+.stat-value { font-size: 22px; font-weight: 600; color: var(--dt-text-primary); }
+.stat-value.warn, .warn { color: var(--el-color-warning); }
 .gap-list { margin: 0; padding-left: 20px; line-height: 1.9; }
-.disclaimer { margin-top: 20px; font-size: 12px; color: #909399; }
+.disclaimer { margin-top: 20px; font-size: 12px; color: var(--dt-text-secondary); }
 </style>

@@ -127,7 +127,7 @@
 
     <!-- 凭证预览对话框 -->
     <el-dialog title="凭证预览" :visible.sync="previewOpen" width="900px" append-to-body>
-      <iframe :srcdoc="previewHtml" style="width: 100%; height: 560px; border: 1px solid #e4e7ed;"></iframe>
+      <iframe :srcdoc="previewHtml" style="width: 100%; height: 560px; border: 1px solid var(--dt-border-color-light);"></iframe>
       <div slot="footer" class="dialog-footer">
         <el-button @click="previewOpen = false">关 闭</el-button>
       </div>
@@ -342,5 +342,5 @@ export default {
 </script>
 
 <style scoped>
-.tip-text { font-size: 12px; color: #909399; line-height: 1.6; }
+.tip-text { font-size: 12px; color: var(--dt-text-secondary); line-height: 1.6; }
 </style>
