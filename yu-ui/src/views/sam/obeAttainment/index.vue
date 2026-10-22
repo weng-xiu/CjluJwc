@@ -80,6 +80,30 @@
         </el-col>
       </el-row>
 
+      <!-- F3 未达标清单：达成度低于目标值的毕业要求集中列示，支撑审核评估整改聚焦 -->
+      <el-card v-if="requirements.length" shadow="never" class="detail-card">
+        <div slot="header" class="chart-header">未达标毕业要求清单（达成度 &lt; 目标值）<el-tag v-if="!shortfallList.length" type="success" size="mini" style="margin-left:8px">全部达成</el-tag></div>
+        <el-table v-if="shortfallList.length" :data="shortfallList" size="small" border row-key="grId">
+          <el-table-column label="毕业要求编号" prop="grCode" width="140" />
+          <el-table-column label="毕业要求名称" prop="grName" min-width="180" show-overflow-tooltip />
+          <el-table-column label="达成度" width="120">
+            <template slot-scope="scope">{{ fmt(scope.row.attainment) }}</template>
+          </el-table-column>
+          <el-table-column label="目标值" width="100">
+            <template slot-scope="scope">{{ scope.row.targetValue != null ? scope.row.targetValue : '—' }}</template>
+          </el-table-column>
+          <el-table-column label="差距" width="100">
+            <template slot-scope="scope"><span class="text-danger">{{ gapOf(scope.row) }}</span></template>
+          </el-table-column>
+          <el-table-column label="未达标指标点" width="130">
+            <template slot-scope="scope">{{ shortfallIpCount(scope.row) }} / {{ (scope.row.indicators || []).length }}</template>
+          </el-table-column>
+          <el-table-column label="待整改支撑课程（示例）" min-width="200" show-overflow-tooltip>
+            <template slot-scope="scope">{{ worstCourse(scope.row) }}</template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+
       <!-- 明细：毕业要求 → 指标点 → 支撑课程 三级下钻 -->
       <el-card shadow="never" class="detail-card">
         <div slot="header" class="chart-header">达成度明细（点击行下钻指标点与支撑课程）</div>
@@ -157,6 +181,12 @@ export default {
     }
   },
   created() { this.getOptions() },
+  computed: {
+    // F3：未达标毕业要求（群体与个体口径同规则：achieved !== '1'）
+    shortfallList() {
+      return this.requirements.filter(r => r.achieved !== '1')
+    }
+  },
   beforeDestroy() {
     if (this.radarChart) { this.radarChart.dispose(); this.radarChart = null }
     if (this.barChart) { this.barChart.dispose(); this.barChart = null }
@@ -178,6 +208,19 @@ export default {
     },
     fmtStudent(r) { return (r.studentName || '') + (r.studentNo ? '（' + r.studentNo + '）' : '') },
     pct(v) { return v != null ? Math.round(v * 1000) / 10 + '%' : '—' },
+    fmt(v) { return v != null ? Number(v).toFixed(3) : '—' },
+    gapOf(row) { return row.targetValue != null && row.attainment != null ? Number((row.targetValue - row.attainment).toFixed(3)) : '—' },
+    shortfallIpCount(row) { return (row.indicators || []).filter(i => i.achieved !== '1').length },
+    // 差距最大的支撑课程（达成度=成绩/100，取最低分课程点名整改对象）
+    worstCourse(row) {
+      let worst = null
+      ;(row.indicators || []).forEach(ip => {
+        ;(ip.courses || []).forEach(c => {
+          if (c.score != null && (!worst || c.score < worst.score)) { worst = c }
+        })
+      })
+      return worst ? worst.courseName + '（' + worst.score + ' 分）' : '—'
+    },
     handleCompute() {
       if (!this.queryParams.planId) { this.$modal.msgWarning("请先选择培养方案"); return }
       if (this.scope === 'student' && !this.queryParams.studentId) { this.$modal.msgWarning("个体口径请先选择学生"); return }
@@ -263,4 +306,5 @@ export default {
 .chart-box { height: 340px; }
 .chart-empty { height: 340px; display: flex; align-items: center; justify-content: center; color: var(--dt-text-secondary); font-size: 13px; }
 .table-empty { color: var(--dt-text-secondary); font-size: 13px; padding: 20px 0; }
+.text-danger { color: var(--el-color-danger); font-weight: 600; }
 </style>

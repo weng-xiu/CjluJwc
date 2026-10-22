@@ -370,6 +370,92 @@ html.dark {
     color: var(--dt-text-regular);
   }
 
+  /* ---------- 复选框 / 单选框 / 开关：element-ui 内控件默认白底，暗色下须改深 ---------- */
+  .el-checkbox__inner,
+  .el-radio__inner {
+    background-color: var(--dt-fill-light);
+    border-color: var(--dt-border-color);
+  }
+
+  .el-checkbox__input.is-checked .el-checkbox__inner,
+  .el-checkbox__input.is-indeterminate .el-checkbox__inner,
+  .el-radio__input.is-checked .el-radio__inner {
+    background-color: var(--el-color-primary);
+    border-color: var(--el-color-primary);
+  }
+
+  .el-checkbox__input.is-focus .el-checkbox__inner,
+  .el-radio__input.is-focus .el-radio__inner {
+    border-color: var(--el-color-primary);
+  }
+
+  .el-checkbox__input.is-disabled .el-checkbox__inner,
+  .el-radio__input.is-disabled .el-radio__inner {
+    background-color: var(--dt-border-color-light);
+    border-color: var(--dt-border-color);
+    cursor: not-allowed;
+  }
+
+  .el-switch__core {
+    background-color: var(--dt-border-color);
+    border-color: var(--dt-border-color);
+  }
+
+  .el-switch.is-checked .el-switch__core {
+    background-color: var(--el-color-primary);
+    border-color: var(--el-color-primary);
+  }
+
+  /* ---------- 日期/时间区间选择器内部（分隔符默认 #303133 暗底不可见） ---------- */
+  .el-date-editor .el-range-input {
+    background-color: transparent;
+    color: var(--dt-text-primary);
+  }
+
+  .el-date-editor .el-range-input::placeholder {
+    color: var(--dt-text-placeholder);
+  }
+
+  .el-date-editor .el-range-separator {
+    color: var(--dt-text-regular);
+  }
+
+  .el-date-editor .el-range__icon,
+  .el-date-editor .el-range__close-icon {
+    color: var(--dt-text-placeholder);
+  }
+
+  /* ---------- 输入框前后置元素 ---------- */
+  .el-input-group__append,
+  .el-input-group__prepend {
+    background-color: var(--dt-fill-light);
+    border-color: var(--dt-border-color);
+    color: var(--dt-text-regular);
+  }
+
+  /* ---------- 树展开箭头（默认 #606060 暗底几乎不可见） ---------- */
+  .el-tree-node__expand-icon {
+    color: var(--dt-text-placeholder);
+
+    &.expanded { color: var(--el-color-primary); }
+    &.is-leaf { color: transparent; }
+  }
+
+  /* ---------- 单选按钮组（WeekTimetable 视图切换等） ---------- */
+  .el-radio-button__inner {
+    background-color: var(--dt-fill-light);
+    border-color: var(--dt-border-color);
+    color: var(--dt-text-regular);
+    box-shadow: none;
+  }
+
+  .el-radio-button__orig-radio:checked + .el-radio-button__inner {
+    background-color: var(--el-color-primary);
+    border-color: var(--el-color-primary);
+    color: #fff;
+    box-shadow: -1px 0 0 0 var(--el-color-primary);
+  }
+
   /* ---------- Divider / Empty ---------- */
   .el-divider {
     background-color: var(--dt-border-color-light);
