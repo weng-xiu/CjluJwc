@@ -6,6 +6,15 @@
   <meta name="renderer" content="webkit">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
       <!-- V4.0 §7.3/U2（与 yu-portal-ui-vue3 同步）：去掉 maximum-scale=1 / user-scalable=no，修复 WCAG 1.4.4 禁缩放无障碍缺陷。 -->
+  <meta name="description" content="长江大学师生互动服务门户：课表、成绩、选课、预警与办理进度查询">
+  <!-- V5/D15（与 yu-portal-ui-vue3 同步）：对外可见性——补 keywords/OG/canonical，便于搜索引擎与微信抓取（域名占位与 sitemap.xml 保持一致，部署时由运维替换） -->
+  <meta name="keywords" content="长江大学,教务处,教务管理系统,师生门户,课表,成绩,选课,学业预警">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="长江大学师生互动服务门户">
+  <meta property="og:title" content="师生互动服务门户">
+  <meta property="og:description" content="长江大学师生互动服务门户：课表、成绩、选课、预警与办理进度查询">
+  <meta property="og:url" content="https://jwc.yangtzeu.edu.cn/">
+  <link rel="canonical" href="https://jwc.yangtzeu.edu.cn/">
   <link rel="icon" href="<%= BASE_URL %>favicon.ico">
   <title><%= webpackConfig.name %></title>
 </head>

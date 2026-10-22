@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamObeImprovementMapper">
+    <resultMap type="SamObeImprovement" id="SamObeImprovementResult">
+        <result property="impId"            column="imp_id"            />
+        <result property="planId"           column="plan_id"           />
+        <result property="semesterId"       column="semester_id"       />
+        <result property="grId"             column="gr_id"             />
+        <result property="ipId"             column="ip_id"             />
+        <result property="sourceTerm"       column="source_term"       />
+        <result property="attainment"       column="attainment"        />
+        <result property="targetValue"      column="target_value"      />
+        <result property="problemDesc"      column="problem_desc"      />
+        <result property="measure"          column="measure"           />
+        <result property="owner"            column="owner"             />
+        <result property="dueDate"          column="due_date"          />
+        <result property="status"           column="status"            />
+        <result property="effectAttainment" column="effect_attainment" />
+        <result property="effectNote"       column="effect_note"       />
+        <result property="delFlag"          column="del_flag"          />
+        <result property="createBy"         column="create_by"         />
+        <result property="createTime"       column="create_time"       />
+        <result property="updateBy"         column="update_by"         />
+        <result property="updateTime"       column="update_time"       />
+        <result property="remark"           column="remark"            />
+        <result property="grCode"           column="gr_code"           />
+        <result property="grName"           column="gr_name"           />
+    </resultMap>
+    <sql id="selectVo">
+        select i.imp_id, i.plan_id, i.semester_id, i.gr_id, i.ip_id, i.source_term, i.attainment, i.target_value,
+               i.problem_desc, i.measure, i.owner, i.due_date, i.status, i.effect_attainment, i.effect_note,
+               i.del_flag, i.create_by, i.create_time, i.update_by, i.update_time, i.remark,
+               gr.gr_code, gr.gr_name
+        from sam_obe_improvement i
+        left join sam_obe_graduation_requirement gr on gr.gr_id = i.gr_id and gr.del_flag = '0'
+    </sql>
+    <select id="selectSamObeImprovementList" parameterType="SamObeImprovement" resultMap="SamObeImprovementResult">
+        <include refid="selectVo"/>
+        <where>
+            i.del_flag = '0'
+            <if test="planId != null"> and i.plan_id = #{planId}</if>
+            <if test="semesterId != null"> and i.semester_id = #{semesterId}</if>
+            <if test="grId != null"> and i.gr_id = #{grId}</if>
+            <if test="ipId != null"> and i.ip_id = #{ipId}</if>
+            <if test="sourceTerm != null and sourceTerm.trim() != ''"> and i.source_term = #{sourceTerm}</if>
+            <if test="status != null and status.trim() != ''"> and i.status = #{status}</if>
+            <if test="owner != null and owner.trim() != ''"> and i.owner like concat('%', #{owner}, '%')</if>
+        </where>
+        order by i.status, i.due_date, i.imp_id desc
+    </select>
+    <select id="selectSamObeImprovementByImpId" parameterType="Long" resultMap="SamObeImprovementResult">
+        <include refid="selectVo"/> where i.imp_id = #{impId} and i.del_flag = '0'
+    </select>
+    <insert id="insertSamObeImprovement" parameterType="SamObeImprovement" useGeneratedKeys="true" keyProperty="impId">
+        insert into sam_obe_improvement
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="planId != null">plan_id,</if>
+            <if test="semesterId != null">semester_id,</if>
+            <if test="grId != null">gr_id,</if>
+            <if test="ipId != null">ip_id,</if>
+            <if test="sourceTerm != null">source_term,</if>
+            <if test="attainment != null">attainment,</if>
+            <if test="targetValue != null">target_value,</if>
+            <if test="problemDesc != null">problem_desc,</if>
+            <if test="measure != null">measure,</if>
+            <if test="owner != null">owner,</if>
+            <if test="dueDate != null">due_date,</if>
+            <if test="status != null">status,</if>
+            <if test="effectAttainment != null">effect_attainment,</if>
+            <if test="effectNote != null">effect_note,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="planId != null">#{planId},</if>
+            <if test="semesterId != null">#{semesterId},</if>
+            <if test="grId != null">#{grId},</if>
+            <if test="ipId != null">#{ipId},</if>
+            <if test="sourceTerm != null">#{sourceTerm},</if>
+            <if test="attainment != null">#{attainment},</if>
+            <if test="targetValue != null">#{targetValue},</if>
+            <if test="problemDesc != null">#{problemDesc},</if>
+            <if test="measure != null">#{measure},</if>
+            <if test="owner != null">#{owner},</if>
+            <if test="dueDate != null">#{dueDate},</if>
+            <if test="status != null">#{status},</if>
+            <if test="effectAttainment != null">#{effectAttainment},</if>
+            <if test="effectNote != null">#{effectNote},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateSamObeImprovement" parameterType="SamObeImprovement">
+        update sam_obe_improvement
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="planId != null">plan_id = #{planId},</if>
+            <if test="semesterId != null">semester_id = #{semesterId},</if>
+            <if test="grId != null">gr_id = #{grId},</if>
+            <if test="ipId != null">ip_id = #{ipId},</if>
+            <if test="sourceTerm != null">source_term = #{sourceTerm},</if>
+            <if test="attainment != null">attainment = #{attainment},</if>
+            <if test="targetValue != null">target_value = #{targetValue},</if>
+            <if test="problemDesc != null">problem_desc = #{problemDesc},</if>
+            <if test="measure != null">measure = #{measure},</if>
+            <if test="owner != null">owner = #{owner},</if>
+            <if test="dueDate != null">due_date = #{dueDate},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="effectAttainment != null">effect_attainment = #{effectAttainment},</if>
+            <if test="effectNote != null">effect_note = #{effectNote},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where imp_id = #{impId}
+    </update>
+    <delete id="deleteSamObeImprovementByImpIds" parameterType="String">
+        update sam_obe_improvement set del_flag = '2' where imp_id in
+        <foreach item="impId" collection="array" open="(" separator="," close=")">#{impId}</foreach>
+    </delete>
+</mapper>

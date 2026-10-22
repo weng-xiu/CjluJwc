@@ -87,3 +87,25 @@ export function calculateByStudent(planId, studentId) {
 export function obeDashboard(planId, semesterId) {
   return request({ url: '/sam/obe/dashboard', method: 'get', params: { planId, semesterId } })
 }
+
+// ===== 持续改进台账（F3 整改闭环）——对应后端 SamObeImprovementController /sam/obe/improvement =====
+
+export function listImprovement(query) {
+  return request({ url: '/sam/obe/improvement/list', method: 'get', params: query })
+}
+
+export function getImprovement(impId) {
+  return request({ url: '/sam/obe/improvement/' + impId, method: 'get' })
+}
+
+export function addImprovement(data) {
+  return request({ url: '/sam/obe/improvement', method: 'post', data: data })
+}
+
+export function updateImprovement(data) {
+  return request({ url: '/sam/obe/improvement', method: 'put', data: data })
+}
+
+export function delImprovement(impIds) {
+  return request({ url: '/sam/obe/improvement/' + impIds, method: 'delete' })
+}

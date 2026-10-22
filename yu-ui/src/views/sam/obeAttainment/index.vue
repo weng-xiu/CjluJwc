@@ -101,6 +101,44 @@
           <el-table-column label="待整改支撑课程（示例）" min-width="200" show-overflow-tooltip>
             <template slot-scope="scope">{{ worstCourse(scope.row) }}</template>
           </el-table-column>
+          <el-table-column label="操作" width="110" align="center">
+            <template slot-scope="scope">
+              <el-button type="text" size="mini" icon="el-icon-plus" v-hasPermi="['sam:obeImprovement:add']" @click="handleAddImp(scope.row)">登记改进</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+
+      <!-- F3 持续改进台账：登记→跟踪→验证，闭环「评价-反馈-改进」 -->
+      <el-card shadow="never" class="detail-card">
+        <div slot="header" class="chart-header">
+          持续改进台账
+          <el-button style="float:right;margin-top:1px" size="mini" type="primary" plain icon="el-icon-plus" v-hasPermi="['sam:obeImprovement:add']" @click="handleAddImp(null)">登记改进</el-button>
+        </div>
+        <el-table v-loading="impLoading" :data="impList" size="small" border>
+          <el-table-column label="毕业要求" min-width="160" show-overflow-tooltip>
+            <template slot-scope="scope">{{ scope.row.grCode ? scope.row.grCode + ' ' : '' }}{{ scope.row.grName || '—' }}</template>
+          </el-table-column>
+          <el-table-column label="发现周期" prop="sourceTerm" width="110" />
+          <el-table-column label="发现时达成度" width="110">
+            <template slot-scope="scope">{{ fmt(scope.row.attainment) }}</template>
+          </el-table-column>
+          <el-table-column label="改进措施" prop="measure" min-width="180" show-overflow-tooltip />
+          <el-table-column label="责任人" prop="owner" width="100" />
+          <el-table-column label="期限" prop="dueDate" width="110" />
+          <el-table-column label="状态" width="90" align="center">
+            <template slot-scope="scope"><el-tag :type="impTagType(scope.row.status)" size="mini">{{ impStatusText(scope.row.status) }}</el-tag></template>
+          </el-table-column>
+          <el-table-column label="改进后达成度" width="120">
+            <template slot-scope="scope">{{ fmt(scope.row.effectAttainment) }}</template>
+          </el-table-column>
+          <el-table-column label="操作" width="140" align="center">
+            <template slot-scope="scope">
+              <el-button type="text" size="mini" icon="el-icon-edit" v-hasPermi="['sam:obeImprovement:edit']" @click="handleUpdateImp(scope.row)">修改</el-button>
+              <el-button type="text" size="mini" icon="el-icon-delete" v-hasPermi="['sam:obeImprovement:remove']" @click="handleDeleteImp(scope.row)">删除</el-button>
+            </template>
+          </el-table-column>
+          <template slot="empty"><div class="table-empty">暂无改进记录，可对未达标毕业要求登记改进措施</div></template>
         </el-table>
       </el-card>
 
@@ -155,13 +193,45 @@
           <template slot="empty"><div class="table-empty">请选择培养方案并点击"计算达成度"</div></template>
         </el-table>
       </el-card>
+
+      <!-- F3 台账登记/修改弹窗 -->
+      <el-dialog :title="impTitle" :visible.sync="impOpen" width="640px" append-to-body>
+        <el-form ref="impForm" :model="impForm" :rules="impRules" label-width="110px" size="small">
+          <el-form-item label="毕业要求">
+            <el-select v-model="impForm.grId" placeholder="请选择毕业要求" clearable filterable style="width:100%" @change="onImpGrChange">
+              <el-option v-for="r in requirements" :key="r.grId" :label="(r.grCode ? r.grCode + ' ' : '') + r.grName" :value="r.grId" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="发现周期"><el-input v-model="impForm.sourceTerm" placeholder="如 2025-2026-2" /></el-form-item>
+          <el-form-item label="问题分析"><el-input v-model="impForm.problemDesc" type="textarea" :rows="2" placeholder="达成度偏低的原因分析（可选）" /></el-form-item>
+          <el-form-item label="改进措施" prop="measure"><el-input v-model="impForm.measure" type="textarea" :rows="3" placeholder="必填：具体、可验证的改进措施" /></el-form-item>
+          <el-form-item label="责任人"><el-input v-model="impForm.owner" /></el-form-item>
+          <el-form-item label="计划完成日期"><el-date-picker v-model="impForm.dueDate" type="date" value-format="yyyy-MM-dd" placeholder="选择日期" style="width:100%" /></el-form-item>
+          <el-form-item label="状态">
+            <el-radio-group v-model="impForm.status">
+              <el-radio-button label="0">进行中</el-radio-button>
+              <el-radio-button label="1">已完成</el-radio-button>
+              <el-radio-button label="2">已验证</el-radio-button>
+            </el-radio-group>
+          </el-form-item>
+          <template v-if="impForm.status === '1' || impForm.status === '2'">
+            <el-form-item label="改进后达成度"><el-input-number v-model="impForm.effectAttainment" :min="0" :max="1" :step="0.01" :precision="3" controls-position="right" /></el-form-item>
+            <el-form-item label="效果说明"><el-input v-model="impForm.effectNote" type="textarea" :rows="2" /></el-form-item>
+          </template>
+          <el-form-item label="备注"><el-input v-model="impForm.remark" type="textarea" :rows="2" /></el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button type="primary" @click="submitImp">保 存</el-button>
+          <el-button @click="impOpen = false">取 消</el-button>
+        </div>
+      </el-dialog>
     </template>
   </div>
 </template>
 
 <script>
 import * as echarts from 'echarts'
-import { obeDashboard, calculateByStudent } from "@/api/sam/obe"
+import { obeDashboard, calculateByStudent, listImprovement, addImprovement, updateImprovement, delImprovement } from "@/api/sam/obe"
 import { listPlan } from "@/api/tpm/plan"
 import { listSemester } from "@/api/brm/semester"
 import { listStudent } from "@/api/sam/student"
@@ -177,6 +247,9 @@ export default {
       queryParams: { planId: null, semesterId: null, studentId: null },
       summary: { totalRequirements: 0, achievedRequirements: 0, achievedRate: 0, averageAttainment: 0 },
       requirements: [],
+      // F3 持续改进台账
+      impList: [], impLoading: false, impOpen: false, impTitle: '', impForm: {},
+      impRules: { measure: [{ required: true, message: '改进措施不能为空', trigger: 'blur' }] },
       radarChart: null, barChart: null
     }
   },
@@ -232,6 +305,7 @@ export default {
           this.fillSummaryFromList(this.requirements)
           this.loading = false
           this.renderCharts()
+          this.loadImpList()
         }).catch(() => { this.error = "达成度计算失败，请重试"; this.loading = false })
       } else {
         obeDashboard(this.queryParams.planId, this.queryParams.semesterId).then(res => {
@@ -240,6 +314,7 @@ export default {
           this.requirements = d.requirements || []
           this.loading = false
           this.renderCharts()
+          this.loadImpList()
         }).catch(() => { this.error = "达成度看板加载失败，请重试"; this.loading = false })
       }
     },
@@ -249,6 +324,58 @@ export default {
       let achieved = 0, sum = 0
       list.forEach(r => { if (r.achieved === '1') achieved++; sum += (r.attainment || 0) })
       this.summary = { totalRequirements: total, achievedRequirements: achieved, achievedRate: total ? achieved / total : 0, averageAttainment: total ? sum / total : 0 }
+    },
+    // ===== F3 持续改进台账 =====
+    loadImpList() {
+      if (!this.queryParams.planId) { this.impList = []; return }
+      this.impLoading = true
+      listImprovement({ planId: this.queryParams.planId, pageNum: 1, pageSize: 100 }).then(res => {
+        this.impList = res.rows || []
+        this.impLoading = false
+      }).catch(() => { this.impLoading = false })
+    },
+    impStatusText(s) { return s === '1' ? '已完成' : s === '2' ? '已验证' : '进行中' },
+    impTagType(s) { return s === '1' ? 'primary' : s === '2' ? 'success' : 'warning' },
+    resetImpForm() {
+      this.impForm = { impId: null, planId: this.queryParams.planId, grId: null, sourceTerm: '', attainment: null, targetValue: null,
+        problemDesc: '', measure: '', owner: '', dueDate: null, status: '0', effectAttainment: null, effectNote: '', remark: '' }
+    },
+    // 选择毕业要求时快照当前达成度/目标值，作为发现时证据
+    onImpGrChange(grId) {
+      const r = this.requirements.find(x => x.grId === grId)
+      if (r) {
+        this.impForm.attainment = r.attainment != null ? Number(Number(r.attainment).toFixed(3)) : null
+        this.impForm.targetValue = r.targetValue != null ? Number(Number(r.targetValue).toFixed(3)) : null
+      }
+    },
+    handleAddImp(row) {
+      if (!this.requirements.length) { this.$modal.msgWarning('请先选择培养方案并计算达成度'); return }
+      this.resetImpForm()
+      if (row) { this.impForm.grId = row.grId; this.onImpGrChange(row.grId) }
+      this.impTitle = '登记改进措施'
+      this.impOpen = true
+    },
+    handleUpdateImp(row) {
+      this.resetImpForm()
+      Object.assign(this.impForm, row)
+      this.impTitle = '修改改进台账'
+      this.impOpen = true
+    },
+    submitImp() {
+      this.$refs.impForm.validate(valid => {
+        if (!valid) return
+        const fn = this.impForm.impId ? updateImprovement : addImprovement
+        fn(this.impForm).then(() => {
+          this.$modal.msgSuccess('保存成功')
+          this.impOpen = false
+          this.loadImpList()
+        })
+      })
+    },
+    handleDeleteImp(row) {
+      this.$modal.confirm('确认删除改进记录「' + (row.measure || '') + '」？').then(() => {
+        return delImprovement(row.impId)
+      }).then(() => { this.$modal.msgSuccess('删除成功'); this.loadImpList() }).catch(() => {})
     },
     // echarts 直挂 ref（Vue2 主栈惯例），雷达+条形两图同帧渲染
     renderCharts() {

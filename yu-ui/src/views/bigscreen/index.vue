@@ -1,7 +1,8 @@
 <template>
   <div class="bigscreen" ref="wrap">
-    <!-- 1920×1080 固定画布，按视口等比缩放（transform: scale），任意分辨率自适应不变形 -->
-    <div class="screen-canvas" :style="canvasStyle">
+    <!-- 1920×1080 固定画布，按视口等比缩放（transform: scale），任意分辨率自适应不变形。
+         V6：支持 ?snapshot=1 打印级静态快照模式（单次加载停轮询 + 浅色主题，适配 A3 打印/归档）。 -->
+    <div class="screen-canvas" :class="{ 'canvas-light': light }" :style="canvasStyle">
       <header class="bs-header">
         <div class="bs-title-wrap">
           <span class="bs-deco bs-deco-l"></span>
@@ -41,7 +42,10 @@
       </section>
 
       <footer class="bs-foot">
-        <span>数据每 60 秒自动刷新</span>
+        <span>{{ light ? "静态快照模式（数据已冻结）" : "数据每 60 秒自动刷新" }}</span>
+        <span class="bs-ops no-print">
+          <el-button size="mini" type="text" icon="el-icon-printer" @click="handlePrint">打印快照</el-button>
+        </span>
         <span class="bs-updated">最近更新：{{ updatedAt || "--" }}</span>
       </footer>
     </div>
@@ -57,8 +61,11 @@ export default {
   data() {
     return {
       scale: 1,
+      // V6 打印级静态快照：?snapshot=1 启用（浅色主题 + 停轮询）
+      light: this.$route.query.snapshot === "1",
       semester: {},
       counts: {},
+      gradStat: {},
       coursePassTop: [],
       warningDistribution: [],
       enrollDistribution: [],
@@ -87,22 +94,40 @@ export default {
     },
     statCards() {
       const c = this.counts
-      return [
+      const cards = [
         { label: "在校学生", value: this.fmtNum(c.studentCount) },
         { label: "任课教师", value: this.fmtNum(c.teacherCount) },
         { label: "本学期开课", value: this.fmtNum(c.offeringCount) },
         { label: "平均通过率", value: c.avgPassRate != null ? c.avgPassRate + "%" : "--" },
         { label: "未解除预警", value: this.fmtNum(c.activeWarningCount) }
       ]
+      // V6 毕业率实时指标：通过/已审（待审不计入分母，无已审数据时置 --）
+      cards.splice(3, 0, { label: "毕业率", value: this.gradRateText })
+      return cards
+    },
+    gradRateText() {
+      const g = this.gradStat || {}
+      const reviewed = Number(g.reviewed || 0)
+      if (!reviewed) return "--"
+      return (Math.round(Number(g.passed || 0) * 1000 / reviewed) / 10) + "%"
+    },
+    // 图表配色随主题切换（快照/打印浅色可读）
+    cc() {
+      return this.light
+        ? { text: "#1f2d3d", sub: "#5b7ba1", line: "#a0b6cc", border: "#ffffff", empty: "#909399" }
+        : { text: "#cfe6ff", sub: "#8fb4d9", line: "#3a6085", border: "#071728", empty: "#5b7ba1" }
     }
   },
   mounted() {
     this.computeScale()
     window.addEventListener("resize", this.computeScale)
     this.tickClock()
-    this._clockTimer = setInterval(this.tickClock, 1000)
     this.loadDashboard()
-    this._refreshTimer = setInterval(this.loadDashboard, 60000)
+    // 快照模式：单次加载冻结数据；常态：秒级时钟 + 60s 轮询
+    if (!this.light) {
+      this._clockTimer = setInterval(this.tickClock, 1000)
+      this._refreshTimer = setInterval(this.loadDashboard, 60000)
+    }
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.computeScale)
@@ -131,6 +156,7 @@ export default {
         const data = res.data || {}
         this.semester = data.semester || {}
         this.counts = data.counts || {}
+        this.gradStat = data.graduationStat || {}
         this.coursePassTop = data.coursePassTop || []
         this.warningDistribution = data.warningDistribution || []
         this.enrollDistribution = data.enrollDistribution || []
@@ -154,13 +180,17 @@ export default {
       this.renderPie("enrollChart", this.enrollDistribution, ["#00d0c0", "#5b8ff9", "#8c8c8c", "#ff4d4f"])
       this.renderPassBar(this.coursePassTop)
     },
+    handlePrint() {
+      window.print()
+    },
     renderPie(refName, list, colors) {
       const chart = this.ensureChart(refName)
       if (!chart) return
+      const cc = this.cc
       const rows = list || []
       if (rows.length === 0) {
         chart.setOption({
-          title: { text: "暂无数据", left: "center", top: "middle", textStyle: { color: "#5b7ba1", fontSize: 22, fontWeight: "normal" } },
+          title: { text: "暂无数据", left: "center", top: "middle", textStyle: { color: cc.empty, fontSize: 22, fontWeight: "normal" } },
           series: []
         }, true)
         return
@@ -168,15 +198,15 @@ export default {
       chart.setOption({
         color: colors,
         tooltip: { trigger: "item", formatter: "{b}: {c} ({d}%)" },
-        legend: { bottom: 10, textStyle: { color: "#cfe6ff", fontSize: 18 }, itemWidth: 16, itemHeight: 16 },
+        legend: { bottom: 10, textStyle: { color: cc.text, fontSize: 18 }, itemWidth: 16, itemHeight: 16 },
         series: [{
           type: "pie",
           radius: ["42%", "66%"],
           center: ["50%", "46%"],
           avoidLabelOverlap: true,
-          itemStyle: { borderColor: "#071728", borderWidth: 2 },
-          label: { show: true, formatter: "{b}\n{c}", color: "#cfe6ff", fontSize: 18 },
-          labelLine: { lineStyle: { color: "#3a6085" } },
+          itemStyle: { borderColor: cc.border, borderWidth: 2 },
+          label: { show: true, formatter: "{b}\n{c}", color: cc.text, fontSize: 18 },
+          labelLine: { lineStyle: { color: cc.line } },
           data: rows
         }]
       }, true)
@@ -184,9 +214,10 @@ export default {
     renderPassBar(rows) {
       const chart = this.ensureChart("passChart")
       if (!chart) return
+      const cc = this.cc
       if (!rows || rows.length === 0) {
         chart.setOption({
-          title: { text: "暂无成绩统计数据", left: "center", top: "middle", textStyle: { color: "#5b7ba1", fontSize: 22, fontWeight: "normal" } },
+          title: { text: "暂无成绩统计数据", left: "center", top: "middle", textStyle: { color: cc.empty, fontSize: 22, fontWeight: "normal" } },
           series: []
         }, true)
         return
@@ -197,26 +228,25 @@ export default {
         tooltip: { trigger: "axis", formatter: p => `${p[0].name}<br/>通过率：${p[0].value}%` },
         xAxis: {
           type: "value", max: 100,
-          axisLabel: { color: "#8fb4d9", fontSize: 16, formatter: "{value}%" },
-          axisLine: { lineStyle: { color: "#3a6085" } },
-          splitLine: { lineStyle: { color: "rgba(90,123,161,0.25)", type: "dashed" } }
+          axisLabel: { color: cc.sub, fontSize: 16, formatter: "{value}%" },
+          axisLine: { lineStyle: { color: cc.line } },
+          splitLine: { lineStyle: { color: this.light ? "rgba(144,147,153,0.25)" : "rgba(90,123,161,0.25)", type: "dashed" } }
         },
         yAxis: {
           type: "category", data: reversed.map(r => r.courseName),
-          axisLabel: { color: "#cfe6ff", fontSize: 16, width: 220, overflow: "truncate" },
-          axisLine: { lineStyle: { color: "#3a6085" } }
+          axisLabel: { color: cc.text, fontSize: 16, width: 220, overflow: "truncate" },
+          axisLine: { lineStyle: { color: cc.line } }
         },
         series: [{
           type: "bar", barMaxWidth: 22,
           data: reversed.map(r => (r.passRate != null ? Number(r.passRate) : 0)),
           itemStyle: {
             borderRadius: [0, 6, 6, 0],
-            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-              { offset: 0, color: "#0a4d8c" },
-              { offset: 1, color: "#00d0c0" }
-            ])
+            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, this.light
+              ? [{ offset: 0, color: "#79bbff" }, { offset: 1, color: "#409eff" }]
+              : [{ offset: 0, color: "#0a4d8c" }, { offset: 1, color: "#00d0c0" }])
           },
-          label: { show: true, position: "right", formatter: "{c}%", color: "#cfe6ff", fontSize: 16 }
+          label: { show: true, position: "right", formatter: "{c}%", color: cc.text, fontSize: 16 }
         }]
       }, true)
     },
@@ -370,4 +400,31 @@ export default {
   border-top: 1px solid rgba(0, 180, 255, 0.12);
 }
 .bs-updated { color: #7fb0dc; }
+.bs-ops { display: inline-flex; align-items: center; }
+
+/* ===== V6 打印级静态快照：浅色主题（白底黑字，适配 A3 打印/归档） ===== */
+.canvas-light {
+  background: linear-gradient(180deg, #ffffff 0%, #f3f7fb 100%);
+  color: #1f2d3d;
+}
+.canvas-light .bs-title { color: #0b2447; text-shadow: none; }
+.canvas-light .bs-meta, .canvas-light .bs-date { color: #5b7ba1; }
+.canvas-light .bs-semester { color: #0a7ab8; }
+.canvas-light .bs-time { color: #0b2447; }
+.canvas-light .stat-card { background: #ffffff; border-color: #d9e6f2; box-shadow: 0 2px 10px rgba(11, 36, 71, 0.06); }
+.canvas-light .stat-value { color: #0a7ab8; text-shadow: none; }
+.canvas-light .stat-label { color: #5b7ba1; }
+.canvas-light .panel { background: #ffffff; border-color: #d9e6f2; }
+.canvas-light .panel-title { color: #0b2447; }
+.canvas-light .panel-title .dot { background: #0a7ab8; box-shadow: none; }
+.canvas-light .bs-header { border-bottom-color: #d9e6f2; }
+.canvas-light .bs-foot { border-top-color: #d9e6f2; color: #909399; }
+.canvas-light .bs-updated { color: #5b7ba1; }
+
+/* 打印时取消缩放与固定视口，隐藏交互按钮，保证 1920 画布完整分页输出 */
+@media print {
+  .bigscreen { position: static; width: auto; height: auto; overflow: visible; background: #fff; }
+  .screen-canvas { transform: none !important; }
+  .no-print { display: none !important; }
+}
 </style>

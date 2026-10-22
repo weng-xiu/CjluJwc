@@ -82,6 +82,9 @@ public class DashboardStatServiceImpl implements IDashboardStatService
         }
         overview.put("enrollDistribution", enrollDist);
 
+        // 6. V6 毕业审核统计（毕业率 = 通过/已审，供大屏/驾驶舱实时指标）
+        overview.put("graduationStat", dashboardStatMapper.selectGraduationStat());
+
         return overview;
     }
 

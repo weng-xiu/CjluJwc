@@ -67,4 +67,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         group by e.result_status
         order by e.result_status
     </select>
+
+    <!-- V6 毕业审核统计：总数/已审数（1通过+2不通过）/通过数，毕业率＝通过/已审 -->
+    <select id="selectGraduationStat" resultType="java.util.HashMap">
+        select count(1)                                                            as totalReviewedAll,
+               sum(case when review_status in ('1', '2') then 1 else 0 end)       as reviewed,
+               sum(case when review_status = '1' then 1 else 0 end)               as passed
+        from sam_graduation_review
+        where status = '0'
+    </select>
 </mapper>

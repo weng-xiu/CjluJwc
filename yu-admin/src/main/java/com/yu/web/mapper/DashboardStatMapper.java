@@ -24,6 +24,9 @@ public interface DashboardStatMapper
     /** 学期课程通过率最低 TOP N（挂科率视角） */
     public List<Map<String, Object>> selectCoursePassTop(@Param("semesterId") Long semesterId, @Param("limit") int limit);
 
-    /** 学期选课结果分布（0待抽签 1已选 2落选 3退选，按实际字典） */
+    /** 学期选课结果分布（0待抽签/1已选/2落选/3退选，按实际字典） */
     public List<Map<String, Object>> selectEnrollResultDistribution(@Param("semesterId") Long semesterId);
+
+    /** V6 毕业审核统计（总数/已审/通过，毕业率=通过/已审） */
+    public Map<String, Object> selectGraduationStat();
 }

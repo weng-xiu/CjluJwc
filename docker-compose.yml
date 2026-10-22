@@ -132,6 +132,23 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  # D22：Vue2 门户（README 日常开发入口）容器化交付。与 Vue3 portal 共享同一后端，独立宿主端口 82；
+  # 默认不随 `up` 启动，按 profile 启用：docker compose --profile vue2 up -d portal-vue2
+  portal-vue2:
+    build:
+      context: ./yu-portal-ui
+      dockerfile: Dockerfile
+    container_name: yu-portal-vue2
+    profiles: ["vue2"]
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${PORTAL_VUE2_PORT_EXPOSE:-82}:80"
+    security_opt:
+      - no-new-privileges:true
+
   # Q3 可观测性：Prometheus 时序库，抓取后端 actuator/prometheus（同网内直连管理端口 8081）
   prometheus:
     image: prom/prometheus:v2.53.0
