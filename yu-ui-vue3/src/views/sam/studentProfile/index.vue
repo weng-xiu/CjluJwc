@@ -11,6 +11,7 @@
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" size="small" :disabled="!studentId" @click="loadProfile">生成数字档案</el-button>
+        <el-button type="warning" icon="Download" size="small" :disabled="!studentId || !profile || profile.available === false" v-hasPermi="['sam:studentProfile:export']" @click="handleExportProfile">导出档案</el-button>
       </el-form-item>
     </el-form>
 
@@ -127,23 +128,140 @@
           </el-table>
           <app-empty v-if="!profile.recentGrades || !profile.recentGrades.length" description="暂无成绩记录" />
         </el-card>
+
+        <!-- F4 干预闭环台账：预警→帮扶→效果回收。记录只存学期口径与定性结论，GPA/及格率由后端按学期现算 -->
+        <el-card shadow="never" class="blk" style="margin-top:16px;">
+          <template #header>
+            <div class="blk-header">
+              <span>干预闭环台账</span>
+              <span class="hd-actions">
+                <el-button type="primary" plain icon="Plus" size="small" v-hasPermi="['sam:intervention:add']" @click="openIntervention()">新增干预</el-button>
+                <el-button type="warning" plain icon="Download" size="small" v-hasPermi="['sam:intervention:export']" @click="handleExportIntervention">导出台账</el-button>
+              </span>
+            </div>
+          </template>
+          <el-table v-loading="interventionLoading" :data="interventions" size="small" border>
+            <el-table-column label="干预类型" width="100"><template #default="s">{{ labelOf(interventionTypes, s.row.interventionType) }}</template></el-table-column>
+            <el-table-column label="干预措施" prop="measure" min-width="200" show-overflow-tooltip />
+            <el-table-column label="帮扶人" prop="helperName" width="90" />
+            <el-table-column label="学期口径（基线→效果）" min-width="190">
+              <template #default="s">{{ s.row.baselineSemesterName || '—' }} → {{ s.row.effectSemesterName || '—' }}</template>
+            </el-table-column>
+            <el-table-column label="GPA（前→后）" min-width="160">
+              <template #default="s">{{ fmtNum(s.row.baselineGpa) }} → {{ fmtNum(s.row.effectGpa) }}<em class="delta" :class="deltaClass(s.row.gpaDelta)">{{ fmtDelta(s.row.gpaDelta) }}</em></template>
+            </el-table-column>
+            <el-table-column label="及格率（前→后）" min-width="180">
+              <template #default="s">{{ fmtPct(s.row.baselinePassRate) }} → {{ fmtPct(s.row.effectPassRate) }}<em class="delta" :class="deltaClass(s.row.passRateDelta)">{{ fmtDelta(s.row.passRateDelta) }}</em></template>
+            </el-table-column>
+            <el-table-column label="状态" width="90" align="center">
+              <template #default="s"><el-tag :type="s.row.status === '1' ? 'success' : (s.row.status === '2' ? 'info' : 'warning')">{{ labelOf(interventionStatus, s.row.status) }}</el-tag></template>
+            </el-table-column>
+            <el-table-column label="操作" width="140" align="center" class-name="small-padding fixed-width">
+              <template #default="s">
+                <el-button size="small" link icon="Edit" v-hasPermi="['sam:intervention:edit']" @click="openIntervention(s.row)">编辑</el-button>
+                <el-button size="small" link icon="Delete" v-hasPermi="['sam:intervention:remove']" @click="handleDeleteIntervention(s.row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <app-empty v-if="!interventionLoading && !interventions.length" description="暂无干预记录，可点击「新增干预」登记帮扶措施" />
+        </el-card>
       </template>
     </template>
 
     <app-empty v-else description="请搜索并选择学生以生成全息数字档案" />
+
+    <!-- 干预登记对话框：基线/效果学期决定了现算口径，登记前可先「效果预览」 -->
+    <el-dialog :title="interventionForm.interventionId ? '编辑干预记录' : '新增干预记录'" v-model="interventionOpen" width="680px" append-to-body :before-close="guardedBeforeClose">
+      <el-form ref="interventionForm" :model="interventionForm" :rules="interventionRules" label-width="110px">
+        <el-row :gutter="12">
+          <el-col :span="12"><el-form-item label="干预类型" prop="interventionType">
+            <el-select v-model="interventionForm.interventionType" placeholder="请选择" style="width:100%">
+              <el-option v-for="o in interventionTypes" :key="o.value" :label="o.label" :value="o.value" />
+            </el-select>
+          </el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="干预状态">
+            <el-select v-model="interventionForm.status" placeholder="请选择" style="width:100%">
+              <el-option v-for="o in interventionStatus" :key="o.value" :label="o.label" :value="o.value" />
+            </el-select>
+          </el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="帮扶人"><el-input v-model="interventionForm.helperName" placeholder="选填" maxlength="50" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="预警类型">
+            <el-select v-model="interventionForm.warningType" placeholder="选填" clearable style="width:100%">
+              <el-option v-for="o in warningTypes" :key="o.value" :label="o.label" :value="o.value" />
+            </el-select>
+          </el-form-item></el-col>
+          <el-col :span="24"><el-form-item label="干预措施" prop="measure">
+            <el-input v-model="interventionForm.measure" type="textarea" :rows="3" maxlength="500" show-word-limit placeholder="例如：每周一次学业辅导，重点跟进高等数学重修" />
+          </el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="基线学期">
+            <el-select v-model="interventionForm.baselineSemesterId" placeholder="干预前学期" clearable style="width:100%" @change="refreshPreview">
+              <el-option v-for="s in semesters" :key="s.semesterId" :label="s.semesterName" :value="s.semesterId" />
+            </el-select>
+          </el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="效果学期">
+            <el-select v-model="interventionForm.effectSemesterId" placeholder="效果考察学期" clearable style="width:100%" @change="refreshPreview">
+              <el-option v-for="s in semesters" :key="s.semesterId" :label="s.semesterName" :value="s.semesterId" />
+            </el-select>
+          </el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="开始日期"><el-date-picker v-model="interventionForm.startDate" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="结束日期"><el-date-picker v-model="interventionForm.endDate" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="24"><el-form-item label="效果结论">
+            <el-input v-model="interventionForm.effectNote" type="textarea" :rows="2" maxlength="500" show-word-limit placeholder="定性描述帮扶成效；GPA/及格率由基线→效果学期现算，不在此填写" />
+          </el-form-item></el-col>
+        </el-row>
+        <el-alert v-if="preview" :type="preview.available ? 'info' : 'warning'" :closable="false" show-icon>
+          <template #title>
+            <span v-if="!preview.available">{{ preview.note || '所选学期暂无成绩数据，无法试算效果' }}</span>
+            <span v-else>效果试算：GPA {{ fmtNum(preview.baseline && preview.baseline.gpa) }} → {{ fmtNum(preview.effect && preview.effect.gpa) }}（{{ fmtDelta(preview.gpaDelta) }}）；及格率 {{ fmtPct(preview.baseline && preview.baseline.passRate) }} → {{ fmtPct(preview.effect && preview.effect.passRate) }}（{{ fmtDelta(preview.passRateDelta) }}）</span>
+          </template>
+        </el-alert>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button size="small" icon="DataAnalysis" @click="refreshPreview">效果预览</el-button>
+          <el-button type="primary" @click="submitIntervention">确 定</el-button>
+          <el-button @click="guardedCancel(() => interventionOpen = false)">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import { getStudentProfile } from "@/api/sam/studentProfile"
 import { listStudent } from "@/api/sam/student"
+import { listIntervention, addIntervention, updateIntervention, delIntervention, previewInterventionEffect } from "@/api/sam/intervention"
+import { listSemester } from "@/api/brm/semester"
+import dialogGuard from '@/utils/dialogGuard'
 
 export default {
   name: "StudentProfile",
+  mixins: [dialogGuard],
   data() {
     return {
       studentId: null, studentOptions: [], searchLoading: false,
-      loading: false, error: "", profile: null
+      loading: false, error: "", profile: null,
+      // F4 干预闭环台账：记录只存学期口径与定性结果，GPA/及格率由后端按 aem_grade_record 现算
+      interventions: [], interventionLoading: false, semesters: [],
+      interventionOpen: false, interventionForm: {}, preview: null,
+      // dialogGuard 除 form 外的脏检查字段
+      guardWatch: ["interventionForm"],
+      interventionTypes: [
+        { value: '0', label: '学业辅导' }, { value: '1', label: '心理疏导' },
+        { value: '2', label: '家校联系' }, { value: '3', label: '课程重修' },
+        { value: '4', label: '学习计划' }, { value: '5', label: '其他' }
+      ],
+      interventionStatus: [
+        { value: '0', label: '进行中' }, { value: '1', label: '已完成' }, { value: '2', label: '已关闭' }
+      ],
+      warningTypes: [
+        { value: '0', label: '学业预警' }, { value: '1', label: '成绩预警' },
+        { value: '2', label: '出勤预警' }, { value: '3', label: '其他' }
+      ],
+      interventionRules: {
+        interventionType: [{ required: true, message: "干预类型不能为空", trigger: "change" }],
+        measure: [{ required: true, message: "干预措施不能为空", trigger: "blur" }]
+      }
     }
   },
   computed: {
@@ -174,9 +292,81 @@ export default {
       if (!this.studentId) return
       this.error = ""
       this.loading = true
-      getStudentProfile(this.studentId).then(res => { this.profile = res.data; this.loading = false })
-        .catch(() => { this.error = "数字档案生成失败，请重试"; this.loading = false })
-    }
+      this.interventions = []
+      this.preview = null
+      getStudentProfile(this.studentId).then(res => {
+        this.profile = res.data
+        this.loading = false
+        this.loadInterventions()
+      }).catch(() => { this.error = "数字档案生成失败，请重试"; this.loading = false })
+    },
+    // ===== F4 干预闭环台账 =====
+    loadInterventions() {
+      if (!this.studentId) { this.interventions = []; return }
+      this.interventionLoading = true
+      listIntervention({ studentId: this.studentId, pageNum: 1, pageSize: 50 }).then(res => {
+        this.interventions = res.rows || []
+        this.interventionLoading = false
+      }).catch(() => { this.interventionLoading = false })
+    },
+    loadSemesters() {
+      if (this.semesters.length) return
+      listSemester({ pageNum: 1, pageSize: 0 }).then(res => { this.semesters = res.rows || [] }).catch(() => {})
+    },
+    openIntervention(row) {
+      this.loadSemesters()
+      this.preview = null
+      this.interventionForm = row ? { ...row } : {
+        studentId: this.studentId, interventionType: '0', status: '0', warningType: null,
+        measure: null, helperName: null, baselineSemesterId: null, effectSemesterId: null,
+        startDate: null, endDate: null, effectNote: null
+      }
+      this.interventionOpen = true
+      this.$nextTick(() => {
+        if (this.$refs.interventionForm) this.$refs.interventionForm.clearValidate()
+        this.captureDialogSnapshot()
+      })
+    },
+    submitIntervention() {
+      this.$refs.interventionForm.validate(valid => {
+        if (!valid) return
+        const form = { ...this.interventionForm, studentId: this.studentId }
+        const req = form.interventionId ? updateIntervention(form) : addIntervention(form)
+        req.then(() => {
+          this.$modal.msgSuccess(form.interventionId ? "修改成功" : "干预登记成功")
+          this.dialogSnapshot = undefined
+          this.interventionOpen = false
+          this.loadInterventions()
+        })
+      })
+    },
+    handleDeleteIntervention(row) {
+      this.$modal.confirm('是否确认删除该干预记录？').then(() => delIntervention(row.interventionId))
+        .then(() => { this.loadInterventions(); this.$modal.msgSuccess("删除成功") }).catch(() => {})
+    },
+    // 效果预览：按基线/效果学期试算，避免学期口径选错导致台账失真
+    refreshPreview() {
+      const f = this.interventionForm
+      previewInterventionEffect({
+        studentId: this.studentId,
+        baselineSemesterId: f.baselineSemesterId || undefined,
+        effectSemesterId: f.effectSemesterId || undefined
+      }).then(res => { this.preview = res.data || null }).catch(() => { this.preview = null })
+    },
+    handleExportProfile() {
+      this.download('sam/studentProfile/export/' + this.studentId, {}, `studentProfile_${this.studentId}.xlsx`)
+    },
+    handleExportIntervention() {
+      this.download('sam/intervention/export', { studentId: this.studentId }, `intervention_${this.studentId}.xlsx`)
+    },
+    labelOf(options, value) {
+      const hit = options.find(o => o.value === value)
+      return hit ? hit.label : (value || '—')
+    },
+    fmtNum(v) { return v == null ? '—' : Number(v).toFixed(2) },
+    fmtPct(v) { return v == null ? '—' : Number(v).toFixed(2) + '%' },
+    fmtDelta(v) { if (v == null) return ''; const n = Number(v); return (n > 0 ? '+' : '') + n.toFixed(2) },
+    deltaClass(v) { const n = Number(v || 0); return n > 0 ? 'delta-up' : (n < 0 ? 'delta-down' : 'delta-flat') }
   }
 }
 </script>
@@ -184,6 +374,12 @@ export default {
 <style scoped>
 .blk { margin-bottom: 0; }
 :deep(.el-card__header) { padding: 12px 16px; font-weight: 600; }
+.blk-header { display: flex; align-items: center; justify-content: space-between; }
+.hd-actions .el-button + .el-button { margin-left: 8px; }
+.delta { margin-left: 6px; font-style: normal; }
+.delta-up { color: var(--el-color-success); }
+.delta-down { color: var(--el-color-danger); }
+.delta-flat { color: var(--dt-text-secondary); }
 .mini-stat .ms { text-align: center; padding: 10px 0; border-radius: 6px; background: var(--dt-fill-light); margin-bottom: 8px; }
 .mini-stat .ms b { display: block; font-size: 20px; color: var(--dt-text-primary); }
 .mini-stat .ms span { font-size: 12px; color: var(--dt-text-secondary); }

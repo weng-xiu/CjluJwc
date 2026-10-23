@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamStudentInterventionMapper">
+    <resultMap type="SamStudentIntervention" id="SamStudentInterventionResult">
+        <result property="interventionId"       column="intervention_id"        />
+        <result property="studentId"            column="student_id"             />
+        <result property="warningType"          column="warning_type"           />
+        <result property="interventionType"     column="intervention_type"      />
+        <result property="measure"              column="measure"                />
+        <result property="helperName"           column="helper_name"            />
+        <result property="baselineSemesterId"   column="baseline_semester_id"   />
+        <result property="effectSemesterId"     column="effect_semester_id"     />
+        <result property="startDate"            column="start_date"             />
+        <result property="endDate"              column="end_date"               />
+        <result property="status"               column="status"                 />
+        <result property="effectNote"           column="effect_note"            />
+        <result property="delFlag"              column="del_flag"               />
+        <result property="createBy"             column="create_by"              />
+        <result property="createTime"           column="create_time"            />
+        <result property="updateBy"             column="update_by"              />
+        <result property="updateTime"           column="update_time"            />
+        <result property="remark"               column="remark"                 />
+        <result property="studentNo"            column="student_no"             />
+        <result property="studentName"          column="student_name"           />
+        <result property="baselineSemesterName" column="baseline_semester_name" />
+        <result property="effectSemesterName"   column="effect_semester_name"   />
+    </resultMap>
+    <sql id="selectVo">
+        select i.intervention_id, i.student_id, i.warning_type, i.intervention_type, i.measure, i.helper_name,
+               i.baseline_semester_id, i.effect_semester_id, i.start_date, i.end_date, i.status, i.effect_note,
+               i.del_flag, i.create_by, i.create_time, i.update_by, i.update_time, i.remark,
+               s.student_no, s.student_name,
+               bs.semester_name as baseline_semester_name,
+               es.semester_name as effect_semester_name
+        from sam_student_intervention i
+        left join sam_student s on s.student_id = i.student_id
+        left join brm_semester bs on bs.semester_id = i.baseline_semester_id
+        left join brm_semester es on es.semester_id = i.effect_semester_id
+    </sql>
+    <select id="selectInterventionList" parameterType="SamStudentIntervention" resultMap="SamStudentInterventionResult">
+        <include refid="selectVo"/>
+        <where>
+            i.del_flag = '0'
+            <if test="studentId != null"> and i.student_id = #{studentId}</if>
+            <if test="studentNo != null and studentNo.trim() != ''"> and s.student_no like concat('%', #{studentNo}, '%')</if>
+            <if test="interventionType != null and interventionType.trim() != ''"> and i.intervention_type = #{interventionType}</if>
+            <if test="status != null and status.trim() != ''"> and i.status = #{status}</if>
+            <if test="helperName != null and helperName.trim() != ''"> and i.helper_name like concat('%', #{helperName}, '%')</if>
+        </where>
+        order by i.intervention_id desc
+    </select>
+    <select id="selectInterventionById" parameterType="Long" resultMap="SamStudentInterventionResult">
+        <include refid="selectVo"/> where i.intervention_id = #{interventionId} and i.del_flag = '0'
+    </select>
+    <!-- 学期口径学业指标：GPA 按学分加权，及格率按门次；无成绩时回落 0 而非报错 -->
+    <select id="selectSemesterMetrics" resultType="java.util.LinkedHashMap">
+        select
+            coalesce(round(sum(gr.grade_point * cl.credit) / nullif(sum(cl.credit), 0), 2), 0) as gpa,
+            coalesce(round(sum(case when gr.is_pass = '1' then 1 else 0 end) / nullif(count(*), 0) * 100, 2), 0) as passRate,
+            count(*) as courseCount
+        from aem_grade_record gr
+        join tpm_course_library cl on cl.course_id = gr.course_id
+        where gr.student_id = #{studentId} and gr.semester_id = #{semesterId} and gr.status = '0'
+    </select>
+    <insert id="insertIntervention" parameterType="SamStudentIntervention" useGeneratedKeys="true" keyProperty="interventionId">
+        insert into sam_student_intervention
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="warningType != null">warning_type,</if>
+            <if test="interventionType != null">intervention_type,</if>
+            <if test="measure != null">measure,</if>
+            <if test="helperName != null">helper_name,</if>
+            <if test="baselineSemesterId != null">baseline_semester_id,</if>
+            <if test="effectSemesterId != null">effect_semester_id,</if>
+            <if test="startDate != null">start_date,</if>
+            <if test="endDate != null">end_date,</if>
+            <if test="status != null">status,</if>
+            <if test="effectNote != null">effect_note,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="warningType != null">#{warningType},</if>
+            <if test="interventionType != null">#{interventionType},</if>
+            <if test="measure != null">#{measure},</if>
+            <if test="helperName != null">#{helperName},</if>
+            <if test="baselineSemesterId != null">#{baselineSemesterId},</if>
+            <if test="effectSemesterId != null">#{effectSemesterId},</if>
+            <if test="startDate != null">#{startDate},</if>
+            <if test="endDate != null">#{endDate},</if>
+            <if test="status != null">#{status},</if>
+            <if test="effectNote != null">#{effectNote},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateIntervention" parameterType="SamStudentIntervention">
+        update sam_student_intervention
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="warningType != null">warning_type = #{warningType},</if>
+            <if test="interventionType != null">intervention_type = #{interventionType},</if>
+            <if test="measure != null">measure = #{measure},</if>
+            <if test="helperName != null">helper_name = #{helperName},</if>
+            <if test="baselineSemesterId != null">baseline_semester_id = #{baselineSemesterId},</if>
+            <if test="effectSemesterId != null">effect_semester_id = #{effectSemesterId},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="effectNote != null">effect_note = #{effectNote},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where intervention_id = #{interventionId}
+    </update>
+    <delete id="deleteInterventionByIds" parameterType="String">
+        update sam_student_intervention set del_flag = '2' where intervention_id in
+        <foreach item="interventionId" collection="array" open="(" separator="," close=")">#{interventionId}</foreach>
+    </delete>
+</mapper>

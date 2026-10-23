@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.yu.sam.domain.dto.ObeAttainmentVo;
+import com.yu.sam.domain.dto.StudentProfileExportVo;
+import com.yu.sam.exporter.SamStudentProfileExporter;
 import com.yu.sam.mapper.SamStudentProfileMapper;
 import com.yu.sam.service.ISamObeAttainmentService;
 import com.yu.sam.service.ISamStudentProfileService;
@@ -29,6 +31,15 @@ public class SamStudentProfileServiceImpl implements ISamStudentProfileService
 
     @Autowired
     private ISamObeAttainmentService obeAttainmentService;
+
+    @Autowired
+    private SamStudentProfileExporter profileExporter;
+
+    @Override
+    public List<StudentProfileExportVo> buildProfileExport(Long studentId)
+    {
+        return profileExporter.flatten(buildProfile(studentId));
+    }
 
     @Override
     public Map<String, Object> buildProfile(Long studentId)
