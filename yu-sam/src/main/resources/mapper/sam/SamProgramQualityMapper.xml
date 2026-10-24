@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.sam.mapper.SamProgramQualityMapper">
+
+    <!-- 专业基础信息（含院系名称） -->
+    <select id="selectMajorBase" resultType="java.util.LinkedHashMap">
+        select m.major_id as majorId, m.major_code as majorCode, m.major_name as majorName,
+               m.dept_id as deptId, d.dept_name as deptName,
+               m.education_level as educationLevel, m.duration as duration
+        from brm_major m
+        left join brm_department d on m.dept_id = d.dept_id
+        where m.major_id = #{majorId} and m.status = '0'
+        limit 1
+    </select>
+
+    <!-- 可选专业清单 -->
+    <select id="selectMajorOptions" resultType="java.util.LinkedHashMap">
+        select m.major_id as majorId, m.major_code as majorCode, m.major_name as majorName,
+               d.dept_name as deptName, m.education_level as educationLevel
+        from brm_major m
+        left join brm_department d on m.dept_id = d.dept_id
+        where m.status = '0'
+        order by m.dept_id, m.major_code
+    </select>
+
+    <!-- 已发布培养方案 -->
+    <select id="selectPublishedPlans" resultType="java.util.LinkedHashMap">
+        select tp.plan_id as planId, tp.plan_name as planName, tp.plan_year as planYear,
+               tp.version as version, tp.total_credits as totalCredits, tp.publish_date as publishDate
+        from tpm_training_plan tp
+        where tp.major_id = #{majorId} and tp.del_flag = '0' and tp.publish_status = '1'
+        order by tp.plan_year desc, tp.plan_id desc
+    </select>
+
+    <!-- 在校生规模统计 -->
+    <select id="selectStudentStats" resultType="java.util.LinkedHashMap">
+        select count(1) as totalCount,
+               coalesce(sum(case when s.student_status = '0' then 1 else 0 end), 0) as enrolledCount,
+               coalesce(sum(case when s.student_status = '3' then 1 else 0 end), 0) as graduatedCount
+        from sam_student s
+        where s.major_id = #{majorId} and s.status = '0'
+    </select>
+
+    <!-- 师资汇总（专业所属院系在岗教师） -->
+    <select id="selectFacultySummary" resultType="java.util.LinkedHashMap">
+        select count(1) as teacherCount,
+               coalesce(sum(case when t.title in ('教授','副教授') then 1 else 0 end), 0) as seniorCount,
+               coalesce(sum(case when t.education in ('博士','博士研究生') then 1 else 0 end), 0) as doctorCount
+        from brm_teacher t
+        where t.dept_id = #{deptId} and t.status = '0'
+    </select>
+
+    <!-- 职称分布 -->
+    <select id="selectTitleDist" resultType="java.util.LinkedHashMap">
+        select coalesce(t.title, '未填写') as title, count(1) as cnt
+        from brm_teacher t
+        where t.dept_id = #{deptId} and t.status = '0'
+        group by t.title
+        order by cnt desc
+    </select>
+
+    <!-- 学历分布 -->
+    <select id="selectEducationDist" resultType="java.util.LinkedHashMap">
+        select coalesce(t.education, '未填写') as education, count(1) as cnt
+        from brm_teacher t
+        where t.dept_id = #{deptId} and t.status = '0'
+        group by t.education
+        order by cnt desc
+    </select>
+
+    <!-- 方案课程统计 -->
+    <select id="selectCourseStats" resultType="java.util.LinkedHashMap">
+        select count(1) as courseCount,
+               coalesce(sum(cl.credit), 0) as totalCredit,
+               coalesce(sum(case when cl.course_category = '实践环节' then 1 else 0 end), 0) as practiceCount,
+               coalesce(sum(case when cl.course_category = '实践环节' then cl.credit else 0 end), 0) as practiceCredit,
+               coalesce(sum(cl.practice_hours), 0) as practiceHours,
+               coalesce(sum(cl.total_hours), 0) as totalHours
+        from tpm_course_library cl
+        where cl.plan_id = #{planId} and cl.del_flag = '0' and cl.status = '0'
+    </select>
+
+    <!-- 学分结构分项 -->
+    <select id="selectCreditSections" resultType="java.util.LinkedHashMap">
+        select cs.credit_type as creditType, cs.credit_type_name as creditTypeName, cs.required_credit as requiredCredit
+        from tpm_credit_structure cs
+        where cs.plan_id = #{planId} and cs.del_flag = '0'
+        order by cs.struct_id
+    </select>
+
+    <!-- 开课统计（方案课程累计开课批次） -->
+    <select id="selectOfferingStats" resultType="java.util.LinkedHashMap">
+        select count(1) as offeringCount, coalesce(sum(o.class_count), 0) as classCount
+        from tpm_course_offering o
+        join tpm_course_library cl on cl.course_id = o.course_id
+        where cl.plan_id = #{planId} and cl.del_flag = '0' and o.del_flag = '0' and o.status = '0'
+    </select>
+
+    <!-- 评教汇总（按专业所属院系教师口径） -->
+    <select id="selectEvalStats" resultType="java.util.LinkedHashMap">
+        select count(1) as evalCount,
+               round(avg(er.total_score), 2) as avgScore,
+               coalesce(sum(case when er.total_score >= 90 then 1 else 0 end), 0) as excellentCount
+        from aem_evaluation_result er
+        join brm_teacher t on er.teacher_id = t.teacher_id
+        where t.dept_id = #{deptId} and t.status = '0' and er.status = '0'
+    </select>
+
+    <!-- 督导汇总（按专业所属院系教师口径） -->
+    <select id="selectSupervisionStats" resultType="java.util.LinkedHashMap">
+        select count(1) as recordCount,
+               round(avg(sr.evaluation_score), 2) as avgScore,
+               coalesce(sum(case when sr.evaluation_level = '3' then 1 else 0 end), 0) as unqualifiedCount
+        from aem_supervision_record sr
+        join brm_teacher t on sr.teacher_id = t.teacher_id
+        where t.dept_id = #{deptId} and t.status = '0' and sr.status = '0'
+    </select>
+
+    <!-- 督导评价等级分布 -->
+    <select id="selectSupervisionLevelDist" resultType="java.util.LinkedHashMap">
+        select sr.evaluation_level as level, count(1) as cnt
+        from aem_supervision_record sr
+        join brm_teacher t on sr.teacher_id = t.teacher_id
+        where t.dept_id = #{deptId} and t.status = '0' and sr.status = '0'
+        group by sr.evaluation_level
+        order by sr.evaluation_level
+    </select>
+
+</mapper>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.dis.mapper.DisQualityTicketMapper">
+    <resultMap type="DisQualityTicket" id="DisQualityTicketResult">
+        <result property="ticketId"      column="ticket_id"      />
+        <result property="taskId"        column="task_id"        />
+        <result property="taskName"      column="task_name"      />
+        <result property="anomalyType"   column="anomaly_type"   />
+        <result property="severity"      column="severity"       />
+        <result property="anomalyDetail" column="anomaly_detail" />
+        <result property="failRate"      column="fail_rate"      />
+        <result property="status"        column="status"         />
+        <result property="assignee"      column="assignee"       />
+        <result property="resolution"    column="resolution"     />
+        <result property="resolvedTime"  column="resolved_time"  />
+        <result property="delFlag"       column="del_flag"       />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"        column="remark"         />
+    </resultMap>
+    <sql id="selectDisQualityTicketVo">
+        select ticket_id, task_id, task_name, anomaly_type, severity, anomaly_detail, fail_rate,
+               status, assignee, resolution, resolved_time, del_flag,
+               create_by, create_time, update_by, update_time, remark
+        from dis_quality_ticket
+    </sql>
+    <select id="selectDisQualityTicketList" parameterType="DisQualityTicket" resultMap="DisQualityTicketResult">
+        <include refid="selectDisQualityTicketVo"/><where>
+            del_flag = '0'
+            <if test="taskId != null"> and task_id = #{taskId}</if>
+            <if test="taskName != null and taskName.trim() != ''"> and task_name like concat('%', #{taskName}, '%')</if>
+            <if test="anomalyType != null and anomalyType.trim() != ''"> and anomaly_type = #{anomalyType}</if>
+            <if test="severity != null and severity.trim() != ''"> and severity = #{severity}</if>
+            <if test="status != null and status.trim() != ''"> and status = #{status}</if>
+            <if test="assignee != null and assignee.trim() != ''"> and assignee like concat('%', #{assignee}, '%')</if>
+        </where> order by
+            case status when '0' then 0 when '1' then 1 when '2' then 2 else 3 end,
+            case severity when '2' then 0 when '1' then 1 else 2 end,
+            ticket_id desc
+    </select>
+    <select id="selectDisQualityTicketByTicketId" parameterType="Long" resultMap="DisQualityTicketResult">
+        <include refid="selectDisQualityTicketVo"/> where ticket_id = #{ticketId} and del_flag = '0'
+    </select>
+    <select id="countOpenByTaskAndType" resultType="int">
+        select count(1) from dis_quality_ticket
+        where del_flag = '0' and status in ('0','1') and task_id = #{taskId} and anomaly_type = #{anomalyType}
+    </select>
+    <insert id="insertDisQualityTicket" parameterType="DisQualityTicket" useGeneratedKeys="true" keyProperty="ticketId">insert into dis_quality_ticket
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="taskId != null">task_id,</if>
+            <if test="taskName != null">task_name,</if>
+            <if test="anomalyType != null and anomalyType != ''">anomaly_type,</if>
+            <if test="severity != null">severity,</if>
+            <if test="anomalyDetail != null">anomaly_detail,</if>
+            <if test="failRate != null">fail_rate,</if>
+            <if test="status != null">status,</if>
+            <if test="assignee != null">assignee,</if>
+            <if test="resolution != null">resolution,</if>
+            <if test="resolvedTime != null">resolved_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if><if test="createTime != null">create_time,</if><if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="taskId != null">#{taskId},</if>
+            <if test="taskName != null">#{taskName},</if>
+            <if test="anomalyType != null and anomalyType != ''">#{anomalyType},</if>
+            <if test="severity != null">#{severity},</if>
+            <if test="anomalyDetail != null">#{anomalyDetail},</if>
+            <if test="failRate != null">#{failRate},</if>
+            <if test="status != null">#{status},</if>
+            <if test="assignee != null">#{assignee},</if>
+            <if test="resolution != null">#{resolution},</if>
+            <if test="resolvedTime != null">#{resolvedTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if><if test="createTime != null">#{createTime},</if><if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+    <update id="updateDisQualityTicket" parameterType="DisQualityTicket">update dis_quality_ticket
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="taskId != null">task_id = #{taskId},</if>
+            <if test="taskName != null">task_name = #{taskName},</if>
+            <if test="anomalyType != null and anomalyType != ''">anomaly_type = #{anomalyType},</if>
+            <if test="severity != null">severity = #{severity},</if>
+            <if test="anomalyDetail != null">anomaly_detail = #{anomalyDetail},</if>
+            <if test="failRate != null">fail_rate = #{failRate},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="assignee != null">assignee = #{assignee},</if>
+            <if test="resolution != null">resolution = #{resolution},</if>
+            <if test="resolvedTime != null">resolved_time = #{resolvedTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if><if test="updateTime != null">update_time = #{updateTime},</if><if test="remark != null">remark = #{remark},</if>
+        </trim> where ticket_id = #{ticketId}
+    </update>
+    <update id="deleteDisQualityTicketByTicketIds">
+        update dis_quality_ticket set del_flag = '2' where ticket_id in
+        <foreach item="ticketId" collection="array" open="(" separator="," close=")">#{ticketId}</foreach>
+    </update>
+</mapper>
