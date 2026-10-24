@@ -15,6 +15,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['brm:class:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !clazzList.length" :rows="6">
     <el-table v-loading="loading" :data="clazzList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="班级编码" align="center" prop="classCode" />
@@ -31,6 +32,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !clazzList.length" description="暂无班级数据，可调整查询条件或新增班级" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
@@ -58,11 +61,12 @@
 import { listClazz, getClazz, delClazz, addClazz, updateClazz } from "@/api/brm/clazz"
 import { listDept } from "@/api/brm/dept"
 import { listMajor, getMajor } from "@/api/brm/major"
+import { required, requiredSelect } from "@/utils/validateRules"
 export default {
   name: "Clazz", dicts: ['sys_normal_disable', 'brm_grade'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, clazzList: [], deptList: [], majorList: [], queryMajorList: [], selectedDeptId: null, queryDeptId: null, title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, className: null, majorId: null, grade: null, status: null },
-    form: {}, rules: { classCode: [{ required: true, message: "班级编码不能为空", trigger: "blur" }], className: [{ required: true, message: "班级名称不能为空", trigger: "blur" }], majorId: [{ required: true, message: "请选择专业", trigger: "change" }] } }
+    form: {}, rules: { classCode: [required("班级编码")], className: [required("班级名称")], majorId: [requiredSelect("专业")] } }
   },
   created() { this.loadDepts(); this.getList() },
   methods: {

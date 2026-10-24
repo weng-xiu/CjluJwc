@@ -26,6 +26,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['tpm:plan:import']">导入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !planList.length" :rows="6">
     <el-table v-loading="loading" :data="planList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="方案名称" align="center" prop="planName" :show-overflow-tooltip="true" />
@@ -48,6 +49,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !planList.length" description="暂无培养方案，可新增方案或使用「导入」批量录入" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" :visible.sync="open" width="1100px" append-to-body :close-on-click-modal="false">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">

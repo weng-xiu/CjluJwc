@@ -65,6 +65,18 @@
       <div slot="footer" class="dialog-footer"><el-button type="primary" :loading="genLoading" @click="submitGenerate">确 定</el-button><el-button @click="genOpen=false">取 消</el-button></div>
     </el-dialog>
 
+    <!-- U3/E3 批量操作反馈：批量生成证书进度与结果汇总 -->
+    <app-batch-progress
+      :visible.sync="genProgressOpen"
+      title="批量生成证书"
+      :running="genRunning"
+      :indeterminate="genRunning"
+      :total="genTotal"
+      :success="genSuccess"
+      :failed="genFailed"
+      tip-text="正在按审核结果扫描学生并分配证书编号，请勿关闭窗口…"
+      @closed="getList" />
+
     <!-- 发放登记对话框 -->
     <el-dialog title="证书发放登记" :visible.sync="issueOpen" width="460px" append-to-body>
       <el-form label-width="100px">
@@ -82,6 +94,8 @@ export default {
   dicts: ['sam_cert_reissue_type'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, list: [], title: "", open: false,
     genOpen: false, genLoading: false, genForm: { certType: '0', gradYear: null },
+    // U3/E3 批量生成证书进度反馈
+    genProgressOpen: false, genRunning: false, genTotal: 0, genSuccess: 0, genFailed: 0,
     issueOpen: false, issueForm: { certId: null, receiver: null, issueDate: null },
     queryParams: { pageNum: 1, pageSize: 10, studentNo: null, studentName: null, certType: null, certNumber: null },
     form: {}, rules: { studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }], certType: [{ required: true, message: "证书类型不能为空", trigger: "change" }] } }
@@ -105,7 +119,23 @@ export default {
     openGenerate() { this.genForm = { certType: '0', gradYear: null }; this.genOpen = true },
     submitGenerate() {
       this.genLoading = true
-      batchGenerate(this.genForm.certType, this.genForm.gradYear).then(res => { this.$modal.msgSuccess(res.msg || "生成完成"); this.genOpen = false; this.getList() }).finally(() => { this.genLoading = false })
+      // U3/E3 批量反馈：同步生成接口用不定模式进度层，结果回填汇总态
+      this.genRunning = true
+      this.genTotal = 0; this.genSuccess = 0; this.genFailed = 0
+      this.genProgressOpen = true
+      batchGenerate(this.genForm.certType, this.genForm.gradYear).then(res => {
+        this.genOpen = false
+        // 后端契约：data 含 candidates/generated 统计，转入结果汇总态
+        const stat = res.data || {}
+        this.genTotal = Number(stat.candidates) || 0
+        this.genSuccess = Number(stat.generated) || 0
+        this.genFailed = Math.max(this.genTotal - this.genSuccess, 0)
+        this.genRunning = false
+      }).catch(() => {
+        // 失败提示由全局拦截器 toast，这里直接收起进度层
+        this.genRunning = false
+        this.genProgressOpen = false
+      }).finally(() => { this.genLoading = false })
     },
     openIssue(row) { this.issueForm = { certId: row.certId, receiver: row.receiver || null, issueDate: null }; this.issueOpen = true },
     submitIssue() { issueCertificate(this.issueForm).then(() => { this.$modal.msgSuccess("发放成功"); this.issueOpen = false; this.getList() }) },

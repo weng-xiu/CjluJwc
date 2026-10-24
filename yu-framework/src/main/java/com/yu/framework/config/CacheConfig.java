@@ -38,6 +38,9 @@ public class CacheConfig
     /** student_schedule：学生课表，门户高频读；受选课/排课/开课三方影响，用短 TTL 120s 自愈 */
     public static final String CACHE_STUDENT_SCHEDULE = "student_schedule";
 
+    /** course_offering：开课单条读（选课/抽签/改选反复按 id 命中 maxStudents）；容量下调走 update 会主动失效，叠加短 TTL 120s 自愈 */
+    public static final String CACHE_COURSE_OFFERING = "course_offering";
+
     /** 默认 TTL：未显式登记的缓存名用此值，防止无界缓存 */
     private static final Duration DEFAULT_TTL = Duration.ofMinutes(5);
 
@@ -57,6 +60,7 @@ public class CacheConfig
         Map<String, RedisCacheConfiguration> perCache = new HashMap<>();
         perCache.put(CACHE_CURRENT_SEMESTER, base.entryTtl(Duration.ofMinutes(10)));
         perCache.put(CACHE_STUDENT_SCHEDULE, base.entryTtl(Duration.ofSeconds(120)));
+        perCache.put(CACHE_COURSE_OFFERING, base.entryTtl(Duration.ofSeconds(120)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(base)

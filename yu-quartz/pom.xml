@@ -47,6 +47,13 @@
             <artifactId>micrometer-core</artifactId>
         </dependency>
 
+        <!-- 单元测试（P2 告警水位逻辑：SimpleMeterRegistry + Mockito）-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>

@@ -14,6 +14,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['brm:teacher:import']">导入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !teacherList.length" :rows="6">
     <el-table v-loading="loading" :data="teacherList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="教师工号" align="center" prop="teacherCode" />
@@ -30,6 +31,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !teacherList.length" description="暂无教师数据，可调整查询条件或新增/导入教师" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
@@ -99,6 +102,7 @@
 import { listTeacher, getTeacher, delTeacher, addTeacher, updateTeacher } from "@/api/brm/teacher"
 import ExcelImportDialog from "@/components/ExcelImportDialog"
 import dialogGuard from "@/utils/dialogGuard"
+import { required } from "@/utils/validateRules"
 export default {
   name: "Teacher", dicts: ['sys_normal_disable', 'sys_user_sex'],
   components: { ExcelImportDialog },
@@ -107,7 +111,7 @@ export default {
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, teacherList: [], title: "", open: false,
     positionList: [], checkedPosition: [], qualificationList: [], checkedQualification: [],
     queryParams: { pageNum: 1, pageSize: 10, teacherCode: null, teacherName: null, status: null },
-    form: {}, rules: { teacherCode: [{ required: true, message: "教师工号不能为空", trigger: "blur" }], teacherName: [{ required: true, message: "教师姓名不能为空", trigger: "blur" }] } }
+    form: {}, rules: { teacherCode: [required("教师工号")], teacherName: [required("教师姓名")] } }
   },
   created() { this.getList() },
   methods: {

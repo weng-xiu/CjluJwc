@@ -10,8 +10,11 @@ import com.yu.common.annotation.DataScope;
 import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.SecurityUtils;
+import com.yu.framework.config.CacheConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.tpm.mapper.TpmCourseOfferingMapper;
@@ -55,6 +58,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
     private int defaultCapacity;
 
     @Override
+    @Cacheable(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, key = "#offeringId", unless = "#result == null")
     public TpmCourseOffering selectTpmCourseOfferingByOfferingId(Long offeringId)
     {
         return tpmCourseOfferingMapper.selectTpmCourseOfferingByOfferingId(offeringId);
@@ -75,6 +79,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, allEntries = true)
     @Override
     public int insertTpmCourseOffering(TpmCourseOffering tpmCourseOffering)
     {
@@ -83,6 +88,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, allEntries = true)
     @Override
     public int updateTpmCourseOffering(TpmCourseOffering tpmCourseOffering)
     {
@@ -108,6 +114,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, allEntries = true)
     @Override
     public int deleteTpmCourseOfferingByOfferingId(Long offeringId)
     {
@@ -116,6 +123,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, allEntries = true)
     @Override
     public int deleteTpmCourseOfferingByOfferingIds(Long[] offeringIds)
     {
@@ -130,6 +138,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, allEntries = true)
     @Override
     public int confirmOffering(Long offeringId)
     {
@@ -141,6 +150,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, allEntries = true)
     @Override
     public int cancelOffering(Long offeringId)
     {
@@ -152,6 +162,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
     }
 
     @Transactional
+    @CacheEvict(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, allEntries = true)
     @Override
     public Map<String, Object> batchGenerateOfferings(BatchOfferingRequest request)
     {

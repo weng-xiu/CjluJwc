@@ -13,9 +13,9 @@
       <el-table-column label="课程名称" align="center" prop="courseName" />
       <el-table-column label="原上课时间" align="center" prop="originTime" />
       <el-table-column label="调整后时间" align="center" prop="newTime" />
-      <el-table-column label="调整类型" align="center" prop="adjustType"><template slot-scope="scope"><dict-tag :options="dict.type.portal_adjust_type" :value="scope.row.adjustType"/></template></el-table-column>
+      <el-table-column label="调整类型" align="center" prop="adjustType"><template slot-scope="scope"><dict-tag :options="PORTAL_ADJUST_TYPE" :value="scope.row.adjustType"/></template></el-table-column>
       <el-table-column label="申请日期" align="center" prop="applyDate" width="120"><template slot-scope="scope"><span>{{ parseTime(scope.row.applyDate, '{y}-{m}-{d}') }}</span></template></el-table-column>
-      <el-table-column label="审批状态" align="center" prop="approveStatus"><template slot-scope="scope"><dict-tag :options="dict.type.portal_approve_status" :value="scope.row.approveStatus"/></template></el-table-column>
+      <el-table-column label="审批状态" align="center" prop="approveStatus"><template slot-scope="scope"><dict-tag :options="PORTAL_APPROVE_STATUS" :value="scope.row.approveStatus"/></template></el-table-column>
       <el-table-column label="原因" align="center" prop="reason" show-overflow-tooltip />
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
@@ -33,9 +33,11 @@
 </template>
 <script>
 import { listAdjustment, addAdjustment } from "@/api/portal/adjustment"
+// 调停课类型与审批状态沿用前端内置枚举（portal_adjust_type / portal_approve_status 未入库）
+import { PORTAL_ADJUST_TYPE, PORTAL_APPROVE_STATUS } from "../dicts"
 export default {
   name: "PortalAdjustment",
-  data() { return { loading: true, showSearch: true, total: 0, adjustmentList: [], title: "", open: false,
+  data() { return { PORTAL_ADJUST_TYPE, PORTAL_APPROVE_STATUS, loading: true, showSearch: true, total: 0, adjustmentList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, courseName: null, approveStatus: null },
     form: {}, rules: { courseName: [{ required: true, message: "课程不能为空", trigger: "blur" }], originTime: [{ required: true, message: "原上课时间不能为空", trigger: "blur" }], newTime: [{ required: true, message: "调整后时间不能为空", trigger: "blur" }], reason: [{ required: true, message: "申请原因不能为空", trigger: "blur" }] } }
   },

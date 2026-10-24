@@ -28,6 +28,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="el-icon-magic-stick" size="mini" @click="handleBatchGenerate" v-hasPermi="['tpm:offering:add']">批量生成</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !offeringList.length" :rows="6">
     <el-table v-loading="loading" :data="offeringList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学期" align="center" prop="semesterName" :show-overflow-tooltip="true" />
@@ -58,6 +59,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !offeringList.length" description="暂无开课计划，可新增或使用「批量生成」按培养方案生成" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
@@ -144,6 +147,22 @@
         <el-button @click="batchOpen = false">关 闭</el-button>
       </div>
     </el-dialog>
+
+    <!-- U3/E3 批量操作反馈：批量生成开课进度与结果汇总 -->
+    <app-batch-progress
+      :visible.sync="batchProgressOpen"
+      title="批量生成开课计划"
+      :running="batchRunning"
+      :indeterminate="batchRunning"
+      :total="batchTotal"
+      :success="batchSuccess"
+      :failed="batchFailed"
+      tip-text="正在按培养方案扫描课程并生成开课计划，请勿关闭窗口…"
+      @closed="getList">
+      <template slot="detail" v-if="batchResult">
+        <p style="text-align:center;color:var(--dt-text-secondary);font-size:13px">教师预分配 {{ batchResult.teacherAssigned }} 条（教师池 {{ batchResult.teacherPoolSize }} 人）</p>
+      </template>
+    </app-batch-progress>
   </div>
 </template>
 <script>
@@ -163,6 +182,8 @@ export default {
     semesterOptions: [], campusOptions: [], apiListCourseLib: listCourseLib, apiListTeacher: listTeacher,
     planOptions: [], deptOptions: [],
     batchOpen: false, batchLoading: false, batchResult: null,
+    // U3/E3 批量生成进度反馈
+    batchProgressOpen: false, batchRunning: false, batchTotal: 0, batchSuccess: 0, batchFailed: 0,
     batchForm: { planId: null, semesterId: null, semesterOrder: null, campusId: null, teacherDeptId: null, defaultCapacity: null, classCount: 1, skipExisting: true },
     batchRules: { planId: [{ required: true, message: "培养方案不能为空", trigger: "change" }], semesterId: [{ required: true, message: "学期不能为空", trigger: "change" }] },
     queryParams: { pageNum: 1, pageSize: 10, semesterId: null, courseId: null, teacherId: null, offeringStatus: null, status: null },
@@ -210,11 +231,24 @@ export default {
       this.$refs["batchForm"].validate(valid => {
         if (!valid) return;
         this.batchLoading = true;
+        // U3/E3 批量反馈：同步扫描接口用不定模式进度层，结果回填汇总态
+        this.batchRunning = true;
+        this.batchTotal = 0; this.batchSuccess = 0; this.batchFailed = 0;
+        this.batchProgressOpen = true;
         batchGenerateOffering(this.batchForm).then(response => {
           this.batchResult = response.data;
-          this.$modal.msgSuccess("生成完成：新增 " + (this.batchResult.generated || 0) + " 条开课计划");
+          this.batchOpen = false;
           if (this.batchForm.semesterId) { this.queryParams.semesterId = this.batchForm.semesterId; }
-          this.getList();
+          // 后端契约：data 含 scanned/generated/skippedExisting 统计，转入结果汇总态
+          const r = this.batchResult || {};
+          this.batchTotal = Number(r.scanned) || 0;
+          this.batchSuccess = Number(r.generated) || 0;
+          this.batchFailed = Number(r.skippedExisting) || 0;
+          this.batchRunning = false;
+        }).catch(() => {
+          // 失败提示由全局拦截器 toast，这里直接收起进度层
+          this.batchRunning = false;
+          this.batchProgressOpen = false;
         }).finally(() => { this.batchLoading = false; });
       });
     }

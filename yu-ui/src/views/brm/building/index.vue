@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['brm:building:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !buildingList.length" :rows="6">
     <el-table v-loading="loading" :data="buildingList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="教学楼名称" align="center" prop="buildingName" />
@@ -27,6 +28,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !buildingList.length" description="暂无教学楼数据，可调整查询条件或新增教学楼" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
@@ -43,11 +46,12 @@
 <script>
 import { listBuilding, getBuilding, delBuilding, addBuilding, updateBuilding } from "@/api/brm/building"
 import { listCampus } from "@/api/brm/campus"
+import { required, requiredSelect } from "@/utils/validateRules"
 export default {
   name: "Building", dicts: ['sys_normal_disable'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, buildingList: [], campusList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, buildingName: null, campusId: null, status: null },
-    form: {}, rules: { buildingName: [{ required: true, message: "教学楼名称不能为空", trigger: "blur" }], campusId: [{ required: true, message: "所属校区不能为空", trigger: "change" }] } }
+    form: {}, rules: { buildingName: [required("教学楼名称")], campusId: [requiredSelect("所属校区")] } }
   },
   created() { this.getList(); this.loadCampus() },
   methods: {

@@ -11,7 +11,7 @@
       <el-table-column label="课程名称" align="center" prop="courseName" />
       <el-table-column label="开始时间" align="center" prop="startTime" width="120"><template slot-scope="scope"><span>{{ parseTime(scope.row.startTime, '{y}-{m}-{d}') }}</span></template></el-table-column>
       <el-table-column label="结束时间" align="center" prop="endTime" width="120"><template slot-scope="scope"><span>{{ parseTime(scope.row.endTime, '{y}-{m}-{d}') }}</span></template></el-table-column>
-      <el-table-column label="状态" align="center" prop="status"><template slot-scope="scope"><dict-tag :options="dict.type.sys_normal_disable" :value="scope.row.status"/></template></el-table-column>
+      <el-table-column label="状态" align="center" prop="status"><template slot-scope="scope"><dict-tag :options="PORTAL_EVAL_STATUS" :value="scope.row.status"/></template></el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button size="mini" type="primary" icon="el-icon-edit" @click="handleEvaluate(scope.row)" v-hasPermi="['portal:evaluation:submit']">去评教</el-button>
@@ -23,9 +23,11 @@
 </template>
 <script>
 import { listQuestionnaire } from "@/api/portal/evaluation"
+// 问卷完成状态用门户内置枚举（未完成/已完成），不复用 sys_normal_disable（正常/停用语义错位）
+import { PORTAL_EVAL_STATUS } from "../dicts"
 export default {
   name: "PortalEvaluation",
-  data() { return { loading: true, total: 0, questionnaireList: [],
+  data() { return { PORTAL_EVAL_STATUS, loading: true, showSearch: true, total: 0, questionnaireList: [],
     queryParams: { pageNum: 1, pageSize: 10, title: null, status: null } }
   },
   created() { this.getList() },

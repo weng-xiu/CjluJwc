@@ -10,16 +10,18 @@
       <el-table-column label="教室" align="center" prop="classroomName" />
       <el-table-column label="考试日期" align="center" prop="examDate" width="120"><template slot-scope="scope"><span>{{ parseTime(scope.row.examDate, '{y}-{m}-{d}') }}</span></template></el-table-column>
       <el-table-column label="时间" align="center" prop="startTime"><template slot-scope="scope"><span>{{ scope.row.startTime }} - {{ scope.row.endTime }}</span></template></el-table-column>
-      <el-table-column label="职责" align="center" prop="dutyType"><template slot-scope="scope"><dict-tag :options="dict.type.portal_duty_type" :value="scope.row.dutyType"/></template></el-table-column>
+      <el-table-column label="职责" align="center" prop="dutyType"><template slot-scope="scope"><dict-tag :options="PORTAL_DUTY_TYPE" :value="scope.row.dutyType"/></template></el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
   </div>
 </template>
 <script>
 import { listInvigilation } from "@/api/portal/exam"
+// 监考职责沿用 Vue3 口径的前端内置枚举（portal_duty_type 未入库）
+import { PORTAL_DUTY_TYPE } from "../dicts"
 export default {
   name: "PortalInvigilation",
-  data() { return { loading: true, total: 0, invigilationList: [],
+  data() { return { PORTAL_DUTY_TYPE, loading: true, showSearch: true, total: 0, invigilationList: [],
     queryParams: { pageNum: 1, pageSize: 10, examName: null, examDate: null } }
   },
   created() { this.getList() },

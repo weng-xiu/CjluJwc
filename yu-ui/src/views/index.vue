@@ -18,7 +18,9 @@
       </div>
     </div>
 
-    <!-- 教务核心指标卡（P2：真实业务数据聚合） -->
+    <!-- 教务核心指标卡（P2：真实业务数据聚合；U3/E4 失败可重试 + 首屏骨架） -->
+    <app-error-state v-if="dashError && !hasDashData" message="驾驶舱数据请求异常，请稍后重试" @retry="loadDashboard" />
+    <app-skeleton v-else :loading="loading.dashboard && !hasDashData" :rows="3">
     <el-row :gutter="16" class="stat-row" v-loading="loading.dashboard">
       <el-col :xs="12" :sm="8" :md="4" v-for="item in dashStatCards" :key="item.label">
         <div class="stat-card">
@@ -32,6 +34,7 @@
         </div>
       </el-col>
     </el-row>
+    </app-skeleton>
 
     <el-row :gutter="16">
       <!-- 左侧主区域 -->
@@ -167,6 +170,7 @@ export default {
       dashSemester: {},
       dashCounts: {},
       coursePassTop: [],
+      dashError: false,
       articleList: [],
       noticeList: [],
       loading: {
@@ -216,6 +220,10 @@ export default {
       const week = Math.floor(diff / (7 * 24 * 3600 * 1000)) + 1
       return week > 0 ? week : 1
     },
+    /** U3/E4 驾驶舱是否已拿到有效数据（决定骨架/错误态与真实内容互斥） */
+    hasDashData() {
+      return !!(this.dashSemester && this.dashSemester.semesterName) || Object.keys(this.dashCounts || {}).length > 0 || (this.coursePassTop || []).length > 0
+    },
     dashStatCards() {
       const c = this.dashCounts
       return [
@@ -253,13 +261,17 @@ export default {
     },
     loadDashboard() {
       this.loading.dashboard = true
+      this.dashError = false
       getDashboardOverview().then(res => {
         const data = res.data || {}
         this.dashSemester = data.semester || {}
         this.dashCounts = data.counts || {}
         this.coursePassTop = data.coursePassTop || []
         this.$nextTick(() => this.renderCharts(data))
-      }).catch(() => {}).finally(() => {
+      }).catch(() => {
+        // U3/E4 失败态可见：KPI 区换错误态并提供「重新加载」，不静默留白
+        this.dashError = true
+      }).finally(() => {
         this.loading.dashboard = false
       })
     },

@@ -15,6 +15,7 @@
         <el-col :span="1.5"><el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['dis:priority:add']">新增</el-button></el-col>
         <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['dis:priority:export']">导出</el-button></el-col>
       </el-row>
+      <app-skeleton :loading="loading && !priorityList.length" :rows="6">
       <el-table v-loading="loading" :data="priorityList">
         <el-table-column label="源编码" align="center" prop="sourceCode" />
         <el-table-column label="源名称" align="center" prop="sourceName" />
@@ -28,6 +29,8 @@
           </template>
         </el-table-column>
       </el-table>
+      <app-empty v-if="!loading && !priorityList.length" description="暂无裁决配置，可新增数据源优先级（种子已内置 GRAD/JW/HR/FINANCE/CARD）" />
+      </app-skeleton>
     </el-card>
 
     <!-- 试裁决：验证"以谁为准" -->

@@ -40,6 +40,11 @@ import ImagePreview from "@/components/ImagePreview"
 import DictTag from '@/components/DictTag'
 // 字典数据组件
 import DictData from '@/components/DictData'
+// U3/E3/E4 统一状态反馈组件（骨架屏/空态/错误态/批量进度，Vue2 主栈基建，自建替代 element-plus 专有组件）
+import AppSkeleton from '@/components/AppSkeleton'
+import AppEmpty from '@/components/AppEmpty'
+import AppErrorState from '@/components/AppErrorState'
+import AppBatchProgress from '@/components/AppBatchProgress'
 
 // 全局方法挂载
 Vue.prototype.getDicts = getDicts
@@ -60,6 +65,11 @@ Vue.component('Editor', Editor)
 Vue.component('FileUpload', FileUpload)
 Vue.component('ImageUpload', ImageUpload)
 Vue.component('ImagePreview', ImagePreview)
+// U3 统一状态反馈组件（全局可用，无需各页重复引入）
+Vue.component('AppSkeleton', AppSkeleton)
+Vue.component('AppEmpty', AppEmpty)
+Vue.component('AppErrorState', AppErrorState)
+Vue.component('AppBatchProgress', AppBatchProgress)
 
 Vue.use(directive)
 Vue.use(plugins)

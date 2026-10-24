@@ -25,6 +25,7 @@
       <el-col :span="1.5"><el-button type="primary" plain icon="el-icon-date" size="mini" @click="openWeekView" v-hasPermi="['tpm:schedule:list']">周课表视图</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !scheduleList.length" :rows="6">
     <el-table v-loading="loading" :data="scheduleList" @selection-change="handleSelectionChange" :row-class-name="tableRowClassName">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="课程名称" align="center" prop="courseName" min-width="140" show-overflow-tooltip />
@@ -51,6 +52,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !scheduleList.length" description="暂无排课数据，可新增排课或使用「自动排教室」批量生成" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增/修改对话框 -->

@@ -40,6 +40,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !templateList.length" :rows="6">
     <el-table v-loading="loading" :data="templateList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="模板ID" align="center" prop="templateId" width="80" />
@@ -68,6 +69,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !templateList.length" description="暂无打印模板，可新增模板或从既有模板复制" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 

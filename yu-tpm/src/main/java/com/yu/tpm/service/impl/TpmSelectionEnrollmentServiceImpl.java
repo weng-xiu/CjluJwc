@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.annotation.BizMetric;
+import com.yu.common.monitor.BizMetrics;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.schedule.TimeSlotUtils;
 import com.yu.framework.cache.SelectionCacheManager;
@@ -72,6 +73,10 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
 
     @Autowired
     private ITpmSelectionRuleService tpmSelectionRuleService;
+
+    /** Q3/P2 可观测性：超卖尝试埋点门面（写入 Micrometer，失败自行降级不影响主流程） */
+    @Autowired
+    private BizMetrics bizMetrics;
 
     @Override
     public TpmSelectionEnrollment selectTpmSelectionEnrollmentByEnrollId(Long enrollId)
@@ -467,6 +472,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         {
             // 容量不足，恢复扣减
             selectionCacheManager.incrementCapacity(courseOfferingId);
+            bizMetrics.recordOversell(); // P2 超卖尝试埋点
             return AjaxResult.error("课程已满，选课失败");
         }
 
@@ -567,6 +573,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
      */
     @Transactional
     @Override
+    @BizMetric("lottery")
     public Map<String, Object> runLottery(Long roundId, Long seed)
     {
         Map<String, Object> result = new HashMap<>();
@@ -946,6 +953,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         {
             selectionCacheManager.incrementCapacity(newOfferingId);
             selectionCacheManager.decrementCapacity(oldOfferingId); // 回滚原课程容量
+            bizMetrics.recordOversell(); // P2 超卖尝试埋点（改选抢已满课程）
             return AjaxResult.error("目标课程已满，改选失败");
         }
 

@@ -31,6 +31,8 @@ public class BizMetrics
     public static final String COUNTER_BIZ = "yu.biz.total";
     /** 预警触发计数 */
     public static final String COUNTER_WARNING = "yu.warning.triggered";
+    /** 选课/改选超卖尝试计数（容量原子扣减触达负值即一次超卖尝试，P2 容量运营可感知） */
+    public static final String COUNTER_OVERSELL = "yu.selection.oversell";
 
     /** 结果 tag 常量 */
     private static final String RESULT_SUCCESS = "success";
@@ -83,6 +85,19 @@ public class BizMetrics
                 .tag("type", type == null ? "unknown" : type)
                 .tag("level", level == null ? "unknown" : level)
                 .description("学业预警触发次数（按类型与级别）")
+                .register(registry)
+                .increment();
+    }
+
+    /**
+     * 记录一次超卖尝试（V5.0 §7.4 P2）：选课/改选在 Redis 原子扣减后剩余容量为负，
+     * 说明有人试图抢占已满课程的名额。此计数供告警水位读取（近窗口增量超阈值即提示扩容），
+     * 不带 offering 维度 tag 以免高基数；具体开课信息由选课失败明细另行留痕。
+     */
+    public void recordOversell()
+    {
+        Counter.builder(COUNTER_OVERSELL)
+                .description("选课超卖尝试次数（容量扣减触达负值）")
                 .register(registry)
                 .increment();
     }

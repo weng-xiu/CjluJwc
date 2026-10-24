@@ -65,6 +65,18 @@
         <el-button @click="batchOpen = false">关 闭</el-button>
       </div>
     </el-dialog>
+
+    <!-- U3/E3 批量操作反馈：批量审核进度与结果汇总（单人明细仍可在对话框内查看） -->
+    <app-batch-progress
+      :visible.sync="batchProgressOpen"
+      title="批量自动审核"
+      :running="batchRunning"
+      :indeterminate="batchRunning"
+      :total="batchProgressTotal"
+      :success="batchProgressPassed"
+      :failed="batchProgressRejected"
+      tip-text="正在按毕业审核口径逐人判定，请勿关闭窗口…"
+      @closed="getList" />
   </div>
 </template>
 <script>
@@ -73,6 +85,8 @@ export default {
   name: "GraduationReview",
   data() { return { loading: true, ids: [], studentIds: [], single: true, multiple: true, showSearch: true, total: 0, list: [], title: "", open: false,
     batchOpen: false, batchLoading: false, batchStudentIds: "", batchResult: null,
+    // U3/E3 批量审核进度反馈
+    batchProgressOpen: false, batchRunning: false, batchProgressTotal: 0, batchProgressPassed: 0, batchProgressRejected: 0,
     queryParams: { pageNum: 1, pageSize: 10, studentId: null, reviewStatus: null },
     form: {} }
   },
@@ -111,10 +125,21 @@ export default {
       const ids = (this.batchStudentIds || "").split(/[,\s\n]+/).filter(s => s !== "").map(s => Number(s));
       if (ids.length === 0 || ids.some(n => isNaN(n))) { this.$modal.msgError("请输入正确的学生ID列表"); return; }
       this.batchLoading = true;
+      // U3/E3 批量反馈：进度层覆盖提交过程，返回后展示通过/不通过汇总
+      this.batchRunning = true;
+      this.batchProgressTotal = ids.length; this.batchProgressPassed = 0; this.batchProgressRejected = 0;
+      this.batchProgressOpen = true;
       batchReviewGraduation(ids).then(response => {
         this.batchResult = response.data;
-        this.$modal.msgSuccess("批量审核完成");
-        this.getList();
+        const r = response.data || {};
+        this.batchProgressTotal = Number(r.total) || ids.length;
+        this.batchProgressPassed = Number(r.passed) || 0;
+        this.batchProgressRejected = Number(r.rejected) || 0;
+        this.batchRunning = false;
+      }).catch(() => {
+        // 失败提示由全局拦截器 toast，这里直接收起进度层
+        this.batchRunning = false;
+        this.batchProgressOpen = false;
       }).finally(() => { this.batchLoading = false; });
     }
   }

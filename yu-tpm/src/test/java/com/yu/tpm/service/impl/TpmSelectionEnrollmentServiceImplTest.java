@@ -25,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.yu.common.core.domain.AjaxResult;
+import com.yu.common.monitor.BizMetrics;
 import com.yu.framework.cache.SelectionCacheManager;
 import com.yu.tpm.domain.TpmCourseLibrary;
 import com.yu.tpm.domain.TpmCourseOffering;
@@ -57,6 +58,7 @@ class TpmSelectionEnrollmentServiceImplTest {
     @Mock private BrmTeacherMapper brmTeacherMapper;
     @Mock private SelectionCacheManager cacheManager;
     @Mock private ITpmSelectionRuleService ruleService;
+    @Mock private BizMetrics bizMetrics;
 
     @InjectMocks
     private TpmSelectionEnrollmentServiceImpl service;

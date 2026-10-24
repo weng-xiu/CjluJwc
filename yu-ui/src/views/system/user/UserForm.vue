@@ -101,6 +101,7 @@ import Treeselect from "@riophae/vue-treeselect"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css"
 import passwordRule from "@/utils/passwordRule"
 import dialogGuard from "@/utils/dialogGuard"
+import { required, lengthRange, email, phone } from "@/utils/validateRules"
 import TeacherForm from "./TeacherForm"
 
 export default {
@@ -124,28 +125,20 @@ export default {
       initPassword: undefined,
       // 表单参数
       form: {},
-      // 表单校验
+      // 表单校验（E5 统一工厂：提示措辞与 trigger 语义与全站保持同构）
       rules: {
         userName: [
-          { required: true, message: "用户名称不能为空", trigger: "blur" },
-          { min: 2, max: 20, message: '用户名称长度必须介于 2 和 20 之间', trigger: 'blur' }
+          required("用户名称"),
+          lengthRange("用户名称", 2, 20)
         ],
         nickName: [
-          { required: true, message: "用户昵称不能为空", trigger: "blur" }
+          required("用户昵称")
         ],
         email: [
-          {
-            type: "email",
-            message: "请输入正确的邮箱地址",
-            trigger: ["blur", "change"]
-          }
+          email()
         ],
         phonenumber: [
-          {
-            pattern: /^1[3|4|5|6|7|8|9][0-9]\d{8}$/,
-            message: "请输入正确的手机号码",
-            trigger: "blur"
-          }
+          phone()
         ]
       }
     }

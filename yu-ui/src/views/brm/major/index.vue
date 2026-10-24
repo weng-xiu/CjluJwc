@@ -14,6 +14,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['brm:major:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !majorList.length" :rows="6">
     <el-table v-loading="loading" :data="majorList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="专业编码" align="center" prop="majorCode" />
@@ -29,6 +30,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !majorList.length" description="暂无专业数据，可调整查询条件或新增专业" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
@@ -50,11 +53,12 @@
 <script>
 import { listMajor, getMajor, delMajor, addMajor, updateMajor } from "@/api/brm/major"
 import { listDept } from "@/api/brm/dept"
+import { required, requiredSelect } from "@/utils/validateRules"
 export default {
   name: "Major", dicts: ['sys_normal_disable', 'brm_education_level'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, majorList: [], deptList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, majorName: null, deptId: null, educationLevel: null, status: null },
-    form: {}, rules: { majorCode: [{ required: true, message: "专业编码不能为空", trigger: "blur" }], majorName: [{ required: true, message: "专业名称不能为空", trigger: "blur" }], deptId: [{ required: true, message: "请选择院系", trigger: "change" }] } }
+    form: {}, rules: { majorCode: [required("专业编码")], majorName: [required("专业名称")], deptId: [requiredSelect("院系")] } }
   },
   created() { this.getList(); this.loadDepts() },
   methods: {

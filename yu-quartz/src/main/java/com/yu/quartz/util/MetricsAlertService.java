@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ import com.yu.system.domain.SysNotice;
 import com.yu.system.service.ISysConfigService;
 import com.yu.system.service.ISysNoticeService;
 
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -47,6 +49,14 @@ public class MetricsAlertService
     public static final String CFG_HTTP_MIN_REQUESTS = "sys.observability.alert.httpMinRequests";
     /** 参数键：同一指标告警冷却分钟数（防刷屏） */
     public static final String CFG_COOLDOWN_MINUTES = "sys.observability.alert.cooldownMinutes";
+    /** 参数键：单次抽签最大耗时告警阈值（秒，P2） */
+    public static final String CFG_LOTTERY_MAX_SECONDS = "sys.observability.alert.lotteryMaxSeconds";
+    /** 参数键：本轮窗口超卖尝试次数告警阈值（次，P2） */
+    public static final String CFG_OVERSELL_COUNT = "sys.observability.alert.oversellCount";
+
+    /** 业务埋点指标名（与 yu-common BizMetrics 定义一致，此处按名读取避免跨模块耦合） */
+    private static final String METER_BIZ_DURATION = "yu.biz.duration";
+    private static final String METER_SELECTION_OVERSELL = "yu.selection.oversell";
 
     @Autowired
     private MeterRegistry meterRegistry;
@@ -60,6 +70,9 @@ public class MetricsAlertService
     /** 各指标最近一次告警时间戳（毫秒），用于冷却去重 */
     private final Map<String, Long> lastAlertAt = new ConcurrentHashMap<>();
 
+    /** 上一轮检查时超卖累计计数，用于计算本轮窗口增量 */
+    private volatile long lastOversellTotal = 0L;
+
     /**
      * 执行一轮水位与错误率检查，超阈值则发送通知。
      *
@@ -70,6 +83,8 @@ public class MetricsAlertService
         int alerts = 0;
         alerts += checkHeap();
         alerts += checkHttpErrorRate();
+        alerts += checkLotteryLatency();
+        alerts += checkOversell();
         if (alerts == 0)
         {
             log.debug("指标告警检查完成，未触发任何阈值");
@@ -134,6 +149,73 @@ public class MetricsAlertService
                     + "<p>检测时间：" + new Date() + "</p>"
                     + "<p style=\"color:#F56C6C;\">请排查服务端异常日志与近期发布变更。</p>";
             sendAlert("[告警] HTTP 5xx 错误率 " + format(rate) + "%", content);
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * 抽签耗时检查（V5.0 §7.4 P2 残项）：读取业务埋点 yu.biz.duration{event=lottery} 的
+     * 最大耗时，超过参数阈值（sys.observability.alert.lotteryMaxSeconds，默认 30 秒）即告警。
+     * 抽签为轮次级全量重算，耗时陡增往往意味着选课名单异常膨胀或 DB 慢查询，需运维感知。
+     * 无抽签样本（count=0）时不判定。
+     */
+    private int checkLotteryLatency()
+    {
+        long count = 0L;
+        double maxSeconds = 0.0;
+        for (Timer t : meterRegistry.find(METER_BIZ_DURATION).tag("event", "lottery").timers())
+        {
+            count += (long) t.count();
+            double m = t.max(TimeUnit.SECONDS);
+            if (m > maxSeconds)
+            {
+                maxSeconds = m;
+            }
+        }
+        double threshold = readDouble(CFG_LOTTERY_MAX_SECONDS, 30.0);
+        if (count > 0 && maxSeconds >= threshold && allowAlert("lotteryLatency", 0))
+        {
+            String content = "<p><b>抽签耗时告警：单次抽签最大耗时过高</b></p>"
+                    + "<p>最大耗时：" + format(maxSeconds) + " 秒（阈值 " + format(threshold) + " 秒）</p>"
+                    + "<p>累计抽签次数：" + count + "</p>"
+                    + "<p>检测时间：" + new Date() + "</p>"
+                    + "<p style=\"color:#F56C6C;\">请关注选课名单是否异常膨胀、DB 慢查询，必要时核查 tpm_selection_enrollment 相关索引。</p>";
+            sendAlert("[告警] 抽签最大耗时 " + format(maxSeconds) + "s", content);
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * 超卖尝试检查（V5.0 §7.4 P2 残项）：读取 yu.selection.oversell 累计计数，
+     * 计算与上一轮检查的增量（本轮窗口内“抢占已满课程名额”次数），增量达阈值
+     * （sys.observability.alert.oversellCount，默认 20 次）即告警。超卖已由原子扣减安全拦截，
+     * 本告警只负责“热门课容量持续被击穿可感知”，提示扩容或增开班次。
+     */
+    private int checkOversell()
+    {
+        long total = 0L;
+        for (Counter c : meterRegistry.find(METER_SELECTION_OVERSELL).counters())
+        {
+            total += (long) c.count();
+        }
+        long delta = total - lastOversellTotal;
+        lastOversellTotal = total;
+        // 计数回绕（进程重启使累计值变小）时以当前累计值作为增量基线，避免误报
+        if (delta < 0)
+        {
+            delta = total;
+        }
+        double threshold = readDouble(CFG_OVERSELL_COUNT, 20.0);
+        if (delta >= threshold && allowAlert("oversell", 0))
+        {
+            String content = "<p><b>选课超卖尝试告警：本轮窗口内抢占已满课程名额次数达阈值</b></p>"
+                    + "<p>本轮增量超卖尝试：" + delta + " 次（阈值 " + format(threshold) + " 次）</p>"
+                    + "<p>累计超卖尝试：" + total + " 次</p>"
+                    + "<p>检测时间：" + new Date() + "</p>"
+                    + "<p style=\"color:#F56C6C;\">超卖已由原子扣减+分布式锁安全拦截（无名额错配）；若持续走高建议对热门课弹性扩容或增开班次。</p>";
+            sendAlert("[告警] 选课超卖尝试 " + delta + " 次/轮", content);
             return 1;
         }
         return 0;

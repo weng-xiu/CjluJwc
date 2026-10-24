@@ -2,7 +2,7 @@
   <div class="app-container">
     <!-- F1 OBE 毕业要求（Vue2 主栈）：后端 SamObeController /sam/obe/requirement。
          自 yu-ui-vue3 同名页回植移植：#default→slot-scope、v-model 弹窗→:visible.sync、
-         link 按钮→type=text、el-radio :value→:label；Vue2 无 app-skeleton/app-empty 机制，保持原生 v-loading。
+         link 按钮→type=text、el-radio :value→:label；V5.11 起 Vue2 主栈已有 app-skeleton/app-empty，本页仍保持原生 v-loading（后续按需升级为骨架+空态）。
          培养方案为远程搜索 el-select（N7 禁全量拉取），编辑回显用详情返回的 planName 合成选项不显裸 ID。 -->
     <el-alert title="用途说明" type="info" :closable="false" style="margin-bottom:10px;">
       <div>毕业要求是 OBE 反向设计的顶层锚点：先按培养方案确定若干条毕业要求，再向下拆分指标点、由课程支撑，最终核算达成度。</div>

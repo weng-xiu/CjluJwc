@@ -12,16 +12,18 @@
       <el-table-column label="时间" align="center" prop="startTime"><template slot-scope="scope"><span>{{ scope.row.startTime }} - {{ scope.row.endTime }}</span></template></el-table-column>
       <el-table-column label="教室" align="center" prop="classroomName" />
       <el-table-column label="座位号" align="center" prop="seatNo" />
-      <el-table-column label="考试类型" align="center" prop="examType"><template slot-scope="scope"><dict-tag :options="dict.type.portal_exam_type" :value="scope.row.examType"/></template></el-table-column>
+      <el-table-column label="考试类型" align="center" prop="examType"><template slot-scope="scope"><dict-tag :options="PORTAL_EXAM_TYPE" :value="scope.row.examType"/></template></el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
   </div>
 </template>
 <script>
 import { listExam } from "@/api/portal/exam"
+// 考试类型沿用 Vue3 口径的前端内置枚举（portal_exam_type 未入库，且本页无 dicts 声明）
+import { PORTAL_EXAM_TYPE } from "../dicts"
 export default {
   name: "PortalExam",
-  data() { return { loading: true, total: 0, examList: [],
+  data() { return { PORTAL_EXAM_TYPE, loading: true, showSearch: true, total: 0, examList: [],
     queryParams: { pageNum: 1, pageSize: 10, examName: null, examType: null } }
   },
   created() { this.getList() },

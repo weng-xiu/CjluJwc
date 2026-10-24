@@ -24,6 +24,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['tpm:course:import']">导入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !courseLibList.length" :rows="6">
     <el-table v-loading="loading" :data="courseLibList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="课程编码" align="center" prop="courseCode" width="120" />
@@ -49,6 +50,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !courseLibList.length" description="暂无课程库数据，可调整查询条件或新增/导入课程" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="title" :visible.sync="open" width="720px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">

@@ -15,6 +15,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['dis:qualityTicket:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !ticketList.length" :rows="6">
     <el-table v-loading="loading" :data="ticketList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="工单ID" align="center" prop="ticketId" width="70" />
@@ -34,6 +35,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !ticketList.length" description="暂无质量工单，可点击「异常检测」按同步失败率自动生成" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 登记 / 处置 对话框 -->

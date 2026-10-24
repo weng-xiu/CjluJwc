@@ -56,6 +56,7 @@
           <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
         </el-row>
 
+        <app-skeleton :loading="loading && !knowledgeList.length" :rows="6">
         <el-table v-loading="loading" :data="knowledgeList" @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="55" align="center" />
           <el-table-column label="ID" align="center" prop="knowledgeId" width="60" />
@@ -87,6 +88,8 @@
             </template>
           </el-table-column>
         </el-table>
+        <app-empty v-if="!loading && !knowledgeList.length" description="暂无知识条目，可新增标准问答或使用导入补齐口径" />
+        </app-skeleton>
 
         <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
       </el-tab-pane>
