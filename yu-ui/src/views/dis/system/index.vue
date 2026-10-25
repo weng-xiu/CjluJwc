@@ -29,7 +29,7 @@
       </el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="650px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="650px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="系统名称" prop="systemName"><el-input v-model="form.systemName" placeholder="请输入系统名称" /></el-form-item>
         <el-form-item label="系统编码" prop="systemCode"><el-input v-model="form.systemCode" placeholder="请输入系统编码" /></el-form-item>
@@ -44,13 +44,16 @@
         <el-form-item label="联系电话"><el-input v-model="form.contactPhone" placeholder="请输入联系电话" /></el-form-item>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
 <script>
 import { listSystem, getSystem, delSystem, addSystem, updateSystem } from "@/api/dis/system"
+import dialogGuard from "@/utils/dialogGuard"
+import scrollToError from "@/utils/scrollToError"
 export default {
+  mixins: [dialogGuard, scrollToError],
   name: "DisSystem", dicts: ['sys_normal_disable', 'dis_system_type', 'dis_auth_type'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, systemList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, systemName: null, systemCode: null, status: null },
@@ -64,9 +67,9 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.systemId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加外部系统" },
-    handleUpdate(row) { this.reset(); const systemId = row.systemId || this.ids; getSystem(systemId).then(response => { this.form = response.data; this.open = true; this.title = "修改外部系统" }) },
-    submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.systemId != null) { updateSystem(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addSystem(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加外部系统" },
+    handleUpdate(row) { this.reset(); const systemId = row.systemId || this.ids; getSystem(systemId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改外部系统" }) },
+    submitForm() { this.$refs["form"].validate(valid => { if (!valid) { this.scrollToError() } if (valid) { if (this.form.systemId != null) { updateSystem(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addSystem(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const systemIds = row.systemId || this.ids; this.$modal.confirm('是否确认删除外部系统编号为"' + systemIds + '"的数据项？').then(function() { return delSystem(systemIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('dis/system/export', { ...this.queryParams }, `system_${new Date().getTime()}.xlsx`) }
   }

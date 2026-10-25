@@ -108,7 +108,7 @@
       @pagination="getList"
     />
 
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="类型名称" prop="typeName">
           <el-input v-model="form.typeName" placeholder="请输入类型名称" />
@@ -128,7 +128,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
   </div>
@@ -137,7 +137,10 @@
 <script>
 import { listRoomtype, getRoomtype, delRoomtype, addRoomtype, updateRoomtype } from "@/api/brm/roomtype"
 
+import dialogGuard from "@/utils/dialogGuard"
+import scrollToError from "@/utils/scrollToError"
 export default {
+  mixins: [dialogGuard, scrollToError],
   name: "Roomtype",
   dicts: ['sys_normal_disable'],
   data() {
@@ -205,7 +208,7 @@ export default {
     },
     handleAdd() {
       this.reset()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "添加教室类型"
     },
     handleUpdate(row) {
@@ -213,12 +216,12 @@ export default {
       const typeId = row.typeId || this.ids
       getRoomtype(typeId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改教室类型"
       })
     },
     submitForm() {
-      this.$refs["form"].validate(valid => {
+      this.$refs["form"].validate(valid => { if (!valid) { this.scrollToError() }
         if (valid) {
           if (this.form.typeId != null) {
             updateRoomtype(this.form).then(response => {

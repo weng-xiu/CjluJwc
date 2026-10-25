@@ -124,7 +124,7 @@
     />
 
     <!-- 添加或修改岗位对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="岗位名称" prop="postName">
           <el-input v-model="form.postName" placeholder="请输入岗位名称" />
@@ -150,7 +150,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
   </div>
@@ -159,7 +159,10 @@
 <script>
 import { listPost, getPost, delPost, addPost, updatePost } from "@/api/system/post"
 
+import dialogGuard from "@/utils/dialogGuard"
+import scrollToError from "@/utils/scrollToError"
 export default {
+  mixins: [dialogGuard, scrollToError],
   name: "Post",
   dicts: ['sys_normal_disable'],
   data() {
@@ -255,7 +258,7 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "添加岗位"
     },
     /** 修改按钮操作 */
@@ -264,13 +267,13 @@ export default {
       const postId = row.postId || this.ids
       getPost(postId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改岗位"
       })
     },
     /** 提交按钮 */
     submitForm() {
-      this.$refs["form"].validate(valid => {
+      this.$refs["form"].validate(valid => { if (!valid) { this.scrollToError() }
         if (valid) {
           if (this.form.postId != undefined) {
             updatePost(this.form).then(() => {

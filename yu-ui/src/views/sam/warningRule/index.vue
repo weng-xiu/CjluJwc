@@ -33,7 +33,7 @@
       </el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="规则代码" prop="ruleCode"><el-input v-model="form.ruleCode" placeholder="请输入规则代码（如GPA_LOW）" /></el-form-item>
         <el-form-item label="规则名称" prop="ruleName"><el-input v-model="form.ruleName" placeholder="请输入规则名称" /></el-form-item>
@@ -55,7 +55,7 @@
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio label="0">正常</el-radio><el-radio label="1">停用</el-radio></el-radio-group></el-form-item>
         <el-form-item label="备注" prop="remark"><el-input v-model="form.remark" type="textarea" placeholder="请输入备注" /></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
@@ -63,7 +63,10 @@
 import { listWarningRule, getWarningRule, delWarningRule, addWarningRule, updateWarningRule } from "@/api/sam/warningRule"
 import { listYear } from "@/api/brm/year"
 import { listSemester, getSemester } from "@/api/brm/semester"
+import dialogGuard from "@/utils/dialogGuard"
+import scrollToError from "@/utils/scrollToError"
 export default {
+  mixins: [dialogGuard, scrollToError],
   name: "WarningRule",
   data() { return {
     loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, ruleList: [], title: "", open: false,
@@ -96,13 +99,13 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.ruleId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加预警规则" },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加预警规则" },
     handleUpdate(row) {
       this.reset()
       const ruleId = row.ruleId || this.ids
       getWarningRule(ruleId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改预警规则"
         if (this.form.semesterId) {
           getSemester(this.form.semesterId).then(res => {
@@ -114,7 +117,7 @@ export default {
         }
       })
     },
-    submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.ruleId != null) { updateWarningRule(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addWarningRule(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
+    submitForm() { this.$refs["form"].validate(valid => { if (!valid) { this.scrollToError() } if (valid) { if (this.form.ruleId != null) { updateWarningRule(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addWarningRule(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const ruleIds = row.ruleId || this.ids; this.$modal.confirm('是否确认删除预警规则编号为"' + ruleIds + '"的数据项？').then(function() { return delWarningRule(ruleIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('sam/warningRule/export', { ...this.queryParams }, `warningRule_${new Date().getTime()}.xlsx`) }
   }

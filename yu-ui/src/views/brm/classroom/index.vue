@@ -31,7 +31,7 @@
       </el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="教室名称" prop="classroomName"><el-input v-model="form.classroomName" placeholder="请输入教室名称" /></el-form-item>
         <el-form-item label="所属校区" prop="campusId"><el-select v-model="form.campusId" placeholder="请选择所属校区" style="width:100%" @change="handleFormCampusChange"><el-option v-for="item in campusList" :key="item.campusId" :label="item.campusName" :value="item.campusId"/></el-select></el-form-item>
@@ -40,7 +40,7 @@
         <el-form-item label="容纳人数"><el-input-number v-model="form.capacity" :min="0" /></el-form-item>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
 
     <!-- P7：教室导入对话框 -->
@@ -60,7 +60,10 @@ import { listCampus } from "@/api/brm/campus"
 import { listBuilding } from "@/api/brm/building"
 import { listRoomtype } from "@/api/brm/roomtype"
 import ExcelImportDialog from "@/components/ExcelImportDialog"
+import dialogGuard from "@/utils/dialogGuard"
+import scrollToError from "@/utils/scrollToError"
 export default {
+  mixins: [dialogGuard, scrollToError],
   name: "Classroom", dicts: ['sys_normal_disable'],
   components: { ExcelImportDialog },
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, classroomList: [], campusList: [], allBuildingList: [], queryBuildingList: [], formBuildingList: [], typeList: [], title: "", open: false,
@@ -82,9 +85,9 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.classroomId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加教室" },
-    handleUpdate(row) { this.reset(); const classroomId = row.classroomId || this.ids; getClassroom(classroomId).then(response => { this.form = response.data; const b = this.allBuildingList.find(x => x.buildingId === this.form.buildingId); if (b) { this.form.campusId = b.campusId; this.formBuildingList = this.allBuildingList.filter(x => x.campusId === b.campusId) } this.open = true; this.title = "修改教室" }) },
-    submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.classroomId != null) { updateClassroom(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addClassroom(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加教室" },
+    handleUpdate(row) { this.reset(); const classroomId = row.classroomId || this.ids; getClassroom(classroomId).then(response => { this.form = response.data; const b = this.allBuildingList.find(x => x.buildingId === this.form.buildingId); if (b) { this.form.campusId = b.campusId; this.formBuildingList = this.allBuildingList.filter(x => x.campusId === b.campusId) } this.open = true; this.captureDialogSnapshot(); this.title = "修改教室" }) },
+    submitForm() { this.$refs["form"].validate(valid => { if (!valid) { this.scrollToError() } if (valid) { if (this.form.classroomId != null) { updateClassroom(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addClassroom(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const classroomIds = row.classroomId || this.ids; this.$modal.confirm('是否确认删除教室编号为"' + classroomIds + '"的数据项？').then(function() { return delClassroom(classroomIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('brm/classroom/export', { ...this.queryParams }, `classroom_${new Date().getTime()}.xlsx`) },
     /** P7：打开导入对话框 */

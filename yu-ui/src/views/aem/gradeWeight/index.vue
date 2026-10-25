@@ -46,7 +46,7 @@
       </el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="课程" prop="courseId">
           <el-select v-model="form.courseId" placeholder="不选则按类别或全局配置" clearable filterable style="width:100%">
@@ -67,14 +67,17 @@
         <el-form-item label="状态" prop="status"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{ dict.label }}</el-radio></el-radio-group></el-form-item>
         <el-form-item label="备注" prop="remark"><el-input v-model="form.remark" type="textarea" :rows="2" placeholder="请输入备注" /></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
 <script>
 import { listGradeWeight, getGradeWeight, delGradeWeight, addGradeWeight, updateGradeWeight } from "@/api/aem/gradeWeight"
 import { listCourseLib } from "@/api/tpm/courseLib"
+import dialogGuard from "@/utils/dialogGuard"
+import scrollToError from "@/utils/scrollToError"
 export default {
+  mixins: [dialogGuard, scrollToError],
   name: "GradeWeight",
   dicts: ['sys_normal_disable', 'tpm_course_category'],
   data() {
@@ -116,14 +119,14 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.weightId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加成绩权重配置" },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加成绩权重配置" },
     handleUpdate(row) {
       this.reset();
       const weightId = row.weightId || this.ids;
-      getGradeWeight(weightId).then(response => { this.form = response.data; this.open = true; this.title = "修改成绩权重配置" })
+      getGradeWeight(weightId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改成绩权重配置" })
     },
     submitForm() {
-      this.$refs["form"].validate(valid => {
+      this.$refs["form"].validate(valid => { if (!valid) { this.scrollToError() }
         if (valid) {
           if (Math.abs((this.form.regularRatio || 0) + (this.form.examRatio || 0) - 100) > 0.001) {
             this.$modal.msgError("平时占比与考试占比之和必须等于100")

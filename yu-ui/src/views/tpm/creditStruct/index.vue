@@ -42,7 +42,7 @@
       </el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="560px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="560px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="所属方案" prop="planId">
           <el-select v-model="form.planId" placeholder="请选择培养方案" filterable clearable style="width:100%">
@@ -60,7 +60,7 @@
         <el-form-item label="说明" prop="description"><el-input v-model="form.description" type="textarea" placeholder="请输入说明" /></el-form-item>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
@@ -68,7 +68,10 @@
 import { listCreditStruct, getCreditStruct, delCreditStruct, addCreditStruct, updateCreditStruct } from "@/api/tpm/creditStruct"
 import { listPlan } from "@/api/tpm/plan"
 
+import dialogGuard from "@/utils/dialogGuard"
+import scrollToError from "@/utils/scrollToError"
 export default {
+  mixins: [dialogGuard, scrollToError],
   name: "CreditStruct",
   dicts: ['sys_normal_disable', 'tpm_credit_type'],
   data() {
@@ -108,10 +111,10 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.structId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加学分结构" },
-    handleUpdate(row) { this.reset(); const structId = row.structId || this.ids; getCreditStruct(structId).then(response => { this.form = response.data; this.open = true; this.title = "修改学分结构" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加学分结构" },
+    handleUpdate(row) { this.reset(); const structId = row.structId || this.ids; getCreditStruct(structId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改学分结构" }) },
     submitForm() {
-      this.$refs["form"].validate(valid => {
+      this.$refs["form"].validate(valid => { if (!valid) { this.scrollToError() }
         if (valid) {
           if (this.form.structId != null) {
             updateCreditStruct(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() })

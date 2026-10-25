@@ -43,7 +43,7 @@
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="环节编码" prop="stepKey"><el-input v-model="form.stepKey" placeholder="如 LIBRARY / 自定义大写字母" :disabled="form.stepId!=null"/></el-form-item>
         <el-form-item label="环节名称" prop="stepName"><el-input v-model="form.stepName" placeholder="请输入环节名称"/></el-form-item>
@@ -57,7 +57,7 @@
         <el-form-item label="状态" prop="status"><el-radio-group v-model="form.status"><el-radio label="0">启用</el-radio><el-radio label="1">停用</el-radio></el-radio-group></el-form-item>
         <el-form-item label="备注" prop="remark"><el-input v-model="form.remark" type="textarea" placeholder="请输入备注"/></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
@@ -65,7 +65,10 @@
 <script>
 import { listProcedureStep, getProcedureStep, addProcedureStep, updateProcedureStep, delProcedureStep } from "@/api/sam/procedureStep"
 
+import dialogGuard from "@/utils/dialogGuard"
+import scrollToError from "@/utils/scrollToError"
 export default {
+  mixins: [dialogGuard, scrollToError],
   name: "ProcedureStep",
   dicts: ['sam_step_auto_check'],
   data() {
@@ -87,10 +90,10 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(i => i.stepId); this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加离校环节" },
-    handleUpdate(row) { this.reset(); getProcedureStep(row.stepId).then(res => { this.form = res.data; this.open = true; this.title = "修改离校环节" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加离校环节" },
+    handleUpdate(row) { this.reset(); getProcedureStep(row.stepId).then(res => { this.form = res.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改离校环节" }) },
     submitForm() {
-      this.$refs["form"].validate(valid => {
+      this.$refs["form"].validate(valid => { if (!valid) { this.scrollToError() }
         if (!valid) return
         if (this.form.stepId != null) { updateProcedureStep(this.form).then(() => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) }
         else { addProcedureStep(this.form).then(() => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) }
