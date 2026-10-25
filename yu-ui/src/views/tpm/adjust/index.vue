@@ -26,6 +26,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['tpm:adjust:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !adjustList.length" :rows="6">
     <el-table v-loading="loading" :data="adjustList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="调课类型" align="center" prop="adjustType" width="90">
@@ -64,8 +65,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !adjustList.length" description="暂无培养过程数据，可调整筛选条件或调整学期/轮次" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="680px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="680px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="排课" prop="scheduleId">
           <el-select v-model="form.scheduleId" placeholder="请选择排课（课程名 教室 周次节次）" filterable clearable style="width:100%">
@@ -170,7 +173,7 @@ export default {
         this.adjustList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     loadOptions() {
       listSchedule({ pageNum: 1, pageSize: 200 }).then(res => { this.scheduleOptions = res.rows || [] })

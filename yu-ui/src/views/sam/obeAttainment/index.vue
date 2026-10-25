@@ -195,7 +195,7 @@
       </el-card>
 
       <!-- F3 台账登记/修改弹窗 -->
-      <el-dialog :title="impTitle" :visible.sync="impOpen" width="640px" append-to-body>
+      <el-dialog :close-on-click-modal="false" :title="impTitle" :visible.sync="impOpen" width="640px" append-to-body>
         <el-form ref="impForm" :model="impForm" :rules="impRules" label-width="110px" size="small">
           <el-form-item label="毕业要求">
             <el-select v-model="impForm.grId" placeholder="请选择毕业要求" clearable filterable style="width:100%" @change="onImpGrChange">

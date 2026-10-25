@@ -17,6 +17,7 @@
     <el-row :gutter="10" class="mb8">
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !scheduleList.length" :rows="6">
     <el-table v-loading="loading" :data="scheduleList">
       <el-table-column label="课程名称" align="center" prop="courseName" />
       <el-table-column label="教师" align="center" prop="teacherName" />
@@ -27,6 +28,8 @@
       </el-table-column>
       <el-table-column label="周次" align="center" prop="weekNo" />
     </el-table>
+    <app-empty v-if="!loading && !scheduleList.length" description="暂无门户内容，可调整筛选条件或先发布" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
   </div>
 </template>
@@ -52,7 +55,7 @@ export default {
         listSemester({ academicYearId: yearId, pageNum: 1, pageSize: 50 }).then(r => { this.semesterList = r.rows })
       }
     },
-    getList() { this.loading = true; listSchedule(this.queryParams).then(response => { this.scheduleList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listSchedule(this.queryParams).then(response => { this.scheduleList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.selectedYearId = null; this.semesterList = []; this.resetForm("queryForm"); this.handleQuery() }
   }

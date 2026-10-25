@@ -15,6 +15,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['sam:warningRule:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !ruleList.length" :rows="6">
     <el-table v-loading="loading" :data="ruleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="规则代码" align="center" prop="ruleCode" />
@@ -32,8 +33,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !ruleList.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="规则代码" prop="ruleCode"><el-input v-model="form.ruleCode" placeholder="请输入规则代码（如GPA_LOW）" /></el-form-item>
         <el-form-item label="规则名称" prop="ruleName"><el-input v-model="form.ruleName" placeholder="请输入规则名称" /></el-form-item>
@@ -89,7 +92,7 @@ export default {
         listSemester({ academicYearId: yearId, pageNum: 1, pageSize: 50 }).then(r => { this.formSemesterList = r.rows })
       }
     },
-    getList() { this.loading = true; listWarningRule(this.queryParams).then(response => { this.ruleList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listWarningRule(this.queryParams).then(response => { this.ruleList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() {
       this.form = { ruleId: null, ruleCode: null, ruleName: null, warningType: null, thresholdValue: null, warningLevel: null, messageTemplate: null, isEnabled: "1", semesterId: null, status: "0", remark: null }

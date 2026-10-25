@@ -115,7 +115,7 @@
 </template>
 <script>
 import * as echarts from 'echarts'
-import { listGradeStatistics, aggregateGrade, aggregateSemester as aggSemester, scoreDistribution, semesterOverview, courseRanking, statByClass, statByTeacher, statByMajor, gradeTrend } from "@/api/aem/gradeStatistics"
+import { listGradeStatistics, aggregateSemester as aggSemester, scoreDistribution, semesterOverview, courseRanking, statByClass, statByTeacher, statByMajor, gradeTrend } from "@/api/aem/gradeStatistics"
 export default {
   name: "GradeStatistics",
   dicts: [],
@@ -146,7 +146,7 @@ export default {
       this.loading = true
       listGradeStatistics(this.queryParams).then(response => {
         this.gradeStatisticsList = response.rows; this.total = response.total; this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     loadAnalysis() {
       if (!this.analysis.semesterId) { this.$modal.msgWarning("请先输入学期ID"); return }

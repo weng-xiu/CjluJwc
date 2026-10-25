@@ -20,6 +20,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="环节编码" align="center" prop="stepKey" width="150"/>
@@ -41,9 +42,11 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="环节编码" prop="stepKey"><el-input v-model="form.stepKey" placeholder="如 LIBRARY / 自定义大写字母" :disabled="form.stepId!=null"/></el-form-item>
         <el-form-item label="环节名称" prop="stepName"><el-input v-model="form.stepName" placeholder="请输入环节名称"/></el-form-item>

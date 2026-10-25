@@ -31,6 +31,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !borrowList.length" :rows="6">
     <el-table v-loading="loading" :data="borrowList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="教室" align="center" min-width="150" show-overflow-tooltip>
@@ -70,11 +71,13 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !borrowList.length" description="暂无基础资源数据，可调整筛选条件或新增" />
+    </app-skeleton>
 
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增/修改申请 -->
-    <el-dialog :title="title" :visible.sync="open" width="620px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="620px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="教室" prop="classroomId">
           <el-select v-model="form.classroomId" filterable placeholder="请选择教室" style="width:100%" @change="preCheckConflict">
@@ -124,7 +127,7 @@
     </el-dialog>
 
     <!-- 审批对话框 -->
-    <el-dialog :title="approveTitle" :visible.sync="approveOpen" width="520px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="approveTitle" :visible.sync="approveOpen" width="520px" append-to-body>
       <el-descriptions :column="1" border size="small" style="margin-bottom:12px">
         <el-descriptions-item label="教室">{{ approveRow.classroomName || approveRow.classroomId }}</el-descriptions-item>
         <el-descriptions-item label="申请人">{{ approveRow.applicant }}</el-descriptions-item>
@@ -282,7 +285,7 @@ export default {
         this.borrowList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     statusText(v) {
       const s = this.statusOptions.find(x => x.value === v)

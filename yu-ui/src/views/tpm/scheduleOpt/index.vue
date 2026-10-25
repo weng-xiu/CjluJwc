@@ -88,7 +88,7 @@
     </el-dialog>
 
     <!-- T1 时间片自动排课对话框 -->
-    <el-dialog title="时间片自动排课（T1）" :visible.sync="asVisible" width="900px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="时间片自动排课（T1）" :visible.sync="asVisible" width="900px" append-to-body>
       <el-alert title="对已确认且尚无排课记录的开课，自动决定星期/节次/周次并分配教室。硬约束：教室容量、教师/教室时间不冲突；软约束：教室类型匹配、跨校区同楼宇、周课时均衡、班级不连堂。可先预览确认再落库，落库后可在排课管理中人工调整。" type="info" :closable="false" show-icon style="margin-bottom:12px" />
       <el-form :inline="true" size="small">
         <el-form-item label="每周天数"><el-input-number v-model="asParam.daysPerWeek" :min="1" :max="7" controls-position="right" style="width:100px" /></el-form-item>

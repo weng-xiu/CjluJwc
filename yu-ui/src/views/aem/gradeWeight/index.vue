@@ -22,6 +22,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
     <el-alert title="总评权重按「课程级 > 课程类别级 > 全局默认」优先级匹配；两者均未配置的科目按平时30% + 考试70% 计算。" type="info" show-icon :closable="false" class="mb8"/>
+    <app-skeleton :loading="loading && !weightList.length" :rows="6">
     <el-table v-loading="loading" :data="weightList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="配置ID" align="center" prop="weightId" width="80" />
@@ -45,8 +46,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !weightList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="课程" prop="courseId">
           <el-select v-model="form.courseId" placeholder="不选则按类别或全局配置" clearable filterable style="width:100%">
@@ -107,7 +110,7 @@ export default {
   methods: {
     getList() {
       this.loading = true;
-      listGradeWeight(this.queryParams).then(response => { this.weightList = response.rows; this.total = response.total; this.loading = false })
+      listGradeWeight(this.queryParams).then(response => { this.weightList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false })
     },
     cancel() { this.open = false; this.reset() },
     reset() {

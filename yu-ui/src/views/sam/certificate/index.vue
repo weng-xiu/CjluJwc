@@ -15,6 +15,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['sam:certificate:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学号" align="center" prop="studentNo" width="140"/>
@@ -33,10 +34,12 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增/修改对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="form.studentId" placeholder="请输入学生ID" /></el-form-item>
         <el-form-item label="证书类型" prop="certType"><el-select v-model="form.certType" @change="onCertTypeChange"><el-option label="毕业证书" value="0"/><el-option label="学位证书" value="1"/><el-option label="结业证书" value="2"/></el-select></el-form-item>
@@ -56,7 +59,7 @@
     </el-dialog>
 
     <!-- 批量生成对话框 -->
-    <el-dialog title="批量生成证书" :visible.sync="genOpen" width="460px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="批量生成证书" :visible.sync="genOpen" width="460px" append-to-body>
       <el-form label-width="100px">
         <el-form-item label="证书类型"><el-select v-model="genForm.certType" style="width:100%"><el-option label="毕业证书" value="0"/><el-option label="学位证书" value="1"/><el-option label="结业证书" value="2"/></el-select></el-form-item>
         <el-form-item label="毕业年份"><el-input v-model="genForm.gradYear" placeholder="可选，如 2026，留空不限" /></el-form-item>
@@ -78,7 +81,7 @@
       @closed="getList" />
 
     <!-- 发放登记对话框 -->
-    <el-dialog title="证书发放登记" :visible.sync="issueOpen" width="460px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="证书发放登记" :visible.sync="issueOpen" width="460px" append-to-body>
       <el-form label-width="100px">
         <el-form-item label="领取人"><el-input v-model="issueForm.receiver" placeholder="请输入领取人" /></el-form-item>
         <el-form-item label="发放日期"><el-date-picker v-model="issueForm.issueDate" type="date" value-format="yyyy-MM-dd" placeholder="默认今天" style="width:100%"/></el-form-item>

@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="学生ID" prop="studentId"><el-input v-model="queryParams.studentId" placeholder="请输入学生ID" clearable/></el-form-item>
+      <el-form-item label="学生ID" prop="studentId"><el-input v-model="queryParams.studentId" placeholder="请输入学生ID" clearable @keyup.enter.native="handleQuery"/></el-form-item>
       <el-form-item label="异动类型" prop="changeType"><el-select v-model="queryParams.changeType" placeholder="请选择" clearable><el-option label="休学" value="0"/><el-option label="复学" value="1"/><el-option label="转学" value="2"/><el-option label="退学" value="3"/></el-select></el-form-item>
       <el-form-item label="审批状态" prop="approveStatus"><el-select v-model="queryParams.approveStatus" placeholder="请选择" clearable><el-option label="待审" value="0"/><el-option label="通过" value="1"/><el-option label="驳回" value="2"/><el-option label="已撤销" value="3"/></el-select></el-form-item>
       <el-form-item><el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button><el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button></el-form-item>
@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['sam:statusChange:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学生ID" align="center" prop="studentId" />
@@ -31,8 +32,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="form.studentId" placeholder="请输入学生ID" /></el-form-item>
         <el-form-item label="异动类型" prop="changeType"><el-select v-model="form.changeType" placeholder="请选择"><el-option label="休学" value="0"/><el-option label="复学" value="1"/><el-option label="转学" value="2"/><el-option label="退学" value="3"/></el-select></el-form-item>
@@ -43,7 +46,7 @@
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
     </el-dialog>
     <!-- S5：审批意见对话框 -->
-    <el-dialog :title="auditTitle" :visible.sync="auditOpen" width="460px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="auditTitle" :visible.sync="auditOpen" width="460px" append-to-body>
       <el-form label-width="80px">
         <el-form-item label="审批意见"><el-input v-model="auditComment" type="textarea" :rows="3" placeholder="请输入审批意见（可选）" /></el-form-item>
       </el-form>
@@ -63,7 +66,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listStatusChange(this.queryParams).then(response => { this.list = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listStatusChange(this.queryParams).then(response => { this.list = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { changeId: null, studentId: null, changeType: null, changeDate: null, originalStatus: null, newStatus: null, reason: null, applicant: null, approveStatus: "0", approveBy: null, approveTime: null, approveOpinion: null, status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

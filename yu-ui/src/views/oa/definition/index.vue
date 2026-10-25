@@ -18,6 +18,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !definitionList.length" :rows="6">
     <el-table v-loading="loading" :data="definitionList">
       <el-table-column label="流程定义ID" align="center" prop="id" :show-overflow-tooltip="true" width="200" />
       <el-table-column label="流程标识" align="center" prop="key" />
@@ -39,6 +40,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !definitionList.length" description="暂无办公数据，可调整筛选条件或发起流程" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
@@ -79,7 +82,7 @@
       </div>
     </el-dialog>
 
-    <el-dialog :title="addTitle" :visible.sync="addOpen" width="800px" append-to-body v-dialogDrag>
+    <el-dialog :close-on-click-modal="false" :title="addTitle" :visible.sync="addOpen" width="800px" append-to-body v-dialogDrag>
       <el-tabs v-model="activeTab">
         <!-- 拖拽式可视化设计 -->
         <el-tab-pane name="design">
@@ -206,7 +209,7 @@ export default {
         this.definitionList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     handleUpload(option) {
       const data = new FormData()

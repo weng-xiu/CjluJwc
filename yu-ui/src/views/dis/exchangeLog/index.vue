@@ -12,6 +12,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['dis:exchangeLog:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !logList.length" :rows="6">
     <el-table v-loading="loading" :data="logList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="日志ID" align="center" prop="logId" width="80" />
@@ -33,6 +34,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !logList.length" description="暂无数据交换数据，可调整筛选条件或检查同步任务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
     <el-dialog title="交换日志详情" :visible.sync="open" width="800px" append-to-body>
       <el-form :model="form" label-width="100px" disabled>
@@ -65,7 +68,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listExchangeLog(this.queryParams).then(response => { this.logList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listExchangeLog(this.queryParams).then(response => { this.logList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.logId); this.multiple = !selection.length },

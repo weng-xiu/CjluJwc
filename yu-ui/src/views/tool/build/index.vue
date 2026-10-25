@@ -123,6 +123,8 @@
       :form-conf="formConf"
       :show-field="!!drawingList.length"
       @tag-change="tagChange"
+      @update:active-data="handleActiveDataUpdate"
+      @update:form-conf="handleFormConfUpdate"
     />
 
     <code-type-dialog
@@ -229,6 +231,13 @@ export default {
     clipboard.destroy()
   },
   methods: {
+    // 属性面板用本地镜像编辑后回传整个配置，这里就地合并：activeData 与 drawingList 元素同一引用，不能换新对象
+    handleActiveDataUpdate(data) {
+      Object.assign(this.activeData, data)
+    },
+    handleFormConfUpdate(data) {
+      Object.assign(this.formConf, data)
+    },
     activeFormItem(element) {
       this.activeData = element
       this.activeId = element.formId

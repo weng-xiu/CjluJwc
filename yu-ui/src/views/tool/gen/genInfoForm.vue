@@ -4,7 +4,7 @@
       <el-col :span="12">
         <el-form-item prop="tplCategory">
           <span slot="label">生成模板</span>
-          <el-select v-model="info.tplCategory" @change="tplSelectChange">
+          <el-select v-model="tplCategory" @change="tplSelectChange">
             <el-option label="单表（增删改查）" value="crud" />
             <el-option label="树表（增删改查）" value="tree" />
             <el-option label="主子表（增删改查）" value="sub" />
@@ -14,7 +14,7 @@
       <el-col :span="12">
         <el-form-item prop="tplWebType">
           <span slot="label">前端类型</span>
-          <el-select v-model="info.tplWebType">
+          <el-select v-model="tplWebType">
             <el-option label="Vue2 Element UI 模版" value="element-ui" />
             <el-option label="Vue3 Element Plus 模版" value="element-plus" />
             <el-option label="Vue3 Element Plus TypeScript 模版" value="element-plus-typescript" />
@@ -29,7 +29,7 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-input v-model="info.packageName" />
+          <el-input v-model="packageName" />
         </el-form-item>
       </el-col>
 
@@ -41,7 +41,7 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-input v-model="info.moduleName" />
+          <el-input v-model="moduleName" />
         </el-form-item>
       </el-col>
 
@@ -53,7 +53,7 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-input v-model="info.businessName" />
+          <el-input v-model="businessName" />
         </el-form-item>
       </el-col>
 
@@ -65,7 +65,7 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-input v-model="info.functionName" />
+          <el-input v-model="functionName" />
         </el-form-item>
       </el-col>
 
@@ -77,7 +77,7 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-select v-model="info.formColNum">
+          <el-select v-model="formColNum">
             <el-option label="单列" :value="1" />
             <el-option label="双列" :value="2" />
             <el-option label="三列" :value="3" />
@@ -88,7 +88,7 @@
       <el-col :span="12">
         <el-form-item prop="genView">
           <span slot="label">扩展功能</span>
-          <el-checkbox v-model="info.view">生成详情页</el-checkbox>
+          <el-checkbox v-model="view">生成详情页</el-checkbox>
         </el-form-item>
       </el-col>
 
@@ -100,8 +100,8 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-radio v-model="info.genType" label="0">zip压缩包</el-radio>
-          <el-radio v-model="info.genType" label="1">自定义路径</el-radio>
+          <el-radio v-model="genType" label="0">zip压缩包</el-radio>
+          <el-radio v-model="genType" label="1">自定义路径</el-radio>
         </el-form-item>
       </el-col>
 
@@ -115,7 +115,7 @@
           </span>
           <treeselect
             :append-to-body="true"
-            v-model="info.parentMenuId"
+            v-model="parentMenuId"
             :options="menus"
             :normalizer="normalizer"
             :show-count="true"
@@ -132,14 +132,14 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-input v-model="info.genPath">
+          <el-input v-model="genPath">
             <el-dropdown slot="append">
               <el-button type="primary">
                 最近路径快速选择
                 <i class="el-icon-arrow-down el-icon--right"></i>
               </el-button>
               <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item @click.native="info.genPath = '/'">恢复默认的生成基础路径</el-dropdown-item>
+                <el-dropdown-item @click.native="genPath = '/'">恢复默认的生成基础路径</el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
           </el-input>
@@ -157,7 +157,7 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-select v-model="info.treeCode" placeholder="请选择">
+          <el-select v-model="treeCode" placeholder="请选择">
             <el-option
               v-for="(column, index) in info.columns"
               :key="index"
@@ -175,7 +175,7 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-select v-model="info.treeParentCode" placeholder="请选择">
+          <el-select v-model="treeParentCode" placeholder="请选择">
             <el-option
               v-for="(column, index) in info.columns"
               :key="index"
@@ -193,7 +193,7 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-select v-model="info.treeName" placeholder="请选择">
+          <el-select v-model="treeName" placeholder="请选择">
             <el-option
               v-for="(column, index) in info.columns"
               :key="index"
@@ -214,7 +214,7 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-select v-model="info.subTableName" placeholder="请选择" @change="subSelectChange">
+          <el-select v-model="subTableName" placeholder="请选择" @change="subSelectChange">
             <el-option
               v-for="(table, index) in tables"
               :key="index"
@@ -232,7 +232,7 @@
               <i class="el-icon-question"></i>
             </el-tooltip>
           </span>
-          <el-select v-model="info.subTableFkName" placeholder="请选择">
+          <el-select v-model="subTableFkName" placeholder="请选择">
             <el-option
               v-for="(column, index) in subColumns"
               :key="index"
@@ -255,7 +255,7 @@ export default {
   props: {
     info: {
       type: Object,
-      default: null
+      default: () => ({})
     },
     tables: {
       type: Array,
@@ -266,9 +266,79 @@ export default {
       default: () => []
     }
   },
+  computed: {
+    // 受控字段代理：写入先暂存补丁，同一 tick 内合并后一次性 emit（父组件用 :info.sync 回收），
+    // 避免 select 的 v-model 与 @change 同步写 prop 时基于旧快照互相覆盖
+    tplCategory: {
+      get() { return this.info.tplCategory },
+      set(val) { this.setField('tplCategory', val) }
+    },
+    tplWebType: {
+      get() { return this.info.tplWebType },
+      set(val) { this.setField('tplWebType', val) }
+    },
+    packageName: {
+      get() { return this.info.packageName },
+      set(val) { this.setField('packageName', val) }
+    },
+    moduleName: {
+      get() { return this.info.moduleName },
+      set(val) { this.setField('moduleName', val) }
+    },
+    businessName: {
+      get() { return this.info.businessName },
+      set(val) { this.setField('businessName', val) }
+    },
+    functionName: {
+      get() { return this.info.functionName },
+      set(val) { this.setField('functionName', val) }
+    },
+    formColNum: {
+      get() { return this.info.formColNum },
+      set(val) { this.setField('formColNum', val) }
+    },
+    view: {
+      get() { return this.info.view },
+      set(val) { this.setField('view', val) }
+    },
+    genType: {
+      get() { return this.info.genType },
+      set(val) { this.setField('genType', val) }
+    },
+    parentMenuId: {
+      get() { return this.info.parentMenuId },
+      set(val) { this.setField('parentMenuId', val) }
+    },
+    genPath: {
+      get() { return this.info.genPath },
+      set(val) { this.setField('genPath', val) }
+    },
+    treeCode: {
+      get() { return this.info.treeCode },
+      set(val) { this.setField('treeCode', val) }
+    },
+    treeParentCode: {
+      get() { return this.info.treeParentCode },
+      set(val) { this.setField('treeParentCode', val) }
+    },
+    treeName: {
+      get() { return this.info.treeName },
+      set(val) { this.setField('treeName', val) }
+    },
+    subTableName: {
+      get() { return this.info.subTableName },
+      set(val) { this.setField('subTableName', val) }
+    },
+    subTableFkName: {
+      get() { return this.info.subTableFkName },
+      set(val) { this.setField('subTableFkName', val) }
+    }
+  },
   data() {
     return {
       subColumns: [],
+      // 待提交的字段补丁（见 setField）
+      pendingPatch: {},
       rules: {
         tplCategory: [
           { required: true, message: "请选择生成模板", trigger: "blur" }
@@ -294,11 +364,23 @@ export default {
     },
     'info.tplWebType': function(val) {
       if (val === '') {
-        this.info.tplWebType = "element-ui"
+        this.tplWebType = "element-ui"
       }
     }
   },
   methods: {
+    /** 暂存字段写入并在同一 tick 内合并 emit，避免连续写 prop 时互相覆盖 */
+    setField(key, val) {
+      this.pendingPatch[key] = val
+      if (this._patchFlushing) return
+      this._patchFlushing = true
+      this.$nextTick(() => {
+        const patch = this.pendingPatch
+        this.pendingPatch = {}
+        this._patchFlushing = false
+        this.$emit('update:info', { ...this.info, ...patch })
+      })
+    },
     /** 转换菜单数据结构 */
     normalizer(node) {
       if (node.children && !node.children.length) {
@@ -312,13 +394,13 @@ export default {
     },
     /** 选择子表名触发 */
     subSelectChange(value) {
-      this.info.subTableFkName = ''
+      this.subTableFkName = ''
     },
     /** 选择生成模板触发 */
     tplSelectChange(value) {
       if(value !== 'sub') {
-        this.info.subTableName = ''
-        this.info.subTableFkName = ''
+        this.subTableName = ''
+        this.subTableFkName = ''
       }
     },
     /** 设置关联外键 */

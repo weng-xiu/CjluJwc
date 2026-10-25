@@ -36,6 +36,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !studentList.length" :rows="6">
     <el-table v-loading="loading" :data="studentList">
       <el-table-column label="学号" align="center" prop="studentCode" width="120" />
       <el-table-column label="姓名" align="center" prop="nickName" width="100" />
@@ -65,11 +66,13 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !studentList.length" description="暂无系统数据，可调整筛选条件后重新查询" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 新增/修改学生对话框 -->
-    <el-dialog :title="dialogTitle" :visible.sync="dialogVisible" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="dialogTitle" :visible.sync="dialogVisible" width="600px" append-to-body>
       <el-form ref="studentForm" :model="studentForm" :rules="studentRules" label-width="100px">
         <el-row>
           <el-col :span="12">
@@ -196,12 +199,12 @@ export default {
         this.studentList = response.rows;
         this.total = response.total;
         this.loading = false;
-      });
+      }).catch(() => { this.loading = false });
     },
     getDeptTree() {
       deptTreeSelect().then(response => {
         this.deptOptions = response.data;
-      });
+      }).catch(() => {});
     },
     normalizer(node) {
       return {

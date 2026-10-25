@@ -36,6 +36,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !indicatorList.length" :rows="6">
     <el-table v-loading="loading" :data="indicatorList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="ipCode" width="120" show-overflow-tooltip />
@@ -59,9 +60,11 @@
       </el-table-column>
       <template slot="empty"><div class="table-empty">暂无指标点，可调整查询条件或新增</div></template>
     </el-table>
+    <app-empty v-if="!loading && !indicatorList.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
-    <el-dialog :title="title" :visible.sync="open" width="640px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="640px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="培养方案" prop="planId">
           <el-select v-model="form.planId" placeholder="输入方案名搜索" filterable remote reserve-keyword :remote-method="searchPlan" :loading="planLoading" style="width:100%" @change="onFormPlanChange">
@@ -133,7 +136,7 @@ export default {
   methods: {
     getList() {
       this.loading = true
-      listIndicator(this.queryParams).then(response => { this.indicatorList = response.rows; this.total = response.total; this.loading = false })
+      listIndicator(this.queryParams).then(response => { this.indicatorList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false })
     },
     searchPlan(query) {
       if (!query) { this.planOptions = []; return }

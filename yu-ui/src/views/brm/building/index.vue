@@ -31,7 +31,7 @@
     <app-empty v-if="!loading && !buildingList.length" description="暂无教学楼数据，可调整查询条件或新增教学楼" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="教学楼名称" prop="buildingName"><el-input v-model="form.buildingName" placeholder="请输入教学楼名称" /></el-form-item>
         <el-form-item label="教学楼编码" prop="buildingCode"><el-input v-model="form.buildingCode" placeholder="请输入教学楼编码" /></el-form-item>
@@ -56,7 +56,7 @@ export default {
   created() { this.getList(); this.loadCampus() },
   methods: {
     loadCampus() { listCampus({ pageNum: 1, pageSize: 999 }).then(response => { this.campusList = response.rows }) },
-    getList() { this.loading = true; listBuilding(this.queryParams).then(response => { this.buildingList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listBuilding(this.queryParams).then(response => { this.buildingList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { buildingId: null, buildingName: null, buildingCode: null, campusId: null, floorCount: 1, status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

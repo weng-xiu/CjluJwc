@@ -11,6 +11,7 @@
       <el-col :span="1.5"><span style="line-height:26px;color:var(--dt-text-secondary)">未读 {{ unread }} 条</span></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list">
       <el-table-column label="标题" align="center" prop="title" :show-overflow-tooltip="true">
         <template slot-scope="scope"><el-badge is-dot :hidden="scope.row.readStatus !== '0'" class="msg-badge">{{ scope.row.title }}</el-badge></template>
@@ -25,6 +26,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无系统数据，可调整筛选条件后重新查询" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
   </div>
 </template>
@@ -39,7 +42,7 @@ export default {
   } },
   created() { this.getList(); this.loadUnread() },
   methods: {
-    getList() { this.loading = true; listMessage(this.queryParams).then(res => { this.list = res.rows; this.total = res.total; this.loading = false }) },
+    getList() { this.loading = true; listMessage(this.queryParams).then(res => { this.list = res.rows; this.total = res.total; this.loading = false }).catch(() => { this.loading = false }) },
     loadUnread() { getUnreadCount().then(res => { this.unread = res.data || 0 }) },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },

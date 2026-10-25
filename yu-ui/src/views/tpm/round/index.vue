@@ -26,6 +26,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['tpm:round:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !roundList.length" :rows="6">
     <el-table v-loading="loading" :data="roundList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学期" align="center" prop="semesterName" />
@@ -58,8 +59,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !roundList.length" description="暂无培养过程数据，可调整筛选条件或调整学期/轮次" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="学期" prop="semesterId">
           <el-select v-model="form.semesterId" placeholder="请选择学期" style="width:100%">
@@ -134,7 +137,7 @@ export default {
   methods: {
     getList() {
       this.loading = true
-      listRound(this.queryParams).then(response => { this.roundList = response.rows; this.total = response.total; this.loading = false })
+      listRound(this.queryParams).then(response => { this.roundList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false })
     },
     getSemesters() {
       listSemester({ pageNum: 1, pageSize: 1000 }).then(response => {

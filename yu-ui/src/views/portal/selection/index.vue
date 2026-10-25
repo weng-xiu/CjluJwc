@@ -8,6 +8,7 @@
     <el-row :gutter="10" class="mb8">
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !courseList.length" :rows="6">
     <el-table v-loading="loading" :data="courseList">
       <el-table-column label="课程名称" align="center" prop="courseName" />
       <el-table-column label="课程代码" align="center" prop="courseCode" />
@@ -24,6 +25,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !courseList.length" description="暂无门户内容，可调整筛选条件或先发布" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
   </div>
 </template>
@@ -36,7 +39,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listCourse(this.queryParams).then(response => { this.courseList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listCourse(this.queryParams).then(response => { this.courseList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleEnroll(row) { this.$modal.confirm('确认选择课程"' + row.courseName + '"？').then(() => { enroll({ courseOfferingId: row.offeringId }).then(response => { this.$modal.msgSuccess("选课成功"); this.getList() }) }).catch(() => {}) }

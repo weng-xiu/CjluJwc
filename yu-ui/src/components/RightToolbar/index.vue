@@ -14,12 +14,12 @@
           <el-dropdown-menu slot="dropdown">
             <!-- 全选/反选 按钮 -->
             <el-dropdown-item>
-              <el-checkbox :indeterminate="isIndeterminate" v-model="isChecked" @change="toggleCheckAll"> 列展示 </el-checkbox>
+              <el-checkbox :indeterminate="isIndeterminate" :value="isChecked" @change="toggleCheckAll"> 列展示 </el-checkbox>
             </el-dropdown-item>
             <div class="check-line"></div>
             <template v-for="(item, key) in columns">
               <el-dropdown-item :key="key">
-                <el-checkbox v-model="item.visible" @change="checkboxChange($event, key)" :label="item.label" />
+                <el-checkbox :value="item.visible" @change="checkboxChange($event, key)" :label="item.label" />
               </el-dropdown-item>
             </template>
           </el-dropdown-menu>
@@ -92,11 +92,8 @@ export default {
       }
       return ret
     },
-    isChecked: {
-      get() {
-        return Array.isArray(this.columns) ? this.columns.every((col) => col.visible) : Object.values(this.columns).every((col) => col.visible)
-      },
-      set() {}
+    isChecked() {
+      return Array.isArray(this.columns) ? this.columns.every((col) => col.visible) : Object.values(this.columns).every((col) => col.visible)
     },
     isIndeterminate() {
       return Array.isArray(this.columns) ? this.columns.some((col) => col.visible) && !this.isChecked : Object.values(this.columns).some((col) => col.visible) && !this.isChecked
@@ -110,34 +107,29 @@ export default {
     }
   },
   created() {
+    let cols = this.columns
     // 如果传入了 storageKey，从 localStorage 恢复列显隐状态
     if (this.storageKey) {
       try {
         const saved = cache.local.getJSON(this.storageKey)
         if (saved && typeof saved === 'object') {
-          if (Array.isArray(this.columns)) {
-            this.columns.forEach((col, index) => {
-              if (saved[index] !== undefined) col.visible = saved[index]
-            })
-          } else {
-            Object.keys(this.columns).forEach(key => {
-              if (saved[key] !== undefined) this.columns[key].visible = saved[key]
-            })
+          if (Object.keys(saved).length > 0) {
+            cols = this.emitColumns(saved)
           }
         }
       } catch (e) {}
     }
     if (this.showColumnsType == 'transfer') {
       // transfer穿梭显隐列初始默认隐藏列
-      if (Array.isArray(this.columns)) {
-        for (let item in this.columns) {
-          if (this.columns[item].visible === false) {
+      if (Array.isArray(cols)) {
+        for (let item in cols) {
+          if (cols[item].visible === false) {
             this.value.push(parseInt(item))
           }
         }
       } else {
-        Object.keys(this.columns).forEach((key, index) => {
-          if (this.columns[key].visible === false) {
+        Object.keys(cols).forEach((key, index) => {
+          if (cols[key].visible === false) {
             this.value.push(index)
           }
         })
@@ -145,6 +137,19 @@ export default {
     }
   },
   methods: {
+    // 合并列显隐补丁后通过 update:columns 交给父组件（父组件用 :columns.sync 回收），不直接深改 prop
+    emitColumns(patch) {
+      const has = (key) => Object.prototype.hasOwnProperty.call(patch, key)
+      const next = Array.isArray(this.columns)
+        ? this.columns.map((col, index) => ({ ...col, visible: has(index) ? patch[index] : col.visible }))
+        : Object.keys(this.columns).reduce((acc, key) => {
+            acc[key] = { ...this.columns[key], visible: has(key) ? patch[key] : this.columns[key].visible }
+            return acc
+          }, {})
+      this.$emit("update:columns", next)
+      this.saveStorage(next)
+      return next
+    },
     // 搜索
     toggleSearch() {
       let el = this.$el
@@ -182,17 +187,17 @@ export default {
     },
     // 右侧列表元素变化
     dataChange(data) {
+      const patch = {}
       if (Array.isArray(this.columns)) {
-        for (let item in this.columns) {
-          const key = this.columns[item].key
-          this.columns[item].visible = !data.includes(key)
-        }
+        this.columns.forEach((col, index) => {
+          patch[index] = !data.includes(col.key)
+        })
       } else {
         Object.keys(this.columns).forEach((key, index) => {
-          this.columns[key].visible = !data.includes(index)
+          patch[key] = !data.includes(index)
         })
       }
-      this.saveStorage()
+      this.emitColumns(patch)
     },
     // 打开显隐列dialog
     showColumn() {
@@ -200,32 +205,35 @@ export default {
     },
     // 单勾选
     checkboxChange(event, key) {
+      const patch = {}
       if (Array.isArray(this.columns)) {
-        this.columns.filter(item => item.key == key)[0].visible = event
+        const index = this.columns.findIndex(item => item.key == key)
+        if (index > -1) patch[index] = event
       } else {
-        this.columns[key].visible = event
+        patch[key] = event
       }
-      this.saveStorage()
+      this.emitColumns(patch)
     },
     // 切换全选/反选
     toggleCheckAll() {
       const newValue = !this.isChecked
+      const patch = {}
       if (Array.isArray(this.columns)) {
-        this.columns.forEach((col) => (col.visible = newValue))
+        this.columns.forEach((col, index) => { patch[index] = newValue })
       } else {
-        Object.values(this.columns).forEach((col) => (col.visible = newValue))
+        Object.keys(this.columns).forEach((key) => { patch[key] = newValue })
       }
-      this.saveStorage()
+      this.emitColumns(patch)
     },
     // 将当前列显隐状态持久化到 localStorage
-    saveStorage() {
+    saveStorage(columns) {
       if (!this.storageKey) return
       try {
         let state = {}
-        if (Array.isArray(this.columns)) {
-          this.columns.forEach((col, index) => { state[index] = col.visible })
+        if (Array.isArray(columns)) {
+          columns.forEach((col, index) => { state[index] = col.visible })
         } else {
-          Object.keys(this.columns).forEach(key => { state[key] = this.columns[key].visible })
+          Object.keys(columns).forEach(key => { state[key] = columns[key].visible })
         }
         cache.local.setJSON(this.storageKey, state)
       } catch (e) {}

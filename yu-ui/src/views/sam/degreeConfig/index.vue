@@ -15,6 +15,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !configList.length" :rows="6">
     <el-table v-loading="loading" :data="configList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="配置名称" align="center" prop="configName" :show-overflow-tooltip="true" />
@@ -33,9 +34,11 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !configList.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="配置名称" prop="configName"><el-input v-model="form.configName" placeholder="请输入配置名称" /></el-form-item>
         <el-form-item label="GPA门槛" prop="gpaThreshold"><el-input-number v-model="form.gpaThreshold" :min="0" :max="5" :step="0.1" :precision="2" controls-position="right" /></el-form-item>
@@ -74,7 +77,7 @@ export default {
   created() { this.getList(); this.getEffective() },
   methods: {
     yn(v) { return v === '1' ? '需合格' : '不强制' },
-    getList() { this.loading = true; listDegreeConfig(this.queryParams).then(response => { this.configList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listDegreeConfig(this.queryParams).then(response => { this.configList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     getEffective() { getEffectiveDegreeConfig().then(res => { this.effective = res.data }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { configId: null, configName: null, gpaThreshold: 2.0, requireDegreeCourse: "1", requireForeignLanguage: "0", requireThesis: "0", requireAchievement: "0", isDefault: "0", status: "0", remark: null }; this.resetForm("form") },

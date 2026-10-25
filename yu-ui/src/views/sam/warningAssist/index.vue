@@ -26,6 +26,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list">
       <el-table-column label="学号" align="center" prop="studentNo" width="130"/>
       <el-table-column label="姓名" align="center" prop="studentName" width="100"/>
@@ -51,10 +52,12 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 手动派发对话框 -->
-    <el-dialog title="手动派发帮扶任务" :visible.sync="dispatchOpen" width="560px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="手动派发帮扶任务" :visible.sync="dispatchOpen" width="560px" append-to-body>
       <el-form ref="dispatchForm" :model="dispatchForm" :rules="dispatchRules" label-width="100px">
         <el-form-item label="关联预警ID" prop="warningId"><el-input v-model="dispatchForm.warningId" placeholder="请输入 sam_warning 的预警ID"/></el-form-item>
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="dispatchForm.studentId" placeholder="请输入学生ID"/></el-form-item>
@@ -74,7 +77,7 @@
     </el-dialog>
 
     <!-- 跟踪登记对话框 -->
-    <el-dialog title="登记帮扶跟踪" :visible.sync="followOpen" width="520px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="登记帮扶跟踪" :visible.sync="followOpen" width="520px" append-to-body>
       <el-form ref="followForm" :model="followForm" :rules="followRules" label-width="90px">
         <el-form-item label="跟踪方式">
           <el-select v-model="followForm.followType" placeholder="请选择" style="width:100%">
@@ -87,7 +90,7 @@
     </el-dialog>
 
     <!-- 完结对话框 -->
-    <el-dialog title="完结帮扶任务" :visible.sync="finishOpen" width="520px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="完结帮扶任务" :visible.sync="finishOpen" width="520px" append-to-body>
       <el-form ref="finishForm" :model="finishForm" label-width="120px">
         <el-form-item label="完结说明"><el-input v-model="finishForm.finishRemark" type="textarea" :rows="3" placeholder="帮扶成效总结"/></el-form-item>
         <el-form-item label="同步解除预警"><el-switch aria-label="同步解除预警" v-model="finishForm.resolveWarning"/></el-form-item>
@@ -157,7 +160,7 @@ export default {
   methods: {
     getList() {
       this.loading = true
-      listWarningAssist(this.queryParams).then(r => { this.list = r.rows; this.total = r.total; this.loading = false })
+      listWarningAssist(this.queryParams).then(r => { this.list = r.rows; this.total = r.total; this.loading = false }).catch(() => { this.loading = false })
     },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.queryParams.helperUserId = null; this.resetForm("queryForm"); this.handleQuery() },

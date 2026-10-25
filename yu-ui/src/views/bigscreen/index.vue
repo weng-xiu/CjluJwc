@@ -72,8 +72,8 @@ export default {
       clock: { time: "--:--:--", date: "" },
       updatedAt: "",
       charts: {},
-      _clockTimer: null,
-      _refreshTimer: null
+      clockTimer: null,
+      refreshTimer: null
     }
   },
   computed: {
@@ -125,14 +125,14 @@ export default {
     this.loadDashboard()
     // 快照模式：单次加载冻结数据；常态：秒级时钟 + 60s 轮询
     if (!this.light) {
-      this._clockTimer = setInterval(this.tickClock, 1000)
-      this._refreshTimer = setInterval(this.loadDashboard, 60000)
+      this.clockTimer = setInterval(this.tickClock, 1000)
+      this.refreshTimer = setInterval(this.loadDashboard, 60000)
     }
   },
   beforeDestroy() {
     window.removeEventListener("resize", this.computeScale)
-    if (this._clockTimer) clearInterval(this._clockTimer)
-    if (this._refreshTimer) clearInterval(this._refreshTimer)
+    if (this.clockTimer) clearInterval(this.clockTimer)
+    if (this.refreshTimer) clearInterval(this.refreshTimer)
     Object.values(this.charts).forEach(ch => ch && ch.dispose())
     this.charts = {}
   },

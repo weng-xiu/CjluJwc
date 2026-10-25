@@ -95,7 +95,7 @@ export default {
         this.list = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     /** 搜索按钮操作 */
     handleQuery() {

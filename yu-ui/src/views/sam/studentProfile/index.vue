@@ -170,7 +170,7 @@
     <div v-else class="page-empty">请搜索并选择学生以生成全息数字档案</div>
 
     <!-- 干预登记对话框：基线/效果学期决定了现算口径，登记前可先「效果预览」 -->
-    <el-dialog :title="interventionForm.interventionId ? '编辑干预记录' : '新增干预记录'" :visible.sync="interventionOpen" width="680px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="interventionForm.interventionId ? '编辑干预记录' : '新增干预记录'" :visible.sync="interventionOpen" width="680px" append-to-body>
       <el-form ref="interventionForm" :model="interventionForm" :rules="interventionRules" label-width="110px">
         <el-row :gutter="12">
           <el-col :span="12"><el-form-item label="干预类型" prop="interventionType">

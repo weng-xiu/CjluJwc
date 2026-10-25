@@ -78,6 +78,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !thesisList.length" :rows="6">
     <el-table v-loading="loading" :data="thesisList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="届别" align="center" prop="planYear" width="70" />
@@ -130,6 +131,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !thesisList.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
@@ -182,7 +185,7 @@
     </el-dialog>
 
     <!-- 新增/修改档案 -->
-    <el-dialog :title="title" :visible.sync="open" width="680px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="680px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="12">
@@ -238,7 +241,7 @@
     </el-dialog>
 
     <!-- 环节审核 -->
-    <el-dialog title="环节审核" :visible.sync="auditOpen" width="560px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="环节审核" :visible.sync="auditOpen" width="560px" append-to-body>
       <el-form label-width="90px">
         <el-form-item label="学生">{{ auditRow.studentName }}（{{ auditRow.studentNo }}）</el-form-item>
         <el-form-item label="审核环节">
@@ -265,7 +268,7 @@
     </el-dialog>
 
     <!-- 查重登记 -->
-    <el-dialog title="查重结果登记" :visible.sync="checkOpen" width="560px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="查重结果登记" :visible.sync="checkOpen" width="560px" append-to-body>
       <el-form label-width="90px">
         <el-form-item label="学生">{{ checkRow.studentName }}（{{ checkRow.studentNo }}）</el-form-item>
         <el-form-item label="重复率">
@@ -286,7 +289,7 @@
     </el-dialog>
 
     <!-- 成绩归档 -->
-    <el-dialog title="成绩归档" :visible.sync="archiveOpen" width="560px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="成绩归档" :visible.sync="archiveOpen" width="560px" append-to-body>
       <el-form label-width="90px">
         <el-form-item label="学生">{{ archiveRow.studentName }}（{{ archiveRow.studentNo }}）</el-form-item>
         <el-form-item label="答辩成绩">
@@ -308,7 +311,7 @@
     </el-dialog>
 
     <!-- 抽检维护 -->
-    <el-dialog title="论文抽检" :visible.sync="sampleOpen" width="560px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="论文抽检" :visible.sync="sampleOpen" width="560px" append-to-body>
       <el-form label-width="90px">
         <el-form-item label="学生">{{ sampleRow.studentName }}（{{ sampleRow.studentNo }}）</el-form-item>
         <el-form-item label="抽检状态">
@@ -328,7 +331,7 @@
     </el-dialog>
 
     <!-- 材料补录 -->
-    <el-dialog title="环节材料补录" :visible.sync="submitOpen" width="560px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="环节材料补录" :visible.sync="submitOpen" width="560px" append-to-body>
       <el-form label-width="90px">
         <el-form-item label="学生">{{ submitRow.studentName }}（{{ submitRow.studentNo }}）</el-form-item>
         <el-form-item label="环节">
@@ -414,7 +417,7 @@ export default {
     },
     getList() {
       this.loading = true
-      listThesis(this.queryParams).then(response => { this.thesisList = response.rows; this.total = response.total; this.loading = false })
+      listThesis(this.queryParams).then(response => { this.thesisList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false })
     },
     getStat() {
       statThesis({ planYear: this.queryParams.planYear, advisor: this.queryParams.advisor }).then(res => {

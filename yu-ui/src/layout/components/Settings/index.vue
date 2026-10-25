@@ -223,8 +223,6 @@ export default {
         if (val == 1) {
           this.$store.dispatch("app/toggleSideBarHide", false)
         }
-        if (val == 2) {
-        }
         if (val == 3) {
           this.$store.dispatch("app/toggleSideBarHide", true)
         }

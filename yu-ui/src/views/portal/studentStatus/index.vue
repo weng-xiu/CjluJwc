@@ -17,7 +17,7 @@
         <el-descriptions-item label="学籍状态">{{ studentInfo.statusName }}</el-descriptions-item>
       </el-descriptions>
     </el-card>
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="异动类型" prop="changeType"><el-select v-model="form.changeType" placeholder="请选择异动类型"><el-option label="休学" value="1"/><el-option label="复学" value="2"/><el-option label="退学" value="3"/><el-option label="转专业" value="4"/></el-select></el-form-item>
         <el-form-item label="申请原因" prop="reason"><el-input v-model="form.reason" type="textarea" placeholder="请输入申请原因" /></el-form-item>

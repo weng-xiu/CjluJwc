@@ -14,6 +14,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="el-icon-s-operation" size="mini" @click="showFlowHelp">流程说明</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !gradeReviewList.length" :rows="6">
     <el-table v-loading="loading" :data="gradeReviewList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="reviewId" width="70" />
@@ -43,9 +44,11 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !gradeReviewList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
-    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="成绩ID" prop="gradeId"><el-input v-model="form.gradeId" placeholder="请输入成绩ID" /></el-form-item>
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="form.studentId" placeholder="请输入学生ID" /></el-form-item>
@@ -59,7 +62,7 @@
     </el-dialog>
 
     <!-- 审批对话框（流程按当前阶段自动路由：初审/终审） -->
-    <el-dialog :title="approveTitle" :visible.sync="approveOpen" width="520px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="approveTitle" :visible.sync="approveOpen" width="520px" append-to-body>
       <el-descriptions :column="1" border size="small" style="margin-bottom:12px">
         <el-descriptions-item label="学生ID">{{ approveRow.studentId }}</el-descriptions-item>
         <el-descriptions-item label="课程ID">{{ approveRow.courseId }}</el-descriptions-item>
@@ -116,7 +119,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listGradeReview(this.queryParams).then(response => { this.gradeReviewList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listGradeReview(this.queryParams).then(response => { this.gradeReviewList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     // 可提交进入流程：待审且未进入流程
     canSubmit(row) { return row.approveStatus === '0' && !row.procInstId },
     // 可修改：未提交/未进入流程的待审单

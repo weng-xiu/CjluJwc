@@ -58,6 +58,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !menuList.length" :rows="6">
     <el-table
       v-if="refreshTable"
       v-loading="loading"
@@ -119,9 +120,11 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !menuList.length" description="暂无系统数据，可调整筛选条件后重新查询" />
+    </app-skeleton>
 
     <!-- 添加或修改菜单对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="680px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="680px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="24">
@@ -383,7 +386,7 @@ export default {
         // 记录原始排序值
         this.recordOriginalOrders(this.menuList)
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     /** 转换菜单数据结构 */
     normalizer(node) {

@@ -11,6 +11,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-menu" size="mini" @click="matrixOpen = true" v-hasPermi="['portal:gradeEntry:list']">批量录入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !gradeList.length" :rows="6">
     <el-table v-loading="loading" :data="gradeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学生姓名" align="center" prop="studentName" />
@@ -28,8 +29,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !gradeList.length" description="暂无门户内容，可调整筛选条件或先发布" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="课程" prop="courseName"><el-input v-model="form.courseName" placeholder="请输入课程名称" /></el-form-item>
         <el-form-item label="学生" prop="studentName"><el-input v-model="form.studentName" placeholder="请输入学生姓名" /></el-form-item>
@@ -61,7 +64,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listGradeEntry(this.queryParams).then(response => { this.gradeList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listGradeEntry(this.queryParams).then(response => { this.gradeList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     submitStatusText(s) { return { '0': '未提交', '1': '已提交待审', '2': '已锁定', '3': '已驳回' }[s || '0'] || '未提交' },
     submitStatusTag(s) { return { '0': 'info', '1': 'warning', '2': 'success', '3': 'danger' }[s || '0'] || 'info' },
     cancel() { this.open = false; this.reset() },

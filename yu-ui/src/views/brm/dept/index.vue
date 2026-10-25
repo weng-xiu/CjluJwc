@@ -28,6 +28,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !deptList.length" :rows="6">
     <el-table
       v-if="refreshTable"
       v-loading="loading"
@@ -57,9 +58,11 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !deptList.length" description="暂无基础资源数据，可调整筛选条件或新增" />
+    </app-skeleton>
 
     <!-- 添加或修改院系对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-row>
           <el-col :span="24" v-if="form.parentId !== 0">
@@ -161,7 +164,7 @@ export default {
       listDept(this.queryParams).then(response => {
         this.deptList = this.handleTree(response.data, "deptId")
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     normalizer(node) {
       if (node.children && !node.children.length) {

@@ -57,7 +57,7 @@
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增/修改对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="开课" prop="offeringId">
           <remote-select v-model="form.offeringId" :api="apiListOffering" search-key="courseName" value-key="offeringId" :formatter="offeringLabel" :initial-option="offeringInitial" placeholder="输入课程名搜索开课" style="width:100%" />
@@ -117,7 +117,7 @@
     </el-dialog>
 
     <!-- 学期选择对话框（用于冲突检测/自动分配） -->
-    <el-dialog title="选择学期" :visible.sync="semesterDialogVisible" width="400px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="选择学期" :visible.sync="semesterDialogVisible" width="400px" append-to-body>
       <el-form label-width="80px">
         <el-form-item label="学期">
           <el-select v-model="semesterDialogValue" placeholder="请选择学期" filterable clearable style="width:100%">
@@ -132,7 +132,7 @@
     </el-dialog>
 
     <!-- 推荐教室对话框 -->
-    <el-dialog title="可用教室推荐" :visible.sync="classroomDialogVisible" width="700px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="可用教室推荐" :visible.sync="classroomDialogVisible" width="700px" append-to-body>
       <el-form :inline="true" size="small" label-width="80px" style="margin-bottom:10px">
         <el-form-item label="最小容量"><el-input-number v-model="classroomQuery.minCapacity" :min="1" :max="500" /></el-form-item>
         <el-form-item><el-button type="primary" icon="el-icon-search" @click="loadAvailableClassrooms">查询</el-button></el-form-item>
@@ -318,7 +318,7 @@ export default {
         this.scheduleList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     cancel() { this.open = false; this.reset() },
     reset() {

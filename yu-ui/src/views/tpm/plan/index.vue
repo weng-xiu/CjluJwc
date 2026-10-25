@@ -248,7 +248,7 @@ export default {
   methods: {
     getList() {
       this.loading = true
-      listPlan(this.queryParams).then(response => { this.planList = response.rows; this.total = response.total; this.loading = false })
+      listPlan(this.queryParams).then(response => { this.planList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false })
     },
     loadDepts() {
       listDept().then(response => { this.deptOptions = response.data || [] })

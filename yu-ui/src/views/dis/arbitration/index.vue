@@ -61,7 +61,7 @@
       </div>
     </el-card>
 
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="源编码" prop="sourceCode"><el-input v-model="form.sourceCode" placeholder="与裁决候选 sourceCode 对齐，如 GRAD" /></el-form-item>
         <el-form-item label="源名称" prop="sourceName"><el-input v-model="form.sourceName" placeholder="请输入来源系统名称" /></el-form-item>
@@ -95,7 +95,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listPriority(this.queryParams).then(res => { this.priorityList = res.rows; this.total = res.total; this.loading = false }) },
+    getList() { this.loading = true; listPriority(this.queryParams).then(res => { this.priorityList = res.rows; this.total = res.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { priorityId: null, sourceCode: null, sourceName: null, priority: 0, status: "0", remark: null }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

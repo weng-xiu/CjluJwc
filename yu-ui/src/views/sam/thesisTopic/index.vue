@@ -42,6 +42,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !topicList.length" :rows="6">
     <el-table v-loading="loading" :data="topicList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="届别" align="center" prop="planYear" width="70" />
@@ -72,11 +73,13 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !topicList.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改选题 -->
-    <el-dialog :title="title" :visible.sync="open" width="720px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="720px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="12">
@@ -154,7 +157,7 @@
     </el-dialog>
 
     <!-- 题目审核 -->
-    <el-dialog title="题目审核" :visible.sync="auditOpen" width="520px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="题目审核" :visible.sync="auditOpen" width="520px" append-to-body>
       <el-form label-width="90px">
         <el-form-item label="论文题目">{{ auditRow.topicName }}</el-form-item>
         <el-form-item label="指导教师">{{ auditRow.advisorName || auditRow.advisor }}</el-form-item>
@@ -202,7 +205,7 @@ export default {
       const item = this.difficultyOptions.find(i => i.value === v)
       return item ? item.label : '-'
     },
-    getList() { this.loading = true; listThesisTopic(this.queryParams).then(response => { this.topicList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listThesisTopic(this.queryParams).then(response => { this.topicList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() {
       this.form = { topicId: null, planYear: this.currentYear(), topicName: null, topicSource: '0', advisor: null, advisorName: null, capacity: 1, difficulty: '2', intro: null, status: '1', deptId: null, majorId: null, remark: null }

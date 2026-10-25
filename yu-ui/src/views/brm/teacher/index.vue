@@ -34,7 +34,7 @@
     <app-empty v-if="!loading && !teacherList.length" description="暂无教师数据，可调整查询条件或新增/导入教师" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body :before-close="guardedBeforeClose">
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="800px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="12"><el-form-item label="教师工号" prop="teacherCode"><el-input v-model="form.teacherCode" placeholder="请输入教师工号" /></el-form-item></el-col>
@@ -115,7 +115,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listTeacher(this.queryParams).then(response => { this.teacherList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listTeacher(this.queryParams).then(response => { this.teacherList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { teacherId: null, teacherCode: null, teacherName: null, deptId: null, gender: "0", phone: null, email: null, title: null, education: null, status: "0" }; this.positionList = []; this.qualificationList = []; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

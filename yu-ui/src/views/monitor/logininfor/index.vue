@@ -98,6 +98,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !list.length" :rows="6">
     <el-table ref="tables" v-loading="loading" :data="list" @selection-change="handleSelectionChange" :default-sort="defaultSort" @sort-change="handleSortChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="访问编号" align="center" prop="infoId" />
@@ -118,6 +119,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无日志数据，可调整筛选条件后重新查询" />
+    </app-skeleton>
 
     <pagination
       v-show="total>0"
@@ -179,7 +182,7 @@ export default {
           this.total = response.total
           this.loading = false
         }
-      )
+      ).catch(() => { this.loading = false })
     },
     /** 搜索按钮操作 */
     handleQuery() {

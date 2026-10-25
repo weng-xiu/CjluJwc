@@ -61,7 +61,7 @@
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
-    <el-dialog :title="title" :visible.sync="open" width="640px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="640px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="培养方案" prop="planId">
           <el-select v-model="form.planId" placeholder="输入方案名搜索" filterable remote reserve-keyword :remote-method="searchPlan" :loading="planLoading" style="width:100%">
@@ -123,7 +123,7 @@ export default {
   methods: {
     getList() {
       this.loading = true
-      listRequirement(this.queryParams).then(response => { this.requirementList = response.rows; this.total = response.total; this.loading = false })
+      listRequirement(this.queryParams).then(response => { this.requirementList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false })
     },
     searchPlan(query) {
       if (!query) { this.planOptions = []; return }

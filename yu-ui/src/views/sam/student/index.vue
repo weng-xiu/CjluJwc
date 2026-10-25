@@ -33,7 +33,7 @@
     <app-empty v-if="!loading && !studentList.length" description="暂无学籍数据，可调整查询条件或使用「导入」批量录入" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学号" prop="studentNo"><el-input v-model="form.studentNo" placeholder="请输入学号" /></el-form-item>
         <el-form-item label="姓名" prop="studentName"><el-input v-model="form.studentName" placeholder="请输入姓名" /></el-form-item>
@@ -74,7 +74,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listStudent(this.queryParams).then(response => { this.studentList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listStudent(this.queryParams).then(response => { this.studentList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { studentId: null, studentNo: null, studentName: null, gender: "0", birthDate: null, idCard: null, majorId: null, deptId: null, classId: null, enrollmentYear: null, educationLevel: null, studentStatus: "0", status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

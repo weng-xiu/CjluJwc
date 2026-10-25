@@ -40,6 +40,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['tpm:rule:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !ruleList.length" :rows="6">
     <el-table v-loading="loading" :data="ruleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="规则名称" align="center" prop="ruleName" min-width="120" show-overflow-tooltip />
@@ -65,8 +66,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !ruleList.length" description="暂无培养过程数据，可调整筛选条件或调整学期/轮次" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="轮次" prop="roundId">
           <el-select v-model="form.roundId" placeholder="请选择轮次" style="width:100%">
@@ -118,7 +121,7 @@ export default {
   methods: {
     getList() {
       this.loading = true
-      listRule(this.queryParams).then(response => { this.ruleList = response.rows; this.total = response.total; this.loading = false })
+      listRule(this.queryParams).then(response => { this.ruleList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false })
     },
     getRounds() {
       // 轮次为小体量业务字典（逐学期递增）保留全量，仅供选择器；表格展示改后端行直接回 roundName（N7 禁全量映射）

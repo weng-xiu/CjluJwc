@@ -31,6 +31,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !meetingRoomList.length" :rows="6">
     <el-table v-loading="loading" :data="meetingRoomList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="会议室ID" align="center" prop="roomId" width="90" />
@@ -52,10 +53,12 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !meetingRoomList.length" description="暂无办公数据，可调整筛选条件或发起流程" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="90px">
         <el-form-item label="会议室名称" prop="roomName">
           <el-input v-model="form.roomName" placeholder="请输入会议室名称" />
@@ -121,7 +124,7 @@
 </template>
 
 <script>
-import { listMeetingRoom, getMeetingRoom, delMeetingRoom, addMeetingRoom, updateMeetingRoom, exportMeetingRoom, roomOccupancy } from "@/api/oa/meetingRoom"
+import { listMeetingRoom, getMeetingRoom, delMeetingRoom, addMeetingRoom, updateMeetingRoom, roomOccupancy } from "@/api/oa/meetingRoom"
 import { listUser } from "@/api/system/user"
 import RemoteSelect from "@/components/RemoteSelect"
 
@@ -182,7 +185,7 @@ export default {
         this.meetingRoomList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     fmtUser(user) {
       return user.nickName || user.userName

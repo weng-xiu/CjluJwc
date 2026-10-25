@@ -44,6 +44,7 @@
           <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
         </el-row>
 
+        <app-skeleton :loading="loading && !list.length" :rows="6">
         <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="55" align="center"/>
           <el-table-column label="学号" align="center" prop="studentNo" width="140"/>
@@ -68,6 +69,8 @@
             </template>
           </el-table-column>
         </el-table>
+        <app-empty v-if="!loading && !list.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
+        </app-skeleton>
         <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
       </el-tab-pane>
 
@@ -94,7 +97,7 @@
     </el-tabs>
 
     <!-- 延迟原因对话框 -->
-    <el-dialog title="标记延迟注册" :visible.sync="deferOpen" width="460px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="标记延迟注册" :visible.sync="deferOpen" width="460px" append-to-body>
       <el-form label-width="90px">
         <el-form-item label="延迟原因">
           <el-input v-model="deferReason" type="textarea" :rows="3" placeholder="请填写延迟注册原因（如因故保留学籍）"/>

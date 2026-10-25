@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['aem:gpaConfig:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !gpaConfigList.length" :rows="6">
     <el-table v-loading="loading" :data="gpaConfigList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="配置ID" align="center" prop="configId" width="80" />
@@ -30,8 +31,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !gpaConfigList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="算法代码" prop="algorithmCode"><el-input v-model="form.algorithmCode" placeholder="请输入算法代码" /></el-form-item>
         <el-form-item label="算法名称" prop="algorithmName"><el-input v-model="form.algorithmName" placeholder="请输入算法名称" /></el-form-item>
@@ -78,7 +81,7 @@ export default {
   methods: {
     getList() {
       this.loading = true;
-      listGpaConfig(this.queryParams).then(response => { this.gpaConfigList = response.rows; this.total = response.total; this.loading = false })
+      listGpaConfig(this.queryParams).then(response => { this.gpaConfigList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false })
     },
     cancel() { this.open = false; this.reset() },
     reset() {

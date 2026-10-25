@@ -37,6 +37,7 @@
       </el-col>
     </el-row>
 
+    <app-skeleton :loading="loading && !gradeList.length" :rows="6">
     <el-table v-loading="loading" :data="gradeList" border :max-height="560">
       <el-table-column label="学号" prop="studentNo" width="150" align="center" fixed>
         <template slot-scope="scope">{{ scope.row.studentNo || scope.row.studentId }}</template>
@@ -73,6 +74,8 @@
         <template slot-scope="scope"><el-tag :type="submitStatusTag(scope.row.submitStatus)" size="mini">{{ submitStatusText(scope.row.submitStatus) }}</el-tag></template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !gradeList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
+    </app-skeleton>
   </div>
 </template>
 

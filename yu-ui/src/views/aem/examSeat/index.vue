@@ -14,6 +14,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['aem:examSeat:import']">导入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !examSeatList.length" :rows="6">
     <el-table v-loading="loading" :data="examSeatList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="考试ID" align="center" prop="examId" />
@@ -30,8 +31,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !examSeatList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="考试ID" prop="examId"><el-input v-model="form.examId" placeholder="请输入考试ID" /></el-form-item>
         <el-form-item label="教室ID" prop="classroomId"><el-input v-model="form.classroomId" placeholder="请输入教室ID" /></el-form-item>
@@ -54,7 +57,7 @@
   </div>
 </template>
 <script>
-import { listExamSeat, getExamSeat, delExamSeat, addExamSeat, updateExamSeat, importExamSeat } from "@/api/aem/examSeat"
+import { listExamSeat, getExamSeat, delExamSeat, addExamSeat, updateExamSeat } from "@/api/aem/examSeat"
 import ImportExcelDialog from "../components/ImportExcelDialog"
 export default {
   name: "ExamSeat",
@@ -66,7 +69,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listExamSeat(this.queryParams).then(response => { this.examSeatList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listExamSeat(this.queryParams).then(response => { this.examSeatList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { seatId: null, examId: null, classroomId: null, studentId: null, seatNumber: null, rowNumber: null, colNumber: null }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

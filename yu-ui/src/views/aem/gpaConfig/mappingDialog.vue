@@ -1,5 +1,5 @@
 <template>
-  <el-dialog :title="'配置分数段映射 - 配置ID:' + configId" :visible.sync="visible" width="700px" append-to-body @close="handleClose">
+  <el-dialog :title="'配置分数段映射 - 配置ID:' + configId" :visible="visible" width="700px" append-to-body :close-on-click-modal="false" @update:visible="$emit('update:visible', $event)" @close="handleClose">
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5"><el-button type="primary" icon="el-icon-plus" size="mini" @click="handleAddRow">新增行</el-button></el-col>
       <el-col :span="1.5"><el-button type="success" icon="el-icon-check" size="mini" @click="handleSave">保 存</el-button></el-col>

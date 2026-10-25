@@ -19,6 +19,7 @@
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['portal:column:remove']">删除</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !columnList.length" :rows="6">
     <el-table v-loading="loading" :data="columnList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="栏目名称" align="center" prop="columnName" />
@@ -46,9 +47,11 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !columnList.length" description="暂无门户内容，可调整筛选条件或先发布" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
     <!-- 添加或修改栏目对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="24">
@@ -153,7 +156,7 @@ export default {
         this.columnList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     /** 获取栏目下拉列表（用于父栏目选择） */
     getColumnOptions() {

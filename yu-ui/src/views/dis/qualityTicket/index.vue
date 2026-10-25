@@ -40,7 +40,7 @@
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 登记 / 处置 对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="任务名称" prop="taskName"><el-input v-model="form.taskName" placeholder="请输入关联同步任务名称" :disabled="form.ticketId != null" /></el-form-item>
         <el-form-item label="异常类型" prop="anomalyType"><el-select v-model="form.anomalyType" placeholder="请选择异常类型" :disabled="form.ticketId != null" style="width:100%"><el-option v-for="item in anomalyTypeOptions" :key="item.value" :label="item.label" :value="item.value"/></el-select></el-form-item>
@@ -114,7 +114,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listQualityTicket(this.queryParams).then(res => { this.ticketList = res.rows; this.total = res.total; this.loading = false }) },
+    getList() { this.loading = true; listQualityTicket(this.queryParams).then(res => { this.ticketList = res.rows; this.total = res.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { ticketId: null, taskId: null, taskName: null, anomalyType: null, severity: null, anomalyDetail: null, status: "0", assignee: null, resolution: null, remark: null }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

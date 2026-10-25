@@ -74,8 +74,8 @@ export default {
         if (valid) {
           updateUserProfile(this.form).then(() => {
             this.$modal.msgSuccess("修改成功")
-            this.user.phonenumber = this.form.phonenumber
-            this.user.email = this.form.email
+            // 向上游 emit 新对象（父组件用 :user.sync 回收），不直接深改 user prop
+            this.$emit('update:user', { ...this.user, phonenumber: this.form.phonenumber, email: this.form.email })
           })
         }
       })

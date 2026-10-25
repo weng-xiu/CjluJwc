@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['brm:semester:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !semesterList.length" :rows="6">
     <el-table v-loading="loading" :data="semesterList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学期名称" align="center" prop="semesterName" />
@@ -28,8 +29,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !semesterList.length" description="暂无基础资源数据，可调整筛选条件或新增" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body :before-close="guardedBeforeClose">
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学期名称" prop="semesterName"><el-input v-model="form.semesterName" placeholder="请输入学期名称" /></el-form-item>
         <el-form-item label="学年" prop="academicYearId">
@@ -60,7 +63,7 @@ export default {
   },
   created() { this.getList(); this.loadYears() },
   methods: {
-    getList() { this.loading = true; listSemester(this.queryParams).then(response => { this.semesterList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listSemester(this.queryParams).then(response => { this.semesterList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     loadYears() { listYear({ pageNum: 1, pageSize: 100 }).then(response => { this.yearList = response.rows }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { semesterId: null, semesterName: null, academicYearId: null, startDate: null, endDate: null, semesterOrder: 1, status: "0" }; this.resetForm("form") },

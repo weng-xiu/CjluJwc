@@ -69,6 +69,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !maintenanceList.length" :rows="6">
     <el-table v-loading="loading" :data="maintenanceList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="设备ID" align="center" prop="equipId" />
@@ -105,6 +106,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !maintenanceList.length" description="暂无基础资源数据，可调整筛选条件或新增" />
+    </app-skeleton>
 
     <pagination
       v-show="total>0"
@@ -114,7 +117,7 @@
       @pagination="getList"
     />
 
-    <el-dialog :title="title" :visible.sync="open" width="550px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="550px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="设备ID" prop="equipId">
           <el-input v-model="form.equipId" placeholder="请输入设备ID" />
@@ -202,7 +205,7 @@ export default {
         this.maintenanceList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     cancel() {
       this.open = false

@@ -17,6 +17,7 @@
           <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
         </el-row>
 
+        <app-skeleton :loading="loading && !taskList.length" :rows="6">
         <el-table v-loading="loading" :data="taskList">
           <el-table-column label="任务名称" align="center" prop="taskName" min-width="120" />
           <el-table-column label="任务ID" align="center" prop="taskId" :show-overflow-tooltip="true" width="170" />
@@ -45,6 +46,8 @@
             </template>
           </el-table-column>
         </el-table>
+        <app-empty v-if="!loading && !taskList.length" description="暂无办公数据，可调整筛选条件或发起流程" />
+        </app-skeleton>
 
         <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
       </el-tab-pane>
@@ -94,7 +97,7 @@
     </el-tabs>
 
     <!-- 通过 / 驳回 / 转办 -->
-    <el-dialog :title="actionTitle" :visible.sync="actionOpen" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="actionTitle" :visible.sync="actionOpen" width="600px" append-to-body>
       <el-form ref="actionForm" :model="actionForm" label-width="90px">
         <el-form-item label="任务名称">
           <el-input v-model="actionForm.taskName" disabled />
@@ -126,7 +129,7 @@
     </el-dialog>
 
     <!-- 加签 / 会签 / 委托 -->
-    <el-dialog :title="coTitle" :visible.sync="coOpen" width="620px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="coTitle" :visible.sync="coOpen" width="620px" append-to-body>
       <el-form ref="coForm" :model="coForm" :rules="coRules" label-width="100px">
         <el-form-item label="任务名称">
           <el-input v-model="coForm.taskName" disabled />
@@ -168,7 +171,7 @@
     </el-dialog>
 
     <!-- 发表加签/会签意见 -->
-    <el-dialog title="发表协同意见" :visible.sync="opinionOpen" width="560px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="发表协同意见" :visible.sync="opinionOpen" width="560px" append-to-body>
       <el-form ref="opinionForm" :model="opinionForm" label-width="90px">
         <el-form-item label="审批节点">
           <el-input :value="opinionForm.nodeName" disabled />

@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['aem:supervision:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !supervisionList.length" :rows="6">
     <el-table v-loading="loading" :data="supervisionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="课程ID" align="center" prop="courseId" />
@@ -30,8 +31,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !supervisionList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="650px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="650px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="课程ID" prop="courseId"><el-input v-model="form.courseId" placeholder="请输入课程ID" /></el-form-item>
         <el-form-item label="教师ID" prop="teacherId"><el-input v-model="form.teacherId" placeholder="请输入教师ID" /></el-form-item>
@@ -58,7 +61,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listSupervision(this.queryParams).then(response => { this.supervisionList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listSupervision(this.queryParams).then(response => { this.supervisionList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { recordId: null, courseId: null, teacherId: null, supervisor: null, visitDate: null, classHours: null, teachingContent: null, evaluationScore: null, evaluationLevel: "0", suggestion: null, recordType: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

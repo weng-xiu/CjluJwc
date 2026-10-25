@@ -1,5 +1,5 @@
 <template>
-  <el-dialog :title="title" :visible.sync="dialogVisible" width="600px" append-to-body :before-close="guardedBeforeClose">
+  <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="dialogVisible" width="600px" append-to-body :before-close="guardedBeforeClose">
     <el-form ref="form" :model="form" :rules="rules" label-width="80px">
       <el-row>
         <el-col :span="12">
@@ -86,7 +86,7 @@
         </el-col>
       </el-row>
       <!-- 教师扩展信息 -->
-      <teacher-form v-if="form.userCategory === 'teacher'" :form="form" :is-add="!form.userId" :dept-options="enabledDeptOptions" />
+      <teacher-form v-if="form.userCategory === 'teacher'" :form.sync="form" :is-add="!form.userId" :dept-options="enabledDeptOptions" />
     </el-form>
     <div slot="footer" class="dialog-footer">
       <el-button type="primary" @click="submitForm">确 定</el-button>

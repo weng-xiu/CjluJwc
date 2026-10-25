@@ -112,7 +112,7 @@ export default {
       options: [],
       loading: false,
       loadedOnce: false,
-      _searchTimer: null
+      searchTimer: null
     }
   },
   computed: {
@@ -133,7 +133,7 @@ export default {
     }
   },
   beforeDestroy() {
-    if (this._searchTimer) clearTimeout(this._searchTimer)
+    if (this.searchTimer) clearTimeout(this.searchTimer)
   },
   methods: {
     optKey(opt) {
@@ -159,8 +159,8 @@ export default {
     },
     handleRemoteSearch(query) {
       // 输入防抖，避免逐字符打到后端
-      if (this._searchTimer) clearTimeout(this._searchTimer)
-      this._searchTimer = setTimeout(() => {
+      if (this.searchTimer) clearTimeout(this.searchTimer)
+      this.searchTimer = setTimeout(() => {
         this.fetch(query)
       }, 300)
     },

@@ -19,6 +19,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !todoList.length" :rows="6">
     <el-table v-loading="loading" :data="todoList">
       <el-table-column label="公文ID" align="center" prop="documentId" width="80" />
       <el-table-column label="标题" align="center" prop="title" :show-overflow-tooltip="true" />
@@ -48,10 +49,12 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !todoList.length" description="暂无办公数据，可调整筛选条件或发起流程" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :title="approveTitle" :visible.sync="approveOpen" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="approveTitle" :visible.sync="approveOpen" width="600px" append-to-body>
       <el-form ref="approveForm" :model="approveForm" label-width="80px">
         <el-form-item label="公文标题">
           <el-input v-model="approveForm.title" disabled />
@@ -140,7 +143,7 @@ export default {
         this.todoList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     handleQuery() {
       this.queryParams.pageNum = 1

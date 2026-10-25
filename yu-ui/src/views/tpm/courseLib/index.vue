@@ -53,7 +53,7 @@
     <app-empty v-if="!loading && !courseLibList.length" description="暂无课程库数据，可调整查询条件或新增/导入课程" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="720px" append-to-body :before-close="guardedBeforeClose">
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="720px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="12"><el-form-item label="课程编码" prop="courseCode"><el-input v-model="form.courseCode" placeholder="请输入课程编码" /></el-form-item></el-col>
@@ -140,7 +140,7 @@ export default {
   methods: {
     getList() {
       this.loading = true
-      listCourseLib(this.queryParams).then(response => { this.courseLibList = response.rows; this.total = response.total; this.loading = false })
+      listCourseLib(this.queryParams).then(response => { this.courseLibList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false })
     },
     loadPlans() {
       listPlan({ pageNum: 1, pageSize: 1000 }).then(response => { this.planOptions = response.rows || [] })

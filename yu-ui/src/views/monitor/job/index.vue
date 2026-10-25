@@ -91,6 +91,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !jobList.length" :rows="6">
     <el-table v-loading="loading" :data="jobList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="任务编号" width="100" align="center" prop="jobId" />
@@ -144,6 +145,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !jobList.length" description="暂无日志数据，可调整筛选条件后重新查询" />
+    </app-skeleton>
 
     <pagination
       v-show="total>0"
@@ -154,7 +157,7 @@
     />
 
     <!-- 添加或修改定时任务对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="800px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-row>
           <el-col :span="12">
@@ -317,7 +320,7 @@ export default {
         this.jobList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     // 任务组名字典翻译
     jobGroupFormat(row, column) {

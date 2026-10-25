@@ -1,5 +1,5 @@
 <template>
-  <el-dialog title="重置密码" :visible.sync="visible" width="450px" append-to-body>
+  <el-dialog :close-on-click-modal="false" title="重置密码" :visible.sync="visible" width="450px" append-to-body>
     <el-form ref="form" :model="form" :rules="rules" label-width="80px">
       <el-form-item label="用户">
         <span>{{ userName }}</span>

@@ -12,6 +12,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['brm:campus:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !campusList.length" :rows="6">
     <el-table v-loading="loading" :data="campusList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="校区名称" align="center" prop="campusName" />
@@ -25,8 +26,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !campusList.length" description="暂无基础资源数据，可调整筛选条件或新增" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body :before-close="guardedBeforeClose">
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="校区名称" prop="campusName"><el-input v-model="form.campusName" placeholder="请输入校区名称" /></el-form-item>
         <el-form-item label="校区地址" prop="campusAddress"><el-input v-model="form.campusAddress" placeholder="请输入校区地址" /></el-form-item>
@@ -50,7 +53,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listCampus(this.queryParams).then(response => { this.campusList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listCampus(this.queryParams).then(response => { this.campusList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { campusId: null, campusName: null, campusAddress: null, orderNum: 0, status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

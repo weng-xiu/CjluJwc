@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['aem:question:import']">导入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !questionList.length" :rows="6">
     <el-table v-loading="loading" :data="questionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="问卷ID" align="center" prop="questionnaireId" />
@@ -27,8 +28,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !questionList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="问卷ID" prop="questionnaireId"><el-input v-model="form.questionnaireId" placeholder="请输入问卷ID" /></el-form-item>
         <el-form-item label="问题类型" prop="questionType"><el-select v-model="form.questionType" placeholder="请选择问题类型" style="width:100%"><el-option v-for="dict in dict.type.aem_question_type" :key="dict.value" :label="dict.label" :value="dict.value"/></el-select></el-form-item>
@@ -51,7 +54,7 @@
   </div>
 </template>
 <script>
-import { listQuestion, getQuestion, delQuestion, addQuestion, updateQuestion, importQuestion } from "@/api/aem/evaluationQuestion"
+import { listQuestion, getQuestion, delQuestion, addQuestion, updateQuestion } from "@/api/aem/evaluationQuestion"
 import ImportExcelDialog from "../components/ImportExcelDialog"
 export default {
   name: "Question",
@@ -63,7 +66,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listQuestion(this.queryParams).then(response => { this.questionList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listQuestion(this.queryParams).then(response => { this.questionList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { questionId: null, questionnaireId: null, questionType: "0", questionContent: null, sortOrder: null, maxScore: null, optionsJson: null }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

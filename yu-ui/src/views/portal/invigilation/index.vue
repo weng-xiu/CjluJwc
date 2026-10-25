@@ -5,6 +5,7 @@
       <el-form-item label="日期" prop="examDate"><el-date-picker clearable v-model="queryParams.examDate" type="date" value-format="yyyy-MM-dd" placeholder="请选择日期" /></el-form-item>
       <el-form-item><el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button><el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
+    <app-skeleton :loading="loading && !invigilationList.length" :rows="6">
     <el-table v-loading="loading" :data="invigilationList">
       <el-table-column label="考试名称" align="center" prop="examName" />
       <el-table-column label="教室" align="center" prop="classroomName" />
@@ -12,6 +13,8 @@
       <el-table-column label="时间" align="center" prop="startTime"><template slot-scope="scope"><span>{{ scope.row.startTime }} - {{ scope.row.endTime }}</span></template></el-table-column>
       <el-table-column label="职责" align="center" prop="dutyType"><template slot-scope="scope"><dict-tag :options="PORTAL_DUTY_TYPE" :value="scope.row.dutyType"/></template></el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !invigilationList.length" description="暂无门户内容，可调整筛选条件或先发布" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
   </div>
 </template>
@@ -26,7 +29,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listInvigilation(this.queryParams).then(response => { this.invigilationList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listInvigilation(this.queryParams).then(response => { this.invigilationList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() }
   }

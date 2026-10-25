@@ -1,5 +1,5 @@
 <template>
-  <el-dialog :title="type === 'log' ? '调度日志详细' : '任务详细'" :visible.sync="visible" width="780px" append-to-body @close="$emit('update:visible', false)">
+  <el-dialog :title="type === 'log' ? '调度日志详细' : '任务详细'" :visible="visible" width="780px" append-to-body @update:visible="$emit('update:visible', $event)" @close="$emit('update:visible', false)">
     <div class="detail-wrap">
 
       <template v-if="type === 'log'">

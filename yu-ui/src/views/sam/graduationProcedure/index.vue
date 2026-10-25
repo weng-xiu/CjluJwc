@@ -24,6 +24,7 @@
           <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
         </el-row>
 
+        <app-skeleton :loading="loading && !procedureList.length" :rows="6">
         <el-table v-loading="loading" :data="procedureList" @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="55" align="center" />
           <el-table-column label="学号" align="center" prop="studentNo" width="140"/>
@@ -43,6 +44,8 @@
             </template>
           </el-table-column>
         </el-table>
+        <app-empty v-if="!loading && !procedureList.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
+        </app-skeleton>
         <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
       </el-tab-pane>
 

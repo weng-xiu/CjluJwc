@@ -132,7 +132,7 @@
     </el-tabs>
 
     <!-- 新增或修改知识条目 -->
-    <el-dialog :title="title" :visible.sync="open" width="860px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="860px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="12">
@@ -319,7 +319,7 @@ export default {
         this.knowledgeList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     loadEngine() {
       getAiEngine().then(response => {

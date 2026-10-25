@@ -5,6 +5,7 @@
       <el-form-item label="学期" prop="semesterName"><el-input v-model="queryParams.semesterName" placeholder="请输入学期" clearable @keyup.enter.native="handleQuery"/></el-form-item>
       <el-form-item><el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button><el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
+    <app-skeleton :loading="loading && !resultList.length" :rows="6">
     <el-table v-loading="loading" :data="resultList">
       <el-table-column label="课程名称" align="center" prop="courseName" />
       <el-table-column label="学期" align="center" prop="semesterName" />
@@ -20,6 +21,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !resultList.length" description="暂无门户内容，可调整筛选条件或先发布" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
   </div>
 </template>
@@ -32,7 +35,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listEvalResult(this.queryParams).then(response => { this.resultList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listEvalResult(this.queryParams).then(response => { this.resultList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleDetail(row) { this.$modal.msgSuccess("正在加载评教详情，课程：" + row.courseName) }

@@ -107,6 +107,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !typeList.length" :rows="6">
     <el-table v-loading="loading" :data="typeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="字典编号" align="center" prop="dictId" />
@@ -153,6 +154,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !typeList.length" description="暂无系统数据，可调整筛选条件后重新查询" />
+    </app-skeleton>
 
     <pagination
       v-show="total>0"
@@ -163,7 +166,7 @@
     />
 
     <!-- 添加或修改参数配置对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="字典名称" prop="dictName">
           <el-input v-model="form.dictName" placeholder="请输入字典名称" />
@@ -267,7 +270,7 @@ export default {
           this.total = response.total
           this.loading = false
         }
-      )
+      ).catch(() => { this.loading = false })
     },
     // 取消按钮
     cancel() {

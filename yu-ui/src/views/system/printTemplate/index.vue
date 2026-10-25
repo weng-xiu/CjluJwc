@@ -75,7 +75,7 @@
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改打印模板对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="820px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="820px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="90px">
         <el-row>
           <el-col :span="12">
@@ -178,7 +178,7 @@ export default {
         this.templateList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     cancel() {
       this.open = false

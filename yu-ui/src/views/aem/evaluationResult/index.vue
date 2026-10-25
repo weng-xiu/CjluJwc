@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['aem:evaluationResult:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !evaluationResultList.length" :rows="6">
     <el-table v-loading="loading" :data="evaluationResultList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="问卷ID" align="center" prop="questionnaireId" />
@@ -29,8 +30,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !evaluationResultList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="650px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="650px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="问卷ID" prop="questionnaireId"><el-input v-model="form.questionnaireId" placeholder="请输入问卷ID" /></el-form-item>
         <el-form-item label="课程ID" prop="courseId"><el-input v-model="form.courseId" placeholder="请输入课程ID" /></el-form-item>
@@ -54,7 +57,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listEvaluationResult(this.queryParams).then(response => { this.evaluationResultList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listEvaluationResult(this.queryParams).then(response => { this.evaluationResultList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { resultId: null, questionnaireId: null, courseId: null, teacherId: null, studentId: null, totalScore: null, evalDate: null, comment: null }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

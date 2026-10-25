@@ -97,6 +97,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !roleList.length" :rows="6">
     <el-table v-loading="loading" :data="roleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="角色编号" prop="roleId" width="120" />
@@ -146,6 +147,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !roleList.length" description="暂无系统数据，可调整筛选条件后重新查询" />
+    </app-skeleton>
 
     <pagination
       v-show="total>0"
@@ -156,7 +159,7 @@
     />
 
     <!-- 添加或修改角色配置对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="角色名称" prop="roleName">
           <el-input v-model="form.roleName" placeholder="请输入角色名称" />
@@ -212,7 +215,7 @@
     </el-dialog>
 
     <!-- 分配角色数据权限对话框 -->
-    <el-dialog :title="title" :visible.sync="openDataScope" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="openDataScope" width="500px" append-to-body>
       <el-form :model="form" label-width="80px">
         <el-form-item label="角色名称">
           <el-input v-model="form.roleName" :disabled="true" />
@@ -367,7 +370,7 @@ export default {
           this.total = response.total
           this.loading = false
         }
-      )
+      ).catch(() => { this.loading = false })
     },
     /** 查询菜单树结构 */
     getMenuTreeselect() {

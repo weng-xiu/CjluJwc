@@ -12,6 +12,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['brm:position:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !positionList.length" :rows="6">
     <el-table v-loading="loading" :data="positionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="教师ID" align="center" prop="teacherId" />
@@ -27,8 +28,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !positionList.length" description="暂无基础资源数据，可调整筛选条件或新增" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="教师ID" prop="teacherId"><el-input v-model="form.teacherId" placeholder="请输入教师ID" /></el-form-item>
         <el-form-item label="任职院系" prop="deptId"><el-input v-model="form.deptId" placeholder="请输入任职院系ID" /></el-form-item>
@@ -51,7 +54,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listPosition(this.queryParams).then(response => { this.positionList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listPosition(this.queryParams).then(response => { this.positionList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { posId: null, teacherId: null, deptId: null, positionTitle: null, startDate: null, endDate: null, isCurrent: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

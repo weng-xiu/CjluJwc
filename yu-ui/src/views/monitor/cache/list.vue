@@ -12,6 +12,7 @@
               @click="refreshCacheNames()"
             ></el-button>
           </div>
+          <app-skeleton :loading="loading && !cacheNames.length" :rows="6">
           <el-table
             v-loading="loading"
             :data="cacheNames"
@@ -56,6 +57,8 @@
               </template>
             </el-table-column>
           </el-table>
+          <app-empty v-if="!loading && !cacheNames.length" description="暂无日志数据，可调整筛选条件后重新查询" />
+          </app-skeleton>
         </el-card>
       </el-col>
 

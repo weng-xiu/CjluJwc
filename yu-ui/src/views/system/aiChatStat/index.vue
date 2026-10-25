@@ -251,7 +251,7 @@ export default {
         this.chatList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     loadStat() {
       this.statLoading = true

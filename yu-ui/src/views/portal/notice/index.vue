@@ -5,6 +5,7 @@
       <el-form-item label="通知类型" prop="noticeType"><el-select v-model="queryParams.noticeType" placeholder="请选择" clearable><el-option label="选课通知" value="1"/><el-option label="考试通知" value="2"/><el-option label="学籍通知" value="3"/><el-option label="综合通知" value="4"/></el-select></el-form-item>
       <el-form-item><el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button><el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
+    <app-skeleton :loading="loading && !noticeList.length" :rows="6">
     <el-table v-loading="loading" :data="noticeList">
       <el-table-column label="序号" type="index" width="60" align="center" />
       <el-table-column label="通知标题" align="center" prop="noticeTitle">
@@ -15,6 +16,8 @@
       <el-table-column label="发布日期" align="center" prop="publishDate" width="120"><template slot-scope="scope"><span>{{ parseTime(scope.row.publishDate, '{y}-{m}-{d}') }}</span></template></el-table-column>
       <el-table-column label="浏览次数" align="center" prop="viewCount" width="80" />
     </el-table>
+    <app-empty v-if="!loading && !noticeList.length" description="暂无门户内容，可调整筛选条件或先发布" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
     <el-dialog :title="currentNotice.noticeTitle" :visible.sync="open" width="700px" append-to-body>
       <div class="notice-content">
@@ -39,7 +42,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listNotice(this.queryParams).then(response => { this.noticeList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listNotice(this.queryParams).then(response => { this.noticeList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleDetail(row) { this.currentNotice = row; this.open = true }

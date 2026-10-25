@@ -15,6 +15,7 @@
       <el-col :span="1.5"><el-tooltip content="点击左侧箭头展开可维护座位编排与监考安排" placement="top"><span class="tips-text">点击行首箭头维护明细</span></el-tooltip></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !examPlanList.length" :rows="6">
     <el-table ref="examPlanTable" v-loading="loading" :data="examPlanList" @selection-change="handleSelectionChange" :row-key="getRowKey" @expand-change="handleExpandChange">
       <el-table-column type="expand">
         <template slot-scope="props">
@@ -72,8 +73,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !examPlanList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="考试名称" prop="examName"><el-input v-model="form.examName" placeholder="请输入考试名称" /></el-form-item>
         <el-form-item label="学期ID" prop="semesterId"><el-input v-model="form.semesterId" placeholder="请输入学期ID" /></el-form-item>
@@ -108,8 +111,8 @@
 </template>
 <script>
 import { listExamPlan, getExamPlan, delExamPlan, addExamPlan, updateExamPlan, getExamPlanDetail, autoArrangeSeat, autoDispatch, autoArrangeExam, detectExamConflicts } from "@/api/aem/examPlan"
-import { listExamSeat, addExamSeat, updateExamSeat, delExamSeat } from "@/api/aem/examSeat"
-import { listInvigilation, addInvigilation, updateInvigilation, delInvigilation } from "@/api/aem/invigilation"
+import { listExamSeat } from "@/api/aem/examSeat"
+import { listInvigilation } from "@/api/aem/invigilation"
 import MasterDetailPanel from "../components/MasterDetailPanel"
 export default {
   name: "ExamPlan",
@@ -142,7 +145,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listExamPlan(this.queryParams).then(response => { this.examPlanList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listExamPlan(this.queryParams).then(response => { this.examPlanList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     getRowKey(row) { return row.examId },
     // 展开行时懒加载明细并默认显示第一个标签
     handleExpandChange(row, expandedRows) {

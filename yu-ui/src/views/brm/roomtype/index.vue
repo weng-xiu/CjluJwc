@@ -71,6 +71,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !roomtypeList.length" :rows="6">
     <el-table v-loading="loading" :data="roomtypeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="类型名称" align="center" prop="typeName" />
@@ -99,6 +100,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !roomtypeList.length" description="暂无基础资源数据，可调整筛选条件或新增" />
+    </app-skeleton>
 
     <pagination
       v-show="total>0"
@@ -108,7 +111,7 @@
       @pagination="getList"
     />
 
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body :before-close="guardedBeforeClose">
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="类型名称" prop="typeName">
           <el-input v-model="form.typeName" placeholder="请输入类型名称" />
@@ -178,7 +181,7 @@ export default {
         this.roomtypeList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     cancel() {
       this.open = false

@@ -43,6 +43,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !recordList.length" :rows="6">
     <el-table v-loading="loading" :data="recordList">
       <el-table-column label="凭证ID" align="center" prop="recordId" width="70" />
       <el-table-column label="类型" align="center" prop="bizType" width="100">
@@ -75,6 +76,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !recordList.length" description="暂无系统数据，可调整筛选条件后重新查询" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
@@ -237,7 +240,7 @@ export default {
         this.recordList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     handleQuery() {
       this.queryParams.pageNum = 1

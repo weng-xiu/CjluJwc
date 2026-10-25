@@ -19,6 +19,7 @@
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-unlock" size="mini" :disabled="multiple" @click="handleUnlock" v-hasPermi="['aem:gradeRecord:unlock']">解锁</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !gradeRecordList.length" :rows="6">
     <el-table ref="gradeRecordTable" v-loading="loading" :data="gradeRecordList" @selection-change="handleSelectionChange" :row-key="getRowKey" @expand-change="handleExpandChange">
       <el-table-column type="expand">
         <template slot-scope="props">
@@ -58,8 +59,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !gradeRecordList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="650px" append-to-body :before-close="guardedBeforeClose">
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="650px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="form.studentId" placeholder="请输入学生ID" /></el-form-item>
         <el-form-item label="课程ID" prop="courseId"><el-input v-model="form.courseId" placeholder="请输入课程ID" /></el-form-item>
@@ -101,8 +104,8 @@
   </div>
 </template>
 <script>
-import { listGradeRecord, getGradeRecord, delGradeRecord, addGradeRecord, updateGradeRecord, importGrade, submitGrade, auditGrade, unlockGrade } from "@/api/aem/gradeRecord"
-import { listGradeReview, addGradeReview, updateGradeReview, delGradeReview } from "@/api/aem/gradeReview"
+import { listGradeRecord, getGradeRecord, delGradeRecord, addGradeRecord, updateGradeRecord, submitGrade, auditGrade, unlockGrade } from "@/api/aem/gradeRecord"
+import { listGradeReview } from "@/api/aem/gradeReview"
 import MasterDetailPanel from "../components/MasterDetailPanel"
 import ImportExcelDialog from "../components/ImportExcelDialog"
 import dialogGuard from "@/utils/dialogGuard"
@@ -127,7 +130,7 @@ export default {
   }},
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listGradeRecord(this.queryParams).then(response => { this.gradeRecordList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listGradeRecord(this.queryParams).then(response => { this.gradeRecordList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     getRowKey(row) { return row.gradeId },
     handleExpandChange() { /* 子表自加载 */ },
     toggleExpand(row) { this.$refs.gradeRecordTable && this.$refs.gradeRecordTable.toggleRowExpansion(row) },

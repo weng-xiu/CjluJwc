@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="学生ID" prop="studentId"><el-input v-model="queryParams.studentId" placeholder="请输入学生ID" clearable/></el-form-item>
+      <el-form-item label="学生ID" prop="studentId"><el-input v-model="queryParams.studentId" placeholder="请输入学生ID" clearable @keyup.enter.native="handleQuery"/></el-form-item>
       <el-form-item label="审核状态" prop="reviewStatus"><el-select v-model="queryParams.reviewStatus" placeholder="请选择" clearable><el-option label="待审" value="0"/><el-option label="通过" value="1"/><el-option label="不通过" value="2"/></el-select></el-form-item>
       <el-form-item><el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button><el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="el-icon-cpu" size="mini" @click="handleBatchReview" v-hasPermi="['sam:graduationReview:audit']">批量审核</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学生ID" align="center" prop="studentId" />
@@ -29,8 +30,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" label-width="100px">
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="form.studentId" placeholder="请输入学生ID" /></el-form-item>
         <el-form-item label="已获总学分" prop="totalCreditsEarned"><el-input v-model="form.totalCreditsEarned" placeholder="请输入已获总学分" /></el-form-item>
@@ -92,7 +95,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listGraduationReview(this.queryParams).then(response => { this.list = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listGraduationReview(this.queryParams).then(response => { this.list = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { reviewId: null, studentId: null, totalCreditsEarned: null, requiredCredits: null, isCreditQualified: "0", isCourseQualified: "0", isEnglishQualified: "0", isPeQualified: "0", reviewStatus: "0", reviewDate: null, reviewer: null, reviewOpinion: null, status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['dis:interface:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !interfaceList.length" :rows="6">
     <el-table v-loading="loading" :data="interfaceList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="接口名称" align="center" prop="interfaceName" />
@@ -29,8 +30,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !interfaceList.length" description="暂无数据交换数据，可调整筛选条件或检查同步任务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="650px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="650px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="所属系统" prop="systemId"><el-input-number v-model="form.systemId" placeholder="请输入系统ID" :min="1" /></el-form-item>
         <el-form-item label="接口名称" prop="interfaceName"><el-input v-model="form.interfaceName" placeholder="请输入接口名称" /></el-form-item>
@@ -59,7 +62,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listInterface(this.queryParams).then(response => { this.interfaceList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listInterface(this.queryParams).then(response => { this.interfaceList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { interfaceId: null, systemId: null, interfaceName: null, interfaceCode: null, requestMethod: 'GET', requestPath: null, requestTemplate: null, timeoutSeconds: 30, retryCount: 0, description: null, status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

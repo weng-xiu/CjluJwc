@@ -2,7 +2,7 @@
   <el-card>
     <el-tabs v-model="activeName">
       <el-tab-pane label="基本信息" name="basic">
-        <basic-info-form ref="basicInfo" :info="info" />
+        <basic-info-form ref="basicInfo" :info.sync="info" />
       </el-tab-pane>
       <el-tab-pane label="字段信息" name="columnInfo">
         <el-table ref="dragTable" :data="columns" row-key="columnId" :max-height="tableHeight">
@@ -109,7 +109,7 @@
         </el-table>
       </el-tab-pane>
       <el-tab-pane label="生成信息" name="genInfo">
-        <gen-info-form ref="genInfo" :info="info" :tables="tables" :menus="menus"/>
+        <gen-info-form ref="genInfo" :info.sync="info" :tables="tables" :menus="menus"/>
       </el-tab-pane>
     </el-tabs>
     <el-form label-width="100px">
@@ -215,7 +215,7 @@ export default {
   },
   mounted() {
     const el = this.$refs.dragTable.$el.querySelectorAll(".el-table__body-wrapper > table > tbody")[0]
-    const sortable = Sortable.create(el, {
+    Sortable.create(el, {
       handle: ".allowDrag",
       onEnd: evt => {
         const targetRow = this.columns.splice(evt.oldIndex, 1)[0]

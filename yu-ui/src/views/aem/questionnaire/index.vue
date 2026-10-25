@@ -12,6 +12,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['aem:questionnaire:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !questionnaireList.length" :rows="6">
     <el-table ref="questionnaireTable" v-loading="loading" :data="questionnaireList" @selection-change="handleSelectionChange" :row-key="getRowKey" @expand-change="handleExpandChange">
       <el-table-column type="expand">
         <template slot-scope="props">
@@ -51,8 +52,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !questionnaireList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="650px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="650px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学年">
           <el-select v-model="formYearId" placeholder="请选择学年" clearable @change="handleFormYearChange" style="width:100%">
@@ -79,7 +82,7 @@
 </template>
 <script>
 import { listQuestionnaire, getQuestionnaire, delQuestionnaire, addQuestionnaire, updateQuestionnaire } from "@/api/aem/questionnaire"
-import { listQuestion, addQuestion, updateQuestion, delQuestion } from "@/api/aem/evaluationQuestion"
+import { listQuestion } from "@/api/aem/evaluationQuestion"
 import { listYear } from "@/api/brm/year"
 import { listSemester, getSemester } from "@/api/brm/semester"
 import MasterDetailPanel from "../components/MasterDetailPanel"
@@ -121,7 +124,7 @@ export default {
     getSemesterName(semesterId) {
       return this.semesterNameMap[semesterId] || semesterId
     },
-    getList() { this.loading = true; listQuestionnaire(this.queryParams).then(response => { this.questionnaireList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listQuestionnaire(this.queryParams).then(response => { this.questionnaireList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     getRowKey(row) { return row.questionnaireId },
     handleExpandChange() { /* 由 MasterDetailPanel 内部 watch masterId 自动加载 */ },
     toggleExpand(row) { this.$refs.questionnaireTable && this.$refs.questionnaireTable.toggleRowExpansion(row) },

@@ -59,6 +59,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !userList.length" :rows="6">
     <el-table v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="用户名称" prop="userName" :show-overflow-tooltip="true" />
@@ -87,6 +88,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !userList.length" description="暂无系统数据，可调整筛选条件后重新查询" />
+    </app-skeleton>
 
     <pagination
       v-show="total>0"
@@ -147,7 +150,7 @@ export default {
           this.total = response.total
           this.loading = false
         }
-      )
+      ).catch(() => { this.loading = false })
     },
     // 返回按钮
     handleClose() {

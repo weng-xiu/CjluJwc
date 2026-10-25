@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['dis:system:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !systemList.length" :rows="6">
     <el-table v-loading="loading" :data="systemList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="系统名称" align="center" prop="systemName" />
@@ -28,8 +29,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !systemList.length" description="暂无数据交换数据，可调整筛选条件或检查同步任务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="650px" append-to-body :before-close="guardedBeforeClose">
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="650px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="系统名称" prop="systemName"><el-input v-model="form.systemName" placeholder="请输入系统名称" /></el-form-item>
         <el-form-item label="系统编码" prop="systemCode"><el-input v-model="form.systemCode" placeholder="请输入系统编码" /></el-form-item>
@@ -61,7 +64,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listSystem(this.queryParams).then(response => { this.systemList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listSystem(this.queryParams).then(response => { this.systemList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { systemId: null, systemName: null, systemCode: null, systemType: null, baseUrl: null, authType: 'TOKEN', authConfig: null, description: null, contactName: null, contactPhone: null, status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

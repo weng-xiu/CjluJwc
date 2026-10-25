@@ -35,7 +35,7 @@
     </el-row>
 
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="学生ID" prop="studentId"><el-input v-model="queryParams.studentId" placeholder="请输入学生ID" clearable/></el-form-item>
+      <el-form-item label="学生ID" prop="studentId"><el-input v-model="queryParams.studentId" placeholder="请输入学生ID" clearable @keyup.enter.native="handleQuery"/></el-form-item>
       <el-form-item label="预警类型" prop="warningType"><el-select v-model="queryParams.warningType" placeholder="请选择" clearable><el-option label="成绩预警" value="0"/><el-option label="学分预警" value="1"/><el-option label="出勤预警" value="2"/><el-option label="综合预警" value="3"/></el-select></el-form-item>
       <el-form-item label="预警级别" prop="warningLevel"><el-select v-model="queryParams.warningLevel" placeholder="请选择" clearable><el-option label="一般" value="0"/><el-option label="严重" value="1"/><el-option label="高危" value="2"/></el-select></el-form-item>
       <el-form-item label="学年">
@@ -60,6 +60,7 @@
       <el-col :span="1.5"><el-button type="success" plain icon="el-icon-s-custom" size="mini" @click="goToAssist" v-hasPermi="['sam:warningAssist:list']">帮扶管理</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学生ID" align="center" prop="studentId" />
@@ -80,10 +81,12 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增/修改对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="form.studentId" placeholder="请输入学生ID" /></el-form-item>
         <el-form-item label="学年">
@@ -106,7 +109,7 @@
     </el-dialog>
 
     <!-- 手动生成预警对话框 -->
-    <el-dialog title="手动生成预警" :visible.sync="generateOpen" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="手动生成预警" :visible.sync="generateOpen" width="500px" append-to-body>
       <el-form ref="generateForm" :model="generateForm" label-width="80px">
         <el-form-item label="学年">
           <el-select v-model="generateYearId" placeholder="请选择学年" clearable @change="handleGenerateYearChange" style="width: 100%">
@@ -166,7 +169,7 @@ export default {
         listSemester({ academicYearId: yearId, pageNum: 1, pageSize: 50 }).then(r => { this.generateSemesterList = r.rows })
       }
     },
-    getList() { this.loading = true; listWarning(this.queryParams).then(response => { this.list = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listWarning(this.queryParams).then(response => { this.list = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     loadStats() {
       const sid = this.queryParams.semesterId || 1
       getWarningStatistics(sid).then(response => { this.stats = response.data })

@@ -9,6 +9,7 @@
       <el-col :span="1.5"><el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd" v-hasPermi="['portal:adjustment:add']">提交申请</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !adjustmentList.length" :rows="6">
     <el-table v-loading="loading" :data="adjustmentList">
       <el-table-column label="课程名称" align="center" prop="courseName" />
       <el-table-column label="原上课时间" align="center" prop="originTime" />
@@ -18,8 +19,10 @@
       <el-table-column label="审批状态" align="center" prop="approveStatus"><template slot-scope="scope"><dict-tag :options="PORTAL_APPROVE_STATUS" :value="scope.row.approveStatus"/></template></el-table-column>
       <el-table-column label="原因" align="center" prop="reason" show-overflow-tooltip />
     </el-table>
+    <app-empty v-if="!loading && !adjustmentList.length" description="暂无门户内容，可调整筛选条件或先发布" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="550px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="550px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="课程" prop="courseName"><el-input v-model="form.courseName" placeholder="请选择课程" /></el-form-item>
         <el-form-item label="原上课时间" prop="originTime"><el-input v-model="form.originTime" placeholder="请输入原上课时间" /></el-form-item>
@@ -43,7 +46,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listAdjustment(this.queryParams).then(response => { this.adjustmentList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listAdjustment(this.queryParams).then(response => { this.adjustmentList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { courseName: null, originTime: null, newTime: null, adjustType: "1", reason: null }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

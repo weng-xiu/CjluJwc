@@ -107,9 +107,7 @@ const layouts = {
 
 const tags = {
   'el-button': el => {
-    const {
-      tag, disabled
-    } = attrBuilder(el)
+    const { disabled } = attrBuilder(el)
     const type = el.type ? `type="${el.type}"` : ''
     const icon = el.icon ? `icon="${el.icon}"` : ''
     const size = el.size ? `size="${el.size}"` : ''
@@ -245,7 +243,7 @@ const tags = {
     const showText = el['show-text'] ? 'show-text' : ''
     const showScore = el['show-score'] ? 'show-score' : ''
 
-    return `<${el.tag} ${vModel} ${allowHalf} ${showText} ${showScore} ${disabled}></${el.tag}>`
+    return `<${el.tag} ${vModel} ${max} ${allowHalf} ${showText} ${showScore} ${disabled}></${el.tag}>`
   },
   'el-color-picker': el => {
     const { disabled, vModel } = attrBuilder(el)

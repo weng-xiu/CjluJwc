@@ -62,7 +62,7 @@
     <app-empty v-if="!loading && !offeringList.length" description="暂无开课计划，可新增或使用「批量生成」按培养方案生成" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
           <el-col :span="12">
@@ -203,7 +203,7 @@ export default {
       listPlan({ pageNum: 1, pageSize: 1000 }).then(res => { this.planOptions = res.rows || [] })
       listDept().then(res => { this.deptOptions = res.data || [] })
     },
-    getList() { this.loading = true; listOffering(this.queryParams).then(response => { this.offeringList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listOffering(this.queryParams).then(response => { this.offeringList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { offeringId: null, semesterId: null, courseId: null, teacherId: null, campusId: null, classCount: 1, maxStudents: 30, elasticEnabled: "0", elasticMax: null, elasticStep: null, offeringStatus: "0", status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

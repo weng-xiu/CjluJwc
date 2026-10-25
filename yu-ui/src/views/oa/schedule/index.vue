@@ -39,6 +39,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !scheduleList.length" :rows="6">
     <el-table v-loading="loading" :data="scheduleList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="日程ID" align="center" prop="scheduleId" width="80" />
@@ -81,10 +82,12 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !scheduleList.length" description="暂无办公数据，可调整筛选条件或发起流程" />
+    </app-skeleton>
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :title="title" :visible.sync="open" width="720px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="720px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="90px">
         <el-row>
           <el-col :span="24">
@@ -214,7 +217,7 @@
 </template>
 
 <script>
-import { listSchedule, getSchedule, delSchedule, addSchedule, updateSchedule, exportSchedule } from "@/api/oa/schedule"
+import { listSchedule, getSchedule, delSchedule, addSchedule, updateSchedule } from "@/api/oa/schedule"
 import { listUser } from "@/api/system/user"
 
 export default {
@@ -270,7 +273,7 @@ export default {
         this.scheduleList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     getUserOptions() {
       listUser({ pageSize: 1000 }).then(response => {

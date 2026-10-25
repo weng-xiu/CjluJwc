@@ -16,6 +16,7 @@
       <el-col :span="1.5"><el-button type="info" plain icon="el-icon-upload2" size="mini" @click="handleImport" v-hasPermi="['brm:classroom:import']">导入</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !classroomList.length" :rows="6">
     <el-table v-loading="loading" :data="classroomList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="教室名称" align="center" prop="classroomName" />
@@ -30,8 +31,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !classroomList.length" description="暂无基础资源数据，可调整筛选条件或新增" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body :before-close="guardedBeforeClose">
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="教室名称" prop="classroomName"><el-input v-model="form.classroomName" placeholder="请输入教室名称" /></el-form-item>
         <el-form-item label="所属校区" prop="campusId"><el-select v-model="form.campusId" placeholder="请选择所属校区" style="width:100%" @change="handleFormCampusChange"><el-option v-for="item in campusList" :key="item.campusId" :label="item.campusName" :value="item.campusId"/></el-select></el-form-item>
@@ -79,7 +82,7 @@ export default {
     },
     handleQueryCampusChange(campusId) { this.queryParams.buildingId = null; this.queryBuildingList = this.allBuildingList.filter(b => b.campusId === campusId) },
     handleFormCampusChange(campusId) { this.form.buildingId = null; this.formBuildingList = this.allBuildingList.filter(b => b.campusId === campusId) },
-    getList() { this.loading = true; listClassroom(this.queryParams).then(response => { this.classroomList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listClassroom(this.queryParams).then(response => { this.classroomList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { classroomId: null, classroomName: null, campusId: null, buildingId: null, typeId: null, capacity: 0, status: "0" }; this.formBuildingList = []; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

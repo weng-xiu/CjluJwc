@@ -35,7 +35,7 @@
     <app-empty v-if="!loading && !clazzList.length" description="暂无班级数据，可调整查询条件或新增班级" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="班级编码" prop="classCode"><el-input v-model="form.classCode" placeholder="请输入班级编码" /></el-form-item>
         <el-form-item label="班级名称" prop="className"><el-input v-model="form.className" placeholder="请输入班级名称" /></el-form-item>
@@ -70,7 +70,7 @@ export default {
   },
   created() { this.loadDepts(); this.getList() },
   methods: {
-    getList() { this.loading = true; listClazz(this.queryParams).then(response => { this.clazzList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listClazz(this.queryParams).then(response => { this.clazzList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     loadDepts() { listDept({ pageNum: 1, pageSize: 200 }).then(response => { this.deptList = response.data }) },
     handleQueryDeptChange(deptId) {
       this.queryParams.majorId = null

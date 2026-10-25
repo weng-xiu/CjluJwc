@@ -91,6 +91,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !tableList.length" :rows="6">
     <el-table ref="tables" v-loading="loading" :data="tableList" @selection-change="handleSelectionChange" :default-sort="defaultSort" @sort-change="handleSortChange">
       <el-table-column type="selection" align="center" width="55"></el-table-column>
       <el-table-column label="序号" type="index" width="50" align="center">
@@ -143,6 +144,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !tableList.length" description="暂无数据，可调整筛选条件后重新查询" />
+    </app-skeleton>
     <pagination
       v-show="total>0"
       :total="total"
@@ -248,7 +251,7 @@ export default {
           this.total = response.total
           this.loading = false
         }
-      )
+      ).catch(() => { this.loading = false })
     },
     /** 搜索按钮操作 */
     handleQuery() {

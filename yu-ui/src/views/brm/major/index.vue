@@ -33,7 +33,7 @@
     <app-empty v-if="!loading && !majorList.length" description="暂无专业数据，可调整查询条件或新增专业" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="专业编码" prop="majorCode"><el-input v-model="form.majorCode" placeholder="请输入专业编码" /></el-form-item>
         <el-form-item label="专业名称" prop="majorName"><el-input v-model="form.majorName" placeholder="请输入专业名称" /></el-form-item>
@@ -62,7 +62,7 @@ export default {
   },
   created() { this.getList(); this.loadDepts() },
   methods: {
-    getList() { this.loading = true; listMajor(this.queryParams).then(response => { this.majorList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listMajor(this.queryParams).then(response => { this.majorList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     loadDepts() { listDept({ pageNum: 1, pageSize: 200 }).then(response => { this.deptList = response.data }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { majorId: null, majorCode: null, majorName: null, deptId: null, educationLevel: null, duration: 4, status: "0" }; this.resetForm("form") },

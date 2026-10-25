@@ -101,6 +101,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !jobLogList.length" :rows="6">
     <el-table v-loading="loading" :data="jobLogList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="日志编号" width="80" align="center" prop="jobLogId" />
@@ -134,6 +135,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !jobLogList.length" description="暂无日志数据，可调整筛选条件后重新查询" />
+    </app-skeleton>
 
     <pagination
       v-show="total>0"
@@ -207,7 +210,7 @@ export default {
           this.total = response.total
           this.loading = false
         }
-      )
+      ).catch(() => { this.loading = false })
     },
     // 返回按钮
     handleClose() {

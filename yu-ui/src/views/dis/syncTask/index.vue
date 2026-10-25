@@ -12,6 +12,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['dis:syncTask:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !taskList.length" :rows="6">
     <el-table v-loading="loading" :data="taskList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="任务名称" align="center" prop="taskName" />
@@ -34,8 +35,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !taskList.length" description="暂无数据交换数据，可调整筛选条件或检查同步任务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="550px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="550px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="任务名称" prop="taskName"><el-input v-model="form.taskName" placeholder="请输入任务名称" /></el-form-item>
         <el-form-item label="任务编码" prop="taskCode"><el-input v-model="form.taskCode" placeholder="请输入任务编码" /></el-form-item>
@@ -80,7 +83,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listSyncTask(this.queryParams).then(response => { this.taskList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listSyncTask(this.queryParams).then(response => { this.taskList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { taskId: null, taskName: null, taskCode: null, systemId: null, interfaceId: null, cronExpression: null, syncMode: "0", status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

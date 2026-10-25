@@ -12,6 +12,7 @@
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['dis:fieldMapping:remove']">删除</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !mappingList.length" :rows="6">
     <el-table v-loading="loading" :data="mappingList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="映射ID" align="center" prop="mappingId" width="80" />
@@ -29,8 +30,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !mappingList.length" description="暂无数据交换数据，可调整筛选条件或检查同步任务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="550px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="550px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="接口ID" prop="interfaceId"><el-input-number v-model="form.interfaceId" placeholder="关联的接口配置ID" :min="1" /></el-form-item>
         <el-form-item label="目标业务表" prop="targetTable"><el-input v-model="form.targetTable" placeholder="请输入落库的目标业务表名" /></el-form-item>
@@ -54,7 +57,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listFieldMapping(this.queryParams).then(response => { this.mappingList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listFieldMapping(this.queryParams).then(response => { this.mappingList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { mappingId: null, interfaceId: null, targetTable: null, sourceField: null, targetColumn: null, keyFlag: "0", sortOrder: 0, status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

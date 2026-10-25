@@ -33,6 +33,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['tpm:enroll:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !enrollList.length" :rows="6">
     <el-table v-loading="loading" :data="enrollList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="学生" align="center" prop="studentName" width="160">
@@ -69,10 +70,12 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !enrollList.length" description="暂无培养过程数据，可调整筛选条件或调整学期/轮次" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增/修改对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="轮次" prop="roundId">
           <el-select v-model="form.roundId" placeholder="请选择轮次" style="width:100%">
@@ -102,7 +105,7 @@
     </el-dialog>
 
     <!-- 发起抽签对话框 -->
-    <el-dialog title="发起选课抽签" :visible.sync="lotteryOpen" width="420px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="发起选课抽签" :visible.sync="lotteryOpen" width="420px" append-to-body>
       <el-form label-width="80px">
         <el-form-item label="选择轮次">
           <el-select v-model="lotteryRoundId" placeholder="请选择要抽签的轮次" style="width:100%">
@@ -120,7 +123,7 @@
     </el-dialog>
 
     <!-- F2-2 退改选对话框 -->
-    <el-dialog title="改选课程" :visible.sync="swapOpen" width="460px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="改选课程" :visible.sync="swapOpen" width="460px" append-to-body>
       <el-form label-width="90px">
         <el-form-item label="当前课程"><span>{{ swapRow.courseName }}</span></el-form-item>
         <el-form-item label="目标开课">
@@ -171,7 +174,7 @@ export default {
     fmtOffering(row) { return (row.courseName || '') + '-' + (row.teacherName || '') },
     getList() {
       this.loading = true
-      listEnroll(this.queryParams).then(response => { this.enrollList = response.rows; this.total = response.total; this.loading = false })
+      listEnroll(this.queryParams).then(response => { this.enrollList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false })
     },
     getRounds() {
       listRound({ pageNum: 1, pageSize: 1000 }).then(response => { this.roundOptions = response.rows || [] })

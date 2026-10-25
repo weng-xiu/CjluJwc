@@ -13,6 +13,7 @@
       <el-col :span="1.5"><el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['portal:noticeManage:export']">导出</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
+    <app-skeleton :loading="loading && !noticeList.length" :rows="6">
     <el-table v-loading="loading" :data="noticeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="通知标题" align="center" prop="noticeTitle" />
@@ -31,8 +32,10 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !noticeList.length" description="暂无门户内容，可调整筛选条件或先发布" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="通知标题" prop="noticeTitle"><el-input v-model="form.noticeTitle" placeholder="请输入通知标题" /></el-form-item>
         <el-form-item label="通知类型" prop="noticeType"><el-select v-model="form.noticeType" placeholder="请选择"><el-option label="选课通知" value="1"/><el-option label="考试通知" value="2"/><el-option label="学籍通知" value="3"/><el-option label="综合通知" value="4"/></el-select></el-form-item>
@@ -60,7 +63,7 @@ export default {
   },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listNoticeManage(this.queryParams).then(response => { this.noticeList = response.rows; this.total = response.total; this.loading = false }) },
+    getList() { this.loading = true; listNoticeManage(this.queryParams).then(response => { this.noticeList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { noticeId: null, noticeTitle: null, noticeType: "1", noticeContent: null, publishDeptId: null, publishDeptName: "教务处", publishStatus: "0", publishDate: null, targetRole: "0", isTop: "0", viewCount: 0, status: "0", remark: null }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },

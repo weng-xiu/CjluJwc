@@ -46,7 +46,7 @@
           <el-col :span="1.5">
             <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport" v-hasPermi="['system:user:export']">导出</el-button>
           </el-col>
-          <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+          <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" :columns.sync="columns"></right-toolbar>
         </el-row>
 
         <el-table v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
@@ -186,7 +186,7 @@ export default {
         this.userList = response.rows
         this.total = response.total
         this.loading = false
-      })
+      }).catch(() => { this.loading = false })
     },
     /** 查询部门下拉树结构 */
     getDeptTree() {

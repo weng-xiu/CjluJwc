@@ -1,5 +1,5 @@
 <template>
-  <el-dialog title="变更用户状态" :visible.sync="visible" width="500px" append-to-body>
+  <el-dialog :close-on-click-modal="false" title="变更用户状态" :visible.sync="visible" width="500px" append-to-body>
     <el-form ref="form" :model="form" :rules="rules" label-width="100px">
       <el-form-item label="当前状态">
         <el-tag>{{ currentStatus }}</el-tag>

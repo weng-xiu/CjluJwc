@@ -6,6 +6,7 @@
       <el-form-item label="状态" prop="status"><el-select v-model="queryParams.status" placeholder="请选择" clearable><el-option label="待办" value="0"/><el-option label="已办" value="1"/></el-select></el-form-item>
       <el-form-item><el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button><el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button></el-form-item>
     </el-form>
+    <app-skeleton :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list">
       <el-table-column label="待办标题" align="center" prop="title" :show-overflow-tooltip="true" />
       <el-table-column label="类型" align="center" prop="todoType" width="90"><template slot-scope="scope"><dict-tag :options="todoTypeOptions" :value="scope.row.todoType"/></template></el-table-column>
@@ -20,6 +21,8 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无系统数据，可调整筛选条件后重新查询" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
   </div>
 </template>
@@ -36,7 +39,7 @@ export default {
   } },
   created() { this.getList() },
   methods: {
-    getList() { this.loading = true; listTodo(this.queryParams).then(res => { this.list = res.rows; this.total = res.total; this.loading = false }) },
+    getList() { this.loading = true; listTodo(this.queryParams).then(res => { this.list = res.rows; this.total = res.total; this.loading = false }).catch(() => { this.loading = false }) },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     businessLabel(bt) { const map = { statusChange: "学籍异动" }; return map[bt] || (bt || "—") },

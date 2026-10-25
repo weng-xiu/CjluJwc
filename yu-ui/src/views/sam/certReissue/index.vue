@@ -21,6 +21,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !list.length" :rows="6">
     <el-table v-loading="loading" :data="list" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="学号" align="center" prop="studentNo" width="140"/>
@@ -44,10 +45,12 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !list.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增补办申请对话框 -->
-    <el-dialog title="证书补办申请" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="证书补办申请" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学生ID" prop="studentId">
           <el-input v-model="form.studentId" placeholder="请输入学生ID后加载其证书" @change="loadCerts">
@@ -67,7 +70,7 @@
     </el-dialog>
 
     <!-- 受理意见对话框 -->
-    <el-dialog :title="auditTitle" :visible.sync="auditOpen" width="460px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="auditTitle" :visible.sync="auditOpen" width="460px" append-to-body>
       <el-form label-width="90px">
         <el-form-item label="受理意见">
           <el-input v-model="auditOpinion" type="textarea" :rows="3" placeholder="请填写受理意见（可选）"/>

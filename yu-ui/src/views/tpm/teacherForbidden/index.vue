@@ -37,6 +37,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
+    <app-skeleton :loading="loading && !forbiddenList.length" :rows="6">
     <el-table v-loading="loading" :data="forbiddenList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="教师" align="center" prop="teacherName" min-width="100" show-overflow-tooltip>
@@ -62,9 +63,11 @@
         </template>
       </el-table-column>
     </el-table>
+    <app-empty v-if="!loading && !forbiddenList.length" description="暂无培养过程数据，可调整筛选条件或调整学期/轮次" />
+    </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
-    <el-dialog :title="title" :visible.sync="open" width="620px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="620px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="教师" prop="teacherId">
           <remote-select v-model="form.teacherId" :api="apiTeacher" search-key="teacherName" value-key="teacherId" :formatter="fmtTeacher" :initial-option="teacherInitial" placeholder="输入教师名搜索" style="width:100%" />
@@ -143,7 +146,7 @@ export default {
   methods: {
     getList() {
       this.loading = true
-      listForbidden(this.queryParams).then(response => { this.forbiddenList = response.rows; this.total = response.total; this.loading = false })
+      listForbidden(this.queryParams).then(response => { this.forbiddenList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false })
     },
     getOptions() {
       // 学期为小体量字典（逐年递增）保留全量；教师大实体改 RemoteSelect 远程搜索（N7 禁全量拉取）
