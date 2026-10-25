@@ -139,7 +139,6 @@
 import draggable from 'vuedraggable'
 import beautifier from 'js-beautify'
 import ClipboardJS from 'clipboard'
-import render from '@/utils/generator/render'
 import RightPanel from './RightPanel'
 import { inputComponents, selectComponents, layoutComponents, formConf } from '@/utils/generator/config'
 import { beautifierConf, titleCase } from '@/utils/index'
@@ -158,7 +157,6 @@ let clipboard = null
 export default {
   components: {
     draggable,
-    render,
     RightPanel,
     CodeTypeDialog,
     DraggableItem

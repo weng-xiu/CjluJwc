@@ -17,7 +17,7 @@ export default {
     dragDom.style.marginTop = 0
     let width = dragDom.style.width
     if (width.includes('%')) {
-      width = +document.body.clientWidth * (+width.replace(/\%/g, '') / 100)
+      width = +document.body.clientWidth * (+width.replace(/%/g, '') / 100)
     } else {
       width = +width.replace(/\px/g, '')
     }
@@ -33,8 +33,8 @@ export default {
 
       // 注意在ie中 第一次获取到的值为组件自带50% 移动之后赋值为px
       if (sty.left.includes('%')) {
-        styL = +document.body.clientWidth * (+sty.left.replace(/\%/g, '') / 100)
-        styT = +document.body.clientHeight * (+sty.top.replace(/\%/g, '') / 100)
+        styL = +document.body.clientWidth * (+sty.left.replace(/%/g, '') / 100)
+        styT = +document.body.clientHeight * (+sty.top.replace(/%/g, '') / 100)
       } else {
         styL = +sty.left.replace(/\px/g, '')
         styT = +sty.top.replace(/\px/g, '')

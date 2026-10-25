@@ -19,7 +19,8 @@ const install = function(Vue) {
 if (window.Vue) {
   window['hasRole'] = hasRole
   window['hasPermi'] = hasPermi
-  Vue.use(install)
+  // 此分支仅在页面通过外链脚本引入 Vue（window.Vue 存在）时生效，故显式取全局引用
+  window.Vue.use(install)
 }
 
 export default install

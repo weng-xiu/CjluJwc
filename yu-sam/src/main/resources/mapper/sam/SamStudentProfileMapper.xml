@@ -101,7 +101,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 近期成绩明细 -->
     <select id="selectRecentGrades" resultType="java.util.LinkedHashMap">
-        select cl.course_name as courseName, gr.credit as credit, gr.total_score as totalScore,
+        select cl.course_name as courseName, cl.credit as credit, gr.total_score as totalScore,
                gr.grade_point as gradePoint, gr.is_pass as isPass, gr.semester_id as semesterId
         from aem_grade_record gr
         left join tpm_course_library cl on cl.course_id = gr.course_id

@@ -232,7 +232,7 @@
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitForm">确 定</el-button>
+        <el-button type="primary" @click="submitArchiveForm">确 定</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
@@ -441,7 +441,9 @@ export default {
       this.reset()
       getThesis(row.thesisId).then(response => { this.form = response.data; this.open = true; this.title = "修改论文档案" })
     },
-    submitForm() {
+    // 注意：不可命名为 submitForm —— data 中存在同名 submitForm（重新提交弹窗表单），
+    // Vue2 中 data 会覆盖同名 method，会导致本按钮点击失效。
+    submitArchiveForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {
           if (this.form.thesisId != null) { updateThesis(this.form).then(() => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) }
