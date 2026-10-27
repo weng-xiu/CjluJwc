@@ -35,7 +35,7 @@
     <app-empty v-if="!loading && !clazzList.length" description="暂无班级数据，可调整查询条件或新增班级" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="班级编码" prop="classCode"><el-input v-model="form.classCode" placeholder="请输入班级编码" /></el-form-item>
         <el-form-item label="班级名称" prop="className"><el-input v-model="form.className" placeholder="请输入班级名称" /></el-form-item>
@@ -53,7 +53,7 @@
         <el-form-item label="学生人数"><el-input-number v-model="form.studentCount" :min="0" /></el-form-item>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
@@ -62,7 +62,9 @@ import { listClazz, getClazz, delClazz, addClazz, updateClazz } from "@/api/brm/
 import { listDept } from "@/api/brm/dept"
 import { listMajor, getMajor } from "@/api/brm/major"
 import { required, requiredSelect } from "@/utils/validateRules"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Clazz", dicts: ['sys_normal_disable', 'brm_grade'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, clazzList: [], deptList: [], majorList: [], queryMajorList: [], selectedDeptId: null, queryDeptId: null, title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, className: null, majorId: null, grade: null, status: null },
@@ -91,7 +93,7 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.queryDeptId = null; this.queryMajorList = []; this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.classId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.selectedDeptId = null; this.majorList = []; this.open = true; this.title = "添加班级" },
+    handleAdd() { this.reset(); this.selectedDeptId = null; this.majorList = []; this.open = true; this.captureDialogSnapshot(); this.title = "添加班级" },
     handleUpdate(row) {
       this.reset(); this.selectedDeptId = null; this.majorList = [];
       const classId = row.classId || this.ids;
@@ -102,11 +104,11 @@ export default {
             this.selectedDeptId = majorRes.data.deptId;
             listMajor({ deptId: this.selectedDeptId, pageNum: 1, pageSize: 200 }).then(r => {
               this.majorList = r.rows;
-              this.open = true; this.title = "修改班级";
+              this.open = true; this.captureDialogSnapshot(); this.title = "修改班级";
             });
           });
         } else {
-          this.open = true; this.title = "修改班级";
+          this.open = true; this.captureDialogSnapshot(); this.title = "修改班级";
         }
       });
     },

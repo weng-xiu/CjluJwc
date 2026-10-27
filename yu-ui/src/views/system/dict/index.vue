@@ -166,7 +166,7 @@
     />
 
     <!-- 添加或修改参数配置对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="字典名称" prop="dictName">
           <el-input v-model="form.dictName" placeholder="请输入字典名称" />
@@ -195,7 +195,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -207,7 +207,9 @@
 import DictDataDrawer from './detail'
 import { listType, getType, delType, addType, updateType, refreshCache } from "@/api/system/dict/type"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Dict",
   components: { DictDataDrawer },
   dicts: ['sys_normal_disable'],
@@ -302,7 +304,7 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "添加字典类型"
     },
     // 多选框选中数据
@@ -326,7 +328,7 @@ export default {
       const dictId = row.dictId || this.ids
       getType(dictId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改字典类型"
       })
     },

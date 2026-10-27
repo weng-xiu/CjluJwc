@@ -76,7 +76,7 @@
     <app-empty v-if="!loading && !examPlanList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="考试名称" prop="examName"><el-input v-model="form.examName" placeholder="请输入考试名称" /></el-form-item>
         <el-form-item label="学期ID" prop="semesterId"><el-input v-model="form.semesterId" placeholder="请输入学期ID" /></el-form-item>
@@ -89,7 +89,7 @@
         <el-form-item label="考生人数" prop="totalStudents"><el-input-number v-model="form.totalStudents" placeholder="请输入考生人数" :min="0" style="width:100%" /></el-form-item>
         <el-form-item label="安排状态" prop="planStatus"><el-select v-model="form.planStatus" placeholder="请选择安排状态" style="width:100%"><el-option v-for="dict in dict.type.aem_plan_status" :key="dict.value" :label="dict.label" :value="dict.value"/></el-select></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
 
     <!-- A2：考试冲突检测结果对话框 -->
@@ -114,7 +114,9 @@ import { listExamPlan, getExamPlan, delExamPlan, addExamPlan, updateExamPlan, ge
 import { listExamSeat } from "@/api/aem/examSeat"
 import { listInvigilation } from "@/api/aem/invigilation"
 import MasterDetailPanel from "../components/MasterDetailPanel"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "ExamPlan",
   components: { MasterDetailPanel },
   dicts: ['aem_exam_type', 'aem_plan_status', 'aem_duty_type'],
@@ -168,8 +170,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.examId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加考试安排" },
-    handleUpdate(row) { this.reset(); const examId = row.examId || this.ids; getExamPlan(examId).then(response => { this.form = response.data; this.open = true; this.title = "修改考试安排" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加考试安排" },
+    handleUpdate(row) { this.reset(); const examId = row.examId || this.ids; getExamPlan(examId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改考试安排" }) },
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (!valid) return

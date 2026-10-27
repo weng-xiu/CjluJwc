@@ -48,7 +48,7 @@
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="成绩ID" prop="gradeId"><el-input v-model="form.gradeId" placeholder="请输入成绩ID" /></el-form-item>
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="form.studentId" placeholder="请输入学生ID" /></el-form-item>
@@ -58,7 +58,7 @@
         <el-form-item label="复核类型" prop="reviewType"><el-select v-model="form.reviewType" placeholder="请选择复核类型" style="width:100%"><el-option v-for="dict in dict.type.aem_review_type" :key="dict.value" :label="dict.label" :value="dict.value"/></el-select></el-form-item>
         <el-form-item label="复核原因" prop="reviewReason"><el-input v-model="form.reviewReason" type="textarea" placeholder="请输入复核原因" /></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
 
     <!-- 审批对话框（流程按当前阶段自动路由：初审/终审） -->
@@ -104,7 +104,9 @@
 <script>
 import { listGradeReview, getGradeReview, delGradeReview, addGradeReview, updateGradeReview,
          approveReview, submitReview, cancelReview, traceReview } from "@/api/aem/gradeReview"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "GradeReview", dicts: ['aem_review_type', 'aem_approve_status'],
   data() { return { loading: true, ids: [], multiple: true, showSearch: true, total: 0, gradeReviewList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, studentId: null, courseId: null, reviewType: null, approveStatus: null },
@@ -136,8 +138,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.reviewId); this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "登记成绩变更申请" },
-    handleUpdate(row) { this.reset(); getGradeReview(row.reviewId).then(response => { this.form = response.data; this.open = true; this.title = "修改成绩变更申请" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "登记成绩变更申请" },
+    handleUpdate(row) { this.reset(); getGradeReview(row.reviewId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改成绩变更申请" }) },
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (!valid) return

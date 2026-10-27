@@ -31,7 +31,7 @@
     <app-empty v-if="!loading && !qualificationList.length" description="暂无基础资源数据，可调整筛选条件或新增" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="教师ID" prop="teacherId"><el-input v-model="form.teacherId" placeholder="请输入教师ID" /></el-form-item>
         <el-form-item label="可授课程类别" prop="courseCategory"><el-input v-model="form.courseCategory" placeholder="请输入可授课程类别" /></el-form-item>
@@ -40,13 +40,15 @@
         <el-form-item label="到期日期" prop="expireDate"><el-date-picker clearable v-model="form.expireDate" type="date" value-format="yyyy-MM-dd" placeholder="请选择到期日期" /></el-form-item>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
 <script>
 import { listQualification, getQualification, delQualification, addQualification, updateQualification } from "@/api/brm/qualification"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Qualification", dicts: ['sys_normal_disable'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, qualificationList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, courseCategory: null, status: null },
@@ -60,8 +62,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.qualId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加授课资格" },
-    handleUpdate(row) { this.reset(); const qualId = row.qualId || this.ids; getQualification(qualId).then(response => { this.form = response.data; this.open = true; this.title = "修改授课资格" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加授课资格" },
+    handleUpdate(row) { this.reset(); const qualId = row.qualId || this.ids; getQualification(qualId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改授课资格" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.qualId != null) { updateQualification(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addQualification(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const qualIds = row.qualId || this.ids; this.$modal.confirm('是否确认删除资格编号为"' + qualIds + '"的数据项？').then(function() { return delQualification(qualIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('brm/qualification/export', { ...this.queryParams }, `qualification_${new Date().getTime()}.xlsx`) }

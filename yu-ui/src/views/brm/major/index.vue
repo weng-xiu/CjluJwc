@@ -33,7 +33,7 @@
     <app-empty v-if="!loading && !majorList.length" description="暂无专业数据，可调整查询条件或新增专业" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="专业编码" prop="majorCode"><el-input v-model="form.majorCode" placeholder="请输入专业编码" /></el-form-item>
         <el-form-item label="专业名称" prop="majorName"><el-input v-model="form.majorName" placeholder="请输入专业名称" /></el-form-item>
@@ -46,7 +46,7 @@
         <el-form-item label="学制(年)"><el-input-number v-model="form.duration" :min="1" :max="10" /></el-form-item>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
@@ -54,7 +54,9 @@
 import { listMajor, getMajor, delMajor, addMajor, updateMajor } from "@/api/brm/major"
 import { listDept } from "@/api/brm/dept"
 import { required, requiredSelect } from "@/utils/validateRules"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Major", dicts: ['sys_normal_disable', 'brm_education_level'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, majorList: [], deptList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, majorName: null, deptId: null, educationLevel: null, status: null },
@@ -69,8 +71,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.majorId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加专业" },
-    handleUpdate(row) { this.reset(); const majorId = row.majorId || this.ids; getMajor(majorId).then(response => { this.form = response.data; this.open = true; this.title = "修改专业" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加专业" },
+    handleUpdate(row) { this.reset(); const majorId = row.majorId || this.ids; getMajor(majorId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改专业" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.majorId != null) { updateMajor(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addMajor(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const majorIds = row.majorId || this.ids; this.$modal.confirm('是否确认删除专业编号为"' + majorIds + '"的数据项？').then(function() { return delMajor(majorIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('brm/major/export', { ...this.queryParams }, `major_${new Date().getTime()}.xlsx`) }

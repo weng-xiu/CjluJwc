@@ -34,7 +34,7 @@
     <app-empty v-if="!loading && !examSeatList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="考试ID" prop="examId"><el-input v-model="form.examId" placeholder="请输入考试ID" /></el-form-item>
         <el-form-item label="教室ID" prop="classroomId"><el-input v-model="form.classroomId" placeholder="请输入教室ID" /></el-form-item>
@@ -43,7 +43,7 @@
         <el-form-item label="行号" prop="rowNumber"><el-input-number v-model="form.rowNumber" placeholder="请输入行号" :min="1" style="width:100%" /></el-form-item>
         <el-form-item label="列号" prop="colNumber"><el-input-number v-model="form.colNumber" placeholder="请输入列号" :min="1" style="width:100%" /></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
 
     <import-excel-dialog
@@ -57,9 +57,11 @@
   </div>
 </template>
 <script>
-import { listExamSeat, getExamSeat, delExamSeat, addExamSeat, updateExamSeat } from "@/api/aem/examSeat"
+import { listExamSeat, getExamSeat, delExamSeat, addExamSeat, updateExamSeat, importExamSeat } from "@/api/aem/examSeat"
 import ImportExcelDialog from "../components/ImportExcelDialog"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "ExamSeat",
   components: { ImportExcelDialog },
   dicts: ['aem_seat_status'],
@@ -69,14 +71,16 @@ export default {
   },
   created() { this.getList() },
   methods: {
+    // 注册为实例方法，模板才能把导入 API 作为 prop 传给子组件（模块级 import 对模板不可见）
+    importExamSeat,
     getList() { this.loading = true; listExamSeat(this.queryParams).then(response => { this.examSeatList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { seatId: null, examId: null, classroomId: null, studentId: null, seatNumber: null, rowNumber: null, colNumber: null }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.seatId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加座位编排" },
-    handleUpdate(row) { this.reset(); const seatId = row.seatId || this.ids; getExamSeat(seatId).then(response => { this.form = response.data; this.open = true; this.title = "修改座位编排" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加座位编排" },
+    handleUpdate(row) { this.reset(); const seatId = row.seatId || this.ids; getExamSeat(seatId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改座位编排" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.seatId != null) { updateExamSeat(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addExamSeat(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const seatIds = row.seatId || this.ids; this.$modal.confirm('是否确认删除座位编排编号为"' + seatIds + '"的数据项？').then(function() { return delExamSeat(seatIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('aem/examSeat/export', { ...this.queryParams }, `examSeat_${new Date().getTime()}.xlsx`) },

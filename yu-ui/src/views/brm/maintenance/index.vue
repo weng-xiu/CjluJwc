@@ -117,7 +117,7 @@
       @pagination="getList"
     />
 
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="550px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="550px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="设备ID" prop="equipId">
           <el-input v-model="form.equipId" placeholder="请输入设备ID" />
@@ -155,7 +155,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
   </div>
@@ -164,7 +164,9 @@
 <script>
 import { listMaintenance, getMaintenance, delMaintenance, addMaintenance, updateMaintenance } from "@/api/brm/maintenance"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Maintenance",
   dicts: ['sys_normal_disable'],
   data() {
@@ -239,7 +241,7 @@ export default {
     },
     handleAdd() {
       this.reset()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "添加设备维护"
     },
     handleUpdate(row) {
@@ -247,7 +249,7 @@ export default {
       const maintenanceId = row.maintenanceId || this.ids
       getMaintenance(maintenanceId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改设备维护"
       })
     },

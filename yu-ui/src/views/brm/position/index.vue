@@ -31,7 +31,7 @@
     <app-empty v-if="!loading && !positionList.length" description="暂无基础资源数据，可调整筛选条件或新增" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="教师ID" prop="teacherId"><el-input v-model="form.teacherId" placeholder="请输入教师ID" /></el-form-item>
         <el-form-item label="任职院系" prop="deptId"><el-input v-model="form.deptId" placeholder="请输入任职院系ID" /></el-form-item>
@@ -40,13 +40,15 @@
         <el-form-item label="结束日期" prop="endDate"><el-date-picker clearable v-model="form.endDate" type="date" value-format="yyyy-MM-dd" placeholder="请选择结束日期" /></el-form-item>
         <el-form-item label="是否现任"><el-radio-group v-model="form.isCurrent"><el-radio v-for="dict in dict.type.sys_yes_no" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
 <script>
 import { listPosition, getPosition, delPosition, addPosition, updatePosition } from "@/api/brm/position"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Position", dicts: ['sys_yes_no'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, positionList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, positionTitle: null, isCurrent: null },
@@ -60,8 +62,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.posId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加教师任职" },
-    handleUpdate(row) { this.reset(); const posId = row.posId || this.ids; getPosition(posId).then(response => { this.form = response.data; this.open = true; this.title = "修改教师任职" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加教师任职" },
+    handleUpdate(row) { this.reset(); const posId = row.posId || this.ids; getPosition(posId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改教师任职" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.posId != null) { updatePosition(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addPosition(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const posIds = row.posId || this.ids; this.$modal.confirm('是否确认删除任职编号为"' + posIds + '"的数据项？').then(function() { return delPosition(posIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('brm/position/export', { ...this.queryParams }, `position_${new Date().getTime()}.xlsx`) }

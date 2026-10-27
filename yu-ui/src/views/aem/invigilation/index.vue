@@ -34,7 +34,7 @@
     <app-empty v-if="!loading && !invigilationList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="考试ID" prop="examId"><el-input v-model="form.examId" placeholder="请输入考试ID" /></el-form-item>
         <el-form-item label="教室ID" prop="classroomId"><el-input v-model="form.classroomId" placeholder="请输入教室ID" /></el-form-item>
@@ -44,7 +44,7 @@
         <el-form-item label="结束时间" prop="endTime"><el-input v-model="form.endTime" placeholder="请输入结束时间(如16:30)" /></el-form-item>
         <el-form-item label="职责" prop="dutyType"><el-select v-model="form.dutyType" placeholder="请选择职责"><el-option v-for="dict in dict.type.aem_duty_type" :key="dict.value" :label="dict.label" :value="dict.value"/></el-select></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
 
     <import-excel-dialog
@@ -58,9 +58,11 @@
   </div>
 </template>
 <script>
-import { listInvigilation, getInvigilation, delInvigilation, addInvigilation, updateInvigilation } from "@/api/aem/invigilation"
+import { listInvigilation, getInvigilation, delInvigilation, addInvigilation, updateInvigilation, importInvigilation } from "@/api/aem/invigilation"
 import ImportExcelDialog from "../components/ImportExcelDialog"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Invigilation",
   components: { ImportExcelDialog },
   dicts: ['aem_duty_type'],
@@ -70,14 +72,16 @@ export default {
   },
   created() { this.getList() },
   methods: {
+    // 注册为实例方法，模板才能把导入 API 作为 prop 传给子组件（模块级 import 对模板不可见）
+    importInvigilation,
     getList() { this.loading = true; listInvigilation(this.queryParams).then(response => { this.invigilationList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { invigilationId: null, examId: null, classroomId: null, teacherId: null, examDate: null, startTime: null, endTime: null, dutyType: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.invigilationId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加监考分配" },
-    handleUpdate(row) { this.reset(); const invigilationId = row.invigilationId || this.ids; getInvigilation(invigilationId).then(response => { this.form = response.data; this.open = true; this.title = "修改监考分配" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加监考分配" },
+    handleUpdate(row) { this.reset(); const invigilationId = row.invigilationId || this.ids; getInvigilation(invigilationId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改监考分配" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.invigilationId != null) { updateInvigilation(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addInvigilation(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const invigilationIds = row.invigilationId || this.ids; this.$modal.confirm('是否确认删除监考分配编号为"' + invigilationIds + '"的数据项？').then(function() { return delInvigilation(invigilationIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('aem/invigilation/export', { ...this.queryParams }, `invigilation_${new Date().getTime()}.xlsx`) },

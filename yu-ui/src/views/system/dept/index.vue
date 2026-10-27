@@ -117,7 +117,7 @@
     </app-skeleton>
 
     <!-- 添加或修改部门对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-row>
           <el-col :span="24" v-if="form.parentId !== 0">
@@ -171,7 +171,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
   </div>
@@ -183,7 +183,9 @@ import { syncFromSys } from "@/api/brm/dept"
 import Treeselect from "@riophae/vue-treeselect"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Dept",
   dicts: ['sys_normal_disable'],
   components: { Treeselect },
@@ -301,7 +303,7 @@ export default {
       if (row != undefined) {
         this.form.parentId = row.deptId
       }
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "添加部门"
       listDept().then(response => {
         this.deptOptions = this.handleTree(response.data, "deptId")
@@ -328,7 +330,7 @@ export default {
       this.reset()
       getDept(row.deptId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改部门"
         listDeptExcludeChild(row.deptId).then(response => {
           this.deptOptions = this.handleTree(response.data, "deptId")

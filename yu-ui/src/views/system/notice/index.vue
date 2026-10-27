@@ -132,7 +132,7 @@
     />
 
     <!-- 添加或修改公告对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="780px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="780px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-row>
           <el-col :span="12">
@@ -172,7 +172,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -186,7 +186,9 @@ import NoticeDetailView from "@/layout/components/HeaderNotice/DetailView"
 import ReadUsersDialog from "./ReadUsers"
 import { listNotice, getNotice, delNotice, addNotice, updateNotice } from "@/api/system/notice"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Notice",
   components: { NoticeDetailView, ReadUsersDialog },
   dicts: ['sys_notice_status', 'sys_notice_type'],
@@ -279,7 +281,7 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "添加公告"
     },
     /** 修改按钮操作 */
@@ -288,7 +290,7 @@ export default {
       const noticeId = row.noticeId || this.ids
       getNotice(noticeId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改公告"
       })
     },

@@ -104,7 +104,7 @@
   </div>
 </template>
 <script>
-import { listGradeRecord, getGradeRecord, delGradeRecord, addGradeRecord, updateGradeRecord, submitGrade, auditGrade, unlockGrade } from "@/api/aem/gradeRecord"
+import { listGradeRecord, getGradeRecord, delGradeRecord, addGradeRecord, updateGradeRecord, submitGrade, auditGrade, unlockGrade, importGrade } from "@/api/aem/gradeRecord"
 import { listGradeReview } from "@/api/aem/gradeReview"
 import MasterDetailPanel from "../components/MasterDetailPanel"
 import ImportExcelDialog from "../components/ImportExcelDialog"
@@ -130,6 +130,8 @@ export default {
   }},
   created() { this.getList() },
   methods: {
+    // 注册为实例方法，模板才能把导入 API 作为 prop 传给子组件（模块级 import 对模板不可见）
+    importGrade,
     getList() { this.loading = true; listGradeRecord(this.queryParams).then(response => { this.gradeRecordList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     getRowKey(row) { return row.gradeId },
     handleExpandChange() { /* 子表自加载 */ },

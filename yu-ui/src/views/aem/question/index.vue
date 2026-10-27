@@ -31,7 +31,7 @@
     <app-empty v-if="!loading && !questionList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="问卷ID" prop="questionnaireId"><el-input v-model="form.questionnaireId" placeholder="请输入问卷ID" /></el-form-item>
         <el-form-item label="问题类型" prop="questionType"><el-select v-model="form.questionType" placeholder="请选择问题类型" style="width:100%"><el-option v-for="dict in dict.type.aem_question_type" :key="dict.value" :label="dict.label" :value="dict.value"/></el-select></el-form-item>
@@ -40,7 +40,7 @@
         <el-form-item label="最高评分" prop="maxScore"><el-input-number v-model="form.maxScore" placeholder="请输入最高评分" :min="0" :precision="1" style="width:100%" /></el-form-item>
         <el-form-item label="选项JSON" prop="optionsJson"><el-input v-model="form.optionsJson" type="textarea" placeholder='请输入选项JSON,如[{"label":"A","value":"A"}]' /></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
 
     <import-excel-dialog
@@ -54,9 +54,11 @@
   </div>
 </template>
 <script>
-import { listQuestion, getQuestion, delQuestion, addQuestion, updateQuestion } from "@/api/aem/evaluationQuestion"
+import { listQuestion, getQuestion, delQuestion, addQuestion, updateQuestion, importQuestion } from "@/api/aem/evaluationQuestion"
 import ImportExcelDialog from "../components/ImportExcelDialog"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Question",
   components: { ImportExcelDialog },
   dicts: ['aem_question_type'],
@@ -66,14 +68,16 @@ export default {
   },
   created() { this.getList() },
   methods: {
+    // 注册为实例方法，模板才能把导入 API 作为 prop 传给子组件（模块级 import 对模板不可见）
+    importQuestion,
     getList() { this.loading = true; listQuestion(this.queryParams).then(response => { this.questionList = response.rows; this.total = response.total; this.loading = false }).catch(() => { this.loading = false }) },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { questionId: null, questionnaireId: null, questionType: "0", questionContent: null, sortOrder: null, maxScore: null, optionsJson: null }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.questionId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加评教问题" },
-    handleUpdate(row) { this.reset(); const questionId = row.questionId || this.ids; getQuestion(questionId).then(response => { this.form = response.data; this.open = true; this.title = "修改评教问题" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加评教问题" },
+    handleUpdate(row) { this.reset(); const questionId = row.questionId || this.ids; getQuestion(questionId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改评教问题" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.questionId != null) { updateQuestion(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addQuestion(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const questionIds = row.questionId || this.ids; this.$modal.confirm('是否确认删除评教问题编号为"' + questionIds + '"的数据项？').then(function() { return delQuestion(questionIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('aem/question/export', { ...this.queryParams }, `question_${new Date().getTime()}.xlsx`) },

@@ -55,7 +55,7 @@
     <app-empty v-if="!loading && !questionnaireList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="650px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="650px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学年">
           <el-select v-model="formYearId" placeholder="请选择学年" clearable @change="handleFormYearChange" style="width:100%">
@@ -76,7 +76,7 @@
         <el-form-item label="评教状态" prop="evalStatus"><el-select v-model="form.evalStatus" placeholder="请选择评教状态" style="width:100%"><el-option v-for="dict in dict.type.aem_eval_status" :key="dict.value" :label="dict.label" :value="dict.value"/></el-select></el-form-item>
         <el-form-item label="是否匿名" prop="isAnonymous"><el-radio-group v-model="form.isAnonymous"><el-radio v-for="dict in dict.type.aem_is_anonymous" :key="dict.value" :label="dict.value">{{ dict.label }}</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
@@ -86,7 +86,9 @@ import { listQuestion } from "@/api/aem/evaluationQuestion"
 import { listYear } from "@/api/brm/year"
 import { listSemester, getSemester } from "@/api/brm/semester"
 import MasterDetailPanel from "../components/MasterDetailPanel"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Questionnaire",
   components: { MasterDetailPanel },
   dicts: ['aem_eval_status', 'aem_is_anonymous', 'aem_question_type'],
@@ -138,13 +140,13 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.questionnaireId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加评教问卷" },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加评教问卷" },
     handleUpdate(row) {
       this.reset()
       const questionnaireId = row.questionnaireId || this.ids
       getQuestionnaire(questionnaireId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改评教问卷"
         if (this.form.semesterId) {
           getSemester(this.form.semesterId).then(res => {

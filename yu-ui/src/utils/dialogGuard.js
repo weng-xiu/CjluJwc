@@ -24,9 +24,16 @@ export default {
     }
   },
   methods: {
-    /** 采集脏检查基线：在对话框打开且表单数据回填完成后调用 */
+    /**
+     * 采集脏检查基线：在对话框打开且表单数据回填完成后调用。
+     * 延后一拍采集：富文本编辑器等在收到新 value 后会把内容重新规范化并回写 v-model，
+     * 同步采集会把规范化前的值当作基线，导致“一打开就判脏”。
+     */
     captureDialogSnapshot() {
-      this.dialogSnapshot = this._collectGuardState()
+      this.dialogSnapshot = undefined
+      this.$nextTick(() => {
+        this.dialogSnapshot = this._collectGuardState()
+      })
     },
     /** 汇总参与脏比较的状态并序列化（form 必含，guardWatch 指定的键附加） */
     _collectGuardState() {

@@ -34,7 +34,7 @@
     <app-empty v-if="!loading && !supervisionList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="650px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="650px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="课程ID" prop="courseId"><el-input v-model="form.courseId" placeholder="请输入课程ID" /></el-form-item>
         <el-form-item label="教师ID" prop="teacherId"><el-input v-model="form.teacherId" placeholder="请输入教师ID" /></el-form-item>
@@ -47,13 +47,15 @@
         <el-form-item label="改进建议" prop="suggestion"><el-input v-model="form.suggestion" type="textarea" placeholder="请输入改进建议" /></el-form-item>
         <el-form-item label="记录类型" prop="recordType"><el-select v-model="form.recordType" placeholder="请选择记录类型" style="width:100%"><el-option v-for="dict in dict.type.aem_record_type" :key="dict.value" :label="dict.label" :value="dict.value"/></el-select></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
 <script>
 import { listSupervision, getSupervision, delSupervision, addSupervision, updateSupervision } from "@/api/aem/supervision"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Supervision", dicts: ['aem_evaluation_level', 'aem_record_type'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, supervisionList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, supervisor: null, teacherId: null, recordType: null },
@@ -67,8 +69,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.recordId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加督导听课记录" },
-    handleUpdate(row) { this.reset(); const recordId = row.recordId || this.ids; getSupervision(recordId).then(response => { this.form = response.data; this.open = true; this.title = "修改督导听课记录" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加督导听课记录" },
+    handleUpdate(row) { this.reset(); const recordId = row.recordId || this.ids; getSupervision(recordId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改督导听课记录" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.recordId != null) { updateSupervision(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addSupervision(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const recordIds = row.recordId || this.ids; this.$modal.confirm('是否确认删除督导听课记录编号为"' + recordIds + '"的数据项？').then(function() { return delSupervision(recordIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('aem/supervision/export', { ...this.queryParams }, `supervision_${new Date().getTime()}.xlsx`) }

@@ -33,7 +33,7 @@
     <app-empty v-if="!loading && !evaluationResultList.length" description="暂无考核评价数据，可调整筛选条件或先录入成绩/考试" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="650px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="650px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="问卷ID" prop="questionnaireId"><el-input v-model="form.questionnaireId" placeholder="请输入问卷ID" /></el-form-item>
         <el-form-item label="课程ID" prop="courseId"><el-input v-model="form.courseId" placeholder="请输入课程ID" /></el-form-item>
@@ -43,13 +43,15 @@
         <el-form-item label="评教时间" prop="evalDate"><el-date-picker clearable v-model="form.evalDate" type="datetime" value-format="yyyy-MM-dd HH:mm:ss" placeholder="请选择评教时间" style="width:100%" /></el-form-item>
         <el-form-item label="评语建议" prop="comment"><el-input v-model="form.comment" type="textarea" placeholder="请输入评语建议" /></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
 <script>
 import { listEvaluationResult, getEvaluationResult, delEvaluationResult, addEvaluationResult, updateEvaluationResult } from "@/api/aem/evaluationResult"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "EvaluationResult", dicts: [],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, evaluationResultList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, questionnaireId: null, courseId: null, teacherId: null },
@@ -63,8 +65,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.resultId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加评教结果" },
-    handleUpdate(row) { this.reset(); const resultId = row.resultId || this.ids; getEvaluationResult(resultId).then(response => { this.form = response.data; this.open = true; this.title = "修改评教结果" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加评教结果" },
+    handleUpdate(row) { this.reset(); const resultId = row.resultId || this.ids; getEvaluationResult(resultId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改评教结果" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.resultId != null) { updateEvaluationResult(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addEvaluationResult(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const resultIds = row.resultId || this.ids; this.$modal.confirm('是否确认删除评教结果编号为"' + resultIds + '"的数据项？').then(function() { return delEvaluationResult(resultIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('aem/evaluationResult/export', { ...this.queryParams }, `evaluationResult_${new Date().getTime()}.xlsx`) }

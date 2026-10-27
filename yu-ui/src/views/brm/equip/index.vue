@@ -116,7 +116,7 @@
       @pagination="getList"
     />
 
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="设备名称" prop="equipName">
           <el-input v-model="form.equipName" placeholder="请输入设备名称" />
@@ -151,7 +151,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
   </div>
@@ -160,7 +160,9 @@
 <script>
 import { listEquip, getEquip, delEquip, addEquip, updateEquip } from "@/api/brm/equip"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Equip",
   dicts: ['sys_normal_disable'],
   data() {
@@ -231,7 +233,7 @@ export default {
     },
     handleAdd() {
       this.reset()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "添加设备"
     },
     handleUpdate(row) {
@@ -239,7 +241,7 @@ export default {
       const equipId = row.equipId || this.ids
       getEquip(equipId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改设备"
       })
     },
