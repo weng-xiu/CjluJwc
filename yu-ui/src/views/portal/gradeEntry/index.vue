@@ -32,7 +32,7 @@
     <app-empty v-if="!loading && !gradeList.length" description="暂无门户内容，可调整筛选条件或先发布" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="课程" prop="courseName"><el-input v-model="form.courseName" placeholder="请输入课程名称" /></el-form-item>
         <el-form-item label="学生" prop="studentName"><el-input v-model="form.studentName" placeholder="请输入学生姓名" /></el-form-item>
@@ -41,7 +41,7 @@
         <el-form-item label="考试类型" prop="examType"><el-select v-model="form.examType" placeholder="请选择"><el-option v-for="t in examTypeOptions" :key="t.value" :label="t.label" :value="t.value"/></el-select></el-form-item>
         <el-form-item label="备注" prop="remark"><el-input v-model="form.remark" type="textarea" placeholder="请输入备注" /></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
     <!-- 成绩录入矩阵（按教学班批量录入，N7 核心交互组件 Vue2 版） -->
     <grade-entry-matrix :visible.sync="matrixOpen" :rows="gradeList" :loading="loading" @success="getList" />
@@ -55,7 +55,9 @@
 // 「批量录入」接入新封装的 GradeEntryMatrix 组件（§6.1 N7 核心交互组件）。
 import { listGradeEntry, addGradeEntry, updateGradeEntry } from "@/api/portal/grade"
 import GradeEntryMatrix from "@/components/GradeEntryMatrix"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "PortalGradeEntry", components: { GradeEntryMatrix }, dicts: ['sys_normal_disable'],
   data() { return { loading: true, ids: [], single: true, showSearch: true, total: 0, gradeList: [], title: "", open: false, matrixOpen: false,
     examTypeOptions: [ { value: "0", label: "正考" }, { value: "1", label: "补考" }, { value: "2", label: "重修" } ],
@@ -72,8 +74,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.gradeId); this.single = selection.length !== 1 },
-    handleAdd() { this.reset(); this.open = true; this.title = "录入成绩" },
-    handleUpdate(row) { this.reset(); const gradeId = row.gradeId || this.ids; listGradeEntry({ gradeId }).then(response => { if (response.rows && response.rows.length > 0) { this.form = response.rows[0] } this.open = true; this.title = "修改成绩" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "录入成绩" },
+    handleUpdate(row) { this.reset(); const gradeId = row.gradeId || this.ids; listGradeEntry({ gradeId }).then(response => { if (response.rows && response.rows.length > 0) { this.form = response.rows[0] } this.open = true; this.captureDialogSnapshot(); this.title = "修改成绩" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.gradeId != null) { updateGradeEntry(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addGradeEntry(this.form).then(response => { this.$modal.msgSuccess("录入成功"); this.open = false; this.getList() }) } } }) }
   }
 }

@@ -50,7 +50,7 @@
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增补办申请对话框 -->
-    <el-dialog :close-on-click-modal="false" title="证书补办申请" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="证书补办申请" :visible.sync="open" :before-close="guardedBeforeClose" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学生ID" prop="studentId">
           <el-input v-model="form.studentId" placeholder="请输入学生ID后加载其证书" @change="loadCerts">
@@ -66,7 +66,7 @@
           <el-input v-model="form.reason" type="textarea" :rows="3" placeholder="请填写补办原因（如遗失、损毁）"/>
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
 
     <!-- 受理意见对话框 -->
@@ -84,7 +84,9 @@
 <script>
 import { listCertReissue, certsOfStudent, submitCertReissue, approveCertReissue, rejectCertReissue, delCertReissue } from "@/api/sam/certReissue"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "CertReissue",
   dicts: ['sam_cert_reissue_status'],
   data() {
@@ -110,7 +112,7 @@ export default {
     handleSelectionChange(selection) { this.ids = selection.map(i => i.applyId); this.multiple = !selection.length },
     cancel() { this.open = false; this.reset() },
     reset() { this.form = { studentId: null, origCertId: null, reason: null }; this.certOptions = []; this.resetForm("form") },
-    handleAdd() { this.reset(); this.open = true },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot() },
     loadCerts() {
       if (!this.form.studentId) { this.$modal.msgError("请先输入学生ID"); return }
       this.certLoading = true; this.form.origCertId = null

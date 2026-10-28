@@ -35,7 +35,7 @@
     <app-empty v-if="!loading && !noticeList.length" description="暂无门户内容，可调整筛选条件或先发布" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="通知标题" prop="noticeTitle"><el-input v-model="form.noticeTitle" placeholder="请输入通知标题" /></el-form-item>
         <el-form-item label="通知类型" prop="noticeType"><el-select v-model="form.noticeType" placeholder="请选择"><el-option label="选课通知" value="1"/><el-option label="考试通知" value="2"/><el-option label="学籍通知" value="3"/><el-option label="综合通知" value="4"/></el-select></el-form-item>
@@ -48,13 +48,15 @@
         <el-form-item label="备注" prop="remark"><el-input v-model="form.remark" type="textarea" placeholder="请输入备注" /></el-form-item>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
 <script>
 import { listNoticeManage, getNoticeManage, delNotice, addNotice, updateNotice } from "@/api/portal/notice"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "PortalNoticeManage",
   dicts: ['sys_normal_disable', 'portal_notice_type'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, noticeList: [], title: "", open: false,
@@ -69,8 +71,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.noticeId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加教务通知" },
-    handleUpdate(row) { this.reset(); const noticeId = row.noticeId || this.ids; getNoticeManage(noticeId).then(response => { this.form = response.data; this.open = true; this.title = "修改教务通知" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加教务通知" },
+    handleUpdate(row) { this.reset(); const noticeId = row.noticeId || this.ids; getNoticeManage(noticeId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改教务通知" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.noticeId != null) { updateNotice(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addNotice(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const noticeIds = row.noticeId || this.ids; this.$modal.confirm('是否确认删除教务通知编号为"' + noticeIds + '"的数据项？').then(function() { return delNotice(noticeIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('portal/noticeManage/export', { ...this.queryParams }, `notice_${new Date().getTime()}.xlsx`) }

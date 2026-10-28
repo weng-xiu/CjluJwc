@@ -58,7 +58,7 @@
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="90px">
         <el-form-item label="会议室名称" prop="roomName">
           <el-input v-model="form.roomName" placeholder="请输入会议室名称" />
@@ -83,7 +83,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -128,7 +128,9 @@ import { listMeetingRoom, getMeetingRoom, delMeetingRoom, addMeetingRoom, update
 import { listUser } from "@/api/system/user"
 import RemoteSelect from "@/components/RemoteSelect"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "OaMeetingRoom",
   components: { RemoteSelect },
   dicts: ['sys_normal_disable'],
@@ -226,7 +228,7 @@ export default {
     },
     handleAdd() {
       this.reset()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "添加会议室"
     },
     handleUpdate(row) {
@@ -234,7 +236,7 @@ export default {
       const roomId = row.roomId || this.ids
       getMeetingRoom(roomId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改会议室"
       })
     },

@@ -35,7 +35,7 @@
     <app-empty v-if="!loading && !list.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="form.studentId" placeholder="请输入学生ID" /></el-form-item>
         <el-form-item label="异动类型" prop="changeType"><el-select v-model="form.changeType" placeholder="请选择"><el-option label="休学" value="0"/><el-option label="复学" value="1"/><el-option label="转学" value="2"/><el-option label="退学" value="3"/></el-select></el-form-item>
@@ -43,7 +43,7 @@
         <el-form-item label="申请原因" prop="reason"><el-input v-model="form.reason" type="textarea" placeholder="请输入申请原因" /></el-form-item>
         <el-form-item label="申请人" prop="applicant"><el-input v-model="form.applicant" placeholder="请输入申请人" /></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
     <!-- S5：审批意见对话框 -->
     <el-dialog :close-on-click-modal="false" :title="auditTitle" :visible.sync="auditOpen" width="460px" append-to-body>
@@ -57,7 +57,9 @@
 <script>
 import { listStatusChange, getStatusChange, delStatusChange, addStatusChange, updateStatusChange, submitStatusChange, approveStatusChange, rejectStatusChange } from "@/api/sam/statusChange"
 import { listTodoTask } from "@/api/oa/workflow"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "StatusChange",
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, list: [], title: "", open: false,
     auditOpen: false, auditLoading: false, auditTitle: "", auditComment: "", auditAction: "", auditRow: null,
@@ -72,8 +74,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.changeId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加学籍异动" },
-    handleUpdate(row) { this.reset(); const changeId = row.changeId || this.ids; getStatusChange(changeId).then(response => { this.form = response.data; this.open = true; this.title = "修改学籍异动" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加学籍异动" },
+    handleUpdate(row) { this.reset(); const changeId = row.changeId || this.ids; getStatusChange(changeId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改学籍异动" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.changeId != null) { updateStatusChange(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addStatusChange(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const ids = row.changeId || this.ids; this.$modal.confirm('是否确认删除？').then(function() { return delStatusChange(ids) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('sam/statusChange/export', { ...this.queryParams }, `statusChange_${new Date().getTime()}.xlsx`) },

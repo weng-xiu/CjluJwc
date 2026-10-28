@@ -64,7 +64,7 @@
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="640px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="640px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="培养方案" prop="planId">
           <el-select v-model="form.planId" placeholder="输入方案名搜索" filterable remote reserve-keyword :remote-method="searchPlan" :loading="planLoading" style="width:100%" @change="onFormPlanChange">
@@ -93,7 +93,7 @@
           </el-radio-group>
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
@@ -103,7 +103,9 @@ import { listIndicator, getIndicator, delIndicator, addIndicator, updateIndicato
 import { listPlan } from "@/api/tpm/plan"
 import { req, reqChange } from "@/utils/validate"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "ObeIndicator",
   dicts: ['sys_normal_disable'],
   data() {
@@ -158,14 +160,14 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.queryRequirementOptions = []; this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.ipId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加指标点" },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加指标点" },
     handleUpdate(row) {
       this.reset()
       const ipId = row.ipId || this.ids
       getIndicator(ipId).then(response => {
         this.form = response.data
         if (this.form.planId) { this.loadRequirements(this.form.planId, 'formRequirementOptions') }
-        this.open = true; this.title = "修改指标点"
+        this.open = true; this.captureDialogSnapshot(); this.title = "修改指标点"
       })
     },
     submitForm() {

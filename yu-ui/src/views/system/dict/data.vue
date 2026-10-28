@@ -144,7 +144,7 @@
     />
 
     <!-- 添加或修改参数配置对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="字典类型">
           <el-input v-model="form.dictType" :disabled="true" />
@@ -186,7 +186,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
   </div>
@@ -196,7 +196,9 @@
 import { listData, getData, delData, addData, updateData } from "@/api/system/dict/data"
 import { optionselect as getDictOptionselect, getType } from "@/api/system/dict/type"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Data",
   dicts: ['sys_normal_disable'],
   data() {
@@ -341,7 +343,7 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "添加字典数据"
       this.form.dictType = this.queryParams.dictType
     },
@@ -357,7 +359,7 @@ export default {
       const dictCode = row.dictCode || this.ids
       getData(dictCode).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改字典数据"
       })
     },

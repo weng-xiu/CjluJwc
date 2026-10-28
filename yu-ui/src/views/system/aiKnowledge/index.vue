@@ -132,7 +132,7 @@
     </el-tabs>
 
     <!-- 新增或修改知识条目 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="860px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="860px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="12">
@@ -187,7 +187,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -256,7 +256,9 @@
 import { listAiKnowledge, getAiKnowledge, addAiKnowledge, updateAiKnowledge, delAiKnowledge,
   getAiKnowledgeStat, getAiEngine, askAiKnowledge, suggestAiQuestion } from "@/api/system/aiKnowledge"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "AiKnowledge",
   dicts: ['sys_ai_category', 'sys_ai_answer_source'],
   data() {
@@ -308,7 +310,7 @@ export default {
     if (fillTitle) {
       this.reset()
       this.form.title = String(fillTitle).substring(0, 200)
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "新增知识条目（补录未命中问题）"
     }
   },
@@ -389,7 +391,7 @@ export default {
     },
     handleAdd() {
       this.reset()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "新增知识条目"
     },
     handleUpdate(row) {
@@ -397,7 +399,7 @@ export default {
       const knowledgeId = row.knowledgeId || this.ids[0]
       getAiKnowledge(knowledgeId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改知识条目"
       })
     },

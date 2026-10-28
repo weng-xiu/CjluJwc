@@ -75,7 +75,7 @@
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改打印模板对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="820px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="820px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="90px">
         <el-row>
           <el-col :span="12">
@@ -115,7 +115,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -132,7 +132,9 @@
 <script>
 import { listPrintTemplate, getPrintTemplate, addPrintTemplate, updatePrintTemplate, delPrintTemplate, previewPrintTemplate } from "@/api/system/printTemplate"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "PrintTemplate",
   dicts: ['sys_print_biz_type'],
   data() {
@@ -211,7 +213,7 @@ export default {
     },
     handleAdd() {
       this.reset()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "新增打印模板"
     },
     handleUpdate(row) {
@@ -219,7 +221,7 @@ export default {
       const templateId = row.templateId || this.ids[0]
       getPrintTemplate(templateId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改打印模板"
       })
     },

@@ -22,7 +22,7 @@
     <app-empty v-if="!loading && !adjustmentList.length" description="暂无门户内容，可调整筛选条件或先发布" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="550px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="550px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="课程" prop="courseName"><el-input v-model="form.courseName" placeholder="请选择课程" /></el-form-item>
         <el-form-item label="原上课时间" prop="originTime"><el-input v-model="form.originTime" placeholder="请输入原上课时间" /></el-form-item>
@@ -30,7 +30,7 @@
         <el-form-item label="调整类型" prop="adjustType"><el-select v-model="form.adjustType" placeholder="请选择"><el-option label="调课" value="1"/><el-option label="停课" value="2"/><el-option label="补课" value="3"/></el-select></el-form-item>
         <el-form-item label="申请原因" prop="reason"><el-input v-model="form.reason" type="textarea" placeholder="请输入申请原因" /></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">提 交</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">提 交</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
@@ -38,7 +38,9 @@
 import { listAdjustment, addAdjustment } from "@/api/portal/adjustment"
 // 调停课类型与审批状态沿用前端内置枚举（portal_adjust_type / portal_approve_status 未入库）
 import { PORTAL_ADJUST_TYPE, PORTAL_APPROVE_STATUS } from "../dicts"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "PortalAdjustment",
   data() { return { PORTAL_ADJUST_TYPE, PORTAL_APPROVE_STATUS, loading: true, showSearch: true, total: 0, adjustmentList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, courseName: null, approveStatus: null },
@@ -51,7 +53,7 @@ export default {
     reset() { this.form = { courseName: null, originTime: null, newTime: null, adjustType: "1", reason: null }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
-    handleAdd() { this.reset(); this.open = true; this.title = "调停课申请" },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "调停课申请" },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { addAdjustment(this.form).then(response => { this.$modal.msgSuccess("申请提交成功"); this.open = false; this.getList() }) } }) }
   }
 }

@@ -33,7 +33,7 @@
     <app-empty v-if="!loading && !interfaceList.length" description="暂无数据交换数据，可调整筛选条件或检查同步任务" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="650px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="650px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="所属系统" prop="systemId"><el-input-number v-model="form.systemId" placeholder="请输入系统ID" :min="1" /></el-form-item>
         <el-form-item label="接口名称" prop="interfaceName"><el-input v-model="form.interfaceName" placeholder="请输入接口名称" /></el-form-item>
@@ -48,13 +48,15 @@
         <el-form-item label="接口描述"><el-input v-model="form.description" type="textarea" placeholder="请输入接口描述" /></el-form-item>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
 <script>
 import { listInterface, getInterface, delInterface, addInterface, updateInterface } from "@/api/dis/interface"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "DisInterface", dicts: ['sys_normal_disable'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, interfaceList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, interfaceName: null, requestMethod: null, status: null },
@@ -68,8 +70,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.interfaceId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加接口配置" },
-    handleUpdate(row) { this.reset(); const interfaceId = row.interfaceId || this.ids; getInterface(interfaceId).then(response => { this.form = response.data; this.open = true; this.title = "修改接口配置" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加接口配置" },
+    handleUpdate(row) { this.reset(); const interfaceId = row.interfaceId || this.ids; getInterface(interfaceId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改接口配置" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.interfaceId != null) { updateInterface(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addInterface(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const interfaceIds = row.interfaceId || this.ids; this.$modal.confirm('是否确认删除接口配置编号为"' + interfaceIds + '"的数据项？').then(function() { return delInterface(interfaceIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('dis/interface/export', { ...this.queryParams }, `interface_${new Date().getTime()}.xlsx`) }

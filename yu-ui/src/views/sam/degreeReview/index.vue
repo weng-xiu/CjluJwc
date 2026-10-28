@@ -34,7 +34,7 @@
     <app-empty v-if="!loading && !list.length" description="暂无学籍学位数据，可调整筛选条件或先发起对应业务" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="600px" append-to-body>
       <el-form ref="form" :model="form" label-width="120px">
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="form.studentId" placeholder="请输入学生ID" /></el-form-item>
         <el-form-item label="毕业审核ID" prop="graduationReviewId"><el-input v-model="form.graduationReviewId" placeholder="请输入毕业审核ID" /></el-form-item>
@@ -48,7 +48,7 @@
         <el-form-item label="审核日期" prop="reviewDate"><el-date-picker clearable v-model="form.reviewDate" type="date" value-format="yyyy-MM-dd" placeholder="请选择" /></el-form-item>
         <el-form-item label="审核人" prop="reviewer"><el-input v-model="form.reviewer" placeholder="请输入审核人" /></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
     <!-- S1：批量自动审核对话框与结果 -->
     <el-dialog title="批量自动审核" :visible.sync="batchOpen" width="680px" append-to-body>
@@ -74,7 +74,9 @@
 </template>
 <script>
 import { listDegreeReview, getDegreeReview, delDegreeReview, addDegreeReview, updateDegreeReview, autoReviewDegree, batchReviewDegree } from "@/api/sam/degreeReview"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "DegreeReview",
   data() { return { loading: true, ids: [], studentIds: [], single: true, multiple: true, showSearch: true, total: 0, list: [], title: "", open: false,
     batchOpen: false, batchLoading: false, batchStudentIds: "", batchResult: null,
@@ -89,8 +91,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.reviewId); this.studentIds = selection.map(item => item.studentId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加学位审核" },
-    handleUpdate(row) { this.reset(); const id = row.reviewId || this.ids; getDegreeReview(id).then(response => { this.form = response.data; this.open = true; this.title = "修改学位审核" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加学位审核" },
+    handleUpdate(row) { this.reset(); const id = row.reviewId || this.ids; getDegreeReview(id).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改学位审核" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.reviewId != null) { updateDegreeReview(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addDegreeReview(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const ids = row.reviewId || this.ids; this.$modal.confirm('是否确认删除？').then(function() { return delDegreeReview(ids) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('sam/degreeReview/export', { ...this.queryParams }, `degreeReview_${new Date().getTime()}.xlsx`) },

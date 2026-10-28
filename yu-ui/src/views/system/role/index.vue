@@ -159,7 +159,7 @@
     />
 
     <!-- 添加或修改角色配置对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="角色名称" prop="roleName">
           <el-input v-model="form.roleName" placeholder="请输入角色名称" />
@@ -210,7 +210,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -262,7 +262,9 @@
 import { listRole, getRole, delRole, addRole, updateRole, dataScope, changeRoleStatus, deptTreeSelect } from "@/api/system/role"
 import { treeselect as menuTreeselect, roleMenuTreeselect } from "@/api/system/menu"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Role",
   dicts: ['sys_normal_disable'],
   data() {
@@ -573,7 +575,7 @@ export default {
     handleAdd() {
       this.reset()
       this.getMenuTreeselect()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "添加角色"
     },
     /** 修改按钮操作 */
@@ -587,7 +589,7 @@ export default {
       });
       getRole(roleId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.$nextTick(() => {
           roleMenu.then(res => {
             let checkedKeys = res.checkedKeys

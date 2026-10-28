@@ -68,7 +68,7 @@
     <app-empty v-if="!loading && !adjustList.length" description="暂无培养过程数据，可调整筛选条件或调整学期/轮次" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="680px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="680px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="排课" prop="scheduleId">
           <el-select v-model="form.scheduleId" placeholder="请选择排课（课程名 教室 周次节次）" filterable clearable style="width:100%">
@@ -134,7 +134,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
   </div>
@@ -144,7 +144,9 @@ import { listAdjust, getAdjust, delAdjust, addAdjust, updateAdjust, approveAdjus
 import { listSchedule } from "@/api/tpm/schedule"
 import { listClassroom } from "@/api/brm/classroom"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Adjust",
   dicts: ['tpm_adjust_type', 'tpm_approve_status', 'sys_normal_disable'],
   data() {
@@ -212,11 +214,11 @@ export default {
       this.single = selection.length !== 1
       this.multiple = !selection.length
     },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加调停课申请" },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加调停课申请" },
     handleUpdate(row) {
       this.reset()
       const adjustId = row.adjustId || this.ids
-      getAdjust(adjustId).then(response => { this.form = response.data; this.open = true; this.title = "修改调停课申请" })
+      getAdjust(adjustId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改调停课申请" })
     },
     submitForm() {
       this.$refs["form"].validate(valid => {

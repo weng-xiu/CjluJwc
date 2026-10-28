@@ -51,7 +51,7 @@
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
     <!-- 添加或修改栏目对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="24">
@@ -108,7 +108,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
   </div>
@@ -116,7 +116,9 @@
 <script>
 import { listColumn, getColumn, delColumn, addColumn, updateColumn } from "@/api/portal/column"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "PortalColumnManage",
   dicts: ['portal_column_type', 'sys_yes_no'],
   data() {
@@ -204,7 +206,7 @@ export default {
     handleAdd() {
       this.reset()
       this.getColumnOptions()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "添加栏目"
     },
     /** 修改按钮操作 */
@@ -214,7 +216,7 @@ export default {
       const columnId = row.columnId || this.ids
       getColumn(columnId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改栏目"
       })
     },

@@ -33,7 +33,7 @@
     <app-empty v-if="!loading && !studentList.length" description="暂无学籍数据，可调整查询条件或使用「导入」批量录入" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学号" prop="studentNo"><el-input v-model="form.studentNo" placeholder="请输入学号" /></el-form-item>
         <el-form-item label="姓名" prop="studentName"><el-input v-model="form.studentName" placeholder="请输入姓名" /></el-form-item>
@@ -48,7 +48,7 @@
         <el-form-item label="学籍状态"><el-select v-model="form.studentStatus" placeholder="请选择"><el-option label="在读" value="0"/><el-option label="休学" value="1"/><el-option label="退学" value="2"/><el-option label="毕业" value="3"/></el-select></el-form-item>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
 
     <!-- P7：学籍导入对话框 -->
@@ -65,7 +65,9 @@
 <script>
 import { listStudent, getStudent, delStudent, addStudent, updateStudent } from "@/api/sam/student"
 import ExcelImportDialog from "@/components/ExcelImportDialog"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "Student", dicts: ['sys_normal_disable'],
   components: { ExcelImportDialog },
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, studentList: [], title: "", open: false,
@@ -80,8 +82,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.studentId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加学生学籍" },
-    handleUpdate(row) { this.reset(); const studentId = row.studentId || this.ids; getStudent(studentId).then(response => { this.form = response.data; this.open = true; this.title = "修改学生学籍" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加学生学籍" },
+    handleUpdate(row) { this.reset(); const studentId = row.studentId || this.ids; getStudent(studentId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改学生学籍" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.studentId != null) { updateStudent(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addStudent(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const studentIds = row.studentId || this.ids; this.$modal.confirm('是否确认删除学籍编号为"' + studentIds + '"的数据项？').then(function() { return delStudent(studentIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('sam/student/export', { ...this.queryParams }, `student_${new Date().getTime()}.xlsx`) },

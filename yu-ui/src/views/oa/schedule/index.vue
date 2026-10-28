@@ -87,7 +87,7 @@
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="720px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="720px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="90px">
         <el-row>
           <el-col :span="24">
@@ -171,7 +171,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -220,7 +220,9 @@
 import { listSchedule, getSchedule, delSchedule, addSchedule, updateSchedule } from "@/api/oa/schedule"
 import { listUser } from "@/api/system/user"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "OaSchedule",
   dicts: ['oa_schedule_type', 'oa_remind_type', 'oa_schedule_status', 'sys_yes_no', 'sys_normal_disable'],
   data() {
@@ -319,7 +321,7 @@ export default {
     },
     handleAdd() {
       this.reset()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "添加日程"
     },
     handleUpdate(row) {
@@ -330,7 +332,7 @@ export default {
         if (this.form.shareList) {
           this.selectedShareUserIds = this.form.shareList.map(s => s.userId)
         }
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改日程"
       })
     },

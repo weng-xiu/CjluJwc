@@ -38,7 +38,7 @@
     <app-empty v-if="!loading && !taskList.length" description="暂无数据交换数据，可调整筛选条件或检查同步任务" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="550px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="550px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="任务名称" prop="taskName"><el-input v-model="form.taskName" placeholder="请输入任务名称" /></el-form-item>
         <el-form-item label="任务编码" prop="taskCode"><el-input v-model="form.taskCode" placeholder="请输入任务编码" /></el-form-item>
@@ -48,7 +48,7 @@
         <el-form-item label="同步模式"><el-radio-group v-model="form.syncMode"><el-radio label="0">全量</el-radio><el-radio label="1">增量（水位线）</el-radio></el-radio-group></el-form-item>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
     <!-- D1：同步执行结果 -->
     <el-dialog title="同步执行结果" :visible.sync="execOpen" width="520px" append-to-body>
@@ -74,7 +74,9 @@
 </template>
 <script>
 import { listSyncTask, getSyncTask, delSyncTask, addSyncTask, updateSyncTask, executeSyncTask, repushSyncTask } from "@/api/dis/syncTask"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "DisSyncTask", dicts: ['sys_normal_disable'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, taskList: [], title: "", open: false,
     execOpen: false, execResult: null,
@@ -89,8 +91,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.taskId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加同步任务" },
-    handleUpdate(row) { this.reset(); const taskId = row.taskId || this.ids; getSyncTask(taskId).then(response => { this.form = response.data; this.open = true; this.title = "修改同步任务" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加同步任务" },
+    handleUpdate(row) { this.reset(); const taskId = row.taskId || this.ids; getSyncTask(taskId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改同步任务" }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.taskId != null) { updateSyncTask(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addSyncTask(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const taskIds = row.taskId || this.ids; this.$modal.confirm('是否确认删除同步任务编号为"' + taskIds + '"的数据项？').then(function() { return delSyncTask(taskIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('dis/task/export', { ...this.queryParams }, `syncTask_${new Date().getTime()}.xlsx`) },

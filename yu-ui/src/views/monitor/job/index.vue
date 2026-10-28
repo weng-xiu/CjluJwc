@@ -157,7 +157,7 @@
     />
 
     <!-- 添加或修改定时任务对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="800px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="800px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-row>
           <el-col :span="12">
@@ -237,7 +237,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -255,7 +255,9 @@ import { listJob, getJob, delJob, addJob, updateJob, runJob, changeJobStatus } f
 import JobDetail from './detail'
 import Crontab from '@/components/Crontab'
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   components: { Crontab, JobDetail },
   name: "Job",
   dicts: ['sys_job_group', 'sys_job_status'],
@@ -420,7 +422,7 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "添加任务"
     },
     /** 修改按钮操作 */
@@ -429,7 +431,7 @@ export default {
       const jobId = row.jobId || this.ids
       getJob(jobId).then(response => {
         this.form = response.data
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改任务"
       })
     },

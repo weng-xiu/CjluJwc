@@ -61,7 +61,7 @@
       </div>
     </el-card>
 
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="源编码" prop="sourceCode"><el-input v-model="form.sourceCode" placeholder="与裁决候选 sourceCode 对齐，如 GRAD" /></el-form-item>
         <el-form-item label="源名称" prop="sourceName"><el-input v-model="form.sourceName" placeholder="请输入来源系统名称" /></el-form-item>
@@ -69,14 +69,16 @@
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
         <el-form-item label="备注"><el-input v-model="form.remark" type="textarea" placeholder="请输入备注" /></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
 
 <script>
 import { listPriority, getPriority, delPriority, addPriority, updatePriority, previewArbitration } from "@/api/dis/priority"
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "DisArbitration",
   dicts: ['sys_normal_disable'],
   data() {
@@ -100,8 +102,8 @@ export default {
     reset() { this.form = { priorityId: null, sourceCode: null, sourceName: null, priority: 0, status: "0", remark: null }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
-    handleAdd() { this.reset(); this.open = true; this.title = "新增数据源优先级" },
-    handleUpdate(row) { this.reset(); getPriority(row.priorityId).then(res => { this.form = res.data; this.open = true; this.title = "修改数据源优先级" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "新增数据源优先级" },
+    handleUpdate(row) { this.reset(); getPriority(row.priorityId).then(res => { this.form = res.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改数据源优先级" }) },
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (!valid) return

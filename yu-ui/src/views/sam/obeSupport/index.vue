@@ -59,7 +59,7 @@
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="640px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="640px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="培养方案" prop="planId">
           <el-select v-model="form.planId" placeholder="输入方案名搜索" filterable remote reserve-keyword :remote-method="searchPlan" :loading="planLoading" style="width:100%" @change="onFormPlanChange">
@@ -87,7 +87,7 @@
           </el-radio-group>
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
@@ -98,7 +98,9 @@ import { listPlan } from "@/api/tpm/plan"
 import { listCourseLib } from "@/api/tpm/courseLib"
 import { reqChange } from "@/utils/validate"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "ObeSupport",
   dicts: ['sys_normal_disable'],
   data() {
@@ -167,7 +169,7 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.queryIndicatorOptions = []; this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.supportId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加课程支撑" },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加课程支撑" },
     handleUpdate(row) {
       this.reset()
       const supportId = row.supportId || this.ids
@@ -175,7 +177,7 @@ export default {
         this.form = response.data
         if (this.form.planId) { this.loadIndicators(this.form.planId, 'formIndicatorOptions') }
         if (this.form.courseName) { this.courseOptions = [{ courseId: this.form.courseId, courseName: this.form.courseName }] }
-        this.open = true; this.title = "修改课程支撑"
+        this.open = true; this.captureDialogSnapshot(); this.title = "修改课程支撑"
       })
     },
     submitForm() {

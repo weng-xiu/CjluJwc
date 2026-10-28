@@ -57,7 +57,7 @@
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
     <!-- 添加或修改轮播对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" :before-close="guardedBeforeClose" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="24">
@@ -107,7 +107,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
   </div>
@@ -115,7 +115,9 @@
 <script>
 import { listBanner, getBanner, delBanner, addBanner, updateBanner } from "@/api/portal/banner"
 
+import dialogGuard from "@/utils/dialogGuard"
 export default {
+  mixins: [dialogGuard],
   name: "PortalBannerManage",
   data() {
     return {
@@ -193,7 +195,7 @@ export default {
     /** 新增按钮操作 */
     handleAdd() {
       this.reset()
-      this.open = true
+      this.open = true; this.captureDialogSnapshot()
       this.title = "添加轮播"
     },
     /** 修改按钮操作 */
@@ -208,7 +210,7 @@ export default {
         } else {
           this.form.timeRange = []
         }
-        this.open = true
+        this.open = true; this.captureDialogSnapshot()
         this.title = "修改轮播"
       })
     },
