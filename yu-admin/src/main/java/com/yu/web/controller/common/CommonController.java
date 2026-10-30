@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.yu.common.config.RuoYiConfig;
 import com.yu.common.core.domain.AjaxResult;
+import com.yu.common.utils.SecurityUtils;
 import com.yu.common.utils.StringUtils;
 import com.yu.common.utils.file.FileUploadUtils;
 import com.yu.common.utils.file.FileUtils;
@@ -38,9 +39,12 @@ public class CommonController
 
     /**
      * 通用下载请求
-     * 
+     *
+     * <p>S-3（质陷报告）：原实现 delete 参数由请求方完全控制，任意登录用户可删除全局下载目录内任意文件；
+     * 现改为仅超管可传 delete=true，其余账号即使传了也忽略并记 warn 日志（不静默）。</p>
+     *
      * @param fileName 文件名称
-     * @param delete 是否删除
+     * @param delete 是否删除（仅超管生效）
      */
     @GetMapping("/download")
     public void fileDownload(String fileName, Boolean delete, HttpServletResponse response, HttpServletRequest request)
@@ -57,9 +61,16 @@ public class CommonController
             response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
             FileUtils.setAttachmentResponseHeader(response, realFileName);
             FileUtils.writeBytes(filePath, response.getOutputStream());
-            if (delete)
+            if (Boolean.TRUE.equals(delete))
             {
-                FileUtils.deleteFile(filePath);
+                if (SecurityUtils.isAdmin())
+                {
+                    FileUtils.deleteFile(filePath);
+                }
+                else
+                {
+                    log.warn("非超管账号尝试删除下载文件，已忽略：fileName={}", fileName);
+                }
             }
         }
         catch (Exception e)

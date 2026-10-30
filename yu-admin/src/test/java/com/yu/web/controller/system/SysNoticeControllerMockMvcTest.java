@@ -163,6 +163,24 @@ class SysNoticeControllerMockMvcTest {
     }
 
     @Test
+    @DisplayName("add：富文本 XSS 载荷在 Controller 入口被白名单清洗")
+    void add_sanitizesXssPayload() throws Exception {
+        when(noticeService.insertNotice(any(SysNotice.class))).thenReturn(1);
+
+        String body = "{\"noticeTitle\":\"选课通知\",\"noticeType\":\"1\",\"noticeContent\":"
+                + "\"<p onclick='alert(1)'>正文</p><script>alert(document.cookie)</script>"
+                + "<img src=x onerror='alert(2)'>\"}";
+        mockMvc.perform(post("/system/notice")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+
+        ArgumentCaptor<SysNotice> captor = ArgumentCaptor.forClass(SysNotice.class);
+        verify(noticeService).insertNotice(captor.capture());
+        Assertions.assertEquals("<p>正文</p><img src=\"x\">", captor.getValue().getNoticeContent());
+    }
+
+    @Test
     @DisplayName("listTop：按登录用户取带已读标记列表并计算 unreadCount")
     void listTop_computesUnreadCount() throws Exception {
         when(noticeReadService.selectNoticeListWithReadStatus(eq(1L), anyInt()))

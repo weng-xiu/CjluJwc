@@ -127,9 +127,8 @@ class TpmSelectionEnrollmentServiceImplTest {
     @Test
     @DisplayName("抽签：相同随机种子结果可复现（审计要求）")
     void runLottery_sameSeed_reproducible() {
-        TpmSelectionRound round = new TpmSelectionRound();
-        round.setRoundId(1L); round.setRoundStatus("1");
-        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(round);
+        // T-4 后轮次状态机会在首次抽签后置为已结束，复现验证需每轮拿到“进行中”的新轮次快照
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(openRound(), openRound());
         TpmCourseOffering off = new TpmCourseOffering(); off.setMaxStudents(2);
         when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(off);
 
@@ -148,6 +147,47 @@ class TpmSelectionEnrollmentServiceImplTest {
         List<Long> winners2 = lastUpdatedWinners();
 
         assertEquals(winners1, winners2, "同种子同名单的中签集合必须一致");
+    }
+
+    /** 构造一个“进行中”的新轮次对象（模拟每次从 DB 读到的独立快照，避免首次抽签的状态回写干扰下一轮） */
+    private TpmSelectionRound openRound() {
+        TpmSelectionRound round = new TpmSelectionRound();
+        round.setRoundId(1L);
+        round.setRoundStatus("1");
+        return round;
+    }
+
+    @Test
+    @DisplayName("抽签幂等：轮次已结束（抽签已完成）时拒绝重抽，不产生任何更新")
+    void runLottery_closedRound_rejected() {
+        TpmSelectionRound round = new TpmSelectionRound();
+        round.setRoundId(1L);
+        round.setRoundStatus("2"); // 已结束（首次抽签后置位）
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(round);
+
+        Map<String, Object> r = service.runLottery(1L, 4242L);
+
+        assertTrue(String.valueOf(r.get("message")).contains("不允许抽签"), "已结束轮次必须被状态机挡住：" + r.get("message"));
+        assertEquals(null, r.get("successCount"), "拒绝重抽时不应返回统计结果");
+        verify(enrollmentMapper, times(0)).selectTpmSelectionEnrollmentList(any());
+        verify(enrollmentMapper, times(0)).updateTpmSelectionEnrollment(any());
+    }
+
+    @Test
+    @DisplayName("抽签幂等：查询只纳入未抽签（lottery_result=0）记录，已产生结果不参与重洗")
+    void runLottery_queriesOnlyUndrawnRecords() {
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(openRound());
+        when(enrollmentMapper.selectTpmSelectionEnrollmentList(any()))
+                .thenReturn(new ArrayList<>(Arrays.asList(enroll(1L, 101L, 20L))));
+        TpmCourseOffering off = new TpmCourseOffering(); off.setMaxStudents(3);
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(off);
+
+        service.runLottery(1L, 4242L);
+
+        org.mockito.ArgumentCaptor<TpmSelectionEnrollment> cap =
+                org.mockito.ArgumentCaptor.forClass(TpmSelectionEnrollment.class);
+        verify(enrollmentMapper).selectTpmSelectionEnrollmentList(cap.capture());
+        assertEquals("0", cap.getValue().getLotteryResult(), "抽签查询必须限定未抽签记录，否则会覆盖旧中签结果");
     }
 
     /** 从最近一次 runLottery 的 update 调用中捕获中签（lotteryResult=1）学生ID */

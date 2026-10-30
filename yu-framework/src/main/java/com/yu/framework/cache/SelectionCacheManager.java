@@ -31,6 +31,15 @@ public class SelectionCacheManager
     /** 学生选课缓存过期时间（30秒） */
     private static final long STUDENT_TTL = 30;
 
+    /**
+     * 课程容量缓存过期时间（2小时）。
+     *
+     * <p>A-10/P-6：容量键原先永不过期——冷启动时现算的余量一旦与库不一致（或进程在 DECR 后、INSERT 前被杀），
+     * 错误值会长期驻留并阻断选课。加 TTL 后最迟到期即失效，下一次选课会走
+     * “capacity==null → 按 DB 计数现算”分支自动对齐；扣减/恢复时刷新 TTL，避免高峰期中途过期。</p>
+     */
+    private static final long CAPACITY_TTL = 2;
+
     @Autowired
     private RedisTemplate<Object, Object> redisTemplate;
 
@@ -68,7 +77,10 @@ public class SelectionCacheManager
     public Long decrementCapacity(Long offeringId)
     {
         String key = SEL_CAPACITY_KEY + offeringId;
-        return redisTemplate.opsForValue().decrement(key);
+        Long remaining = redisTemplate.opsForValue().decrement(key);
+        // 刷新 TTL：保持活跃课程的缓存不过期，同时保留“不再活跃后自动对齐 DB”的兑底能力
+        redisTemplate.expire(key, CAPACITY_TTL, TimeUnit.HOURS);
+        return remaining;
     }
 
     /**
@@ -81,7 +93,9 @@ public class SelectionCacheManager
     public Long incrementCapacity(Long offeringId)
     {
         String key = SEL_CAPACITY_KEY + offeringId;
-        return redisTemplate.opsForValue().increment(key);
+        Long remaining = redisTemplate.opsForValue().increment(key);
+        redisTemplate.expire(key, CAPACITY_TTL, TimeUnit.HOURS);
+        return remaining;
     }
 
     /**
@@ -93,7 +107,7 @@ public class SelectionCacheManager
     public void setCapacity(Long offeringId, int capacity)
     {
         String key = SEL_CAPACITY_KEY + offeringId;
-        redisTemplate.opsForValue().set(key, capacity);
+        redisTemplate.opsForValue().set(key, capacity, CAPACITY_TTL, TimeUnit.HOURS);
     }
 
     /**

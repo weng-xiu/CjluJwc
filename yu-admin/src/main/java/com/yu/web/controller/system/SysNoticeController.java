@@ -19,6 +19,7 @@ import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.core.page.TableDataInfo;
 import com.yu.common.core.text.Convert;
 import com.yu.common.enums.BusinessType;
+import com.yu.common.utils.html.RichTextSanitizer;
 import com.yu.system.domain.SysNotice;
 import com.yu.system.service.ISysNoticeReadService;
 import com.yu.system.service.ISysNoticeService;
@@ -67,6 +68,9 @@ public class SysNoticeController extends BaseController
     @PostMapping
     public AjaxResult add(@Validated @RequestBody SysNotice notice)
     {
+        // S-2：/system/notice 已从 XssFilter 排除（保留富文本），正文必须在此按白名单净化，
+        // Service 落库前会再清洗一次，双重校验兜住直接调用 Service 的旁路。
+        notice.setNoticeContent(RichTextSanitizer.sanitize(notice.getNoticeContent()));
         notice.setCreateBy(getUsername());
         return toAjax(noticeService.insertNotice(notice));
     }
@@ -79,6 +83,8 @@ public class SysNoticeController extends BaseController
     @PutMapping
     public AjaxResult edit(@Validated @RequestBody SysNotice notice)
     {
+        // S-2：同 add，编辑入口同样必须先过白名单清洗，避免“先存干净、再改脏”绕过。
+        notice.setNoticeContent(RichTextSanitizer.sanitize(notice.getNoticeContent()));
         notice.setUpdateBy(getUsername());
         return toAjax(noticeService.updateNotice(notice));
     }

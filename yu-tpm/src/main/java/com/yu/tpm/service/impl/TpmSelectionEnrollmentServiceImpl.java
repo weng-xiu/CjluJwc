@@ -135,9 +135,10 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         List<ConflictWarning> warnings = new ArrayList<>();
 
         // 1. 获取待选课程的排课信息
-        List<TpmSchedule> targetSchedules = tpmScheduleMapper.selectTpmScheduleList(new TpmSchedule() {{
-            setOfferingId(courseOfferingId);
-        }});
+        // Q-4：不用双括号匿名内部类（每次调用都会生成匿名子类，序列化与内存开销大）
+        TpmSchedule scheduleQuery = new TpmSchedule();
+        scheduleQuery.setOfferingId(courseOfferingId);
+        List<TpmSchedule> targetSchedules = tpmScheduleMapper.selectTpmScheduleList(scheduleQuery);
 
         // 2. 查询学生在该轮次已选课程
         List<TpmSelectionEnrollment> enrolledList = tpmSelectionEnrollmentMapper.selectByStudentAndRound(studentId, roundId);
@@ -399,7 +400,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
      * @param roundId          轮次ID
      * @return 操作结果
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     @BizMetric("selection")
     public AjaxResult enrollWithValidation(Long studentId, Long courseOfferingId, Long roundId)
@@ -412,6 +413,10 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
      * F2-2：带志愿优先级的选课。priority 为志愿序号（1=第一志愿，越小越优先），
      * 供轮次采用 weighted 抽签模式时按志愿权重中签；为空则等同普通选课。
      */
+    // T-1：控制器实际调用的是本 4 参重载，事务注解必须落在真正被执行的方法上，
+    // 否则容量扣减、选课落库、异常回补三步不在同一事务内（历史缺陷）。
+    // T-2：显式 rollbackFor，避免受检异常导致部分提交。
+    @Transactional(rollbackFor = Exception.class)
     @Override
     @BizMetric("selection")
     public AjaxResult enrollWithValidation(Long studentId, Long courseOfferingId, Long roundId, Integer priority)
@@ -558,7 +563,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
      * @param roundId 轮次ID
      * @return 抽签结果统计
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public Map<String, Object> runLottery(Long roundId)
     {
@@ -571,7 +576,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
      * ② 落选学生写入候补排名 waitlist_rank（按抽签顺序），供后续递补；
      * ③ 抽签完成后按开课回写 Redis 剩余容量，消除缓存与库不一致。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     @BizMetric("lottery")
     public Map<String, Object> runLottery(Long roundId, Long seed)
@@ -583,10 +588,21 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
             result.put("message", "轮次不存在");
             return result;
         }
+        // T-4 幂等闸门：抽签是轮次级全量重算，只允许在“进行中(1)”的轮次执行；
+        // 抽签成功后轮次将被置为已结束(2)，重复点击/前端重试/任务重跑一律被状态机挡住，
+        // 不会对已产生的中签结果重新洗牌覆盖（学生已按结果缴费排课的事故形态）。
+        if (!"1".equals(round.getRoundStatus()))
+        {
+            result.put("message", "轮次当前状态不允许抽签（仅进行中可抽签，已结束请先重置轮次状态）");
+            return result;
+        }
         // 查询轮次下所有选课记录（状态为已选但未抽签的）
         TpmSelectionEnrollment query = new TpmSelectionEnrollment();
         query.setRoundId(roundId);
         query.setResultStatus("1"); // 选中状态
+        // T-4 幂等：只纳入 lottery_result='0'（未抽签）的记录，
+        // 即使状态闸门被绕过（如手工改回进行中），已中签/已落选的记录也不会被重新洗牌。
+        query.setLotteryResult("0");
         List<TpmSelectionEnrollment> allEnrollments = tpmSelectionEnrollmentMapper.selectTpmSelectionEnrollmentList(query);
 
         if (allEnrollments == null || allEnrollments.isEmpty())

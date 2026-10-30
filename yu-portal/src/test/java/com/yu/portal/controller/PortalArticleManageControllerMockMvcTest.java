@@ -118,6 +118,24 @@ class PortalArticleManageControllerMockMvcTest {
     }
 
     @Test
+    @DisplayName("add：富文本 XSS 载荷在 Controller 入口被白名单清洗")
+    void add_sanitizesXssPayload() throws Exception {
+        when(portalArticleService.insertPortalArticle(any(PortalArticle.class))).thenReturn(1);
+
+        String body = "{\"title\":\"开学通知\",\"columnId\":3,\"content\":"
+                + "\"<p>正文</p><script>alert(1)</script><img src=x onerror='alert(2)'>\"}";
+        mockMvc.perform(post("/portal/articleManage")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+
+        ArgumentCaptor<PortalArticle> captor = ArgumentCaptor.forClass(PortalArticle.class);
+        verify(portalArticleService).insertPortalArticle(captor.capture());
+        Assertions.assertEquals("<p>正文</p><img src=\"x\">", captor.getValue().getContent());
+    }
+
+    @Test
     @DisplayName("add：缺标题被 @Validated 拦截返回 400 且不落库")
     void add_missingTitleReturns400() throws Exception {
         mockMvc.perform(post("/portal/articleManage")

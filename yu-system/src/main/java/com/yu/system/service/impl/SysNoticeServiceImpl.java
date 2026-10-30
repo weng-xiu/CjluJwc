@@ -3,6 +3,7 @@ package com.yu.system.service.impl;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.yu.common.utils.html.RichTextSanitizer;
 import com.yu.system.domain.SysNotice;
 import com.yu.system.mapper.SysNoticeMapper;
 import com.yu.system.service.ISysNoticeService;
@@ -51,6 +52,8 @@ public class SysNoticeServiceImpl implements ISysNoticeService
     @Override
     public int insertNotice(SysNotice notice)
     {
+        // S-2：落库前二次白名单清洗（Controller 已清洗一次），挡住 Job/其他模块直调 Service 的旁路
+        notice.setNoticeContent(RichTextSanitizer.sanitize(notice.getNoticeContent()));
         return noticeMapper.insertNotice(notice);
     }
 
@@ -63,6 +66,8 @@ public class SysNoticeServiceImpl implements ISysNoticeService
     @Override
     public int updateNotice(SysNotice notice)
     {
+        // S-2：同 insertNotice，更新路径也必须净化
+        notice.setNoticeContent(RichTextSanitizer.sanitize(notice.getNoticeContent()));
         return noticeMapper.updateNotice(notice);
     }
 

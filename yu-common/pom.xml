@@ -107,6 +107,12 @@
             <artifactId>jaxb-api</artifactId>
         </dependency>
 
+        <!-- 富文本 HTML 白名单清洗（S-2：RichTextSanitizer，剥离 script/style/on* 与危险协议；单 jar 零传递依赖，离线安全） -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+        </dependency>
+
         <!-- 国密算法提供者（K3：SensitiveFieldCipher 的 SM4-CBC/HMAC-SM3 原语；单 jar 零传递依赖，离线安全） -->
         <dependency>
             <groupId>org.bouncycastle</groupId>

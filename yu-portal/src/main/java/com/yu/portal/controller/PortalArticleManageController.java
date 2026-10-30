@@ -18,6 +18,7 @@ import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.enums.BusinessType;
 import com.yu.common.utils.SecurityUtils;
+import com.yu.common.utils.html.RichTextSanitizer;
 import com.yu.portal.domain.PortalArticle;
 import com.yu.portal.service.IPortalArticleService;
 import com.yu.common.core.page.TableDataInfo;
@@ -56,6 +57,9 @@ public class PortalArticleManageController extends BaseController
     @PostMapping
     public AjaxResult add(@Validated @RequestBody PortalArticle portalArticle)
     {
+        // S-2：/portal/articleManage 已从 XssFilter 排除（保留富文本），正文必须在此按白名单净化，
+        // Service 落库前会再清洗一次，双重校验兜住直接调用 Service 的旁路。
+        portalArticle.setContent(RichTextSanitizer.sanitize(portalArticle.getContent()));
         return toAjax(portalArticleService.insertPortalArticle(portalArticle));
     }
 
@@ -64,6 +68,8 @@ public class PortalArticleManageController extends BaseController
     @PutMapping
     public AjaxResult edit(@Validated @RequestBody PortalArticle portalArticle)
     {
+        // S-2：同 add，编辑入口同样必须先过白名单清洗，避免“先存干净、再改脏”绕过。
+        portalArticle.setContent(RichTextSanitizer.sanitize(portalArticle.getContent()));
         return toAjax(portalArticleService.updatePortalArticle(portalArticle));
     }
 

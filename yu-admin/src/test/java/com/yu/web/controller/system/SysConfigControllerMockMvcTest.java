@@ -32,6 +32,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.yu.common.core.domain.entity.SysUser;
 import com.yu.common.core.domain.model.LoginUser;
@@ -63,10 +64,22 @@ class SysConfigControllerMockMvcTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        // S-1：standalone 不处理 @Value，手动注入公开键白名单（与 application.yml 默认值一致）
+        ReflectionTestUtils.setField(controller, "publicConfigKeys",
+                "sys.ui.themeColor,sys.account.captchaEnabled,sys.user.initPassword");
         // BaseController.getUsername() 依赖 SecurityContext，standalone 手动注入登录用户
         SysUser sysUser = new SysUser();
         sysUser.setUserName("tester");
         LoginUser loginUser = new LoginUser(1L, 2L, sysUser, Collections.emptySet());
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(loginUser, null));
+    }
+
+    /** 切换当前登录用户的权限集合（模拟不同角色访问） */
+    private void loginWithPermissions(String... permissions) {
+        SysUser sysUser = new SysUser();
+        sysUser.setUserName("tester");
+        LoginUser loginUser = new LoginUser(1L, 2L, sysUser, new java.util.HashSet<>(List.of(permissions)));
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(loginUser, null));
     }
@@ -127,6 +140,28 @@ class SysConfigControllerMockMvcTest {
                 .andExpect(jsonPath("$.data").doesNotExist());
 
         verify(configService).selectConfigByKey(eq("sys.account.captchaEnabled"));
+    }
+
+    @Test
+    @DisplayName("getConfigKey：非公开键且无 system:config:query 时返回 403，不查库（S-1 止血）")
+    void getConfigKey_nonPublicKeyWithoutPerm_denied() throws Exception {
+        mockMvc.perform(get("/system/config/configKey/ai.llm.apiKey"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(403));
+
+        verify(configService, never()).selectConfigByKey(any());
+    }
+
+    @Test
+    @DisplayName("getConfigKey：非公开键但具备 system:config:query 时正常返回")
+    void getConfigKey_nonPublicKeyWithPerm_allowed() throws Exception {
+        loginWithPermissions("system:config:query");
+        when(configService.selectConfigByKey(eq("ai.llm.endpoint"))).thenReturn("http://llm.local");
+
+        mockMvc.perform(get("/system/config/configKey/ai.llm.endpoint"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.msg").value("http://llm.local"));
     }
 
     @Test

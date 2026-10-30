@@ -8,7 +8,6 @@
     :clearable="clearable"
     :disabled="disabled"
     :placeholder="placeholder"
-    :style="style"
     :multiple="multiple"
     v-bind="$attrs"
     @input="handleInput"
@@ -101,11 +100,9 @@ export default {
     multiple: {
       type: Boolean,
       default: false
-    },
-    style: {
-      type: [String, Object],
-      default: ''
     }
+    // 注：不得声明 style/class 等 Vue2 保留属性为 prop（保留属性只告警不提取，prop 永远拿到默认值，
+    // 每次渲染还会刷 "style" is a reserved attribute 错误）；使用点的 style 经 inheritAttrs:false + v-bind="$attrs" 落到根 el-select 上。
   },
   data() {
     return {

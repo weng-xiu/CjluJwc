@@ -32,6 +32,7 @@
         <zxing.version>3.5.0</zxing.version>
         <bcprov.version>1.74</bcprov.version>
         <jaxb-api.version>2.3.1</jaxb-api.version>
+        <jsoup.version>1.16.1</jsoup.version>
         <springdoc.version>3.0.2</springdoc.version>
         <!-- JaCoCo 行覆盖率下限：默认 0（不对无测试模块施红），受控模块在各自 pom 的 <properties> 中抬高为防回归棘轮 -->
         <jacoco.line.minimum>0.00</jacoco.line.minimum>
@@ -140,6 +141,13 @@
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-jackson</artifactId>
                 <version>${jwt.version}</version>
+            </dependency>
+
+            <!-- 富文本 HTML 白名单清洗（S-2：公告/文章正文落库前净化；单 jar 零传递依赖，离线安全） -->
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${jsoup.version}</version>
             </dependency>
 
             <!-- MFA 绑定二维码生成（仅 core，无传递依赖，离线安全） -->

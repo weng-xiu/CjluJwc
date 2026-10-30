@@ -3,6 +3,7 @@ package com.yu.portal.service.impl;
 import java.util.List;
 import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
+import com.yu.common.utils.html.RichTextSanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,6 +63,8 @@ public class PortalArticleServiceImpl implements IPortalArticleService
     @Override
     public int insertPortalArticle(PortalArticle portalArticle)
     {
+        // S-2：落库前二次白名单清洗（Controller 已清洗一次），挡住定时任务/其他模块直调 Service 的旁路
+        portalArticle.setContent(RichTextSanitizer.sanitize(portalArticle.getContent()));
         portalArticle.setCreateTime(DateUtils.getNowDate());
         return portalArticleMapper.insertPortalArticle(portalArticle);
     }
@@ -70,6 +73,8 @@ public class PortalArticleServiceImpl implements IPortalArticleService
     @Override
     public int updatePortalArticle(PortalArticle portalArticle)
     {
+        // S-2：同 insertPortalArticle，更新路径也必须净化
+        portalArticle.setContent(RichTextSanitizer.sanitize(portalArticle.getContent()));
         portalArticle.setUpdateTime(DateUtils.getNowDate());
         return portalArticleMapper.updatePortalArticle(portalArticle);
     }

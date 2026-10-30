@@ -188,6 +188,10 @@ xss:
 security:
   doc-endpoints:
     permit-all: ${DOC_ENDPOINT_PERMIT_ALL:false}
+  # S-1：/system/config/configKey/{configKey} 的公开键白名单（逗号分隔）。
+  # 白名单外的一律要求 system:config:query 权限，防止任意登录用户遍历读取
+  # 第三方密钥/短信/AI 配置/审批人等敏感运营参数。
+  public-config-keys: ${PUBLIC_CONFIG_KEYS:sys.ui.themeColor,sys.account.captchaEnabled,sys.user.initPassword}
 
 # 可观测性（Q3 可观测性体系，承接 V4.0 A5 actuator 基座）：
 # - 接入 Prometheus 注册表，暴露 metrics/prometheus，JVM/接口/缓存/业务指标统一导出；
