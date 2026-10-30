@@ -67,7 +67,7 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
     private IOaCountersignService oaCountersignService;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Deployment deployProcess(String processName, InputStream bpmnInputStream)
     {
         return repositoryService.createDeployment()
@@ -77,7 +77,7 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Deployment deployProcess(String processName, String bpmnXml)
     {
         return deployProcess(processName, new ByteArrayInputStream(bpmnXml.getBytes(StandardCharsets.UTF_8)));
@@ -182,7 +182,7 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public ProcessInstance startProcessInstance(String processKey, String businessKey, Map<String, Object> variables)
     {
         return runtimeService.startProcessInstanceByKey(processKey, businessKey, variables);
@@ -212,7 +212,7 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void completeTask(String taskId, String assignee, Map<String, Object> variables, String comment)
     {
         Task task = taskService.createTaskQuery().taskId(taskId).taskAssignee(assignee).singleResult();
@@ -235,7 +235,7 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void rejectTask(String taskId, String assignee, String comment)
     {
         Task task = taskService.createTaskQuery().taskId(taskId).taskAssignee(assignee).singleResult();
@@ -258,7 +258,7 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void transferTask(String taskId, String originalAssignee, String newAssignee, String comment)
     {
         Task task = taskService.createTaskQuery().taskId(taskId).taskAssignee(originalAssignee).singleResult();
@@ -274,7 +274,7 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void cancelProcessInstance(String processInstanceId, String reason)
     {
         runtimeService.deleteProcessInstance(processInstanceId, reason);
@@ -310,7 +310,7 @@ public class OaWorkflowServiceImpl implements IOaWorkflowService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deleteDeployment(String deploymentId)
     {
         repositoryService.deleteDeployment(deploymentId, true);

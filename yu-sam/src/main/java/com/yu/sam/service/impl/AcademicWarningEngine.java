@@ -67,7 +67,7 @@ public class AcademicWarningEngine
      * @param semesterId 学期ID
      * @return 生成的预警列表
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public List<SamWarning> generateWarningsForStudent(Long studentId, Long semesterId)
     {
         // 清理该学生该学期未解除的旧预警（联动去重）

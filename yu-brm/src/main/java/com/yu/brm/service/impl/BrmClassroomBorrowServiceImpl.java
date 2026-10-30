@@ -42,7 +42,7 @@ public class BrmClassroomBorrowServiceImpl implements IBrmClassroomBorrowService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertBrmClassroomBorrow(BrmClassroomBorrow brmClassroomBorrow)
     {
         brmClassroomBorrow.setCreateTime(DateUtils.getNowDate());
@@ -56,7 +56,7 @@ public class BrmClassroomBorrowServiceImpl implements IBrmClassroomBorrowService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateBrmClassroomBorrow(BrmClassroomBorrow brmClassroomBorrow)
     {
         brmClassroomBorrow.setUpdateTime(DateUtils.getNowDate());
@@ -64,14 +64,14 @@ public class BrmClassroomBorrowServiceImpl implements IBrmClassroomBorrowService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmClassroomBorrowByBorrowId(Long borrowId)
     {
         return brmClassroomBorrowMapper.deleteBrmClassroomBorrowByBorrowId(borrowId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmClassroomBorrowByBorrowIds(Long[] borrowIds)
     {
         return brmClassroomBorrowMapper.deleteBrmClassroomBorrowByBorrowIds(borrowIds);

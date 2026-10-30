@@ -16,23 +16,53 @@ public interface TpmSelectionEnrollmentMapper
     public List<TpmSelectionEnrollment> selectTpmSelectionEnrollmentList(TpmSelectionEnrollment tpmSelectionEnrollment);
     public int insertTpmSelectionEnrollment(TpmSelectionEnrollment tpmSelectionEnrollment);
     public int updateTpmSelectionEnrollment(TpmSelectionEnrollment tpmSelectionEnrollment);
+
+    /**
+     * P-3：抽签结果批量落库（单条 CASE WHEN 更新三列，按 Service 侧切片调用）。
+     *
+     * @param list       同一批次的选课记录，必须均已填好 lotteryResult / resultStatus / waitlistRank
+     * @param updateTime 统一更新时间
+     * @return 受影响行数
+     */
+    public int batchUpdateLotteryResult(@Param("list") List<TpmSelectionEnrollment> list,
+                                        @Param("updateTime") java.util.Date updateTime);
     public int deleteTpmSelectionEnrollmentByEnrollId(Long enrollId);
     public int deleteTpmSelectionEnrollmentByEnrollIds(Long[] enrollIds);
 
     /**
-     * 查询某开课的已选人数
+     * 查询某开课的报名行数（含落选/候补，result_status != '3'）。
+     *
+     * <p>仅供「是否已有报名记录/删除前校验」使用：落选/候补（result_status='2'）也是报名痕迹，
+     * 开课不能被删成悬空引用。**容量判定不得用它**，改用 {@link #countAdmittedByOffering(Long)}。</p>
      *
      * @param courseOfferingId 开课ID
-     * @return 已选人数
+     * @return 报名行数
      */
     public int selectCountByOffering(@Param("courseOfferingId") Long courseOfferingId);
 
     /**
-     * 查询学生在某轮次已选的选课记录
+     * 统计某开课的**在册人数**（result_status = '1'），与 tpm_course_offering.enrolled_count 同口径。
+     *
+     * <p>T-3：落选/候补（result_status='2'）没有占到名额，不能计入容量；用 != '3' 口径会把
+     * 候补算满，导致“明明还有名额却提示已满”。</p>
+     *
+     * <p>与后面的 {@link #countAdmittedByOffering(Long)} 不是一回事：那个只数**抽签中签**
+     * （lottery_result='1'），直接选课（lottery_result='0'）的人不在内；容量判定必须用本方法。</p>
+     *
+     * @param courseOfferingId 开课ID
+     * @return 在册人数
+     */
+    public int countEnrolledByOffering(@Param("courseOfferingId") Long courseOfferingId);
+
+    /**
+     * 查询学生在某轮次**在册**的选课记录（result_status = '1'）。
+     *
+     * <p>抽签落选/候补（result_status='2'）不占选课门数，也不参与时间/学分冲突检测，
+     * 因此这里不能返回它们，否则学生抽签后会因“已达到门数上限”而无法再补选。</p>
      *
      * @param studentId 学生ID
      * @param roundId   轮次ID
-     * @return 选课记录列表
+     * @return 在册选课记录列表
      */
     public List<TpmSelectionEnrollment> selectByStudentAndRound(@Param("studentId") Long studentId, @Param("roundId") Long roundId);
 

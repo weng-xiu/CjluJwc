@@ -35,7 +35,7 @@ public class BrmAcademicYearServiceImpl implements IBrmAcademicYearService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertBrmAcademicYear(BrmAcademicYear brmAcademicYear)
     {
         // 唯一性校验：学年名称不能重复
@@ -51,7 +51,7 @@ public class BrmAcademicYearServiceImpl implements IBrmAcademicYearService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateBrmAcademicYear(BrmAcademicYear brmAcademicYear)
     {
         // 唯一性校验：学年名称不能重复（排除自身）
@@ -73,14 +73,14 @@ public class BrmAcademicYearServiceImpl implements IBrmAcademicYearService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmAcademicYearByYearId(Long yearId)
     {
         return brmAcademicYearMapper.deleteBrmAcademicYearByYearId(yearId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmAcademicYearByYearIds(Long[] yearIds)
     {
         return brmAcademicYearMapper.deleteBrmAcademicYearByYearIds(yearIds);

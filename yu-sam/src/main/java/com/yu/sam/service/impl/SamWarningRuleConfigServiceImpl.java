@@ -46,7 +46,7 @@ public class SamWarningRuleConfigServiceImpl implements ISamWarningRuleConfigSer
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertSamWarningRuleConfig(SamWarningRuleConfig samWarningRuleConfig) 
     {
         samWarningRuleConfig.setCreateTime(DateUtils.getNowDate());
@@ -54,7 +54,7 @@ public class SamWarningRuleConfigServiceImpl implements ISamWarningRuleConfigSer
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateSamWarningRuleConfig(SamWarningRuleConfig samWarningRuleConfig) 
     {
         samWarningRuleConfig.setUpdateTime(DateUtils.getNowDate());
@@ -62,14 +62,14 @@ public class SamWarningRuleConfigServiceImpl implements ISamWarningRuleConfigSer
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamWarningRuleConfigById(Long ruleId) 
     {
         return samWarningRuleConfigMapper.deleteSamWarningRuleConfigById(ruleId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamWarningRuleConfigByIds(Long[] ruleIds) 
     {
         return samWarningRuleConfigMapper.deleteSamWarningRuleConfigByIds(ruleIds);

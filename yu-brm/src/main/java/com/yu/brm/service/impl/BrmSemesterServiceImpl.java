@@ -36,7 +36,7 @@ public class BrmSemesterServiceImpl implements IBrmSemesterService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = "current_semester", allEntries = true)
     public int insertBrmSemester(BrmSemester brmSemester)
     {
@@ -54,7 +54,7 @@ public class BrmSemesterServiceImpl implements IBrmSemesterService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = "current_semester", allEntries = true)
     public int updateBrmSemester(BrmSemester brmSemester)
     {
@@ -78,7 +78,7 @@ public class BrmSemesterServiceImpl implements IBrmSemesterService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = "current_semester", allEntries = true)
     public int deleteBrmSemesterBySemesterId(Long semesterId)
     {
@@ -94,7 +94,7 @@ public class BrmSemesterServiceImpl implements IBrmSemesterService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = "current_semester", allEntries = true)
     public int deleteBrmSemesterBySemesterIds(Long[] semesterIds)
     {

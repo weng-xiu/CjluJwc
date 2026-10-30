@@ -70,20 +70,20 @@ public class SamGraduationProcedureServiceImpl implements ISamGraduationProcedur
     public List<SamGraduationProcedure> selectSamGraduationProcedureList(SamGraduationProcedure samGraduationProcedure) { return samGraduationProcedureMapper.selectSamGraduationProcedureList(samGraduationProcedure); }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertSamGraduationProcedure(SamGraduationProcedure samGraduationProcedure) { samGraduationProcedure.setCreateTime(DateUtils.getNowDate()); return samGraduationProcedureMapper.insertSamGraduationProcedure(samGraduationProcedure); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateSamGraduationProcedure(SamGraduationProcedure samGraduationProcedure) { samGraduationProcedure.setUpdateTime(DateUtils.getNowDate()); return samGraduationProcedureMapper.updateSamGraduationProcedure(samGraduationProcedure); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamGraduationProcedureByProcedureId(Long procedureId) { return samGraduationProcedureMapper.deleteSamGraduationProcedureByProcedureId(procedureId); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamGraduationProcedureByProcedureIds(Long[] procedureIds) { return samGraduationProcedureMapper.deleteSamGraduationProcedureByProcedureIds(procedureIds); }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int initProcedures(Long studentId, String operator)
     {
         int created = samGraduationProcedureMapper.initProceduresForGraduates(studentId, operator);
@@ -99,7 +99,7 @@ public class SamGraduationProcedureServiceImpl implements ISamGraduationProcedur
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int toggleItem(Long procedureId, Long stepId, boolean done, String operator)
     {
         SamGraduationProcedure proc = samGraduationProcedureMapper.selectSamGraduationProcedureByProcedureId(procedureId);
@@ -131,7 +131,7 @@ public class SamGraduationProcedureServiceImpl implements ISamGraduationProcedur
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int autoCheck(Long studentId, String operator)
     {
         List<SamProcedureStep> steps = samProcedureStepMapper.selectActiveSteps();

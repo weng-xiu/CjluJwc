@@ -31,7 +31,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="elasticStep"    column="elastic_step"     />
     </resultMap>
     <sql id="selectTpmCourseOfferingVo">
-        select offering_id, semester_id, course_id, teacher_id, campus_id, class_count, max_students, offering_status, status, del_flag, elastic_enabled, elastic_max, elastic_step, create_by, create_time, update_by, update_time, remark from tpm_course_offering
+        select offering_id, semester_id, course_id, teacher_id, campus_id, class_count, max_students, enrolled_count, offering_status, status, del_flag, elastic_enabled, elastic_max, elastic_step, create_by, create_time, update_by, update_time, remark from tpm_course_offering
     </sql>
     <!-- V4.0 §6.1/N7：附带课程学分（与 ForPortal 口径对齐）并支持按课程名称筛选 -->
     <select id="selectTpmCourseOfferingList" parameterType="TpmCourseOffering" resultMap="TpmCourseOfferingResult">
@@ -155,6 +155,40 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="remark != null">remark = #{remark},</if>
         </trim>
         where offering_id = #{offeringId}
+    </update>
+    <!-- T-3：选课容量真相下沉到 DB。把「是否还有名额」与「占一个名额」压成同一条语句，
+         由 InnoDB 行锁串行化并发选课，不存在「先查后改」的窗口（原 Redis DECR 方案要靠 TTL
+         与补偿对齐，进程崩在 DECR 与 INSERT 之间就永久少一个名额）。
+         受影响行数 = 1 表示占到名额，= 0 表示已满（或开课不存在/已删/容量未配置）。
+         **enrolled_count 只能由本语句、releaseSeat、recountEnrolled 维护**：不要把它加进上面的
+         updateTpmCourseOffering，否则会把读到的旧值覆盖到并发计数上。 -->
+    <update id="occupySeat">
+        update tpm_course_offering
+        set enrolled_count = enrolled_count + 1,
+            update_time = sysdate()
+        where offering_id = #{offeringId}
+          and del_flag = '0'
+          and enrolled_count &lt; max_students
+    </update>
+    <!-- T-3：释放一个名额（退课/改选回退）。带 enrolled_count > 0 守卫，计数不会被减成负数。 -->
+    <update id="releaseSeat">
+        update tpm_course_offering
+        set enrolled_count = enrolled_count - 1,
+            update_time = sysdate()
+        where offering_id = #{offeringId}
+          and enrolled_count &gt; 0
+    </update>
+    <!-- T-3：按报名表真相全量重算占用数（幂等）。抽签会把部分「选中」改为「落选/候补」，
+         必须重算而不是逐条减；管理端直接改报名记录时也用它校正，避免计数漂移。 -->
+    <update id="recountEnrolled">
+        update tpm_course_offering
+        set enrolled_count = (select count(1) from tpm_selection_enrollment e
+                               where e.course_offering_id = tpm_course_offering.offering_id
+                                 and e.result_status = '1'
+                                 and e.del_flag = '0'),
+            update_time = sysdate()
+        where offering_id in
+        <foreach item="offeringId" collection="offeringIds" open="(" separator="," close=")">#{offeringId}</foreach>
     </update>
     <update id="deleteTpmCourseOfferingByOfferingId" parameterType="Long">
         update tpm_course_offering set del_flag = '2' where offering_id = #{offeringId}

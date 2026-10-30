@@ -44,7 +44,7 @@ public class BrmClassroomServiceImpl implements IBrmClassroomService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertBrmClassroom(BrmClassroom brmClassroom)
     {
         // 数据范围校验：容量必须为正整数
@@ -57,7 +57,7 @@ public class BrmClassroomServiceImpl implements IBrmClassroomService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateBrmClassroom(BrmClassroom brmClassroom)
     {
         // 数据范围校验：容量必须为正整数
@@ -70,14 +70,14 @@ public class BrmClassroomServiceImpl implements IBrmClassroomService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmClassroomByClassroomId(Long classroomId)
     {
         return brmClassroomMapper.deleteBrmClassroomByClassroomId(classroomId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmClassroomByClassroomIds(Long[] classroomIds)
     {
         return brmClassroomMapper.deleteBrmClassroomByClassroomIds(classroomIds);
@@ -86,7 +86,7 @@ public class BrmClassroomServiceImpl implements IBrmClassroomService
     /**
      * P7：批量导入教室，逐行校验（名称/教学楼/类型必填、容量为正、外键存在、教学楼+名称唯一）并生成校验报告。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public String importClassroom(List<BrmClassroom> classroomList, String operName, boolean updateSupport)
     {

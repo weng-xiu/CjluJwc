@@ -29,7 +29,7 @@ public class SamProcedureStepServiceImpl implements ISamProcedureStepService
     public List<SamProcedureStep> selectSamProcedureStepList(SamProcedureStep samProcedureStep) { return samProcedureStepMapper.selectSamProcedureStepList(samProcedureStep); }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertSamProcedureStep(SamProcedureStep samProcedureStep)
     {
         if (samProcedureStep.getRequiredFlag() == null) samProcedureStep.setRequiredFlag("1");
@@ -44,7 +44,7 @@ public class SamProcedureStepServiceImpl implements ISamProcedureStepService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateSamProcedureStep(SamProcedureStep samProcedureStep)
     {
         if (samProcedureStep.getStepKey() != null
@@ -57,6 +57,6 @@ public class SamProcedureStepServiceImpl implements ISamProcedureStepService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamProcedureStepByStepIds(Long[] stepIds) { return samProcedureStepMapper.deleteSamProcedureStepByStepIds(stepIds); }
 }

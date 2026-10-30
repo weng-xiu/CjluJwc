@@ -47,7 +47,7 @@ public class SamCertificateServiceImpl implements ISamCertificateService
     public List<SamCertificate> selectByStudentId(Long studentId) { return samCertificateMapper.selectByStudentId(studentId); }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertSamCertificate(SamCertificate samCertificate)
     {
         // 编号为空则自动生成；非空则做唯一性校验
@@ -68,7 +68,7 @@ public class SamCertificateServiceImpl implements ISamCertificateService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateSamCertificate(SamCertificate samCertificate)
     {
         if (StringUtils.isNotBlank(samCertificate.getCertNumber())
@@ -81,11 +81,11 @@ public class SamCertificateServiceImpl implements ISamCertificateService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamCertificateByCertId(Long certId) { return samCertificateMapper.deleteSamCertificateByCertId(certId); }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamCertificateByCertIds(Long[] certIds) { return samCertificateMapper.deleteSamCertificateByCertIds(certIds); }
 
     @Override
@@ -96,7 +96,7 @@ public class SamCertificateServiceImpl implements ISamCertificateService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> batchGenerateCertificates(String certType, String gradYear, String operator)
     {
         if (StringUtils.isBlank(certType))

@@ -97,7 +97,7 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
         return disSyncTaskMapper.selectDisSyncTaskList(disSyncTask);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertDisSyncTask(DisSyncTask disSyncTask)
     {
@@ -105,7 +105,7 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
         return disSyncTaskMapper.insertDisSyncTask(disSyncTask);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateDisSyncTask(DisSyncTask disSyncTask)
     {
@@ -113,14 +113,14 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
         return disSyncTaskMapper.updateDisSyncTask(disSyncTask);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteDisSyncTaskByTaskId(Long taskId)
     {
         return disSyncTaskMapper.deleteDisSyncTaskByTaskId(taskId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteDisSyncTaskByTaskIds(Long[] taskIds)
     {

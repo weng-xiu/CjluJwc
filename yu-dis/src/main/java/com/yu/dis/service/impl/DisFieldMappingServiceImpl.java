@@ -38,7 +38,7 @@ public class DisFieldMappingServiceImpl implements IDisFieldMappingService
         return disFieldMappingMapper.selectEnabledByInterfaceId(interfaceId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertDisFieldMapping(DisFieldMapping disFieldMapping)
     {
@@ -46,7 +46,7 @@ public class DisFieldMappingServiceImpl implements IDisFieldMappingService
         return disFieldMappingMapper.insertDisFieldMapping(disFieldMapping);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateDisFieldMapping(DisFieldMapping disFieldMapping)
     {
@@ -54,14 +54,14 @@ public class DisFieldMappingServiceImpl implements IDisFieldMappingService
         return disFieldMappingMapper.updateDisFieldMapping(disFieldMapping);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteDisFieldMappingByMappingId(Long mappingId)
     {
         return disFieldMappingMapper.deleteDisFieldMappingByMappingId(mappingId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteDisFieldMappingByMappingIds(Long[] mappingIds)
     {

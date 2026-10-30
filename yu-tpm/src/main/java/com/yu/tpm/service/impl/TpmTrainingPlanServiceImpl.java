@@ -67,7 +67,7 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
         return tpmTrainingPlanMapper.selectTpmTrainingPlanList(tpmTrainingPlan);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertTpmTrainingPlan(TpmTrainingPlan tpmTrainingPlan)
     {
@@ -80,7 +80,7 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
         return tpmTrainingPlanMapper.insertTpmTrainingPlan(tpmTrainingPlan);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateTpmTrainingPlan(TpmTrainingPlan tpmTrainingPlan)
     {
@@ -109,7 +109,7 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmTrainingPlanByPlanId(Long planId)
     {
@@ -117,7 +117,7 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
         return tpmTrainingPlanMapper.deleteTpmTrainingPlanByPlanId(planId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmTrainingPlanByPlanIds(Long[] planIds)
     {
@@ -150,7 +150,7 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int publishTrainingPlan(Long planId)
     {
@@ -207,7 +207,7 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
         return rows;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deprecateTrainingPlan(Long planId)
     {
@@ -221,7 +221,7 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
     /**
      * T3：复制培养方案（含课程与学分结构子表）为新草稿版本，版本号自动递增。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public Long copyTrainingPlan(Long planId)
     {
@@ -340,7 +340,7 @@ public class TpmTrainingPlanServiceImpl implements ITpmTrainingPlanService
         return "V1";
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int savePlanWithChildren(TpmTrainingPlan plan, List<TpmCourseLibrary> courseList, List<TpmCreditStructure> creditList)
     {

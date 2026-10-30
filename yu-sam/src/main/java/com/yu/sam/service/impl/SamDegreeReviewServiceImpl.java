@@ -45,16 +45,16 @@ public class SamDegreeReviewServiceImpl implements ISamDegreeReviewService
     @Override
     public List<SamDegreeReview> selectSamDegreeReviewList(SamDegreeReview samDegreeReview) { return samDegreeReviewMapper.selectSamDegreeReviewList(samDegreeReview); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertSamDegreeReview(SamDegreeReview samDegreeReview) { samDegreeReview.setCreateTime(DateUtils.getNowDate()); return samDegreeReviewMapper.insertSamDegreeReview(samDegreeReview); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateSamDegreeReview(SamDegreeReview samDegreeReview) { samDegreeReview.setUpdateTime(DateUtils.getNowDate()); return samDegreeReviewMapper.updateSamDegreeReview(samDegreeReview); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamDegreeReviewByReviewId(Long reviewId) { return samDegreeReviewMapper.deleteSamDegreeReviewByReviewId(reviewId); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamDegreeReviewByReviewIds(Long[] reviewIds) { return samDegreeReviewMapper.deleteSamDegreeReviewByReviewIds(reviewIds); }
 
     /**
@@ -63,7 +63,7 @@ public class SamDegreeReviewServiceImpl implements ISamDegreeReviewService
      * 数据来源：跨模块查询 aem_grade_record + tpm_course_library；论文取 sam_thesis 归档结论。
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public SamDegreeReview autoReview(Long studentId)
     {
         return doReview(studentId, true);
@@ -175,7 +175,7 @@ public class SamDegreeReviewServiceImpl implements ISamDegreeReviewService
      * 批量自动审核学位资格（S1）。
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> batchAutoReview(List<Long> studentIds)
     {
         Map<String, Object> result = new LinkedHashMap<>();

@@ -79,7 +79,7 @@ public class SysTeacherLinkServiceImpl implements ISysTeacherLinkService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertTeacherLink(SysTeacherLink link)
     {
         // 校验用户是否已关联教师
@@ -110,7 +110,7 @@ public class SysTeacherLinkServiceImpl implements ISysTeacherLinkService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateTeacherLink(SysTeacherLink link)
     {
         int rows = teacherLinkMapper.updateTeacherLink(link);
@@ -134,7 +134,7 @@ public class SysTeacherLinkServiceImpl implements ISysTeacherLinkService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteTeacherLinkById(Long linkId)
     {
         SysTeacherLink link = teacherLinkMapper.selectTeacherLinkById(linkId);

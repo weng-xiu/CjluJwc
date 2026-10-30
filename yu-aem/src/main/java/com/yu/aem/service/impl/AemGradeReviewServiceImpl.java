@@ -107,7 +107,7 @@ public class AemGradeReviewServiceImpl implements IAemGradeReviewService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertAemGradeReview(AemGradeReview aemGradeReview)
     {
         // 业务校验：复核原因不能为空
@@ -134,7 +134,7 @@ public class AemGradeReviewServiceImpl implements IAemGradeReviewService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateAemGradeReview(AemGradeReview aemGradeReview)
     {
         // 状态校验：已办结或已进入流程的申请不允许直接修改
@@ -154,14 +154,14 @@ public class AemGradeReviewServiceImpl implements IAemGradeReviewService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemGradeReviewByReviewId(Long reviewId)
     {
         return aemGradeReviewMapper.deleteAemGradeReviewByReviewId(reviewId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemGradeReviewByReviewIds(Long[] reviewIds)
     {
         return aemGradeReviewMapper.deleteAemGradeReviewByReviewIds(reviewIds);
@@ -172,7 +172,7 @@ public class AemGradeReviewServiceImpl implements IAemGradeReviewService
      * 通过后回写成绩并触发GPA重算
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int approveReview(Long reviewId, boolean approved, String approveBy, String approveOpinion)
     {
         AemGradeReview review = aemGradeReviewMapper.selectAemGradeReviewByReviewId(reviewId);
@@ -207,7 +207,7 @@ public class AemGradeReviewServiceImpl implements IAemGradeReviewService
      * O1：提交复核申请并启动 Flowable 多级审批流程（课程负责人初审 → 教务处终审）
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int submitForApproval(Long reviewId)
     {
         AemGradeReview review = aemGradeReviewMapper.selectAemGradeReviewByReviewId(reviewId);
@@ -271,7 +271,7 @@ public class AemGradeReviewServiceImpl implements IAemGradeReviewService
      * O1：流程审批，按当前状态路由：0=课程负责人初审，4=教务处终审
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int approveReviewByFlow(Long reviewId, boolean approved, String opinion)
     {
         AemGradeReview review = aemGradeReviewMapper.selectAemGradeReviewByReviewId(reviewId);
@@ -366,7 +366,7 @@ public class AemGradeReviewServiceImpl implements IAemGradeReviewService
      * O1：申请人撤销审批中的复核申请
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int cancelByApplicant(Long reviewId, String operator)
     {
         AemGradeReview review = aemGradeReviewMapper.selectAemGradeReviewByReviewId(reviewId);

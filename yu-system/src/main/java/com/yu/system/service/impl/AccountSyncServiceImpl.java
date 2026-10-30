@@ -71,7 +71,7 @@ public class AccountSyncServiceImpl implements IAccountSyncService
      * @return 结果统计 {created: x, skipped: x, failed: x}
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Integer> syncTeacherAccounts(Long deptId)
     {
         int created = 0;

@@ -34,7 +34,7 @@ public class BrmTeacherPositionServiceImpl implements IBrmTeacherPositionService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertBrmTeacherPosition(BrmTeacherPosition brmTeacherPosition)
     {
         brmTeacherPosition.setCreateTime(DateUtils.getNowDate());
@@ -42,7 +42,7 @@ public class BrmTeacherPositionServiceImpl implements IBrmTeacherPositionService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateBrmTeacherPosition(BrmTeacherPosition brmTeacherPosition)
     {
         brmTeacherPosition.setUpdateTime(DateUtils.getNowDate());
@@ -50,14 +50,14 @@ public class BrmTeacherPositionServiceImpl implements IBrmTeacherPositionService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmTeacherPositionByPosId(Long posId)
     {
         return brmTeacherPositionMapper.deleteBrmTeacherPositionByPosId(posId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmTeacherPositionByPosIds(Long[] posIds)
     {
         return brmTeacherPositionMapper.deleteBrmTeacherPositionByPosIds(posIds);

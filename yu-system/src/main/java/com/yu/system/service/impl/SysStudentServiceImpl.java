@@ -95,7 +95,7 @@ public class SysStudentServiceImpl implements ISysStudentService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertStudent(SysStudent student)
     {
         // 校验学号唯一性
@@ -115,7 +115,7 @@ public class SysStudentServiceImpl implements ISysStudentService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateStudent(SysStudent student)
     {
         // 校验学号唯一性
@@ -139,7 +139,7 @@ public class SysStudentServiceImpl implements ISysStudentService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteStudentByIds(Long[] studentIds)
     {
         int rows = studentMapper.deleteStudentByIds(studentIds);
@@ -191,7 +191,7 @@ public class SysStudentServiceImpl implements ISysStudentService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int changeStudentStatus(Long studentId, String newStatus, String remark)
     {
         SysStudent student = studentMapper.selectStudentById(studentId);

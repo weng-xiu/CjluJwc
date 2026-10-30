@@ -6,6 +6,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -19,6 +23,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -44,8 +49,9 @@ import com.yu.tpm.service.ITpmSelectionRuleService;
 /**
  * 选课核心算法单元测试（Q1 回归防护）。
  *
- * <p>覆盖 T6 公平抽签（确定性随机种子、超/未满容量分支、候补排名）、候补递补（按空余名额递补 + Redis 容量回写）、
- * 选课冲突检测（时间冲突判定）、退课（状态流转 + 容量回补 + 中签者退课触发自动递补）。</p>
+ * <p>覆盖 T6 公平抽签（确定性随机种子、超/未满容量分支、候补排名）、候补递补（按空余名额递补 + DB 占名额）、
+ * 选课/退课/改选的名额增减（T-3：DB 条件更新 occupySeat / releaseSeat）、
+ * 选课冲突检测（时间冲突判定）。</p>
  */
 @ExtendWith(MockitoExtension.class)
 class TpmSelectionEnrollmentServiceImplTest {
@@ -171,6 +177,7 @@ class TpmSelectionEnrollmentServiceImplTest {
         assertEquals(null, r.get("successCount"), "拒绝重抽时不应返回统计结果");
         verify(enrollmentMapper, times(0)).selectTpmSelectionEnrollmentList(any());
         verify(enrollmentMapper, times(0)).updateTpmSelectionEnrollment(any());
+        verify(enrollmentMapper, times(0)).batchUpdateLotteryResult(any(), any());
     }
 
     @Test
@@ -190,15 +197,83 @@ class TpmSelectionEnrollmentServiceImplTest {
         assertEquals("0", cap.getValue().getLotteryResult(), "抽签查询必须限定未抽签记录，否则会覆盖旧中签结果");
     }
 
-    /** 从最近一次 runLottery 的 update 调用中捕获中签（lotteryResult=1）学生ID */
+    /** 从最近一次 runLottery 的批量 update 调用中捕获中签（lotteryResult=1）学生ID */
     private List<Long> lastUpdatedWinners() {
-        org.mockito.ArgumentCaptor<TpmSelectionEnrollment> cap = org.mockito.ArgumentCaptor.forClass(TpmSelectionEnrollment.class);
-        verify(enrollmentMapper, atLeastOnce()).updateTpmSelectionEnrollment(cap.capture());
-        List<TpmSelectionEnrollment> all = cap.getAllValues();
-        // 取本批次（最后一次 runLottery 会 update 5 条）
+        org.mockito.ArgumentCaptor<List> cap = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(enrollmentMapper, atLeastOnce()).batchUpdateLotteryResult(cap.capture(), any());
+        List<TpmSelectionEnrollment> all = new ArrayList<>();
+        for (Object o : cap.getAllValues()) {
+            @SuppressWarnings("unchecked")
+            List<TpmSelectionEnrollment> part = (List<TpmSelectionEnrollment>) o;
+            all.addAll(part);
+        }
+        // 取本批次（最后一次 runLottery 会 batch 更新 5 条）
         List<TpmSelectionEnrollment> batch = all.subList(Math.max(0, all.size() - 5), all.size());
         return batch.stream().filter(e -> "1".equals(e.getLotteryResult()))
                 .map(TpmSelectionEnrollment::getStudentId).sorted().collect(Collectors.toList());
+    }
+
+    @Test
+    @DisplayName("P-3：抽签落库按 500 行分块，不再逐行 update")
+    void runLottery_batchesInChunks() {
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(openRound());
+        List<TpmSelectionEnrollment> list = new ArrayList<>();
+        for (long i = 1; i <= 1200; i++) {
+            list.add(enroll(i, 1000L + i, 20L));
+        }
+        when(enrollmentMapper.selectTpmSelectionEnrollmentList(any())).thenReturn(list);
+        TpmCourseOffering off = new TpmCourseOffering(); off.setMaxStudents(1200); // 未超容量
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(off);
+
+        service.runLottery(1L, 4242L);
+
+        org.mockito.ArgumentCaptor<List> cap = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(enrollmentMapper, times(3)).batchUpdateLotteryResult(cap.capture(), any());
+        List<Integer> sizes = cap.getAllValues().stream().map(List::size).collect(Collectors.toList());
+        assertEquals(Arrays.asList(500, 500, 200), sizes, "1200 行必须切成 500+500+200 三条语句");
+        verify(enrollmentMapper, times(0)).updateTpmSelectionEnrollment(any());
+    }
+
+    @Test
+    @DisplayName("P-3：批量落库携带三列完整语义（中签清排名、落选带候补排名）")
+    void runLottery_batchCarriesAllColumns() {
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(openRound());
+        List<TpmSelectionEnrollment> list = new ArrayList<>(Arrays.asList(
+                enroll(1L, 101L, 20L), enroll(2L, 102L, 20L), enroll(3L, 103L, 20L),
+                enroll(4L, 104L, 20L), enroll(5L, 105L, 20L)));
+        when(enrollmentMapper.selectTpmSelectionEnrollmentList(any())).thenReturn(list);
+        TpmCourseOffering off = new TpmCourseOffering(); off.setMaxStudents(2);
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(off);
+
+        service.runLottery(1L, 777L);
+
+        org.mockito.ArgumentCaptor<List> cap = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(enrollmentMapper).batchUpdateLotteryResult(cap.capture(), any());
+        @SuppressWarnings("unchecked")
+        List<TpmSelectionEnrollment> sent = (List<TpmSelectionEnrollment>) cap.getValue();
+        assertEquals(5, sent.size(), "一次抽签的 5 条记录必须都在同一批里（未超 500）");
+        for (TpmSelectionEnrollment e : sent) {
+            assertTrue(e.getLotteryResult() != null && e.getResultStatus() != null, "三列不得漏传：" + e.getEnrollId());
+            if ("1".equals(e.getLotteryResult())) {
+                assertEquals(null, e.getWaitlistRank(), "中签者必须清空候补排名");
+            } else {
+                assertTrue(e.getWaitlistRank() != null, "落选者必须有候补排名");
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("P-3：无待落库记录时不得调用批量接口（空列表会拼出非法 SQL）")
+    void runLottery_noPendingRecord_skipsBatch() {
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(openRound());
+        when(enrollmentMapper.selectTpmSelectionEnrollmentList(any()))
+                .thenReturn(new ArrayList<>(Arrays.asList(enroll(1L, 101L, 20L))));
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(null); // 开课被删/无容量
+
+        service.runLottery(1L, 4242L);
+
+        verify(enrollmentMapper, times(0)).batchUpdateLotteryResult(any(), any());
+        verify(enrollmentMapper, times(0)).updateTpmSelectionEnrollment(any());
     }
 
     @Test
@@ -212,20 +287,37 @@ class TpmSelectionEnrollmentServiceImplTest {
     // ==================== promoteWaitlist ====================
 
     @Test
-    @DisplayName("候补递补：按空余名额递补并回写 Redis 剩余容量")
+    @DisplayName("候选递补：按空余名额递补，每递补一名先占 DB 名额")
     void promoteWaitlist_fillsFreeSeats() {
         TpmCourseOffering off = new TpmCourseOffering(); off.setMaxStudents(5);
         when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(off);
         when(enrollmentMapper.countAdmittedByOffering(20L)).thenReturn(3); // 空 2
         when(enrollmentMapper.selectWaitlistByOffering(20L)).thenReturn(new ArrayList<>(Arrays.asList(
                 enroll(11L, 201L, 20L), enroll(12L, 202L, 20L), enroll(13L, 203L, 20L))));
+        when(offeringMapper.occupySeat(20L)).thenReturn(1); // 名额充裕
 
         Map<String, Object> r = service.promoteWaitlist(20L);
 
         assertEquals(2, r.get("promoted"), "仅有 2 个空位，递补前 2 名候补");
         verify(enrollmentMapper, times(2)).promoteFromWaitlist(anyLong(), any());
-        verify(cacheManager, times(2)).decrementCapacity(20L);
-        verify(cacheManager).setCapacity(20L, 0); // 5-(3+2)
+        verify(offeringMapper, times(2)).occupySeat(20L);
+    }
+    
+    @Test
+    @DisplayName("候选递补：名额被并发抢走时立即停止，不超额递补")
+    void promoteWaitlist_seatTakenConcurrently_stops() {
+        TpmCourseOffering off = new TpmCourseOffering(); off.setMaxStudents(5);
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(off);
+        when(enrollmentMapper.countAdmittedByOffering(20L)).thenReturn(3); // 内存视图空 2
+        List<TpmSelectionEnrollment> waitlist = new ArrayList<>(Arrays.asList(
+                enroll(11L, 201L, 20L), enroll(12L, 202L, 20L), enroll(13L, 203L, 20L)));
+        when(enrollmentMapper.selectWaitlistByOffering(20L)).thenReturn(waitlist);
+        when(offeringMapper.occupySeat(20L)).thenReturn(1, 0); // 第二个名额已被别人占走
+
+        Map<String, Object> r = service.promoteWaitlist(20L);
+
+        assertEquals(1, r.get("promoted"), "名额抢不到就停，不能把候补拔到容量外");
+        verify(enrollmentMapper, times(1)).promoteFromWaitlist(anyLong(), any());
     }
 
     @Test
@@ -256,14 +348,14 @@ class TpmSelectionEnrollmentServiceImplTest {
         enrolledSched.setOfferingId(10L);
         when(scheduleMapper.selectByOfferingIds(any())).thenReturn(new ArrayList<>(Arrays.asList(enrolledSched)));
         TpmCourseOffering off10 = new TpmCourseOffering(); off10.setCourseId(100L); off10.setMaxStudents(50);
-        TpmCourseOffering off20 = new TpmCourseOffering(); off20.setCourseId(200L); off20.setMaxStudents(50);
+        TpmCourseOffering off20 = new TpmCourseOffering();
+        off20.setCourseId(200L); off20.setMaxStudents(50); off20.setEnrolledCount(0);
         when(offeringMapper.selectTpmCourseOfferingByOfferingId(10L)).thenReturn(off10);
         when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(off20);
         TpmCourseLibrary c100 = new TpmCourseLibrary(); c100.setCourseName("高等数学"); c100.setCredit(3.0);
         TpmCourseLibrary c200 = new TpmCourseLibrary(); c200.setCredit(2.0);
         when(libraryMapper.selectTpmCourseLibraryByCourseId(100L)).thenReturn(c100);
         when(libraryMapper.selectTpmCourseLibraryByCourseId(200L)).thenReturn(c200);
-        when(enrollmentMapper.selectCountByOffering(20L)).thenReturn(0);
         when(ruleService.validate(1L, 101L, 20L)).thenReturn(new ArrayList<>());
 
         List<ConflictWarning> w = service.checkSelectionConflicts(101L, 20L, 1L);
@@ -274,14 +366,14 @@ class TpmSelectionEnrollmentServiceImplTest {
     }
 
     @Test
-    @DisplayName("冲突检测：容量已满报 COURSE_FULL")
+    @DisplayName("冲突检测：容量已满报 COURSE_FULL（读 enrolled_count 真相列）")
     void checkConflicts_courseFull() {
         ReflectionTestUtils.setField(service, "defaultMaxCredits", 30.0);
         when(scheduleMapper.selectTpmScheduleList(any())).thenReturn(new ArrayList<>());
         when(enrollmentMapper.selectByStudentAndRound(101L, 1L)).thenReturn(new ArrayList<>());
-        TpmCourseOffering off20 = new TpmCourseOffering(); off20.setCourseId(200L); off20.setMaxStudents(2);
+        TpmCourseOffering off20 = new TpmCourseOffering();
+        off20.setCourseId(200L); off20.setMaxStudents(2); off20.setEnrolledCount(2);
         when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(off20);
-        when(enrollmentMapper.selectCountByOffering(20L)).thenReturn(2); // 已满
         when(ruleService.validate(1L, 101L, 20L)).thenReturn(new ArrayList<>());
 
         List<ConflictWarning> w = service.checkSelectionConflicts(101L, 20L, 1L);
@@ -290,14 +382,35 @@ class TpmSelectionEnrollmentServiceImplTest {
     }
 
     @Test
+    @DisplayName("冲突检测：落选/候补（result_status=2）不占名额，不能按报名行数判满")
+    void checkConflicts_waitlistedNotCountedAsFull() {
+        ReflectionTestUtils.setField(service, "defaultMaxCredits", 30.0);
+        when(scheduleMapper.selectTpmScheduleList(any())).thenReturn(new ArrayList<>());
+        when(enrollmentMapper.selectByStudentAndRound(101L, 1L)).thenReturn(new ArrayList<>());
+        // 真相列：在册 30 / 上限 60，还剩名额
+        TpmCourseOffering off20 = new TpmCourseOffering();
+        off20.setCourseId(200L); off20.setMaxStudents(60); off20.setEnrolledCount(30);
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(off20);
+        // 报名行里另有 170 条落选/候补：旧口径（result_status != '3'）会数成 200 人而误判已满
+        lenient().when(enrollmentMapper.selectCountByOffering(20L)).thenReturn(200);
+        when(ruleService.validate(1L, 101L, 20L)).thenReturn(new ArrayList<>());
+
+        List<ConflictWarning> w = service.checkSelectionConflicts(101L, 20L, 1L);
+
+        assertTrue(w.stream().noneMatch(x -> "COURSE_FULL".equals(x.getConflictType())),
+                "在册 30 < 上限 60，落选行不得把容量算满");
+        verify(enrollmentMapper, never()).selectCountByOffering(anyLong());
+    }
+
+    @Test
     @DisplayName("冲突检测：选课规则违规转成 RULE_VIOLATION 警告")
     void checkConflicts_ruleViolation() {
         ReflectionTestUtils.setField(service, "defaultMaxCredits", 30.0);
         when(scheduleMapper.selectTpmScheduleList(any())).thenReturn(new ArrayList<>());
         when(enrollmentMapper.selectByStudentAndRound(101L, 1L)).thenReturn(new ArrayList<>());
-        TpmCourseOffering off20 = new TpmCourseOffering(); off20.setCourseId(200L); off20.setMaxStudents(50);
+        TpmCourseOffering off20 = new TpmCourseOffering();
+        off20.setCourseId(200L); off20.setMaxStudents(50); off20.setEnrolledCount(0);
         when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(off20);
-        when(enrollmentMapper.selectCountByOffering(20L)).thenReturn(0);
         when(ruleService.validate(1L, 101L, 20L)).thenReturn(Arrays.asList("未满足先修课程要求"));
 
         List<ConflictWarning> w = service.checkSelectionConflicts(101L, 20L, 1L);
@@ -309,7 +422,7 @@ class TpmSelectionEnrollmentServiceImplTest {
     // ==================== dropCourse ====================
 
     @Test
-    @DisplayName("退课：中签者退课置状态3、回补容量并触发候补递补")
+    @DisplayName("退课：中签者退课置状态3、释放 DB 名额并触发候补递补")
     void dropCourse_admittedTriggersPromote() {
         TpmSelectionEnrollment e = enroll(1L, 101L, 20L);
         e.setLotteryResult("1"); // 中签
@@ -325,7 +438,7 @@ class TpmSelectionEnrollmentServiceImplTest {
 
         assertEquals(200, r.get(AjaxResult.CODE_TAG));
         assertEquals("3", e.getResultStatus());
-        verify(cacheManager).incrementCapacity(20L);
+        verify(offeringMapper).releaseSeat(20L);
         verify(cacheManager).clearStudentCache(101L, 1L);
         // 中签者退课应触发候补递补查询
         verify(enrollmentMapper).countAdmittedByOffering(eq(20L));
@@ -342,5 +455,143 @@ class TpmSelectionEnrollmentServiceImplTest {
 
         assertEquals(500, r.get(AjaxResult.CODE_TAG));
         verify(enrollmentMapper, times(0)).updateTpmSelectionEnrollment(any());
+    }
+
+    // ==================== enrollWithValidation（T-3 名额） ====================
+
+    /** 选课链路公共桩：轮次进行中、无已选课程、无排课、待选课程容量未满 */
+    private void stubCleanEnrollPath(Long offeringId, int maxStudents) {
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(openRound());
+        when(enrollmentMapper.selectByStudentAndRound(101L, 1L)).thenReturn(new ArrayList<>());
+        when(scheduleMapper.selectTpmScheduleList(any())).thenReturn(new ArrayList<>());
+        TpmCourseOffering off = new TpmCourseOffering();
+        off.setMaxStudents(maxStudents);
+        off.setEnrolledCount(0);
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(offeringId)).thenReturn(off);
+        when(ruleService.validate(1L, 101L, offeringId)).thenReturn(new ArrayList<>());
+    }
+
+    @Test
+    @DisplayName("T-3：选课先占 DB 名额再落记录，两步同属一个事务")
+    void enroll_occupiesSeatBeforeInsert() {
+        stubCleanEnrollPath(20L, 50);
+        // 用共享调用序列记录两步的先后：InOrder 会“跳过早先的不匹配调用”，拦不住“先 insert 再占名额”
+        List<String> calls = new ArrayList<>();
+        doAnswer(inv -> { calls.add("occupy"); return 1; }).when(offeringMapper).occupySeat(20L);
+        doAnswer(inv -> { calls.add("insert"); return 1; })
+                .when(enrollmentMapper).insertTpmSelectionEnrollment(any());
+
+        AjaxResult r = service.enrollWithValidation(101L, 20L, 1L, null);
+
+        assertEquals(200, r.get(AjaxResult.CODE_TAG));
+        assertEquals(Arrays.asList("occupy", "insert"), calls,
+                "必须先占到名额再落报名记录，顺序反了会留下无名额的报名行");
+        verify(cacheManager).clearStudentCache(101L, 1L);
+    }
+
+    @Test
+    @DisplayName("T-3：名额占不到且课程存在时判定已满，写超卖埋点且不落记录")
+    void enroll_full_rejected() {
+        stubCleanEnrollPath(20L, 50);
+        when(offeringMapper.occupySeat(20L)).thenReturn(0);
+
+        AjaxResult r = service.enrollWithValidation(101L, 20L, 1L, null);
+
+        assertEquals(500, r.get(AjaxResult.CODE_TAG));
+        assertTrue(String.valueOf(r.get(AjaxResult.MSG_TAG)).contains("课程已满"));
+        verify(bizMetrics).recordOversell();
+        verify(enrollmentMapper, times(0)).insertTpmSelectionEnrollment(any());
+    }
+
+    @Test
+    @DisplayName("T-3：开课不存在/容量未配置时返回课程信息异常，不计超卖")
+    void enroll_offeringMissing_notOversell() {
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(openRound());
+        when(enrollmentMapper.selectByStudentAndRound(101L, 1L)).thenReturn(new ArrayList<>());
+        when(scheduleMapper.selectTpmScheduleList(any())).thenReturn(new ArrayList<>());
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(null);
+        when(ruleService.validate(1L, 101L, 20L)).thenReturn(new ArrayList<>());
+        when(offeringMapper.occupySeat(20L)).thenReturn(0);
+
+        AjaxResult r = service.enrollWithValidation(101L, 20L, 1L, null);
+
+        assertEquals(500, r.get(AjaxResult.CODE_TAG));
+        assertTrue(String.valueOf(r.get(AjaxResult.MSG_TAG)).contains("课程信息异常"));
+        verify(bizMetrics, times(0)).recordOversell();
+    }
+
+    // ==================== swapCourse（T-3 先占后放） ====================
+
+    @Test
+    @DisplayName("T-3：改选先占新名额、后释放旧名额，失败不丢原课")
+    void swapCourse_occupiesNewThenReleasesOld() {
+        TpmSelectionEnrollment e = enroll(1L, 101L, 20L);
+        when(enrollmentMapper.selectTpmSelectionEnrollmentByEnrollId(1L)).thenReturn(e);
+        TpmSelectionRound round = new TpmSelectionRound();
+        round.setRoundId(1L);
+        round.setAllowDropAdjust("1"); // 退改选窗口开放，且未配置起止时间
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(round);
+        when(enrollmentMapper.selectByStudentAndRound(101L, 1L)).thenReturn(new ArrayList<>());
+        when(scheduleMapper.selectTpmScheduleList(any())).thenReturn(new ArrayList<>());
+        TpmCourseOffering off21 = new TpmCourseOffering(); off21.setMaxStudents(50); off21.setEnrolledCount(1);
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(21L)).thenReturn(off21);
+        when(ruleService.validate(1L, 101L, 21L)).thenReturn(new ArrayList<>());
+        when(offeringMapper.occupySeat(21L)).thenReturn(1);
+
+        AjaxResult r = service.swapCourse(1L, 21L);
+
+        assertEquals(200, r.get(AjaxResult.CODE_TAG));
+        assertEquals(21L, e.getCourseOfferingId(), "报名记录必须已改指向目标开课");
+        InOrder io = inOrder(offeringMapper);
+        io.verify(offeringMapper).occupySeat(21L);
+        io.verify(offeringMapper).releaseSeat(20L);
+        verify(cacheManager).clearStudentCache(101L, 1L);
+    }
+
+    @Test
+    @DisplayName("T-3：目标课程已满时改选失败，不释放原课名额")
+    void swapCourse_targetFull_keepsOldSeat() {
+        TpmSelectionEnrollment e = enroll(1L, 101L, 20L);
+        when(enrollmentMapper.selectTpmSelectionEnrollmentByEnrollId(1L)).thenReturn(e);
+        TpmSelectionRound round = new TpmSelectionRound();
+        round.setRoundId(1L);
+        round.setAllowDropAdjust("1");
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(round);
+        when(enrollmentMapper.selectByStudentAndRound(101L, 1L)).thenReturn(new ArrayList<>());
+        when(scheduleMapper.selectTpmScheduleList(any())).thenReturn(new ArrayList<>());
+        TpmCourseOffering off21 = new TpmCourseOffering(); off21.setMaxStudents(50); off21.setEnrolledCount(1);
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(21L)).thenReturn(off21);
+        when(ruleService.validate(1L, 101L, 21L)).thenReturn(new ArrayList<>());
+        when(offeringMapper.occupySeat(21L)).thenReturn(0);
+
+        AjaxResult r = service.swapCourse(1L, 21L);
+
+        assertEquals(500, r.get(AjaxResult.CODE_TAG));
+        assertTrue(String.valueOf(r.get(AjaxResult.MSG_TAG)).contains("目标课程已满"));
+        assertEquals(20L, e.getCourseOfferingId(), "失败时报名记录不得改动");
+        verify(offeringMapper, times(0)).releaseSeat(anyLong());
+        verify(bizMetrics).recordOversell();
+    }
+
+    // ==================== 容量重算 ====================
+
+    @Test
+    @DisplayName("T-3：抽签落库后按报名表重算各开课已占名额")
+    void runLottery_recountsEnrolledSeats() {
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(openRound());
+        when(enrollmentMapper.selectTpmSelectionEnrollmentList(any())).thenReturn(new ArrayList<>(Arrays.asList(
+                enroll(1L, 101L, 20L), enroll(2L, 102L, 20L), enroll(3L, 103L, 21L))));
+        TpmCourseOffering off = new TpmCourseOffering(); off.setMaxStudents(5);
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(off);
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(21L)).thenReturn(off);
+
+        service.runLottery(1L, 999L);
+
+        org.mockito.ArgumentCaptor<List> cap = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(offeringMapper).recountEnrolled(cap.capture());
+        @SuppressWarnings("unchecked")
+        List<Long> offeringIds = (List<Long>) cap.getValue();
+        assertEquals(2, offeringIds.size(), "每门涉及的开课都要重算一次");
+        assertTrue(offeringIds.containsAll(Arrays.asList(20L, 21L)));
     }
 }

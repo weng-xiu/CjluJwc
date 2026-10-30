@@ -60,7 +60,7 @@ public class SamObeAttainmentServiceImpl implements ISamObeAttainmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertRequirement(SamObeGraduationRequirement record)
     {
         record.setCreateTime(DateUtils.getNowDate());
@@ -68,7 +68,7 @@ public class SamObeAttainmentServiceImpl implements ISamObeAttainmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateRequirement(SamObeGraduationRequirement record)
     {
         record.setUpdateTime(DateUtils.getNowDate());
@@ -76,7 +76,7 @@ public class SamObeAttainmentServiceImpl implements ISamObeAttainmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteRequirementByGrIds(Long[] grIds)
     {
         if (grIds == null || grIds.length == 0)
@@ -114,7 +114,7 @@ public class SamObeAttainmentServiceImpl implements ISamObeAttainmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertIndicator(SamObeIndicatorPoint record)
     {
         if (record.getPlanId() == null && record.getGrId() != null)
@@ -130,7 +130,7 @@ public class SamObeAttainmentServiceImpl implements ISamObeAttainmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateIndicator(SamObeIndicatorPoint record)
     {
         record.setUpdateTime(DateUtils.getNowDate());
@@ -138,7 +138,7 @@ public class SamObeAttainmentServiceImpl implements ISamObeAttainmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteIndicatorByIpIds(Long[] ipIds)
     {
         if (ipIds == null || ipIds.length == 0)
@@ -163,7 +163,7 @@ public class SamObeAttainmentServiceImpl implements ISamObeAttainmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertSupport(SamObeCourseSupport record)
     {
         if (record.getPlanId() == null && record.getIpId() != null)
@@ -179,7 +179,7 @@ public class SamObeAttainmentServiceImpl implements ISamObeAttainmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateSupport(SamObeCourseSupport record)
     {
         record.setUpdateTime(DateUtils.getNowDate());
@@ -187,7 +187,7 @@ public class SamObeAttainmentServiceImpl implements ISamObeAttainmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSupportBySupportIds(Long[] supportIds)
     {
         if (supportIds == null || supportIds.length == 0)

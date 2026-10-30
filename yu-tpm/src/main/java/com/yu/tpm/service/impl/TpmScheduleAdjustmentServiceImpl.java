@@ -72,7 +72,7 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
         return tpmScheduleAdjustmentMapper.selectTpmScheduleAdjustmentList(tpmScheduleAdjustment);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertTpmScheduleAdjustment(TpmScheduleAdjustment tpmScheduleAdjustment)
     {
@@ -92,7 +92,7 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
         return rows;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int cancelByApplicant(Long adjustId, String operator)
     {
@@ -119,7 +119,7 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
         return rows;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateTpmScheduleAdjustment(TpmScheduleAdjustment tpmScheduleAdjustment)
     {
@@ -127,21 +127,21 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
         return tpmScheduleAdjustmentMapper.updateTpmScheduleAdjustment(tpmScheduleAdjustment);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmScheduleAdjustmentByAdjustId(Long adjustId)
     {
         return tpmScheduleAdjustmentMapper.deleteTpmScheduleAdjustmentByAdjustId(adjustId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmScheduleAdjustmentByAdjustIds(Long[] adjustIds)
     {
         return tpmScheduleAdjustmentMapper.deleteTpmScheduleAdjustmentByAdjustIds(adjustIds);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public void approve(Long adjustId, String approveComment)
     {
@@ -238,7 +238,7 @@ public class TpmScheduleAdjustmentServiceImpl implements ITpmScheduleAdjustmentS
         completeAdjustTodos(adjustId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public void reject(Long adjustId, String approveComment)
     {

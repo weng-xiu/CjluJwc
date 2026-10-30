@@ -38,7 +38,7 @@ public class SamDegreeConfigServiceImpl implements ISamDegreeConfigService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertSamDegreeConfig(SamDegreeConfig samDegreeConfig)
     {
         samDegreeConfig.setCreateTime(DateUtils.getNowDate());
@@ -56,7 +56,7 @@ public class SamDegreeConfigServiceImpl implements ISamDegreeConfigService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateSamDegreeConfig(SamDegreeConfig samDegreeConfig)
     {
         if ("1".equals(samDegreeConfig.getIsDefault()))
@@ -79,7 +79,7 @@ public class SamDegreeConfigServiceImpl implements ISamDegreeConfigService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamDegreeConfigByConfigIds(Long[] configIds)
     {
         for (Long configId : configIds)
@@ -94,7 +94,7 @@ public class SamDegreeConfigServiceImpl implements ISamDegreeConfigService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int setDefault(Long configId)
     {
         SamDegreeConfig cfg = samDegreeConfigMapper.selectSamDegreeConfigByConfigId(configId);

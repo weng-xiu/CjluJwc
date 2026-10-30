@@ -78,7 +78,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
         return tpmCourseOfferingMapper.selectTpmCourseOfferingListForPortal(tpmCourseOffering);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, allEntries = true)
     @Override
     public int insertTpmCourseOffering(TpmCourseOffering tpmCourseOffering)
@@ -87,7 +87,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
         return tpmCourseOfferingMapper.insertTpmCourseOffering(tpmCourseOffering);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, allEntries = true)
     @Override
     public int updateTpmCourseOffering(TpmCourseOffering tpmCourseOffering)
@@ -113,7 +113,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, allEntries = true)
     @Override
     public int deleteTpmCourseOfferingByOfferingId(Long offeringId)
@@ -122,7 +122,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
         return tpmCourseOfferingMapper.deleteTpmCourseOfferingByOfferingId(offeringId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, allEntries = true)
     @Override
     public int deleteTpmCourseOfferingByOfferingIds(Long[] offeringIds)
@@ -137,7 +137,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
         return tpmCourseOfferingMapper.deleteTpmCourseOfferingByOfferingIds(offeringIds);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, allEntries = true)
     @Override
     public int confirmOffering(Long offeringId)
@@ -149,7 +149,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
         return tpmCourseOfferingMapper.updateTpmCourseOffering(offering);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, allEntries = true)
     @Override
     public int cancelOffering(Long offeringId)
@@ -161,7 +161,7 @@ public class TpmCourseOfferingServiceImpl implements ITpmCourseOfferingService
         return tpmCourseOfferingMapper.updateTpmCourseOffering(offering);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = CacheConfig.CACHE_COURSE_OFFERING, allEntries = true)
     @Override
     public Map<String, Object> batchGenerateOfferings(BatchOfferingRequest request)

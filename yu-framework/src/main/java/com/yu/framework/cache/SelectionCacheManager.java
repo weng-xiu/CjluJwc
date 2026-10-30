@@ -9,7 +9,13 @@ import org.springframework.stereotype.Component;
 
 /**
  * 选课缓存管理器
- * 管理选课轮次信息、课程容量、学生已选课程等缓存
+ * 管理选课轮次信息、学生已选课程等缓存
+ *
+ * <p>T-3：课程容量不再进缓存。容量的唯一真相是 tpm_course_offering.enrolled_count，
+ * 由 DB 条件更新（occupySeat / releaseSeat / recountEnrolled）维护。原先的 sel:capacity:*
+ * 键在“准入改为 DB 条件更新”后已无任何消费方，留在代码里就是会与库不一致的冗余计数，
+ * 因此整组下线（decrementCapacity / incrementCapacity / setCapacity / getCapacity /
+ * clearCapacityCache）。历史键随 TTL 自然过期，无需主动清理。</p>
  *
  * @author ruoyi
  */
@@ -19,9 +25,6 @@ public class SelectionCacheManager
     /** 选课轮次缓存键前缀 */
     private static final String SEL_ROUND_KEY = "sel:round:";
 
-    /** 课程容量缓存键前缀 */
-    private static final String SEL_CAPACITY_KEY = "sel:capacity:";
-
     /** 学生已选课程缓存键前缀 */
     private static final String SEL_STUDENT_KEY = "sel:student:";
 
@@ -30,15 +33,6 @@ public class SelectionCacheManager
 
     /** 学生选课缓存过期时间（30秒） */
     private static final long STUDENT_TTL = 30;
-
-    /**
-     * 课程容量缓存过期时间（2小时）。
-     *
-     * <p>A-10/P-6：容量键原先永不过期——冷启动时现算的余量一旦与库不一致（或进程在 DECR 后、INSERT 前被杀），
-     * 错误值会长期驻留并阻断选课。加 TTL 后最迟到期即失效，下一次选课会走
-     * “capacity==null → 按 DB 计数现算”分支自动对齐；扣减/恢复时刷新 TTL，避免高峰期中途过期。</p>
-     */
-    private static final long CAPACITY_TTL = 2;
 
     @Autowired
     private RedisTemplate<Object, Object> redisTemplate;
@@ -65,70 +59,6 @@ public class SelectionCacheManager
     {
         String key = SEL_ROUND_KEY + roundId;
         redisTemplate.opsForValue().set(key, roundInfo, ROUND_TTL, TimeUnit.MINUTES);
-    }
-
-    /**
-     * 原子扣减容量，返回剩余容量
-     * 使用Redis的DECR命令保证原子性
-     *
-     * @param offeringId 开课ID
-     * @return 剩余容量，小于0表示已满
-     */
-    public Long decrementCapacity(Long offeringId)
-    {
-        String key = SEL_CAPACITY_KEY + offeringId;
-        Long remaining = redisTemplate.opsForValue().decrement(key);
-        // 刷新 TTL：保持活跃课程的缓存不过期，同时保留“不再活跃后自动对齐 DB”的兑底能力
-        redisTemplate.expire(key, CAPACITY_TTL, TimeUnit.HOURS);
-        return remaining;
-    }
-
-    /**
-     * 原子恢复容量（退课时调用）
-     * 使用Redis的INCR命令保证原子性
-     *
-     * @param offeringId 开课ID
-     * @return 恢复后的容量
-     */
-    public Long incrementCapacity(Long offeringId)
-    {
-        String key = SEL_CAPACITY_KEY + offeringId;
-        Long remaining = redisTemplate.opsForValue().increment(key);
-        redisTemplate.expire(key, CAPACITY_TTL, TimeUnit.HOURS);
-        return remaining;
-    }
-
-    /**
-     * 设置课程容量
-     *
-     * @param offeringId 开课ID
-     * @param capacity   容量上限
-     */
-    public void setCapacity(Long offeringId, int capacity)
-    {
-        String key = SEL_CAPACITY_KEY + offeringId;
-        redisTemplate.opsForValue().set(key, capacity, CAPACITY_TTL, TimeUnit.HOURS);
-    }
-
-    /**
-     * 获取课程剩余容量
-     *
-     * @param offeringId 开课ID
-     * @return 剩余容量，不存在则返回null
-     */
-    public Long getCapacity(Long offeringId)
-    {
-        String key = SEL_CAPACITY_KEY + offeringId;
-        Object value = redisTemplate.opsForValue().get(key);
-        if (value == null)
-        {
-            return null;
-        }
-        if (value instanceof Number)
-        {
-            return ((Number) value).longValue();
-        }
-        return Long.parseLong(value.toString());
     }
 
     /**
@@ -187,17 +117,6 @@ public class SelectionCacheManager
     public void clearRoundCache(Long roundId)
     {
         String key = SEL_ROUND_KEY + roundId;
-        redisTemplate.delete(key);
-    }
-
-    /**
-     * 清除课程容量缓存
-     *
-     * @param offeringId 开课ID
-     */
-    public void clearCapacityCache(Long offeringId)
-    {
-        String key = SEL_CAPACITY_KEY + offeringId;
         redisTemplate.delete(key);
     }
 }

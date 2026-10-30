@@ -71,7 +71,7 @@ public class BrmDepartmentServiceImpl implements IBrmDepartmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertBrmDepartment(BrmDepartment dept)
     {
         // 唯一性校验：院系名称不能重复
@@ -94,7 +94,7 @@ public class BrmDepartmentServiceImpl implements IBrmDepartmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateBrmDepartment(BrmDepartment dept)
     {
         // 唯一性校验：院系名称不能重复（排除自身）
@@ -130,7 +130,7 @@ public class BrmDepartmentServiceImpl implements IBrmDepartmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmDepartmentByDeptId(Long deptId)
     {
         BrmMajor query = new BrmMajor();
@@ -144,7 +144,7 @@ public class BrmDepartmentServiceImpl implements IBrmDepartmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmDepartmentByDeptIds(Long[] deptIds)
     {
         for (Long deptId : deptIds)
@@ -173,7 +173,7 @@ public class BrmDepartmentServiceImpl implements IBrmDepartmentService
      * 共享同一 dept_id，零风险。dept_code 由 dept_id 生成。
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int syncFromSysDept()
     {
         brmDepartmentMapper.deleteAllBrmDepartment();
@@ -208,7 +208,7 @@ public class BrmDepartmentServiceImpl implements IBrmDepartmentService
      * 单条 upsert：部门增改时，将对应部门同步到 brm_department
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int upsertFromSysDept(SysDept s)
     {
         BrmDepartment existing = brmDepartmentMapper.selectBrmDepartmentByDeptId(s.getDeptId());
@@ -252,7 +252,7 @@ public class BrmDepartmentServiceImpl implements IBrmDepartmentService
      * 单条删除：部门删除时，同步逻辑删除 brm_department 对应记录
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteByDeptId(Long deptId)
     {
         return brmDepartmentMapper.deleteBrmDepartmentByDeptId(deptId);

@@ -33,7 +33,7 @@ public class TpmCreditStructureServiceImpl implements ITpmCreditStructureService
         return tpmCreditStructureMapper.selectTpmCreditStructureList(tpmCreditStructure);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertTpmCreditStructure(TpmCreditStructure tpmCreditStructure)
     {
@@ -41,7 +41,7 @@ public class TpmCreditStructureServiceImpl implements ITpmCreditStructureService
         return tpmCreditStructureMapper.insertTpmCreditStructure(tpmCreditStructure);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateTpmCreditStructure(TpmCreditStructure tpmCreditStructure)
     {
@@ -49,14 +49,14 @@ public class TpmCreditStructureServiceImpl implements ITpmCreditStructureService
         return tpmCreditStructureMapper.updateTpmCreditStructure(tpmCreditStructure);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmCreditStructureByStructId(Long structId)
     {
         return tpmCreditStructureMapper.deleteTpmCreditStructureByStructId(structId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmCreditStructureByStructIds(Long[] structIds)
     {

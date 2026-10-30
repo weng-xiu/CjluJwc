@@ -74,7 +74,7 @@ public class OaDocumentServiceImpl implements IOaDocumentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertOaDocument(OaDocument oaDocument)
     {
         oaDocument.setCreateTime(DateUtils.getNowDate());
@@ -88,7 +88,7 @@ public class OaDocumentServiceImpl implements IOaDocumentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateOaDocument(OaDocument oaDocument)
     {
         oaDocument.setUpdateTime(DateUtils.getNowDate());
@@ -100,7 +100,7 @@ public class OaDocumentServiceImpl implements IOaDocumentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteOaDocumentByDocumentId(Long documentId)
     {
         oaDocumentAttachMapper.deleteOaDocumentAttachByDocumentId(documentId);
@@ -109,7 +109,7 @@ public class OaDocumentServiceImpl implements IOaDocumentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteOaDocumentByDocumentIds(Long[] documentIds)
     {
         for (Long documentId : documentIds)
@@ -121,7 +121,7 @@ public class OaDocumentServiceImpl implements IOaDocumentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int submitDocument(Long documentId)
     {
         OaDocument document = oaDocumentMapper.selectOaDocumentByDocumentId(documentId);
@@ -178,7 +178,7 @@ public class OaDocumentServiceImpl implements IOaDocumentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int approveDocument(Long documentId, String taskId, String comment)
     {
         String assignee = SecurityUtils.getUsername();
@@ -202,7 +202,7 @@ public class OaDocumentServiceImpl implements IOaDocumentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int rejectDocument(Long documentId, String taskId, String comment)
     {
         String assignee = SecurityUtils.getUsername();
@@ -235,7 +235,7 @@ public class OaDocumentServiceImpl implements IOaDocumentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int cancelDocument(Long documentId)
     {
         OaDocument document = oaDocumentMapper.selectOaDocumentByDocumentId(documentId);

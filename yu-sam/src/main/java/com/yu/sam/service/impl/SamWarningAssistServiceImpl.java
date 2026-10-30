@@ -78,7 +78,7 @@ public class SamWarningAssistServiceImpl implements ISamWarningAssistService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int dispatch(SamWarningAssist assist)
     {
         if (assist.getAssistStatus() == null)
@@ -96,7 +96,7 @@ public class SamWarningAssistServiceImpl implements ISamWarningAssistService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public SamWarningAssist autoDispatch(SamWarning warning, String studentName, String studentNo)
     {
         if (warning == null || warning.getWarningId() == null)
@@ -146,7 +146,7 @@ public class SamWarningAssistServiceImpl implements ISamWarningAssistService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int claim(Long assistId, Long helperUserId, String helperName)
     {
         SamWarningAssist db = assistMapper.selectSamWarningAssistByAssistId(assistId);
@@ -172,7 +172,7 @@ public class SamWarningAssistServiceImpl implements ISamWarningAssistService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int follow(Long assistId, SamWarningAssistRecord record)
     {
         SamWarningAssist db = assistMapper.selectSamWarningAssistByAssistId(assistId);
@@ -207,7 +207,7 @@ public class SamWarningAssistServiceImpl implements ISamWarningAssistService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int finish(Long assistId, String finishRemark, boolean resolveWarning)
     {
         SamWarningAssist db = assistMapper.selectSamWarningAssistByAssistId(assistId);
@@ -239,7 +239,7 @@ public class SamWarningAssistServiceImpl implements ISamWarningAssistService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int closeAssist(Long assistId, String finishRemark)
     {
         SamWarningAssist db = assistMapper.selectSamWarningAssistByAssistId(assistId);
@@ -259,7 +259,7 @@ public class SamWarningAssistServiceImpl implements ISamWarningAssistService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamWarningAssistByAssistIds(Long[] assistIds)
     {
         recordMapper.deleteByAssistIds(assistIds);

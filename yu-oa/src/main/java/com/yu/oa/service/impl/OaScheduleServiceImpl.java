@@ -63,7 +63,7 @@ public class OaScheduleServiceImpl implements IOaScheduleService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertOaSchedule(OaSchedule oaSchedule)
     {
         oaSchedule.setCreateTime(DateUtils.getNowDate());
@@ -81,7 +81,7 @@ public class OaScheduleServiceImpl implements IOaScheduleService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateOaSchedule(OaSchedule oaSchedule)
     {
         oaSchedule.setUpdateTime(DateUtils.getNowDate());
@@ -97,7 +97,7 @@ public class OaScheduleServiceImpl implements IOaScheduleService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteOaScheduleByScheduleIds(Long[] scheduleIds)
     {
         for (Long scheduleId : scheduleIds)
@@ -114,7 +114,7 @@ public class OaScheduleServiceImpl implements IOaScheduleService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteOaScheduleByScheduleId(Long scheduleId)
     {
         oaScheduleShareMapper.deleteOaScheduleShareByScheduleId(scheduleId);

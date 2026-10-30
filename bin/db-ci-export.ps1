@@ -115,7 +115,9 @@ $patterns = @{
     "身份证" = '(?<!\d)\d{17}[\dXx](?!\d)'
 }
 # 白名单（合成/机构公开值，非个人信息）：RuoYi 演示号、号段式合成号、学校机构域名邮箱
-$allow = @('^15888888888$', '^1380000\d{4}$', '@cjlu\.edu\.cn$', '@163\.com$')
+# V5.23 S-10：合成身份证号段 99010119900101xxxx 与合成手机号段 1380000xxxx 与
+# sql/desensitize-test-data.sql 的改写公式一致，仓库级门禁见 bin/pii-scan.js
+$allow = @('^15888888888$', '^1380000\d{4}$', '^99010119900101\d{4}$', '@cjlu\.edu\.cn$', '@163\.com$')
 $hits = @()
 foreach ($f in @($schemaOut, $metaOut, (Join-Path $OutDir "03-anchors.sql"))) {
     if (-not (Test-Path $f)) { continue }

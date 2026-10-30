@@ -39,7 +39,7 @@ public class PortalColumnServiceImpl implements IPortalColumnService
         return portalColumnMapper.selectPortalColumnByCode(columnCode);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertPortalColumn(PortalColumn portalColumn)
     {
@@ -47,7 +47,7 @@ public class PortalColumnServiceImpl implements IPortalColumnService
         return portalColumnMapper.insertPortalColumn(portalColumn);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updatePortalColumn(PortalColumn portalColumn)
     {
@@ -55,7 +55,7 @@ public class PortalColumnServiceImpl implements IPortalColumnService
         return portalColumnMapper.updatePortalColumn(portalColumn);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deletePortalColumnByIds(Long[] columnIds)
     {

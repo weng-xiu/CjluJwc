@@ -56,7 +56,7 @@ public class TpmSelectionRuleServiceImpl implements ITpmSelectionRuleService
         return tpmSelectionRuleMapper.selectTpmSelectionRuleList(tpmSelectionRule);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertTpmSelectionRule(TpmSelectionRule tpmSelectionRule)
     {
@@ -64,7 +64,7 @@ public class TpmSelectionRuleServiceImpl implements ITpmSelectionRuleService
         return tpmSelectionRuleMapper.insertTpmSelectionRule(tpmSelectionRule);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateTpmSelectionRule(TpmSelectionRule tpmSelectionRule)
     {
@@ -72,14 +72,14 @@ public class TpmSelectionRuleServiceImpl implements ITpmSelectionRuleService
         return tpmSelectionRuleMapper.updateTpmSelectionRule(tpmSelectionRule);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmSelectionRuleByRuleId(Long ruleId)
     {
         return tpmSelectionRuleMapper.deleteTpmSelectionRuleByRuleId(ruleId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmSelectionRuleByRuleIds(Long[] ruleIds)
     {
@@ -147,7 +147,8 @@ public class TpmSelectionRuleServiceImpl implements ITpmSelectionRuleService
                 try
                 {
                     int limit = Integer.parseInt(restrictValue);
-                    int enrolled = tpmSelectionEnrollmentMapper.selectCountByOffering(courseOfferingId);
+                    // T-3：只数在册（result_status='1'）。报名行 != '3' 口径含落选/候补，会把名额算满
+                    int enrolled = tpmSelectionEnrollmentMapper.countEnrolledByOffering(courseOfferingId);
                     if (enrolled >= limit)
                     {
                         violations.add(rule.getRuleName() + "：该课程规则容量已满（上限" + limit + "人）");

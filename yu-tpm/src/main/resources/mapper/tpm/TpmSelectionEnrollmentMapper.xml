@@ -106,6 +106,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </trim>
         where enroll_id = #{enrollId}
     </update>
+    <!-- P-3：抽签结果批量落库。抽签是轮次级全量重算，逐行 update 在万级记录下要发 N 次 DB 往返；
+         改为单条语句同时更新三列（CASE enroll_id WHEN ... END）+ Service 侧按块切片，
+         仍处于同一事务（不得拆成多段独立提交，否则中途失败会留下“部分中签、部分未抽签”的半成品）。
+         注意：waitlist_rank 对中签者为 NULL，必须显式 jdbcType，否则 MyBatis 对 null 参数会报错。 -->
+    <update id="batchUpdateLotteryResult">
+        update tpm_selection_enrollment
+        set lottery_result = <foreach item="item" collection="list" open="case enroll_id" close="end"> when #{item.enrollId} then #{item.lotteryResult} </foreach>,
+            result_status = <foreach item="item" collection="list" open="case enroll_id" close="end"> when #{item.enrollId} then #{item.resultStatus} </foreach>,
+            waitlist_rank = <foreach item="item" collection="list" open="case enroll_id" close="end"> when #{item.enrollId} then #{item.waitlistRank,jdbcType=BIGINT} </foreach>,
+            update_time = #{updateTime}
+        where enroll_id in
+        <foreach item="item" collection="list" open="(" separator="," close=")">#{item.enrollId}</foreach>
+    </update>
     <update id="deleteTpmSelectionEnrollmentByEnrollId" parameterType="Long">
         update tpm_selection_enrollment set del_flag = '2' where enroll_id = #{enrollId}
     </update>
@@ -113,17 +126,28 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         update tpm_selection_enrollment set del_flag = '2' where enroll_id in
         <foreach item="enrollId" collection="array" open="(" separator="," close=")">#{enrollId}</foreach>
     </update>
+    <!-- 报名行计数（含落选/候补，result_status != '3'）。仅供“是否已有报名记录/删除前校验”使用；
+         容量判定必须用下面的 countAdmittedByOffering，否则候补会把名额算满。 -->
     <select id="selectCountByOffering" resultType="int">
         select count(1) from tpm_selection_enrollment
         where course_offering_id = #{courseOfferingId}
         and result_status != '3'
         and del_flag = '0'
     </select>
+    <!-- T-3：在册人数（result_status = '1'），与 tpm_course_offering.enrolled_count 同口径。
+         注意与下方 T6 的 countAdmittedByOffering 区分：后者只数抽签中签（lottery_result='1'）。 -->
+    <select id="countEnrolledByOffering" resultType="int">
+        select count(1) from tpm_selection_enrollment
+        where course_offering_id = #{courseOfferingId}
+        and result_status = '1'
+        and del_flag = '0'
+    </select>
+    <!-- 学生在某轮次的“已选（在册）”记录：落选/候补（result_status='2'）不占门数、不参与时间/学分冲突检测 -->
     <select id="selectByStudentAndRound" resultMap="TpmSelectionEnrollmentResult">
         <include refid="selectTpmSelectionEnrollmentVo"/>
         where e.student_id = #{studentId}
         and e.round_id = #{roundId}
-        and e.result_status != '3'
+        and e.result_status = '1'
         and e.del_flag = '0'
     </select>
     <select id="countCompletedCourses" resultType="int">

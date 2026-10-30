@@ -79,16 +79,18 @@ class SensitiveDesensitizationTest
     void serialize_masksPhone_forNonAdmin()
     {
         login(2L);
-        String json = JsonMapper.builder().build().writeValueAsString(new Contact("13812345678"));
-        assertTrue(json.contains("138****5678"), "普通用户手机号应脱敏, 实际=" + json);
+        // V5.23 S-10：测试手机号改用仓内合成号段 1380000xxxx（同 sql/desensitize-test-data.sql），
+        // 避免形如真实号码的字面量被 PII 门禁拦下
+        String json = JsonMapper.builder().build().writeValueAsString(new Contact("13800001234"));
+        assertTrue(json.contains("138****1234"), "普通用户手机号应脱敏, 实际=" + json);
     }
 
     @Test
     void serialize_keepsRaw_forAdmin()
     {
         login(1L);
-        String json = JsonMapper.builder().build().writeValueAsString(new Contact("13812345678"));
-        assertTrue(json.contains("13812345678"), "管理员手机号应保留明文, 实际=" + json);
+        String json = JsonMapper.builder().build().writeValueAsString(new Contact("13800001234"));
+        assertTrue(json.contains("13800001234"), "管理员手机号应保留明文, 实际=" + json);
     }
 
     @Test

@@ -167,6 +167,18 @@ jobs:
         shell: pwsh
         run: ./bin/db-menu-check.ps1 -IgnoreLegacy
 
+      # V5.23 S-10：PII 仓库门禁（缺陷报告 S-10：种子文件曾含 821 个身份证号 / 36 个手机号，
+      # 其中 78 个身份证校验位合法）。规则见 bin/pii-scan.js 头注释：只拦校验位合法的身份证
+      # 与非合成号段手机号，合成号段 99010119900101xxxx / 1380000xxxx 豁免。
+      - name: Scan tracked files for PII (ID card / mobile)
+        run: node bin/pii-scan.js
+
+      # V5.24 T-2：事务回滚语义门禁。Spring 默认只对 RuntimeException/Error 回滚，
+      # 受检异常会提交——V5.24 前全仓 422 处 @Transactional 有 404 处没声明 rollbackFor，
+      # 这是「校验失败但已落库」孤儿行的根因。只读方法用 readOnly = true 豁免。
+      - name: Check @Transactional rollback semantics
+        run: node bin/tx-scan.js
+
   build-images:
     # Q2 部署阶段：三门禁全绿后构建后端/管理端/门户三镜像；main 推送时打 sha + latest 双标签并推 GHCR，
     # PR 仅跑一次 docker build 验证 Dockerfile 可构建（push=false，不登录不推送），提前暴露镜像层回归。

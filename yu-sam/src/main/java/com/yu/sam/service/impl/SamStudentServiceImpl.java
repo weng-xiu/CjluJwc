@@ -75,7 +75,7 @@ public class SamStudentServiceImpl implements ISamStudentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertSamStudent(SamStudent samStudent)
     {
         // 唯一性校验：学号不能重复
@@ -91,7 +91,7 @@ public class SamStudentServiceImpl implements ISamStudentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateSamStudent(SamStudent samStudent)
     {
         // 状态校验：已毕业的学生不允许修改学籍信息
@@ -113,7 +113,7 @@ public class SamStudentServiceImpl implements ISamStudentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamStudentByStudentId(Long studentId)
     {
         if (samStudentMapper.checkStudentHasGradeRecord(studentId) > 0)
@@ -138,7 +138,7 @@ public class SamStudentServiceImpl implements ISamStudentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamStudentByStudentIds(Long[] studentIds)
     {
         for (Long studentId : studentIds)
@@ -168,7 +168,7 @@ public class SamStudentServiceImpl implements ISamStudentService
     /**
      * P7：批量导入学籍，逐行校验（学号/姓名必填、专业/院系/班级存在、身份证唯一、学号唯一）并生成校验报告。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public String importStudent(List<SamStudent> studentList, String operName, boolean updateSupport)
     {

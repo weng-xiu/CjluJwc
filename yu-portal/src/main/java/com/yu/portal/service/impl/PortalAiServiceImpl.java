@@ -93,7 +93,7 @@ public class PortalAiServiceImpl implements IPortalAiService
         Map<String, Object> plan = portalAiMapper.selectPublishedPlan(num(profile, "majorId") == null
                 ? null : num(profile, "majorId").longValue());
 
-        // 已选清单（退课记录不计入），门数与学分同时用于余量计算
+        // 已选清单（在册 result_status='1'，落选/候补与退课均不计入），门数与学分同时用于余量计算
         List<TpmSelectionEnrollment> selected = listSelected(studentId, round.getRoundId());
         Set<Long> selectedOfferingIds = new LinkedHashSet<>();
         double selectedCredit = 0d;
@@ -710,7 +710,13 @@ public class PortalAiServiceImpl implements IPortalAiService
         return rounds.get(0);
     }
 
-    /** 本人在该轮次的有效选课（排除退课） */
+    /**
+     * 本人在该轮次的在册选课（result_status='1'）。
+     *
+     * <p>V5.27：旧实现用 {@code !"3".equals(...)} 排除退课，但这会把**落选/候补**（result_status='2'，
+     * waitlist_rank 非空）也当成已选 —— 学生抽签落选后打开门户，已选清单里出现了没选上的课，
+     * 门数与学分余量也被这些课占掉，于是被告知“已达门数上限，请先退课”。在册口径只认 '1'。</p>
+     */
     private List<TpmSelectionEnrollment> listSelected(Long studentId, Long roundId)
     {
         TpmSelectionEnrollment query = new TpmSelectionEnrollment();
@@ -722,7 +728,7 @@ public class PortalAiServiceImpl implements IPortalAiService
         {
             for (TpmSelectionEnrollment e : list)
             {
-                if (!"3".equals(e.getResultStatus()))
+                if ("1".equals(e.getResultStatus()))
                 {
                     valid.add(e);
                 }

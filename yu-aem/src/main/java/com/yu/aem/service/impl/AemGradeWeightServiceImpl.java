@@ -39,7 +39,7 @@ public class AemGradeWeightServiceImpl implements IAemGradeWeightService
         return aemGradeWeightMapper.selectAemGradeWeightList(aemGradeWeight);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertAemGradeWeight(AemGradeWeight aemGradeWeight)
     {
@@ -48,7 +48,7 @@ public class AemGradeWeightServiceImpl implements IAemGradeWeightService
         return aemGradeWeightMapper.insertAemGradeWeight(aemGradeWeight);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateAemGradeWeight(AemGradeWeight aemGradeWeight)
     {
@@ -57,7 +57,7 @@ public class AemGradeWeightServiceImpl implements IAemGradeWeightService
         return aemGradeWeightMapper.updateAemGradeWeight(aemGradeWeight);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteAemGradeWeightByWeightIds(Long[] weightIds)
     {

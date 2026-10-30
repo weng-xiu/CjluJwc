@@ -33,7 +33,7 @@ public class DisInterfaceConfigServiceImpl implements IDisInterfaceConfigService
         return disInterfaceConfigMapper.selectDisInterfaceConfigList(disInterfaceConfig);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertDisInterfaceConfig(DisInterfaceConfig disInterfaceConfig)
     {
@@ -41,7 +41,7 @@ public class DisInterfaceConfigServiceImpl implements IDisInterfaceConfigService
         return disInterfaceConfigMapper.insertDisInterfaceConfig(disInterfaceConfig);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateDisInterfaceConfig(DisInterfaceConfig disInterfaceConfig)
     {
@@ -49,14 +49,14 @@ public class DisInterfaceConfigServiceImpl implements IDisInterfaceConfigService
         return disInterfaceConfigMapper.updateDisInterfaceConfig(disInterfaceConfig);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteDisInterfaceConfigByInterfaceId(Long interfaceId)
     {
         return disInterfaceConfigMapper.deleteDisInterfaceConfigByInterfaceId(interfaceId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteDisInterfaceConfigByInterfaceIds(Long[] interfaceIds)
     {

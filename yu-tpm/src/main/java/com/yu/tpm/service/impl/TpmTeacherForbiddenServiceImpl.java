@@ -34,7 +34,7 @@ public class TpmTeacherForbiddenServiceImpl implements ITpmTeacherForbiddenServi
         return tpmTeacherForbiddenMapper.selectTpmTeacherForbiddenList(tpmTeacherForbidden);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertTpmTeacherForbidden(TpmTeacherForbidden tpmTeacherForbidden)
     {
@@ -47,7 +47,7 @@ public class TpmTeacherForbiddenServiceImpl implements ITpmTeacherForbiddenServi
         return tpmTeacherForbiddenMapper.insertTpmTeacherForbidden(tpmTeacherForbidden);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateTpmTeacherForbidden(TpmTeacherForbidden tpmTeacherForbidden)
     {
@@ -56,14 +56,14 @@ public class TpmTeacherForbiddenServiceImpl implements ITpmTeacherForbiddenServi
         return tpmTeacherForbiddenMapper.updateTpmTeacherForbidden(tpmTeacherForbidden);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmTeacherForbiddenByForbiddenId(Long forbiddenId)
     {
         return tpmTeacherForbiddenMapper.deleteTpmTeacherForbiddenByForbiddenId(forbiddenId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmTeacherForbiddenByForbiddenIds(Long[] forbiddenIds)
     {

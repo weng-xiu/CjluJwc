@@ -50,7 +50,7 @@ public class DisSourcePriorityServiceImpl implements IDisSourcePriorityService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertDisSourcePriority(DisSourcePriority disSourcePriority)
     {
         disSourcePriority.setCreateTime(DateUtils.getNowDate());
@@ -60,7 +60,7 @@ public class DisSourcePriorityServiceImpl implements IDisSourcePriorityService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateDisSourcePriority(DisSourcePriority disSourcePriority)
     {
         disSourcePriority.setUpdateTime(DateUtils.getNowDate());
@@ -70,7 +70,7 @@ public class DisSourcePriorityServiceImpl implements IDisSourcePriorityService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteDisSourcePriorityByPriorityIds(Long[] priorityIds)
     {
         int rows = disSourcePriorityMapper.deleteDisSourcePriorityByPriorityIds(priorityIds);

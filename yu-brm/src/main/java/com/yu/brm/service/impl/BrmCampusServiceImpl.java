@@ -40,7 +40,7 @@ public class BrmCampusServiceImpl implements IBrmCampusService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertBrmCampus(BrmCampus brmCampus)
     {
         // 唯一性校验：校区名称不能重复
@@ -56,7 +56,7 @@ public class BrmCampusServiceImpl implements IBrmCampusService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateBrmCampus(BrmCampus brmCampus)
     {
         // 唯一性校验：校区名称不能重复（排除自身）
@@ -78,7 +78,7 @@ public class BrmCampusServiceImpl implements IBrmCampusService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmCampusByCampusId(Long campusId)
     {
         BrmBuilding query = new BrmBuilding();
@@ -92,7 +92,7 @@ public class BrmCampusServiceImpl implements IBrmCampusService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmCampusByCampusIds(Long[] campusIds)
     {
         for (Long campusId : campusIds)

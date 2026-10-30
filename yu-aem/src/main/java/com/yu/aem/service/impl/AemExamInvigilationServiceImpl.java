@@ -73,7 +73,7 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertAemExamInvigilation(AemExamInvigilation aemExamInvigilation)
     {
         aemExamInvigilation.setCreateTime(DateUtils.getNowDate());
@@ -81,7 +81,7 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateAemExamInvigilation(AemExamInvigilation aemExamInvigilation)
     {
         aemExamInvigilation.setUpdateTime(DateUtils.getNowDate());
@@ -89,14 +89,14 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemExamInvigilationByInvigilationId(Long invigilationId)
     {
         return aemExamInvigilationMapper.deleteAemExamInvigilationByInvigilationId(invigilationId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemExamInvigilationByInvigilationIds(Long[] invigilationIds)
     {
         return aemExamInvigilationMapper.deleteAemExamInvigilationByInvigilationIds(invigilationIds);
@@ -111,7 +111,7 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
      * 4. 回避同一教师在同一时间的冲突
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> autoDispatchInvigilators(Long examId)
     {
         Map<String, Object> result = new HashMap<>();
@@ -290,7 +290,7 @@ public class AemExamInvigilationServiceImpl implements IAemExamInvigilationServi
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int importInvigilation(List<AemExamInvigilation> list, String operator)
     {
         if (list == null || list.isEmpty())

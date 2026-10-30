@@ -61,7 +61,7 @@ public class SamRegistrationServiceImpl implements ISamRegistrationService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int initRegistration(Long semesterId, String operator)
     {
         Long sid = semesterId != null ? semesterId : samRegistrationMapper.selectCurrentSemesterId();
@@ -73,7 +73,7 @@ public class SamRegistrationServiceImpl implements ISamRegistrationService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int batchRegister(Long[] registrationIds, String status, String deferReason, String operator)
     {
         if (registrationIds == null || registrationIds.length == 0)

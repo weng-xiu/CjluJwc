@@ -36,7 +36,7 @@ public class AemSupervisionRecordServiceImpl implements IAemSupervisionRecordSer
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertAemSupervisionRecord(AemSupervisionRecord aemSupervisionRecord)
     {
         aemSupervisionRecord.setCreateTime(DateUtils.getNowDate());
@@ -44,7 +44,7 @@ public class AemSupervisionRecordServiceImpl implements IAemSupervisionRecordSer
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateAemSupervisionRecord(AemSupervisionRecord aemSupervisionRecord)
     {
         aemSupervisionRecord.setUpdateTime(DateUtils.getNowDate());
@@ -52,14 +52,14 @@ public class AemSupervisionRecordServiceImpl implements IAemSupervisionRecordSer
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemSupervisionRecordByRecordId(Long recordId)
     {
         return aemSupervisionRecordMapper.deleteAemSupervisionRecordByRecordId(recordId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemSupervisionRecordByRecordIds(Long[] recordIds)
     {
         return aemSupervisionRecordMapper.deleteAemSupervisionRecordByRecordIds(recordIds);

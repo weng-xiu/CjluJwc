@@ -34,7 +34,7 @@ public class BrmEquipmentServiceImpl implements IBrmEquipmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertBrmEquipment(BrmEquipment brmEquipment)
     {
         brmEquipment.setCreateTime(DateUtils.getNowDate());
@@ -42,7 +42,7 @@ public class BrmEquipmentServiceImpl implements IBrmEquipmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateBrmEquipment(BrmEquipment brmEquipment)
     {
         brmEquipment.setUpdateTime(DateUtils.getNowDate());
@@ -50,14 +50,14 @@ public class BrmEquipmentServiceImpl implements IBrmEquipmentService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmEquipmentByEquipId(Long equipId)
     {
         return brmEquipmentMapper.deleteBrmEquipmentByEquipId(equipId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmEquipmentByEquipIds(Long[] equipIds)
     {
         return brmEquipmentMapper.deleteBrmEquipmentByEquipIds(equipIds);

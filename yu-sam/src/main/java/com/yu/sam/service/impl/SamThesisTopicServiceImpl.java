@@ -52,7 +52,7 @@ public class SamThesisTopicServiceImpl implements ISamThesisTopicService
      * 新增题目：教师自助申报进入待审核，管理员/教务新增直接可用。
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertSamThesisTopic(SamThesisTopic samThesisTopic)
     {
         samThesisTopic.setTopicId(null);
@@ -77,7 +77,7 @@ public class SamThesisTopicServiceImpl implements ISamThesisTopicService
      * 修改题目：已被选用的题目不允许改小容量到已选人数以下。
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateSamThesisTopic(SamThesisTopic samThesisTopic)
     {
         SamThesisTopic exist = samThesisTopicMapper.selectSamThesisTopicByTopicId(samThesisTopic.getTopicId());
@@ -98,7 +98,7 @@ public class SamThesisTopicServiceImpl implements ISamThesisTopicService
      * 删除题目：已被选用的题目禁止删除，避免论文档案失去来源。
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamThesisTopicByTopicIds(Long[] topicIds)
     {
         if (topicIds == null || topicIds.length == 0)
@@ -118,7 +118,7 @@ public class SamThesisTopicServiceImpl implements ISamThesisTopicService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int auditTopic(Long topicId, boolean pass, String opinion, String operator)
     {
         SamThesisTopic exist = samThesisTopicMapper.selectSamThesisTopicByTopicId(topicId);
@@ -142,7 +142,7 @@ public class SamThesisTopicServiceImpl implements ISamThesisTopicService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int changeStatus(Long topicId, String status, String operator)
     {
         SamThesisTopic exist = samThesisTopicMapper.selectSamThesisTopicByTopicId(topicId);

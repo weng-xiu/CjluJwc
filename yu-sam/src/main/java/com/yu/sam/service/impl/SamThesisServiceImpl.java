@@ -122,7 +122,7 @@ public class SamThesisServiceImpl implements ISamThesisService
      * 管理员代建论文档案（允许自拟题目，不走选题库名额时也保留题目快照）。
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertSamThesis(SamThesis samThesis)
     {
         if (samThesis.getStudentId() == null || StringUtils.isEmpty(samThesis.getPlanYear()))
@@ -168,7 +168,7 @@ public class SamThesisServiceImpl implements ISamThesisService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateSamThesis(SamThesis samThesis)
     {
         SamThesis exist = samThesisMapper.selectSamThesisByThesisId(samThesis.getThesisId());
@@ -181,7 +181,7 @@ public class SamThesisServiceImpl implements ISamThesisService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamThesisByThesisIds(Long[] thesisIds)
     {
         if (thesisIds == null || thesisIds.length == 0)
@@ -204,7 +204,7 @@ public class SamThesisServiceImpl implements ISamThesisService
      * 学生选题：题目须处于可选题状态且名额未满，成功后进入开题环节。
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public SamThesis chooseTopic(Long studentId, Long topicId, String operator)
     {
         SamStudent student = samStudentMapper.selectSamStudentByStudentId(studentId);
@@ -259,7 +259,7 @@ public class SamThesisServiceImpl implements ISamThesisService
      * 学生提交环节材料，提交后进入待审核状态并给指导教师推送待办。
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int submitStage(Long thesisId, String stage, String title, String content, String attachment, String operator)
     {
         SamThesis thesis = requireThesis(thesisId);
@@ -296,7 +296,7 @@ public class SamThesisServiceImpl implements ISamThesisService
      * 环节审核：通过推进到下一环节，不通过置为已退回并由学生重新提交。
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int auditStage(Long thesisId, String stage, boolean pass, Double score, String opinion, String operator)
     {
         SamThesis thesis = requireThesis(thesisId);
@@ -345,7 +345,7 @@ public class SamThesisServiceImpl implements ISamThesisService
      * 查重登记：重复率不高于阈值判达标并进入答辩环节，否则退回修改。
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int recordCheck(Long thesisId, Double checkRate, String attachment, String opinion, String operator)
     {
         SamThesis thesis = requireThesis(thesisId);
@@ -382,7 +382,7 @@ public class SamThesisServiceImpl implements ISamThesisService
      * 成绩归档：折算等级并给出合格结论（总评≥60 且查重达标），供学位审核论文分项使用。
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int archiveGrade(Long thesisId, Double totalScore, Double defenseScore, String opinion, String operator)
     {
         SamThesis thesis = requireThesis(thesisId);
@@ -428,7 +428,7 @@ public class SamThesisServiceImpl implements ISamThesisService
      * 抽检状态维护：回填抽检不合格时同步撤回合格结论。
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int markSample(Long thesisId, String sampleStatus, String opinion, String operator)
     {
         SamThesis thesis = requireThesis(thesisId);

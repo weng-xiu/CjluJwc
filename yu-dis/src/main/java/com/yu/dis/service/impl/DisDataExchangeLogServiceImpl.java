@@ -32,28 +32,28 @@ public class DisDataExchangeLogServiceImpl implements IDisDataExchangeLogService
         return disDataExchangeLogMapper.selectDisDataExchangeLogList(disDataExchangeLog);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertDisDataExchangeLog(DisDataExchangeLog disDataExchangeLog)
     {
         return disDataExchangeLogMapper.insertDisDataExchangeLog(disDataExchangeLog);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteDisDataExchangeLogByLogId(Long logId)
     {
         return disDataExchangeLogMapper.deleteDisDataExchangeLogByLogId(logId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteDisDataExchangeLogByLogIds(Long[] logIds)
     {
         return disDataExchangeLogMapper.deleteDisDataExchangeLogByLogIds(logIds);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int cleanDisDataExchangeLog()
     {

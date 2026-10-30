@@ -2,13 +2,16 @@ package com.yu.framework.web.service;
 
 import java.security.SecureRandom;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import jakarta.annotation.PostConstruct;
 import com.yu.common.constant.CacheConstants;
@@ -44,9 +47,13 @@ public class TokenService
     @Value("${token.secret}")
     private String secret;
 
-    // 令牌有效期（默认30分钟）
+    // 令牌滑动有效期（默认30分钟）：Redis TTL，空闲超过该时长即过期
     @Value("${token.expireTime}")
     private int expireTime;
+
+    // 令牌绝对有效期（默认720分钟=12小时，S-4）：JWT exp 上限，滑动续期不得越过该窗口
+    @Value("${token.maxLifetime:720}")
+    private int maxLifetime;
 
     protected static final long MILLIS_SECOND = 1000;
 
@@ -56,6 +63,12 @@ public class TokenService
 
     @Autowired
     private RedisCache redisCache;
+
+    @Autowired
+    private Environment environment;
+
+    /** 允许缺省 token.secret 的 profile：仅本地/测试，其余（prod 等）启动即失败，见 {@link #init()}。 */
+    private static final Set<String> SECRET_OPTIONAL_PROFILES = Set.of("dev", "it", "test");
 
     /**
      * K3 jjwt 升级：由配置密钥派生的 HMAC 签名密钥。
@@ -76,9 +89,21 @@ public class TokenService
     {
         if (StringUtils.isEmpty(secret))
         {
+            // S-4：非本地/测试 profile 直接 fail-fast。随机密钥在多实例间不一致，会让请求漂移到
+            // 另一实例时 401，且重启即全体失效——这类故障放到启动期暴露，比上线后随机 401 便宜得多。
+            if (!isSecretOptionalProfile())
+            {
+                throw new IllegalStateException("未配置 token.secret（TOKEN_SECRET 环境变量）。"
+                        + "当前 profile 不允许使用一次性随机密钥，请显式注入 TOKEN_SECRET（建议 openssl rand -base64 64）。");
+            }
             secret = generateRandomSecret();
             log.warn("未检测到 token.secret（TOKEN_SECRET 环境变量），已生成一次性随机密钥用于本地运行。"
-                    + "生产/多实例部署请务必设置 TOKEN_SECRET，否则重启将使全部令牌失效。");
+                    + "生产/多实例部署请务必设置 TOKEN_SECRET，否则重启将使全部令牌失效、多实例无法互验。");
+        }
+        else if (secret.length() < 32)
+        {
+            log.warn("token.secret 长度不足 32 字符（当前 {} 个字符），建议使用 openssl rand -base64 64 生成强随机密钥。",
+                    secret.length());
         }
         // K3：派生固定长度的 HMAC 签名密钥（SHA-512 摘要 → 64 字节 → HS512）
         try
@@ -91,6 +116,24 @@ public class TokenService
         {
             throw new IllegalStateException("SHA-512 不可用，无法初始化令牌签名密钥", e);
         }
+    }
+
+    /** 当前 profile 是否属于允许缺省密钥的本地/测试环境（无激活 profile 时按本地处理）。 */
+    private boolean isSecretOptionalProfile()
+    {
+        String[] profiles = environment == null ? new String[0] : environment.getActiveProfiles();
+        if (profiles.length == 0)
+        {
+            return true;
+        }
+        for (String profile : profiles)
+        {
+            if (SECRET_OPTIONAL_PROFILES.contains(profile))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** 生成 64 字节（HS512 建议 >= 64 字节）安全随机密钥，Base64 编码。 */
@@ -170,7 +213,9 @@ public class TokenService
         Map<String, Object> claims = new HashMap<>();
         claims.put(Constants.LOGIN_USER_KEY, token);
         claims.put(Constants.JWT_USERNAME, loginUser.getUsername());
-        return createToken(claims);
+        // S-4：显式写入 exp。Redis TTL 仍是逐请求的滑动有效期，exp 只做绝对上限——
+        // 即使 Redis 中的会话被续期，令牌也不可能无限期有效；续期不会越过该窗口。
+        return createToken(claims, new Date(System.currentTimeMillis() + maxLifetime * MILLIS_MINUTE));
     }
 
     /**
@@ -226,14 +271,16 @@ public class TokenService
     /**
      * 从数据声明生成令牌
      *
-     * @param claims 数据声明
+     * @param claims     数据声明
+     * @param expiration 过期时间（写入 exp 声明）
      * @return 令牌
      */
-    private String createToken(Map<String, Object> claims)
+    String createToken(Map<String, Object> claims, Date expiration)
     {
         // K3 jjwt 0.11.x：signWith(SecretKey) 由密钥长度自动选定 HS512
         return Jwts.builder()
                 .setClaims(claims)
+                .setExpiration(expiration)
                 .signWith(signKey).compact();
     }
 

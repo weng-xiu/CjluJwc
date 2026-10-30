@@ -82,7 +82,7 @@ public class BrmBorrowFlowServiceImpl implements IBrmBorrowFlowService
     private String aaApproverConfig;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public BrmClassroomBorrow submit(Long borrowId)
     {
         BrmClassroomBorrow borrow = brmClassroomBorrowService.selectBrmClassroomBorrowByBorrowId(borrowId);
@@ -141,7 +141,7 @@ public class BrmBorrowFlowServiceImpl implements IBrmBorrowFlowService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deptApprove(Long borrowId, boolean approved, String opinion)
     {
         BrmClassroomBorrow borrow = requireRunning(borrowId, ST_DEPT);
@@ -175,7 +175,7 @@ public class BrmBorrowFlowServiceImpl implements IBrmBorrowFlowService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void aaApprove(Long borrowId, boolean approved, String opinion)
     {
         BrmClassroomBorrow borrow = requireRunning(borrowId, ST_AA);
@@ -223,7 +223,7 @@ public class BrmBorrowFlowServiceImpl implements IBrmBorrowFlowService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void cancel(Long borrowId)
     {
         BrmClassroomBorrow borrow = brmClassroomBorrowService.selectBrmClassroomBorrowByBorrowId(borrowId);

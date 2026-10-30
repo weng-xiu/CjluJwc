@@ -62,7 +62,7 @@ public class AemEvaluationQuestionnaireServiceImpl implements IAemEvaluationQues
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertAemEvaluationQuestionnaire(AemEvaluationQuestionnaire aemEvaluationQuestionnaire)
     {
         checkTitleUnique(aemEvaluationQuestionnaire);
@@ -73,7 +73,7 @@ public class AemEvaluationQuestionnaireServiceImpl implements IAemEvaluationQues
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateAemEvaluationQuestionnaire(AemEvaluationQuestionnaire aemEvaluationQuestionnaire)
     {
         checkTitleUnique(aemEvaluationQuestionnaire);
@@ -155,7 +155,7 @@ public class AemEvaluationQuestionnaireServiceImpl implements IAemEvaluationQues
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemEvaluationQuestionnaireByQuestionnaireId(Long questionnaireId)
     {
         // 已产生评教结果的问卷不允许删除，保证业务数据完整性
@@ -171,7 +171,7 @@ public class AemEvaluationQuestionnaireServiceImpl implements IAemEvaluationQues
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemEvaluationQuestionnaireByQuestionnaireIds(Long[] questionnaireIds)
     {
         for (Long questionnaireId : questionnaireIds)

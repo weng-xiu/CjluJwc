@@ -166,7 +166,7 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertAemGradeRecord(AemGradeRecord aemGradeRecord)
     {
         // 数据范围校验：成绩分数必须在0-100范围内
@@ -194,7 +194,7 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateAemGradeRecord(AemGradeRecord aemGradeRecord)
     {
         // 状态校验：已复核的成绩记录不允许修改
@@ -236,7 +236,7 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemGradeRecordByGradeId(Long gradeId)
     {
         // 级联删除复核子表，保证主子表数据一致性
@@ -245,7 +245,7 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemGradeRecordByGradeIds(Long[] gradeIds)
     {
         for (Long gradeId : gradeIds)
@@ -288,7 +288,7 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void batchRecalculateGpa(Long semesterId, String algorithmCode)
     {
         IGpaCalculationStrategy strategy = getStrategy(algorithmCode);
@@ -309,7 +309,7 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int importGrade(List<AemGradeRecord> list, String operator, String algorithmCode)
     {
         if (list == null || list.isEmpty())
@@ -360,7 +360,7 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int submitGrade(Long[] gradeIds, String operator)
     {
         if (gradeIds == null || gradeIds.length == 0)
@@ -371,7 +371,7 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int auditGrade(Long[] gradeIds, boolean approved, String operator)
     {
         if (gradeIds == null || gradeIds.length == 0)
@@ -384,7 +384,7 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int unlockGrade(Long[] gradeIds, String operator)
     {
         if (gradeIds == null || gradeIds.length == 0)

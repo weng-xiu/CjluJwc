@@ -66,6 +66,14 @@
             <artifactId>yu-system</artifactId>
         </dependency>
 
+        <!-- 单元测试（JUnit5 + Mockito + spring-test MockHttpServletRequest/MockEnvironment）
+             V5.23 S-4：TokenService 的 exp 声明与密钥启动期门禁需要直测，不能只靠 Controller 层间接覆盖 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>

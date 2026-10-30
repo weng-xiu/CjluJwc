@@ -51,7 +51,7 @@ public class BrmTeacherServiceImpl implements IBrmTeacherService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertBrmTeacher(BrmTeacher brmTeacher)
     {
         brmTeacher.setCreateTime(DateUtils.getNowDate());
@@ -62,7 +62,7 @@ public class BrmTeacherServiceImpl implements IBrmTeacherService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateBrmTeacher(BrmTeacher brmTeacher)
     {
         brmTeacher.setUpdateTime(DateUtils.getNowDate());
@@ -74,7 +74,7 @@ public class BrmTeacherServiceImpl implements IBrmTeacherService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateBrmTeacherByUserId(BrmTeacher brmTeacher)
     {
         brmTeacher.setUpdateTime(DateUtils.getNowDate());
@@ -82,7 +82,7 @@ public class BrmTeacherServiceImpl implements IBrmTeacherService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmTeacherByTeacherId(Long teacherId)
     {
         brmTeacherMapper.deleteBrmTeacherPositionByTeacherId(teacherId);
@@ -91,7 +91,7 @@ public class BrmTeacherServiceImpl implements IBrmTeacherService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmTeacherByTeacherIds(Long[] teacherIds)
     {
         brmTeacherMapper.deleteBrmTeacherPositionByTeacherIds(teacherIds);
@@ -100,7 +100,7 @@ public class BrmTeacherServiceImpl implements IBrmTeacherService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmTeacherByUserId(Long userId)
     {
         BrmTeacher teacher = brmTeacherMapper.selectBrmTeacherByUserId(userId);
@@ -155,7 +155,7 @@ public class BrmTeacherServiceImpl implements IBrmTeacherService
     /**
      * P7：批量导入教师，逐行校验（工号/姓名必填、院系存在、工号唯一）并生成校验报告。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public String importTeacher(List<BrmTeacher> teacherList, String operName, boolean updateSupport)
     {

@@ -33,7 +33,7 @@ public class DisExternalSystemServiceImpl implements IDisExternalSystemService
         return disExternalSystemMapper.selectDisExternalSystemList(disExternalSystem);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertDisExternalSystem(DisExternalSystem disExternalSystem)
     {
@@ -41,7 +41,7 @@ public class DisExternalSystemServiceImpl implements IDisExternalSystemService
         return disExternalSystemMapper.insertDisExternalSystem(disExternalSystem);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateDisExternalSystem(DisExternalSystem disExternalSystem)
     {
@@ -49,14 +49,14 @@ public class DisExternalSystemServiceImpl implements IDisExternalSystemService
         return disExternalSystemMapper.updateDisExternalSystem(disExternalSystem);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteDisExternalSystemBySystemId(Long systemId)
     {
         return disExternalSystemMapper.deleteDisExternalSystemBySystemId(systemId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteDisExternalSystemBySystemIds(Long[] systemIds)
     {

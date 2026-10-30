@@ -34,7 +34,7 @@ public class OaMeetingRoomServiceImpl implements IOaMeetingRoomService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertOaMeetingRoom(OaMeetingRoom oaMeetingRoom)
     {
         oaMeetingRoom.setCreateTime(DateUtils.getNowDate());
@@ -42,7 +42,7 @@ public class OaMeetingRoomServiceImpl implements IOaMeetingRoomService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateOaMeetingRoom(OaMeetingRoom oaMeetingRoom)
     {
         oaMeetingRoom.setUpdateTime(DateUtils.getNowDate());
@@ -50,14 +50,14 @@ public class OaMeetingRoomServiceImpl implements IOaMeetingRoomService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteOaMeetingRoomByRoomId(Long roomId)
     {
         return oaMeetingRoomMapper.deleteOaMeetingRoomByRoomId(roomId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteOaMeetingRoomByRoomIds(Long[] roomIds)
     {
         return oaMeetingRoomMapper.deleteOaMeetingRoomByRoomIds(roomIds);

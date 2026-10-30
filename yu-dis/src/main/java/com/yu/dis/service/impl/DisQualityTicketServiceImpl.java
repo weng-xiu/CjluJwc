@@ -50,7 +50,7 @@ public class DisQualityTicketServiceImpl implements IDisQualityTicketService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertDisQualityTicket(DisQualityTicket disQualityTicket)
     {
         disQualityTicket.setCreateTime(DateUtils.getNowDate());
@@ -66,7 +66,7 @@ public class DisQualityTicketServiceImpl implements IDisQualityTicketService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateDisQualityTicket(DisQualityTicket disQualityTicket)
     {
         disQualityTicket.setUpdateTime(DateUtils.getNowDate());
@@ -79,14 +79,14 @@ public class DisQualityTicketServiceImpl implements IDisQualityTicketService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteDisQualityTicketByTicketIds(Long[] ticketIds)
     {
         return disQualityTicketMapper.deleteDisQualityTicketByTicketIds(ticketIds);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int detectAndGenerate(double threshold, String operator)
     {
         List<DisSyncTask> tasks = disSyncTaskService.selectDisSyncTaskList(new DisSyncTask());

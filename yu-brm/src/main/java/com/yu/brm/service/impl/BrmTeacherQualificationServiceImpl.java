@@ -34,7 +34,7 @@ public class BrmTeacherQualificationServiceImpl implements IBrmTeacherQualificat
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertBrmTeacherQualification(BrmTeacherQualification brmTeacherQualification)
     {
         brmTeacherQualification.setCreateTime(DateUtils.getNowDate());
@@ -42,7 +42,7 @@ public class BrmTeacherQualificationServiceImpl implements IBrmTeacherQualificat
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateBrmTeacherQualification(BrmTeacherQualification brmTeacherQualification)
     {
         brmTeacherQualification.setUpdateTime(DateUtils.getNowDate());
@@ -50,14 +50,14 @@ public class BrmTeacherQualificationServiceImpl implements IBrmTeacherQualificat
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmTeacherQualificationByQualId(Long qualId)
     {
         return brmTeacherQualificationMapper.deleteBrmTeacherQualificationByQualId(qualId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmTeacherQualificationByQualIds(Long[] qualIds)
     {
         return brmTeacherQualificationMapper.deleteBrmTeacherQualificationByQualIds(qualIds);

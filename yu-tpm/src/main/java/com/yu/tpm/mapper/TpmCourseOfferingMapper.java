@@ -58,4 +58,35 @@ public interface TpmCourseOfferingMapper
      * @return 容量水位统计列表
      */
     public List<OfferingCapacityStat> selectRoundCapacityStats(@Param("roundId") Long roundId);
+
+    /**
+     * T-3：原子占用一个名额（容量真相在 DB）。
+     *
+     * <p>条件更新把「是否还有名额」与「占一个名额」压成同一条语句，并发选课由 InnoDB 行锁串行化，
+     * 不存在「先查后改」的窗口。切勿改回「先 select 判余量再 update」——那会让并发请求同时通过判断。</p>
+     *
+     * @param offeringId 开课ID
+     * @return 1=占到名额；0=已满（或开课不存在/已删除/容量未配置）
+     */
+    public int occupySeat(@Param("offeringId") Long offeringId);
+
+    /**
+     * T-3：释放一个名额（退课、改选回退、递补失败回滚）。
+     * SQL 带 {@code enrolled_count > 0} 守卫，重复释放不会把计数减成负数。
+     *
+     * @param offeringId 开课ID
+     * @return 受影响行数（0 表示计数已为 0 或开课不存在）
+     */
+    public int releaseSeat(@Param("offeringId") Long offeringId);
+
+    /**
+     * T-3：按报名表真相全量重算占用数（幂等）。
+     *
+     * <p>抽签会把部分「已选中」改为「落选/候补」，这种情况必须重算而不是逐条减；
+     * 管理端直接增删改报名记录后也用它校正，避免计数漂移。</p>
+     *
+     * @param offeringIds 开课ID集合（非空）
+     * @return 受影响行数
+     */
+    public int recountEnrolled(@Param("offeringIds") List<Long> offeringIds);
 }

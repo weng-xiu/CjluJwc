@@ -33,7 +33,7 @@ public class PortalNoticeServiceImpl implements IPortalNoticeService
         return portalNoticeMapper.selectPortalNoticeList(portalNotice);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertPortalNotice(PortalNotice portalNotice)
     {
@@ -41,7 +41,7 @@ public class PortalNoticeServiceImpl implements IPortalNoticeService
         return portalNoticeMapper.insertPortalNotice(portalNotice);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updatePortalNotice(PortalNotice portalNotice)
     {
@@ -49,14 +49,14 @@ public class PortalNoticeServiceImpl implements IPortalNoticeService
         return portalNoticeMapper.updatePortalNotice(portalNotice);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deletePortalNoticeByNoticeId(Long noticeId)
     {
         return portalNoticeMapper.deletePortalNoticeByNoticeId(noticeId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deletePortalNoticeByNoticeIds(Long[] noticeIds)
     {

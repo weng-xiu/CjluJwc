@@ -50,6 +50,13 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
     /** 星期名称映射 */
     private static final String[] WEEK_DAY_NAMES = {"", "周一", "周二", "周三", "周四", "周五", "周六", "周日"};
 
+    /**
+     * P-3：抽签结果批量落库的分块行数。
+     * 仅限制单条 SQL 的体积与锁持有粒度，**不是分段提交边界**——抽签必须整体原子，
+     * 中途失败要能全量回滚后重抽，拆成多段独立事务会留下「部分中签、部分未抽签」的半成品。
+     */
+    static final int LOTTERY_UPDATE_CHUNK = 500;
+
     @Autowired
     private TpmSelectionEnrollmentMapper tpmSelectionEnrollmentMapper;
 
@@ -90,34 +97,89 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         return tpmSelectionEnrollmentMapper.selectTpmSelectionEnrollmentList(tpmSelectionEnrollment);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertTpmSelectionEnrollment(TpmSelectionEnrollment tpmSelectionEnrollment)
     {
         tpmSelectionEnrollment.setCreateTime(DateUtils.getNowDate());
-        return tpmSelectionEnrollmentMapper.insertTpmSelectionEnrollment(tpmSelectionEnrollment);
+        int rows = tpmSelectionEnrollmentMapper.insertTpmSelectionEnrollment(tpmSelectionEnrollment);
+        // T-3：管理端直接补录报名行不经过 atomic 抢名额路径，按报名表真相重算该开课的占用数
+        recountSeats(tpmSelectionEnrollment.getCourseOfferingId());
+        return rows;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateTpmSelectionEnrollment(TpmSelectionEnrollment tpmSelectionEnrollment)
     {
+        // 改选/改状态可能跨开课，两个开课都要重算（旧开课改前取，删完就查不到了）
+        TpmSelectionEnrollment before = tpmSelectionEnrollment.getEnrollId() == null ? null
+                : tpmSelectionEnrollmentMapper.selectTpmSelectionEnrollmentByEnrollId(tpmSelectionEnrollment.getEnrollId());
         tpmSelectionEnrollment.setUpdateTime(DateUtils.getNowDate());
-        return tpmSelectionEnrollmentMapper.updateTpmSelectionEnrollment(tpmSelectionEnrollment);
+        int rows = tpmSelectionEnrollmentMapper.updateTpmSelectionEnrollment(tpmSelectionEnrollment);
+        recountSeats(tpmSelectionEnrollment.getCourseOfferingId());
+        if (before != null)
+        {
+            recountSeats(before.getCourseOfferingId());
+        }
+        return rows;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmSelectionEnrollmentByEnrollId(Long enrollId)
     {
-        return tpmSelectionEnrollmentMapper.deleteTpmSelectionEnrollmentByEnrollId(enrollId);
+        TpmSelectionEnrollment before = tpmSelectionEnrollmentMapper.selectTpmSelectionEnrollmentByEnrollId(enrollId);
+        int rows = tpmSelectionEnrollmentMapper.deleteTpmSelectionEnrollmentByEnrollId(enrollId);
+        if (before != null)
+        {
+            recountSeats(before.getCourseOfferingId());
+        }
+        return rows;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmSelectionEnrollmentByEnrollIds(Long[] enrollIds)
     {
-        return tpmSelectionEnrollmentMapper.deleteTpmSelectionEnrollmentByEnrollIds(enrollIds);
+        // 软删后查不到开课ID，先取回再删；管理端批量操作，N 为 UI 勾选行数（个位数）
+        List<Long> affectedOfferingIds = new ArrayList<>();
+        if (enrollIds != null)
+        {
+            for (Long enrollId : enrollIds)
+            {
+                TpmSelectionEnrollment before = tpmSelectionEnrollmentMapper.selectTpmSelectionEnrollmentByEnrollId(enrollId);
+                if (before != null && before.getCourseOfferingId() != null)
+                {
+                    affectedOfferingIds.add(before.getCourseOfferingId());
+                }
+            }
+        }
+        int rows = tpmSelectionEnrollmentMapper.deleteTpmSelectionEnrollmentByEnrollIds(enrollIds);
+        recountSeats(affectedOfferingIds.toArray(new Long[0]));
+        return rows;
+    }
+
+    /**
+     * T-3：按报名表真相重算若干开课的占用数（幂等）。
+     *
+     * <p>热路径（选课/退课/改选/递补）用原子增量；管理端直接增删改报名行这类低频路径用重算，
+     * 既不会把并发增量覆盖掉，也顺手修正了历史上可能的计数漂移。</p>
+     */
+    private void recountSeats(Long... offeringIds)
+    {
+        List<Long> ids = new ArrayList<>();
+        for (Long offeringId : offeringIds)
+        {
+            if (offeringId != null && !ids.contains(offeringId))
+            {
+                ids.add(offeringId);
+            }
+        }
+        if (!ids.isEmpty())
+        {
+            tpmCourseOfferingMapper.recountEnrolled(ids);
+        }
     }
 
     /**
@@ -246,14 +308,16 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
             }
         }
 
-        // 6. 检测课程容量是否已满
-        int enrolledCount = tpmSelectionEnrollmentMapper.selectCountByOffering(courseOfferingId);
+        // 6. 检测课程容量是否已满（T-3：读 enrolled_count 真相列。落选/候补 result_status='2' 不占名额，
+        //    不能拿报名行数判满，否则抽签后大量候补会把还有名额的课判成已满）
         TpmCourseOffering offering = tpmCourseOfferingMapper.selectTpmCourseOfferingByOfferingId(courseOfferingId);
-        if (offering != null && offering.getMaxStudents() != null && enrolledCount >= offering.getMaxStudents())
+        if (offering != null && offering.getMaxStudents() != null && offering.getMaxStudents() > 0
+                && offering.getEnrolledCount() != null
+                && offering.getEnrolledCount() >= offering.getMaxStudents())
         {
             warnings.add(new ConflictWarning(
                     "COURSE_FULL",
-                    "课程已满：当前已选" + enrolledCount + "人，容量上限" + offering.getMaxStudents() + "人"
+                    "课程已满：当前已选" + offering.getEnrolledCount() + "人，容量上限" + offering.getMaxStudents() + "人"
             ));
         }
 
@@ -326,9 +390,10 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
                 continue;
             }
 
-            // 检查容量
-            int altEnrolledCount = tpmSelectionEnrollmentMapper.selectCountByOffering(alt.getOfferingId());
-            if (alt.getMaxStudents() != null && altEnrolledCount >= alt.getMaxStudents())
+            // 检查容量（T-3：列表查询的 enrolled_count 子查询已按 result_status='1' 现算）
+            Integer altEnrolledCount = alt.getEnrolledCount();
+            if (alt.getMaxStudents() != null && alt.getMaxStudents() > 0
+                    && altEnrolledCount != null && altEnrolledCount >= alt.getMaxStudents())
             {
                 continue; // 已满，跳过
             }
@@ -393,7 +458,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
 
     /**
      * 带验证的选课
-     * 流程：冲突检测 -> Redis原子扣减容量 -> 保存选课记录 -> 清除缓存
+     * 流程：冲突检测 -> 原子占用名额（DB 条件更新） -> 保存选课记录 -> 清除缓存
      *
      * @param studentId        学生ID
      * @param courseOfferingId 开课ID
@@ -453,62 +518,42 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
             return AjaxResult.error(msg.toString());
         }
 
-        // 2. Redis原子扣减容量
-        // 先确保容量缓存存在
-        Long capacity = selectionCacheManager.getCapacity(courseOfferingId);
-        if (capacity == null)
+        // 2. 原子占用名额（T-3）：容量的唯一真相是 tpm_course_offering.enrolled_count。
+        //    条件更新把「是否还有名额」与「占一个名额」压成一条语句，由 InnoDB 行锁串行化并发请求，
+        //    不存在「先查后改」的窗口。原实现走 Redis DECR/INCR：进程崩在 DECR 与 INSERT 之间会
+        //    永久少一个名额，键被清空或主从切换则会超卖，两边不一致时也判断不出谁对。
+        if (tpmCourseOfferingMapper.occupySeat(courseOfferingId) == 0)
         {
-            // 缓存不存在，从数据库初始化
+            // 只在失败路径多查一次开课，用于区分「真的满了」与「开课不存在/容量未配置」
             TpmCourseOffering offering = tpmCourseOfferingMapper.selectTpmCourseOfferingByOfferingId(courseOfferingId);
-            if (offering != null && offering.getMaxStudents() != null)
-            {
-                int currentCount = tpmSelectionEnrollmentMapper.selectCountByOffering(courseOfferingId);
-                int remaining = offering.getMaxStudents() - currentCount;
-                selectionCacheManager.setCapacity(courseOfferingId, remaining);
-            }
-            else
+            if (offering == null || offering.getMaxStudents() == null || offering.getMaxStudents() <= 0)
             {
                 return AjaxResult.error("课程信息异常");
             }
-        }
-
-        Long remaining = selectionCacheManager.decrementCapacity(courseOfferingId);
-        if (remaining < 0)
-        {
-            // 容量不足，恢复扣减
-            selectionCacheManager.incrementCapacity(courseOfferingId);
             bizMetrics.recordOversell(); // P2 超卖尝试埋点
             return AjaxResult.error("课程已满，选课失败");
         }
 
-        try
+        // 3. 保存选课记录。整个方法处在同一事务内：insert 抛错会连同上面占用的名额一起回滚，
+        //    不需要 catch 里手工补偿（那条补偿在进程被杀时根本不会执行）。
+        TpmSelectionEnrollment enrollment = new TpmSelectionEnrollment();
+        enrollment.setStudentId(studentId);
+        enrollment.setCourseOfferingId(courseOfferingId);
+        enrollment.setRoundId(roundId);
+        enrollment.setSelectTime(new Date());
+        enrollment.setResultStatus("1"); // 选中
+        enrollment.setLotteryResult("0"); // 未抽签
+        if (priority != null && priority > 0)
         {
-            // 3. 保存选课记录
-            TpmSelectionEnrollment enrollment = new TpmSelectionEnrollment();
-            enrollment.setStudentId(studentId);
-            enrollment.setCourseOfferingId(courseOfferingId);
-            enrollment.setRoundId(roundId);
-            enrollment.setSelectTime(new Date());
-            enrollment.setResultStatus("1"); // 选中
-            enrollment.setLotteryResult("0"); // 未抽签
-            if (priority != null && priority > 0)
-            {
-                enrollment.setPriority(priority); // F2-2 志愿优先级
-            }
-            enrollment.setCreateTime(DateUtils.getNowDate());
-            tpmSelectionEnrollmentMapper.insertTpmSelectionEnrollment(enrollment);
-
-            // 4. 清除学生选课缓存
-            selectionCacheManager.clearStudentCache(studentId, roundId);
-
-            return AjaxResult.success("选课成功");
+            enrollment.setPriority(priority); // F2-2 志愿优先级
         }
-        catch (Exception e)
-        {
-            // 选课失败，恢复容量
-            selectionCacheManager.incrementCapacity(courseOfferingId);
-            throw e;
-        }
+        enrollment.setCreateTime(DateUtils.getNowDate());
+        tpmSelectionEnrollmentMapper.insertTpmSelectionEnrollment(enrollment);
+
+        // 4. 清除学生选课缓存
+        selectionCacheManager.clearStudentCache(studentId, roundId);
+
+        return AjaxResult.success("选课成功");
     }
 
     /**
@@ -574,7 +619,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
      * T6：执行抽签（可指定随机种子以支持结果复现审计）。
      * 相比旧实现新增：① 记录并复用随机种子，逐开课用 seed+offeringId 派生确定性随机序列，结果可复现；
      * ② 落选学生写入候补排名 waitlist_rank（按抽签顺序），供后续递补；
-     * ③ 抽签完成后按开课回写 Redis 剩余容量，消除缓存与库不一致。
+     * ③ 抽签完成后按报名表重算各开课已占名额（容量真相在 DB 列，不再回写 Redis）。
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -622,8 +667,6 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         int successCount = 0;
         int failCount = 0;
         List<TpmSelectionEnrollment> toUpdate = new ArrayList<>();
-        // 记录每个开课抽签后的剩余容量，用于抽签完成后回写 Redis
-        Map<Long, Integer> remainingByOffering = new HashMap<>();
 
         for (Map.Entry<Long, List<TpmSelectionEnrollment>> entry : offeringMap.entrySet())
         {
@@ -661,7 +704,6 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
                     toUpdate.add(e);
                     successCount++;
                 }
-                remainingByOffering.put(offeringId, maxCapacity - enrollments.size());
                 continue;
             }
 
@@ -678,7 +720,6 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
             }
             lotteryCount++;
 
-            int admitted = 0;
             for (int i = 0; i < enrollments.size(); i++)
             {
                 TpmSelectionEnrollment e = enrollments.get(i);
@@ -688,7 +729,6 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
                     e.setResultStatus("1");  // 选中
                     e.setWaitlistRank(null);
                     successCount++;
-                    admitted++;
                 }
                 else
                 {
@@ -699,20 +739,24 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
                 }
                 toUpdate.add(e);
             }
-            remainingByOffering.put(offeringId, maxCapacity - admitted);
         }
 
-        // 批量更新
-        for (TpmSelectionEnrollment e : toUpdate)
+        // P-3：批量落库。原实现逐行 updateTpmSelectionEnrollment，单轮抽签要发 N 次 DB 往返
+        // （备份库实测该轮 13957 条选课记录），每次一条 SQL 各自往返与加锁，耗时线性放大。
+        // 改为按块切片，每块一条 CASE WHEN 同时更新 lottery_result / result_status / waitlist_rank。
+        // toUpdate 为空时不调用 Mapper：空列表会拼出 `case enroll_id end` 这种非法 SQL。
+        Date lotteryUpdateTime = new Date();
+        for (int from = 0; from < toUpdate.size(); from += LOTTERY_UPDATE_CHUNK)
         {
-            e.setUpdateTime(new Date());
-            tpmSelectionEnrollmentMapper.updateTpmSelectionEnrollment(e);
+            int to = Math.min(from + LOTTERY_UPDATE_CHUNK, toUpdate.size());
+            tpmSelectionEnrollmentMapper.batchUpdateLotteryResult(toUpdate.subList(from, to), lotteryUpdateTime);
         }
 
-        // 抽签后回写 Redis 剩余容量，保证缓存与库一致
-        for (Map.Entry<Long, Integer> re : remainingByOffering.entrySet())
+        // T-3：抽签把部分「已选中」改成了「落选/候补」，占用数必须按报名表全量重算（幂等）。
+        // 不再回写 Redis：缓存不是真相，且中签计数与报名行数在并发下可能不同源。
+        if (!offeringMap.isEmpty())
         {
-            selectionCacheManager.setCapacity(re.getKey(), re.getValue());
+            tpmCourseOfferingMapper.recountEnrolled(new ArrayList<>(offeringMap.keySet()));
         }
 
         // 记录种子与抽签时间，并更新轮次状态为已结束
@@ -791,9 +835,11 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
     }
 
     /**
-     * T6：候补递补。当中签人数低于容量时，按候补排名顺序将落选学生递补为中签，并同步回写 Redis 容量。
+     * T6：候补递补。当中签人数低于容量时，按候补排名顺序将落选学生递补为中签。
+     * T-3：递补前先做一次 DB 条件更新占名额（occupySeat），占到才改记录；占不到说明名额被并发抢走，
+     * 立即停止递补（剩余候补等下一次触发），不会出现“记录已递补、名额没占到”的越界。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public Map<String, Object> promoteWaitlist(Long offeringId)
     {
@@ -833,14 +879,15 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
             {
                 break;
             }
+            // 先占名额再改记录：占不到（返回 0）说明并发请求已把这批空位吃掉，本轮到此为止
+            if (tpmCourseOfferingMapper.occupySeat(offeringId) == 0)
+            {
+                break;
+            }
             tpmSelectionEnrollmentMapper.promoteFromWaitlist(e.getEnrollId(), now);
-            // 每递补一名，回写 Redis 剩余容量（一名）
-            selectionCacheManager.decrementCapacity(offeringId);
             selectionCacheManager.clearStudentCache(e.getStudentId(), e.getRoundId());
             promoted++;
         }
-        int remaining = Math.max(0, maxCapacity - (admitted + promoted));
-        selectionCacheManager.setCapacity(offeringId, remaining);
         result.put("promoted", promoted);
         result.put("admitted", admitted + promoted);
         result.put("capacity", maxCapacity);
@@ -850,9 +897,9 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
 
     /**
      * 学生退课
-     * 校验记录存在、当前为选中状态、轮次进行中；置为退课状态并回补Redis容量
+     * 校验记录存在、当前为选中状态、轮次进行中；置为退课状态并释放 DB 名额（releaseSeat）
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public AjaxResult dropCourse(Long enrollId)
     {
@@ -883,8 +930,9 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         enrollment.setUpdateTime(DateUtils.getNowDate());
         tpmSelectionEnrollmentMapper.updateTpmSelectionEnrollment(enrollment);
 
-        // 回补Redis容量
-        selectionCacheManager.incrementCapacity(enrollment.getCourseOfferingId());
+        // T-3：释放名额走 DB 条件更新（带 enrolled_count > 0 守卫，计数不会被减成负数），
+        // 与选课占名额同处一张表的行锁域内，不再有 Redis 与 DB 两套计数需要对齐。
+        tpmCourseOfferingMapper.releaseSeat(enrollment.getCourseOfferingId());
         // 清除学生选课缓存
         selectionCacheManager.clearStudentCache(enrollment.getStudentId(), enrollment.getRoundId());
 
@@ -900,13 +948,15 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
     /**
      * F2-2 退改选窗口：将学生已选课程改选为另一开课（保持选课门数不变）。
      * 仅当轮次开放退改选（allow_drop_adjust='1'）且当前时间处于 [dropAdjustStart, dropAdjustEnd] 窗口内时允许；
-     * 全程复用既有冲突检测与 Redis 容量并发控制，改选失败则回滚至原课程。
+     * T-3：顺序为「冲突检测 → 占新名额 → 改记录 → 释放旧名额」。先占后放保证任何一步失败都由事务
+     * 整体回滚，不会出现“旧名额已放、新名额没抢到”导致学生无课可上的中间态（原实现要先释放再抢，
+     * 失败时靠 catch 反向补偿，补偿本身也可能抢不到）。
      *
      * @param enrollId      原选课记录ID
      * @param newOfferingId 目标开课ID
      * @return 操作结果
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public AjaxResult swapCourse(Long enrollId, Long newOfferingId)
     {
@@ -939,61 +989,42 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         Long studentId = enrollment.getStudentId();
         Long roundId = enrollment.getRoundId();
 
-        // 1. 释放原课程容量（先占位，改选失败再回滚）
-        selectionCacheManager.incrementCapacity(oldOfferingId);
-
-        // 2. 新课程冲突检测（此时原记录仍为选中，需排除自身对旧课的占用——旧课已释放容量但记录未改，故只校验时间/规则冲突）
+        // 1. 新课程冲突检测（原记录尚未改动，冲突检测的口径与学生当前已选状态一致）
         List<ConflictWarning> conflicts = checkSelectionConflicts(studentId, newOfferingId, roundId);
         if (!conflicts.isEmpty())
         {
-            selectionCacheManager.decrementCapacity(oldOfferingId); // 回滚容量
             StringBuilder msg = new StringBuilder("改选失败，新课程存在以下冲突：");
             for (ConflictWarning w : conflicts) { msg.append(w.getMessage()).append("；"); }
             return AjaxResult.error(msg.toString());
         }
 
-        // 3. 确保新课程容量缓存存在并扣减
-        if (selectionCacheManager.getCapacity(newOfferingId) == null)
+        // 2. 先占新名额（DB 条件更新）。占不到时多查一次开课，区分「已满」与「开课不存在/容量未配置」
+        if (tpmCourseOfferingMapper.occupySeat(newOfferingId) == 0)
         {
-            TpmCourseOffering offering = tpmCourseOfferingMapper.selectTpmCourseOfferingByOfferingId(newOfferingId);
-            if (offering == null || offering.getMaxStudents() == null)
+            TpmCourseOffering target = tpmCourseOfferingMapper.selectTpmCourseOfferingByOfferingId(newOfferingId);
+            if (target == null || target.getMaxStudents() == null || target.getMaxStudents() <= 0)
             {
-                selectionCacheManager.decrementCapacity(oldOfferingId);
                 return AjaxResult.error("目标课程信息异常");
             }
-            int currentCount = tpmSelectionEnrollmentMapper.selectCountByOffering(newOfferingId);
-            selectionCacheManager.setCapacity(newOfferingId, offering.getMaxStudents() - currentCount);
-        }
-        Long remaining = selectionCacheManager.decrementCapacity(newOfferingId);
-        if (remaining < 0)
-        {
-            selectionCacheManager.incrementCapacity(newOfferingId);
-            selectionCacheManager.decrementCapacity(oldOfferingId); // 回滚原课程容量
             bizMetrics.recordOversell(); // P2 超卖尝试埋点（改选抢已满课程）
             return AjaxResult.error("目标课程已满，改选失败");
         }
 
-        try
-        {
-            // 4. 原地改指向目标开课，重置为未抽签选中
-            enrollment.setCourseOfferingId(newOfferingId);
-            enrollment.setResultStatus("1");
-            enrollment.setLotteryResult("0");
-            enrollment.setWaitlistRank(null);
-            enrollment.setDropTime(null);
-            enrollment.setSelectTime(new Date());
-            enrollment.setUpdateTime(DateUtils.getNowDate());
-            tpmSelectionEnrollmentMapper.updateTpmSelectionEnrollment(enrollment);
+        // 3. 原地改指向目标开课，重置为未抽签选中
+        enrollment.setCourseOfferingId(newOfferingId);
+        enrollment.setResultStatus("1");
+        enrollment.setLotteryResult("0");
+        enrollment.setWaitlistRank(null);
+        enrollment.setDropTime(null);
+        enrollment.setSelectTime(new Date());
+        enrollment.setUpdateTime(DateUtils.getNowDate());
+        tpmSelectionEnrollmentMapper.updateTpmSelectionEnrollment(enrollment);
 
-            selectionCacheManager.clearStudentCache(studentId, roundId);
-            return AjaxResult.success("改选成功");
-        }
-        catch (Exception e)
-        {
-            selectionCacheManager.incrementCapacity(newOfferingId); // 回滚新课程扣减
-            selectionCacheManager.decrementCapacity(oldOfferingId); // 还原原课程占用
-            throw e;
-        }
+        // 4. 记录已指向新课后释放旧名额；若本步或上一步抛错，整个事务回滚，新名额自动归还
+        tpmCourseOfferingMapper.releaseSeat(oldOfferingId);
+
+        selectionCacheManager.clearStudentCache(studentId, roundId);
+        return AjaxResult.success("改选成功");
     }
 
     /**

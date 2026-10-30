@@ -42,16 +42,16 @@ public class SamGraduationReviewServiceImpl implements ISamGraduationReviewServi
     @Override
     public List<SamGraduationReview> selectSamGraduationReviewList(SamGraduationReview samGraduationReview) { return samGraduationReviewMapper.selectSamGraduationReviewList(samGraduationReview); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertSamGraduationReview(SamGraduationReview samGraduationReview) { samGraduationReview.setCreateTime(DateUtils.getNowDate()); return samGraduationReviewMapper.insertSamGraduationReview(samGraduationReview); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateSamGraduationReview(SamGraduationReview samGraduationReview) { samGraduationReview.setUpdateTime(DateUtils.getNowDate()); return samGraduationReviewMapper.updateSamGraduationReview(samGraduationReview); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamGraduationReviewByReviewId(Long reviewId) { return samGraduationReviewMapper.deleteSamGraduationReviewByReviewId(reviewId); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamGraduationReviewByReviewIds(Long[] reviewIds) { return samGraduationReviewMapper.deleteSamGraduationReviewByReviewIds(reviewIds); }
 
     /**
@@ -66,7 +66,7 @@ public class SamGraduationReviewServiceImpl implements ISamGraduationReviewServi
      * </ul>
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public SamGraduationReview autoReview(Long studentId)
     {
         // 跨学期累计：统计全部学期的学分和不及格课程
@@ -162,7 +162,7 @@ public class SamGraduationReviewServiceImpl implements ISamGraduationReviewServi
      * @return 审核结果（已落库）
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public SamGraduationReview autoReviewBySnapshot(Long studentId, Long snapshotId)
     {
         Map<String, Object> snap = samWarningDataMapper.selectPlanSnapshotForReview(snapshotId);
@@ -270,7 +270,7 @@ public class SamGraduationReviewServiceImpl implements ISamGraduationReviewServi
      * @return 汇总结果（total/passed/rejected/failList）
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> batchAutoReview(List<Long> studentIds)
     {
         Map<String, Object> result = new LinkedHashMap<>();

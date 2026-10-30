@@ -60,7 +60,7 @@ public class OaMeetingServiceImpl implements IOaMeetingService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertOaMeeting(OaMeeting oaMeeting)
     {
         if (checkMeetingConflict(oaMeeting))
@@ -78,7 +78,7 @@ public class OaMeetingServiceImpl implements IOaMeetingService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateOaMeeting(OaMeeting oaMeeting)
     {
         if (checkMeetingConflict(oaMeeting))
@@ -93,7 +93,7 @@ public class OaMeetingServiceImpl implements IOaMeetingService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteOaMeetingByMeetingId(Long meetingId)
     {
         oaMeetingParticipantMapper.deleteOaMeetingParticipantByMeetingId(meetingId);
@@ -102,7 +102,7 @@ public class OaMeetingServiceImpl implements IOaMeetingService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteOaMeetingByMeetingIds(Long[] meetingIds)
     {
         for (Long meetingId : meetingIds)
@@ -162,7 +162,7 @@ public class OaMeetingServiceImpl implements IOaMeetingService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int saveMinutes(OaMeetingMinutes minutes)
     {
         minutes.setUpdateTime(DateUtils.getNowDate());
@@ -179,14 +179,14 @@ public class OaMeetingServiceImpl implements IOaMeetingService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateParticipantStatus(OaMeetingParticipant participant)
     {
         return oaMeetingParticipantMapper.updateOaMeetingParticipant(participant);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int signMeeting(Long participantId)
     {
         OaMeetingParticipant participant = new OaMeetingParticipant();

@@ -2355,6 +2355,7 @@ CREATE TABLE `tpm_course_offering` (
   `campus_id` bigint DEFAULT NULL COMMENT '校区ID',
   `class_count` int DEFAULT '1' COMMENT '教学班数',
   `max_students` int DEFAULT '0' COMMENT '容量上限',
+  `enrolled_count` int NOT NULL DEFAULT '0' COMMENT '已占名额（T-3：由 DB 条件更新维护，禁止应用侧回写绝对值）',
   `offering_status` char(1) COLLATE utf8mb4_general_ci DEFAULT '0' COMMENT '开课状态（0待确认 1已确认 2已取消）',
   `elastic_enabled` char(1) COLLATE utf8mb4_general_ci DEFAULT '0' COMMENT '弹性扩容开关（0关闭 1开启）',
   `elastic_max` int DEFAULT NULL COMMENT '弹性扩容上限人数',

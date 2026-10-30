@@ -49,7 +49,7 @@ public class SamStudentInterventionServiceImpl implements ISamStudentInterventio
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertIntervention(SamStudentIntervention record)
     {
         record.setCreateTime(DateUtils.getNowDate());
@@ -57,7 +57,7 @@ public class SamStudentInterventionServiceImpl implements ISamStudentInterventio
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateIntervention(SamStudentIntervention record)
     {
         record.setUpdateTime(DateUtils.getNowDate());
@@ -65,7 +65,7 @@ public class SamStudentInterventionServiceImpl implements ISamStudentInterventio
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteInterventionByIds(Long[] interventionIds)
     {
         return interventionMapper.deleteInterventionByIds(interventionIds);

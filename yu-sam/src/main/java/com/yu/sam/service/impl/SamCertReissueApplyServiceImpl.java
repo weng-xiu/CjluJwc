@@ -78,7 +78,7 @@ public class SamCertReissueApplyServiceImpl implements ISamCertReissueApplyServi
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int submitApply(SamCertReissueApply apply)
     {
         if (apply.getStudentId() == null || apply.getOrigCertId() == null)
@@ -113,7 +113,7 @@ public class SamCertReissueApplyServiceImpl implements ISamCertReissueApplyServi
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int approve(Long applyId, String auditOpinion, String operator)
     {
         SamCertReissueApply apply = samCertReissueApplyMapper.selectSamCertReissueApplyByApplyId(applyId);
@@ -161,7 +161,7 @@ public class SamCertReissueApplyServiceImpl implements ISamCertReissueApplyServi
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int reject(Long applyId, String auditOpinion, String operator)
     {
         SamCertReissueApply apply = samCertReissueApplyMapper.selectSamCertReissueApplyByApplyId(applyId);

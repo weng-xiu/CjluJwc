@@ -40,7 +40,7 @@ public class BrmMajorServiceImpl implements IBrmMajorService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertBrmMajor(BrmMajor brmMajor)
     {
         brmMajor.setCreateTime(DateUtils.getNowDate());
@@ -48,7 +48,7 @@ public class BrmMajorServiceImpl implements IBrmMajorService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateBrmMajor(BrmMajor brmMajor)
     {
         brmMajor.setUpdateTime(DateUtils.getNowDate());
@@ -56,7 +56,7 @@ public class BrmMajorServiceImpl implements IBrmMajorService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmMajorByMajorId(Long majorId)
     {
         BrmClass query = new BrmClass();
@@ -70,7 +70,7 @@ public class BrmMajorServiceImpl implements IBrmMajorService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmMajorByMajorIds(Long[] majorIds)
     {
         for (Long majorId : majorIds)

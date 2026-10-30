@@ -36,7 +36,7 @@ public class BrmClassServiceImpl implements IBrmClassService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertBrmClass(BrmClass brmClass)
     {
         brmClass.setCreateTime(DateUtils.getNowDate());
@@ -44,7 +44,7 @@ public class BrmClassServiceImpl implements IBrmClassService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateBrmClass(BrmClass brmClass)
     {
         brmClass.setUpdateTime(DateUtils.getNowDate());
@@ -52,14 +52,14 @@ public class BrmClassServiceImpl implements IBrmClassService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmClassByClassId(Long classId)
     {
         return brmClassMapper.deleteBrmClassByClassId(classId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmClassByClassIds(Long[] classIds)
     {
         return brmClassMapper.deleteBrmClassByClassIds(classIds);

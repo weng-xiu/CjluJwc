@@ -33,7 +33,7 @@ public class SamObeImprovementServiceImpl implements ISamObeImprovementService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertImprovement(SamObeImprovement record)
     {
         record.setCreateTime(DateUtils.getNowDate());
@@ -41,7 +41,7 @@ public class SamObeImprovementServiceImpl implements ISamObeImprovementService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateImprovement(SamObeImprovement record)
     {
         record.setUpdateTime(DateUtils.getNowDate());
@@ -49,7 +49,7 @@ public class SamObeImprovementServiceImpl implements ISamObeImprovementService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteImprovementByImpIds(Long[] impIds)
     {
         return improvementMapper.deleteSamObeImprovementByImpIds(impIds);

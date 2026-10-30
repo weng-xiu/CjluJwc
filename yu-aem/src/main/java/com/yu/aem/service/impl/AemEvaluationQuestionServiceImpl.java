@@ -36,7 +36,7 @@ public class AemEvaluationQuestionServiceImpl implements IAemEvaluationQuestionS
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertAemEvaluationQuestion(AemEvaluationQuestion aemEvaluationQuestion)
     {
         aemEvaluationQuestion.setCreateTime(DateUtils.getNowDate());
@@ -44,7 +44,7 @@ public class AemEvaluationQuestionServiceImpl implements IAemEvaluationQuestionS
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateAemEvaluationQuestion(AemEvaluationQuestion aemEvaluationQuestion)
     {
         aemEvaluationQuestion.setUpdateTime(DateUtils.getNowDate());
@@ -52,21 +52,21 @@ public class AemEvaluationQuestionServiceImpl implements IAemEvaluationQuestionS
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemEvaluationQuestionByQuestionId(Long questionId)
     {
         return aemEvaluationQuestionMapper.deleteAemEvaluationQuestionByQuestionId(questionId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemEvaluationQuestionByQuestionIds(Long[] questionIds)
     {
         return aemEvaluationQuestionMapper.deleteAemEvaluationQuestionByQuestionIds(questionIds);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int importQuestion(List<AemEvaluationQuestion> list, String operator)
     {
         if (list == null || list.isEmpty())

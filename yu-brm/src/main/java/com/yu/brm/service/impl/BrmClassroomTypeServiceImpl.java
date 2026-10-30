@@ -40,7 +40,7 @@ public class BrmClassroomTypeServiceImpl implements IBrmClassroomTypeService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertBrmClassroomType(BrmClassroomType brmClassroomType)
     {
         // 唯一性校验：类型名称不能重复
@@ -56,7 +56,7 @@ public class BrmClassroomTypeServiceImpl implements IBrmClassroomTypeService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateBrmClassroomType(BrmClassroomType brmClassroomType)
     {
         // 唯一性校验：类型名称不能重复（排除自身）
@@ -78,7 +78,7 @@ public class BrmClassroomTypeServiceImpl implements IBrmClassroomTypeService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmClassroomTypeByTypeId(Long typeId)
     {
         BrmClassroom query = new BrmClassroom();
@@ -92,7 +92,7 @@ public class BrmClassroomTypeServiceImpl implements IBrmClassroomTypeService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmClassroomTypeByTypeIds(Long[] typeIds)
     {
         for (Long typeId : typeIds)

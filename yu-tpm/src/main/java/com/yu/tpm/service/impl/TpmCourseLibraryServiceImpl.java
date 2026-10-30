@@ -40,7 +40,7 @@ public class TpmCourseLibraryServiceImpl implements ITpmCourseLibraryService
         return tpmCourseLibraryMapper.selectTpmCourseLibraryList(tpmCourseLibrary);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertTpmCourseLibrary(TpmCourseLibrary tpmCourseLibrary)
     {
@@ -54,7 +54,7 @@ public class TpmCourseLibraryServiceImpl implements ITpmCourseLibraryService
         return tpmCourseLibraryMapper.insertTpmCourseLibrary(tpmCourseLibrary);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateTpmCourseLibrary(TpmCourseLibrary tpmCourseLibrary)
     {
@@ -68,7 +68,7 @@ public class TpmCourseLibraryServiceImpl implements ITpmCourseLibraryService
         return tpmCourseLibraryMapper.updateTpmCourseLibrary(tpmCourseLibrary);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmCourseLibraryByCourseId(Long courseId)
     {
@@ -82,7 +82,7 @@ public class TpmCourseLibraryServiceImpl implements ITpmCourseLibraryService
         return tpmCourseLibraryMapper.deleteTpmCourseLibraryByCourseId(courseId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmCourseLibraryByCourseIds(Long[] courseIds)
     {
@@ -102,7 +102,7 @@ public class TpmCourseLibraryServiceImpl implements ITpmCourseLibraryService
     /**
      * P7：批量导入课程，逐行校验（必填、编码唯一）并生成校验报告。
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public String importCourse(List<TpmCourseLibrary> courseList, String operName, boolean updateSupport)
     {

@@ -45,7 +45,7 @@ public class GpaAlgorithmConfigServiceImpl implements IGpaAlgorithmConfigService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertAlgorithmConfig(AemGpaAlgorithmConfig config)
     {
         config.setCreateTime(DateUtils.getNowDate());
@@ -63,7 +63,7 @@ public class GpaAlgorithmConfigServiceImpl implements IGpaAlgorithmConfigService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateAlgorithmConfig(AemGpaAlgorithmConfig config)
     {
         config.setUpdateTime(DateUtils.getNowDate());
@@ -73,7 +73,7 @@ public class GpaAlgorithmConfigServiceImpl implements IGpaAlgorithmConfigService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAlgorithmConfigByIds(Long[] configIds)
     {
         for (Long configId : configIds)
@@ -84,7 +84,7 @@ public class GpaAlgorithmConfigServiceImpl implements IGpaAlgorithmConfigService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int setDefaultAlgorithm(Long configId)
     {
         aemGpaAlgorithmConfigMapper.updateAllDefaultToZero();
@@ -113,7 +113,7 @@ public class GpaAlgorithmConfigServiceImpl implements IGpaAlgorithmConfigService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int saveScoreMappings(Long configId, List<AemGpaScoreMapping> mappings)
     {
         aemGpaScoreMappingMapper.deleteByConfigId(configId);

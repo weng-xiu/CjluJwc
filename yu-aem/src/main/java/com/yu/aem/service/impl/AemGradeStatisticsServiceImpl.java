@@ -39,7 +39,7 @@ public class AemGradeStatisticsServiceImpl implements IAemGradeStatisticsService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertAemGradeStatistics(AemGradeStatistics aemGradeStatistics)
     {
         aemGradeStatistics.setCreateTime(DateUtils.getNowDate());
@@ -47,14 +47,14 @@ public class AemGradeStatisticsServiceImpl implements IAemGradeStatisticsService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemGradeStatisticsByStatId(Long statId)
     {
         return aemGradeStatisticsMapper.deleteAemGradeStatisticsByStatId(statId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemGradeStatisticsByStatIds(Long[] statIds)
     {
         return aemGradeStatisticsMapper.deleteAemGradeStatisticsByStatIds(statIds);
@@ -64,7 +64,7 @@ public class AemGradeStatisticsServiceImpl implements IAemGradeStatisticsService
      * 按课程聚合成绩统计（使用SQL聚合，避免全量加载成绩到内存）
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public AemGradeStatistics aggregateByCourse(Long courseId, Long semesterId)
     {
         Map<String, Object> agg = aemGradeStatisticsMapper.aggregateGradeByCourse(courseId, semesterId);
@@ -83,7 +83,7 @@ public class AemGradeStatisticsServiceImpl implements IAemGradeStatisticsService
      * 按学期批量聚合所有课程的成绩统计
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int aggregateBySemester(Long semesterId)
     {
         List<Map<String, Object>> list = aemGradeStatisticsMapper.aggregateGradeBySemester(semesterId);

@@ -136,7 +136,7 @@ public class TpmScheduleServiceImpl implements ITpmScheduleService
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = CacheConfig.CACHE_STUDENT_SCHEDULE, allEntries = true)
     @Override
     public int insertTpmSchedule(TpmSchedule tpmSchedule)
@@ -146,7 +146,7 @@ public class TpmScheduleServiceImpl implements ITpmScheduleService
         return tpmScheduleMapper.insertTpmSchedule(tpmSchedule);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = CacheConfig.CACHE_STUDENT_SCHEDULE, allEntries = true)
     @Override
     public int updateTpmSchedule(TpmSchedule tpmSchedule)
@@ -156,7 +156,7 @@ public class TpmScheduleServiceImpl implements ITpmScheduleService
         return tpmScheduleMapper.updateTpmSchedule(tpmSchedule);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = CacheConfig.CACHE_STUDENT_SCHEDULE, allEntries = true)
     @Override
     public int deleteTpmScheduleByScheduleId(Long scheduleId)
@@ -164,7 +164,7 @@ public class TpmScheduleServiceImpl implements ITpmScheduleService
         return tpmScheduleMapper.deleteTpmScheduleByScheduleId(scheduleId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = CacheConfig.CACHE_STUDENT_SCHEDULE, allEntries = true)
     @Override
     public int deleteTpmScheduleByScheduleIds(Long[] scheduleIds)

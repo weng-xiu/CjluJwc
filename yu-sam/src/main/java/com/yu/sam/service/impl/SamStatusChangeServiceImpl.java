@@ -88,7 +88,7 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertSamStatusChange(SamStatusChange samStatusChange)
     {
         if (samStatusChange.getStudentId() != null)
@@ -114,7 +114,7 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateSamStatusChange(SamStatusChange samStatusChange)
     {
         SamStatusChange existing = samStatusChangeMapper.selectSamStatusChangeByChangeId(samStatusChange.getChangeId());
@@ -127,21 +127,21 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamStatusChangeByChangeId(Long changeId)
     {
         return samStatusChangeMapper.deleteSamStatusChangeByChangeId(changeId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamStatusChangeByChangeIds(Long[] changeIds)
     {
         return samStatusChangeMapper.deleteSamStatusChangeByChangeIds(changeIds);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int submitForApproval(Long changeId)
     {
         SamStatusChange change = samStatusChangeMapper.selectSamStatusChangeByChangeId(changeId);
@@ -198,7 +198,7 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @BizMetric("approval")
     public int approveChange(Long changeId, String taskId, String comment)
     {
@@ -255,7 +255,7 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int rejectChange(Long changeId, String taskId, String comment)
     {
         String assignee = SecurityUtils.getUsername();
@@ -301,7 +301,7 @@ public class SamStatusChangeServiceImpl implements ISamStatusChangeService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int cancelByApplicant(Long changeId, String operator)
     {
         SamStatusChange change = samStatusChangeMapper.selectSamStatusChangeByChangeId(changeId);

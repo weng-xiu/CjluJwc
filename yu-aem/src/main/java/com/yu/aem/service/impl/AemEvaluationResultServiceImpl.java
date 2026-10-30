@@ -40,7 +40,7 @@ public class AemEvaluationResultServiceImpl implements IAemEvaluationResultServi
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertAemEvaluationResult(AemEvaluationResult aemEvaluationResult)
     {
         aemEvaluationResult.setCreateTime(DateUtils.getNowDate());
@@ -48,7 +48,7 @@ public class AemEvaluationResultServiceImpl implements IAemEvaluationResultServi
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateAemEvaluationResult(AemEvaluationResult aemEvaluationResult)
     {
         aemEvaluationResult.setUpdateTime(DateUtils.getNowDate());
@@ -56,14 +56,14 @@ public class AemEvaluationResultServiceImpl implements IAemEvaluationResultServi
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemEvaluationResultByResultId(Long resultId)
     {
         return aemEvaluationResultMapper.deleteAemEvaluationResultByResultId(resultId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemEvaluationResultByResultIds(Long[] resultIds)
     {
         return aemEvaluationResultMapper.deleteAemEvaluationResultByResultIds(resultIds);

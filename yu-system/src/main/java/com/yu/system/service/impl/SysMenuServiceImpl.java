@@ -373,7 +373,7 @@ public class SysMenuServiceImpl implements ISysMenuService
      * @param orderNums 排序ID
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void updateMenuSort(String[] menuIds, String[] orderNums)
     {
         try

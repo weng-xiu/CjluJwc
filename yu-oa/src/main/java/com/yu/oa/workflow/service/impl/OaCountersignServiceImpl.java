@@ -68,7 +68,7 @@ public class OaCountersignServiceImpl implements IOaCountersignService
     private ApplicationEventPublisher eventPublisher;
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Long addSign(String taskId, String operator, String mode, List<String> handlers, String reason)
     {
         if (!MODE_PRE_SIGN.equals(mode) && !MODE_POST_SIGN.equals(mode))
@@ -94,7 +94,7 @@ public class OaCountersignServiceImpl implements IOaCountersignService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Long counterSign(String taskId, String operator, List<String> handlers, String rule, String reason)
     {
         String finalRule = StringUtils.isEmpty(rule) ? RULE_ALL : rule.toUpperCase();
@@ -124,7 +124,7 @@ public class OaCountersignServiceImpl implements IOaCountersignService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Long delegate(String taskId, String operator, String handler, String reason)
     {
         if (StringUtils.isEmpty(handler))
@@ -157,7 +157,7 @@ public class OaCountersignServiceImpl implements IOaCountersignService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void reclaimDelegate(String taskId, String operator, String reason)
     {
         Task task = taskService.createTaskQuery().taskId(taskId).singleResult();
@@ -195,7 +195,7 @@ public class OaCountersignServiceImpl implements IOaCountersignService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void submitOpinion(Long itemId, String operator, boolean agree, String opinion)
     {
         OaCountersignItem item = oaCountersignMapper.selectItemById(itemId);
@@ -288,7 +288,7 @@ public class OaCountersignServiceImpl implements IOaCountersignService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void afterTaskCompleted(String taskId, String operator)
     {
         List<OaCountersignBatch> batches = oaCountersignMapper.selectActiveBatchByTaskId(taskId);
@@ -320,7 +320,7 @@ public class OaCountersignServiceImpl implements IOaCountersignService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void cancelByProcessInstance(String processInstanceId)
     {
         oaCountersignMapper.cancelBatchByProcessInstanceId(processInstanceId);

@@ -297,7 +297,7 @@ public class SysDeptServiceImpl implements ISysDeptService
      * @param orderNums 排序数组
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void updateDeptSort(String[] deptIds, String[] orderNums)
     {
         try

@@ -40,7 +40,7 @@ public class BrmBuildingServiceImpl implements IBrmBuildingService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertBrmBuilding(BrmBuilding brmBuilding)
     {
         brmBuilding.setCreateTime(DateUtils.getNowDate());
@@ -48,7 +48,7 @@ public class BrmBuildingServiceImpl implements IBrmBuildingService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateBrmBuilding(BrmBuilding brmBuilding)
     {
         brmBuilding.setUpdateTime(DateUtils.getNowDate());
@@ -56,7 +56,7 @@ public class BrmBuildingServiceImpl implements IBrmBuildingService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmBuildingByBuildingId(Long buildingId)
     {
         BrmClassroom query = new BrmClassroom();
@@ -70,7 +70,7 @@ public class BrmBuildingServiceImpl implements IBrmBuildingService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteBrmBuildingByBuildingIds(Long[] buildingIds)
     {
         for (Long buildingId : buildingIds)

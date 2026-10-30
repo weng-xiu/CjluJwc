@@ -73,6 +73,13 @@ temp_*
 # Database migration artifacts (contain data, do NOT commit)
 bin/db-backup/
 bin/
+# V5.23 S-10：bin/ 整体忽略，但 CI 门禁脚本必须入库（.github/workflows/ci.yml 直接调用），
+# 故单独放行 pii-scan.js（合成号段判据的唯一真相源）；其余脚本仍按本地工具处理
+!/bin/
+/bin/*
+!/bin/pii-scan.js
+# V5.24 T-2：事务回滚语义门禁同样由 CI 直接调用，须入库
+!/bin/tx-scan.js
 
 ######################################################################
 # V4.0 §7.3/C1：含真实数据的整库 dump 禁止入库（Navicat 全量备份目录）

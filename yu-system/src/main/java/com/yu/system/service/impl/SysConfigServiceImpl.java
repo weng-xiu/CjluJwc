@@ -133,7 +133,7 @@ public class SysConfigServiceImpl implements ISysConfigService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertConfig(SysConfig config)
     {
         int row = configMapper.insertConfig(config);
@@ -155,7 +155,7 @@ public class SysConfigServiceImpl implements ISysConfigService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateConfig(SysConfig config)
     {
         SysConfig temp = configMapper.selectConfigById(config.getConfigId());
@@ -184,7 +184,7 @@ public class SysConfigServiceImpl implements ISysConfigService
      * @param configIds 需要删除的参数ID
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deleteConfigByIds(Long[] configIds)
     {
         for (Long configId : configIds)

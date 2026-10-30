@@ -52,7 +52,7 @@ public class AemExamSeatServiceImpl implements IAemExamSeatService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertAemExamSeat(AemExamSeat aemExamSeat)
     {
         // 数据范围校验：座位号必须为正整数
@@ -65,7 +65,7 @@ public class AemExamSeatServiceImpl implements IAemExamSeatService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateAemExamSeat(AemExamSeat aemExamSeat)
     {
         aemExamSeat.setUpdateTime(DateUtils.getNowDate());
@@ -73,14 +73,14 @@ public class AemExamSeatServiceImpl implements IAemExamSeatService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemExamSeatBySeatId(Long seatId)
     {
         return aemExamSeatMapper.deleteAemExamSeatBySeatId(seatId);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemExamSeatBySeatIds(Long[] seatIds)
     {
         return aemExamSeatMapper.deleteAemExamSeatBySeatIds(seatIds);
@@ -91,7 +91,7 @@ public class AemExamSeatServiceImpl implements IAemExamSeatService
      * 算法：按学号排序，蛇形分配座位，每列间隔一个座位（错开相邻座位防作弊）
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> autoArrangeSeats(Long examId, Long classroomId)
     {
         Map<String, Object> result = new HashMap<>();
@@ -200,7 +200,7 @@ public class AemExamSeatServiceImpl implements IAemExamSeatService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int importSeat(List<AemExamSeat> list, String operator)
     {
         if (list == null || list.isEmpty())

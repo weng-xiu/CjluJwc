@@ -69,7 +69,7 @@ public class OaNoticeServiceImpl implements IOaNoticeService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertOaNotice(OaNotice oaNotice)
     {
         oaNotice.setCreateTime(DateUtils.getNowDate());
@@ -89,7 +89,7 @@ public class OaNoticeServiceImpl implements IOaNoticeService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateOaNotice(OaNotice oaNotice)
     {
         oaNotice.setUpdateTime(DateUtils.getNowDate());
@@ -105,7 +105,7 @@ public class OaNoticeServiceImpl implements IOaNoticeService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteOaNoticeByNoticeIds(Long[] noticeIds)
     {
         for (Long noticeId : noticeIds)
@@ -123,7 +123,7 @@ public class OaNoticeServiceImpl implements IOaNoticeService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteOaNoticeByNoticeId(Long noticeId)
     {
         oaNoticeDeptMapper.deleteOaNoticeDeptByNoticeId(noticeId);
@@ -138,7 +138,7 @@ public class OaNoticeServiceImpl implements IOaNoticeService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int publishOaNotice(Long noticeId)
     {
         OaNotice notice = new OaNotice();
@@ -156,7 +156,7 @@ public class OaNoticeServiceImpl implements IOaNoticeService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int revokeOaNotice(Long noticeId)
     {
         OaNotice notice = new OaNotice();
@@ -173,7 +173,7 @@ public class OaNoticeServiceImpl implements IOaNoticeService
      * @return 结果
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int readOaNotice(Long noticeId)
     {
         Long userId = getLoginUserId();

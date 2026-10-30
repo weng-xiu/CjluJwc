@@ -13,6 +13,8 @@
 -- 执行方式（PowerShell，须带 utf8mb4 以正确处理中文字段值）：
 --       mysql --default-character-set=utf8mb4 -h<host> -P<port> -u<user> -p <test_db> < sql/desensitize-test-data.sql
 -- 幂等性：是（多次执行结果一致，均改写为同一套由主键派生的合成值）
+-- 合成标记（V5.23 S-10，仓库门禁 bin/pii-scan.js 依此豁免，勿改口径）：
+--       身份证 99010119900101xxxx、手机号 1380000xxxx；同口径已回填至 sql/yangtze_seed_data.sql
 -- 关联：db/migration/V20261007_2__add_sys_data_class.sql（台账登记）；@Sensitive DesensitizedType 口径
 -- =====================================================================================
 

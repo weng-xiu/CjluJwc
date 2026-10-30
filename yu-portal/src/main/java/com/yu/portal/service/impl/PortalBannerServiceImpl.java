@@ -39,7 +39,7 @@ public class PortalBannerServiceImpl implements IPortalBannerService
         return portalBannerMapper.selectActiveBanners();
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertPortalBanner(PortalBanner portalBanner)
     {
@@ -47,7 +47,7 @@ public class PortalBannerServiceImpl implements IPortalBannerService
         return portalBannerMapper.insertPortalBanner(portalBanner);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updatePortalBanner(PortalBanner portalBanner)
     {
@@ -55,7 +55,7 @@ public class PortalBannerServiceImpl implements IPortalBannerService
         return portalBannerMapper.updatePortalBanner(portalBanner);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deletePortalBannerByIds(Long[] bannerIds)
     {

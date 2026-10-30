@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -153,19 +154,22 @@ class TpmSelectionRuleServiceImplTest {
     // ==================== 规则4：人数上限 ====================
 
     @Test
-    @DisplayName("容量未满：通过；已满（enrolled>=limit）：违规")
+    @DisplayName("容量未满：通过；已满（在册>=limit）：违规")
     void validate_capacity() {
         when(tpmSelectionRuleMapper.selectTpmSelectionRuleList(any()))
                 .thenReturn(Arrays.asList(rule("4", "50")));
         when(samStudentMapper.selectSamStudentByStudentId(101L)).thenReturn(student(5L, 3L, "2023"));
+        // 旧口径（报名行 != '3'）会把落选/候补也算进来：若实现读它，49 人就会变 99 人被误判超限
+        lenient().when(tpmSelectionEnrollmentMapper.selectCountByOffering(20L)).thenReturn(99);
 
-        when(tpmSelectionEnrollmentMapper.selectCountByOffering(20L)).thenReturn(49);
+        when(tpmSelectionEnrollmentMapper.countEnrolledByOffering(20L)).thenReturn(49);
         assertTrue(service.validate(1L, 101L, 20L).isEmpty());
 
-        when(tpmSelectionEnrollmentMapper.selectCountByOffering(20L)).thenReturn(50);
+        when(tpmSelectionEnrollmentMapper.countEnrolledByOffering(20L)).thenReturn(50);
         List<String> v = service.validate(1L, 101L, 20L);
         assertEquals(1, v.size());
         assertTrue(v.get(0).contains("容量已满"));
+        verify(tpmSelectionEnrollmentMapper, never()).selectCountByOffering(anyLong());
     }
 
     @Test
@@ -176,7 +180,7 @@ class TpmSelectionRuleServiceImplTest {
         when(samStudentMapper.selectSamStudentByStudentId(101L)).thenReturn(student(5L, 3L, "2023"));
 
         assertTrue(service.validate(1L, 101L, 20L).isEmpty());
-        verify(tpmSelectionEnrollmentMapper, never()).selectCountByOffering(anyLong());
+        verify(tpmSelectionEnrollmentMapper, never()).countEnrolledByOffering(anyLong());
     }
 
     // ==================== 规则5：先修课程 ====================
@@ -207,7 +211,7 @@ class TpmSelectionRuleServiceImplTest {
                 rule("2", "2021"),     // 年级不符
                 rule("4", "10")));     // 容量已满
         when(samStudentMapper.selectSamStudentByStudentId(101L)).thenReturn(student(5L, 3L, "2023"));
-        when(tpmSelectionEnrollmentMapper.selectCountByOffering(20L)).thenReturn(10);
+        when(tpmSelectionEnrollmentMapper.countEnrolledByOffering(20L)).thenReturn(10);
 
         assertEquals(3, service.validate(1L, 101L, 20L).size());
     }

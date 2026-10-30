@@ -84,7 +84,7 @@ public class AemExamPlanServiceImpl implements IAemExamPlanService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertAemExamPlan(AemExamPlan aemExamPlan)
     {
         aemExamPlan.setCreateTime(DateUtils.getNowDate());
@@ -92,7 +92,7 @@ public class AemExamPlanServiceImpl implements IAemExamPlanService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateAemExamPlan(AemExamPlan aemExamPlan)
     {
         // 级联校验：发布状态的考试安排必须至少完成座位或监考编排
@@ -114,7 +114,7 @@ public class AemExamPlanServiceImpl implements IAemExamPlanService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemExamPlanByExamId(Long examId)
     {
         // 级联删除子表，保证主子表数据一致性
@@ -124,7 +124,7 @@ public class AemExamPlanServiceImpl implements IAemExamPlanService
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteAemExamPlanByExamIds(Long[] examIds)
     {
         for (Long examId : examIds)
@@ -141,7 +141,7 @@ public class AemExamPlanServiceImpl implements IAemExamPlanService
      *      → 各教室蛇形排座 → 置为已安排。
      */
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> autoArrangeExam(Long examId)
     {
         Map<String, Object> result = new HashMap<>();

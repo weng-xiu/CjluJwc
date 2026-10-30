@@ -48,7 +48,7 @@ public class TpmSelectionRoundServiceImpl implements ITpmSelectionRoundService
         return tpmSelectionRoundMapper.selectTpmSelectionRoundList(tpmSelectionRound);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertTpmSelectionRound(TpmSelectionRound tpmSelectionRound)
     {
@@ -56,7 +56,7 @@ public class TpmSelectionRoundServiceImpl implements ITpmSelectionRoundService
         return tpmSelectionRoundMapper.insertTpmSelectionRound(tpmSelectionRound);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updateTpmSelectionRound(TpmSelectionRound tpmSelectionRound)
     {
@@ -64,7 +64,7 @@ public class TpmSelectionRoundServiceImpl implements ITpmSelectionRoundService
         return tpmSelectionRoundMapper.updateTpmSelectionRound(tpmSelectionRound);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmSelectionRoundByRoundId(Long roundId)
     {
@@ -85,7 +85,7 @@ public class TpmSelectionRoundServiceImpl implements ITpmSelectionRoundService
         return tpmSelectionRoundMapper.deleteTpmSelectionRoundByRoundId(roundId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deleteTpmSelectionRoundByRoundIds(Long[] roundIds)
     {
@@ -109,7 +109,7 @@ public class TpmSelectionRoundServiceImpl implements ITpmSelectionRoundService
         return tpmSelectionRoundMapper.deleteTpmSelectionRoundByRoundIds(roundIds);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int startRound(Long roundId)
     {
@@ -129,7 +129,7 @@ public class TpmSelectionRoundServiceImpl implements ITpmSelectionRoundService
         return rows;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int finishRound(Long roundId)
     {

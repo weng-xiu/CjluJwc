@@ -59,7 +59,7 @@ public class PortalArticleServiceImpl implements IPortalArticleService
         return portalArticleMapper.selectNextArticle(columnId, articleId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertPortalArticle(PortalArticle portalArticle)
     {
@@ -69,7 +69,7 @@ public class PortalArticleServiceImpl implements IPortalArticleService
         return portalArticleMapper.insertPortalArticle(portalArticle);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int updatePortalArticle(PortalArticle portalArticle)
     {
@@ -79,14 +79,14 @@ public class PortalArticleServiceImpl implements IPortalArticleService
         return portalArticleMapper.updatePortalArticle(portalArticle);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int deletePortalArticleByIds(Long[] articleIds)
     {
         return portalArticleMapper.deletePortalArticleByIds(articleIds);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int submitForReview(Long articleId)
     {
@@ -106,7 +106,7 @@ public class PortalArticleServiceImpl implements IPortalArticleService
         return portalArticleMapper.updatePortalArticle(update);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int approveArticle(Long articleId, Long reviewerId, String comment)
     {
@@ -130,7 +130,7 @@ public class PortalArticleServiceImpl implements IPortalArticleService
         return portalArticleMapper.updatePortalArticle(update);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int rejectArticle(Long articleId, Long reviewerId, String comment)
     {
@@ -153,7 +153,7 @@ public class PortalArticleServiceImpl implements IPortalArticleService
         return portalArticleMapper.updatePortalArticle(update);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int publishArticle(Long articleId)
     {
@@ -170,7 +170,7 @@ public class PortalArticleServiceImpl implements IPortalArticleService
         return portalArticleMapper.updatePortalArticle(update);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public int withdrawArticle(Long articleId)
     {

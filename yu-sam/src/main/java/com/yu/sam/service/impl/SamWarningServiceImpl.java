@@ -20,15 +20,15 @@ public class SamWarningServiceImpl implements ISamWarningService
     @Override
     public List<SamWarning> selectSamWarningList(SamWarning samWarning) { return samWarningMapper.selectSamWarningList(samWarning); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int insertSamWarning(SamWarning samWarning) { samWarning.setCreateTime(DateUtils.getNowDate()); return samWarningMapper.insertSamWarning(samWarning); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int updateSamWarning(SamWarning samWarning) { samWarning.setUpdateTime(DateUtils.getNowDate()); return samWarningMapper.updateSamWarning(samWarning); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamWarningByWarningId(Long warningId) { return samWarningMapper.deleteSamWarningByWarningId(warningId); }
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public int deleteSamWarningByWarningIds(Long[] warningIds) { return samWarningMapper.deleteSamWarningByWarningIds(warningIds); }
 }
