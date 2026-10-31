@@ -1571,8 +1571,9 @@ CREATE TABLE `sam_student` (
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) COLLATE utf8mb4_general_ci DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
-  `remark` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '备注',
+  `remark` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '备注', 
   PRIMARY KEY (`student_id`),
+  UNIQUE KEY `uk_sam_student_no` (`student_no`),
   KEY `idx_sam_student_user_id` (`user_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=114 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='学生学籍信息表';
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -2484,7 +2485,9 @@ CREATE TABLE `tpm_selection_enrollment` (
   `remark` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '备注',
   `waitlist_rank` int DEFAULT NULL COMMENT '候补排名（抽签落选后的递补顺序，null表示非候补）',
   `priority` int DEFAULT NULL COMMENT '志愿优先级（1=第一志愿，越小越优先；weighted抽签按此加权）',
-  PRIMARY KEY (`enroll_id`)
+  `active_slot` tinyint GENERATED ALWAYS AS ((case when ((`del_flag` = _utf8mb4'0') and (`result_status` in (_utf8mb4'1',_utf8mb4'2'))) then 1 else NULL end)) STORED COMMENT '活跃行标记（1=在册/候补，退课或删除为 NULL）；仅用于唯一约束，业务不读写',
+  PRIMARY KEY (`enroll_id`),
+  UNIQUE KEY `uk_enroll_active` (`round_id`,`student_id`,`course_offering_id`,`active_slot`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9350 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='选课名单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tpm_selection_round`;

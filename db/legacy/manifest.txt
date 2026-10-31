@@ -77,6 +77,15 @@
 0.62|sql/phase33_status_report.sql|Y|教育部状态数据上报
 0.63|sql/phase34_ai_pilot.sql|Y|AI 试点
 0.64|sql/phase35_ui_theme.sql|Y|UI 主题与暗色模式令牌
+# V5.30 补登记：phase36~42 与三个演示/测试数据脚本此前漏登，导致 bin/db-manifest-check.ps1 长期 FAIL。
+# 顺序按文件落库时间排列，与既有 phase 段一致；execute 口径：结构补丁 Y，演示/测试数据 N。
+0.65|sql/phase36_f2_algorithm.sql|Y|F2 算法增强
+0.66|sql/phase37_observability.sql|Y|可观测性（告警参数/指标）
+0.67|sql/phase38_schema_drift_fix.sql|Y|schema 漂移修复
+0.68|sql/phase39_obe_attainment.sql|Y|OBE 达成度
+0.69|sql/phase40_student_profile.sql|Y|学生画像
+0.70|sql/phase41_v4_grade_entry_matrix.sql|Y|V4 成绩录入矩阵
+0.71|sql/phase42_service_desk_aging.sql|Y|服务大厅时效看板
 
 # ---------- F. 明确排除（保留登记，不参与自动导入） ----------
 9.01|sql/_drop_act.sql|N|破坏性运维脚本：DROP Flowable ACT_* 表
@@ -85,3 +94,6 @@
 9.04|sql/_drop_flow_wrapped.sql|N|破坏性运维脚本：同 9.03 的包裹版
 9.05|sql/yangtze_seed_data.sql|N|演示数据，按需手工导入
 9.06|sql/seed_feature_test_data.sql|N|功能测试数据，按需手工导入
+9.07|sql/desensitize-test-data.sql|N|测试数据脱敏脚本（合成身份证/手机号），按需手工执行
+9.08|sql/seed_portal_cms_test_data.sql|N|门户 CMS 测试数据，按需手工导入
+9.09|sql/seed_portal_covers.sql|N|门户封面图测试数据，按需手工导入

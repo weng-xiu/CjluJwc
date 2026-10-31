@@ -162,4 +162,58 @@ class TpmSelectionEnrollmentMapperXmlTest {
 
         assertTrue(sql.contains("result_status != '3'"), "删除前校验要拦住有落选记录的开课：" + sql);
     }
+
+    // ==================== T-3 并发收口：状态迁移必须带 WHERE 栅栏 ====================
+
+    @Test
+    @DisplayName("T-3 并发：退课条件迁移限定 result_status='1'，否则释放名额会重计")
+    void dropIfEnrolled_isConditionalTransition() {
+        Map<String, Object> param = new HashMap<>();
+        param.put("enrollId", 7L);
+        param.put("dropTime", new Date());
+
+        BoundSql bs = boundSqlOf("dropIfEnrolled", param);
+        String sql = normalized(bs.getSql());
+
+        assertTrue(sql.contains("set result_status = '3'"), "必须把退课状态写进 set：" + sql);
+        assertTrue(sql.contains("and result_status = '1'"), "状态判定必须在 WHERE（Java 侧先查后改会重复释放名额）：" + sql);
+        assertTrue(sql.contains("and del_flag = '0'"), "已删除行不得参与迁移：" + sql);
+        assertEquals(3, bs.getParameterMappings().size(),
+                "drop_time + update_time + enrollId 三个占位（两个时间列共用同一个参数值）：" + sql);
+    }
+
+    @Test
+    @DisplayName("T-3 并发：改选条件迁移带旧开课栅栏，且不得写 enrolled_count")
+    void swapIfEnrolled_fencesOnOldOffering() {
+        Map<String, Object> param = new HashMap<>();
+        param.put("enrollId", 7L);
+        param.put("oldOfferingId", 20L);
+        param.put("newOfferingId", 21L);
+        param.put("updateTime", new Date());
+
+        BoundSql bs = boundSqlOf("swapIfEnrolled", param);
+        String sql = normalized(bs.getSql());
+
+        assertTrue(sql.contains("and course_offering_id = ?"), "旧开课必须是栅栏条件：" + sql);
+        assertTrue(sql.contains("and result_status = '1'"), "只允许迁在册记录：" + sql);
+        assertTrue(sql.contains("lottery_result = '0'") && sql.contains("waitlist_rank = null"),
+                "改选后重置为未抽签、非候补：" + sql);
+        assertFalse(sql.contains("enrolled_count"), "名额只能由 occupySeat/releaseSeat 增量维护：" + sql);
+        assertEquals(5, bs.getParameterMappings().size(),
+                "newOfferingId + select_time + update_time + enrollId + oldOfferingId：" + sql);
+    }
+
+    @Test
+    @DisplayName("T-3 并发：候补递补只允许把 '2' 升为 '1'，否则名额会被占两次")
+    void promoteFromWaitlist_isConditional() {
+        Map<String, Object> param = new HashMap<>();
+        param.put("enrollId", 7L);
+        param.put("updateTime", new Date());
+
+        BoundSql bs = boundSqlOf("promoteFromWaitlist", param);
+        String sql = normalized(bs.getSql());
+
+        assertTrue(sql.contains("and result_status = '2'"), "递补必须限定候补态：" + sql);
+        assertEquals(2, bs.getParameterMappings().size(), "enrollId + updateTime 两个参数：" + sql);
+    }
 }

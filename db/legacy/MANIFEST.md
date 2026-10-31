@@ -96,8 +96,18 @@
 | 0.62 | `sql/phase33_status_report.sql` | — | 教育部状态数据上报 | 需补写 |
 | 0.63 | `sql/phase34_ai_pilot.sql` | — | AI 试点（问答/画像/推荐） | 需补写 |
 | 0.64 | `sql/phase35_ui_theme.sql` | — | UI 主题/暗色模式令牌 | 需补写 |
+| 0.65 | `sql/phase36_f2_algorithm.sql` | F2 | 算法增强 | 需补写 |
+| 0.66 | `sql/phase37_observability.sql` | — | 可观测性（告警参数/指标） | 需补写 |
+| 0.67 | `sql/phase38_schema_drift_fix.sql` | — | schema 漂移修复 | 需补写 |
+| 0.68 | `sql/phase39_obe_attainment.sql` | F3 | OBE 达成度 | 需补写 |
+| 0.69 | `sql/phase40_student_profile.sql` | F4 | 学生画像 | 需补写 |
+| 0.70 | `sql/phase41_v4_grade_entry_matrix.sql` | V4 | 成绩录入矩阵 | 需补写 |
+| 0.71 | `sql/phase42_service_desk_aging.sql` | F6 | 服务大厅时效看板 | 需补写 |
 
-> `phase2_*` 不存在（历史缺失编号，非遗漏）。E 段共 37 个文件、覆盖 phase1–phase35。
+> `phase2_*` 不存在（历史缺失编号，非遗漏）。E 段共 44 个文件、覆盖 phase1–phase42。
+> 0.65–0.71 为 V5.30 补登记：`manifest.txt` 此前也没登记，`bin/db-manifest-check.ps1`
+> 因 10 个脚本未入清单长期报 FAIL（2026-10-22 新增的 phase36–42 在清单 2026-10-02
+> 最后一次更新之后）。两处（`manifest.txt` / 本文件）必须同步维护。
 
 ## 基线重放的已知阻塞项（由 `bin/db-menu-check.ps1` 自动发现）
 
@@ -149,6 +159,7 @@
 |---|---|
 | `sql/_drop_act.sql`、`sql/_drop_act_wrapped.sql`、`sql/_drop_flow.sql`、`sql/_drop_flow_wrapped.sql` | **破坏性运维脚本**（DROP Flowable 引擎表），只用于本地重放官方建表，绝不进入自动导入链路 |
 | `sql/yangtze_seed_data.sql`、`sql/seed_feature_test_data.sql` | 演示/测试数据，与结构无关；由各环境按需手工导入 |
+| `sql/desensitize-test-data.sql`、`sql/seed_portal_cms_test_data.sql`、`sql/seed_portal_covers.sql` | 测试/演示数据（脱敏样本、门户 CMS 与封面图），与结构无关；由各环境按需手工导入（V5.30 补登） |
 | `sql/备份/*.sql` | 含真实个人信息的整库 dump，**已出库并被 `.gitignore` 忽略**（V4.0 §7.3/C1），仅本机保留 |
 
 ## 校验

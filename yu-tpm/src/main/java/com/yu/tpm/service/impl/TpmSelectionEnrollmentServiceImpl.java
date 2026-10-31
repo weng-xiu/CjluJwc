@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.annotation.BizMetric;
+import com.yu.common.exception.ServiceException;
 import com.yu.common.monitor.BizMetrics;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.schedule.TimeSlotUtils;
@@ -29,6 +30,7 @@ import com.yu.tpm.service.ITpmSelectionRuleService;
 import com.yu.brm.mapper.BrmTeacherMapper;
 import com.yu.brm.domain.BrmTeacher;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.yu.tpm.mapper.TpmSelectionEnrollmentMapper;
@@ -207,6 +209,18 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
 
         if (enrolledList != null && !enrolledList.isEmpty())
         {
+            // P-2：重复选课必须先于时间冲突判定。同一开课天然与自己时间完全重叠，不先判重会把它
+            // 报成「与已选课程【X】时间冲突：第3-4节 与 第3-4节 冲突」，学生看不出真实原因。
+            // 这里只挡「顺序重复提交」；并发重复由 DB 唯一键 uk_enroll_active 兜底。
+            for (TpmSelectionEnrollment enrolled : enrolledList)
+            {
+                if (courseOfferingId != null && courseOfferingId.equals(enrolled.getCourseOfferingId()))
+                {
+                    warnings.add(new ConflictWarning("DUPLICATE_COURSE", "本轮次已选过该课程，请勿重复选课"));
+                    return warnings;
+                }
+            }
+
             // 提取已选课程的开课ID列表
             List<Long> enrolledOfferingIds = enrolledList.stream()
                     .map(TpmSelectionEnrollment::getCourseOfferingId)
@@ -536,6 +550,9 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
 
         // 3. 保存选课记录。整个方法处在同一事务内：insert 抛错会连同上面占用的名额一起回滚，
         //    不需要 catch 里手工补偿（那条补偿在进程被杀时根本不会执行）。
+        //    P-2：并发重复选课（双击/重试）由 DB 唯一键 uk_enroll_active 兜底拦下，
+        //    这里把冲突异常翻成业务提示，但**必须继续抛出**——返回值会让事务提交，
+        //    名额就跟着留下，变成「没选上课却少了一个名额」。
         TpmSelectionEnrollment enrollment = new TpmSelectionEnrollment();
         enrollment.setStudentId(studentId);
         enrollment.setCourseOfferingId(courseOfferingId);
@@ -548,7 +565,17 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
             enrollment.setPriority(priority); // F2-2 志愿优先级
         }
         enrollment.setCreateTime(DateUtils.getNowDate());
-        tpmSelectionEnrollmentMapper.insertTpmSelectionEnrollment(enrollment);
+        try
+        {
+            tpmSelectionEnrollmentMapper.insertTpmSelectionEnrollment(enrollment);
+        }
+        catch (DuplicateKeyException e)
+        {
+            // 唯一键 uk_enroll_active 命中：同一轮次同一学生同一开课已有在册/候补行。
+            // 抛 ServiceException（RuntimeException）→ 事务回滚（连 occupySeat 一起），
+            // 由 GlobalExceptionHandler 输出友好文案；不在这里返回 AjaxResult.error。
+            throw new ServiceException("您已在本轮次选中该课程，请勿重复提交");
+        }
 
         // 4. 清除学生选课缓存
         selectionCacheManager.clearStudentCache(studentId, roundId);
@@ -884,7 +911,14 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
             {
                 break;
             }
-            tpmSelectionEnrollmentMapper.promoteFromWaitlist(e.getEnrollId(), now);
+            // T-3 并发收口：递补本身也是条件迁移（仅 result_status='2' 可升）。
+            // 两个并发退课会各自触发一次本方法，同一条候补行只应该被递补一次；
+            // 改不到说明该行已被另一路抢先递补/退掉，刚占到的名额必须当场归还，否则空位永久消失。
+            if (tpmSelectionEnrollmentMapper.promoteFromWaitlist(e.getEnrollId(), now) == 0)
+            {
+                tpmCourseOfferingMapper.releaseSeat(offeringId);
+                break;
+            }
             selectionCacheManager.clearStudentCache(e.getStudentId(), e.getRoundId());
             promoted++;
         }
@@ -925,13 +959,15 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         }
 
         // 更新为退课状态
-        enrollment.setResultStatus("3");
-        enrollment.setDropTime(new Date());
-        enrollment.setUpdateTime(DateUtils.getNowDate());
-        tpmSelectionEnrollmentMapper.updateTpmSelectionEnrollment(enrollment);
-
-        // T-3：释放名额走 DB 条件更新（带 enrolled_count > 0 守卫，计数不会被减成负数），
-        // 与选课占名额同处一张表的行锁域内，不再有 Redis 与 DB 两套计数需要对齐。
+        // T-3 并发收口：状态判定不能留在 Java 侧。原先「读到 result_status='1' 就 update + releaseSeat」
+        // 存在读改写窗口：同一记录被并发退课时两条请求都读到 '1'，各自释放一次名额，
+        // enrolled_count 从此少于真实在册人数（releaseSeat 的 > 0 守卫只能防负数，防不住少计）。
+        // 改成条件状态迁移后，只有把 '1' 迁到 '3' 的那一条返回 1，才允许释放名额。
+        Date dropTime = new Date();
+        if (tpmSelectionEnrollmentMapper.dropIfEnrolled(enrollId, dropTime) == 0)
+        {
+            return AjaxResult.error("当前选课记录状态不允许退课");
+        }
         tpmCourseOfferingMapper.releaseSeat(enrollment.getCourseOfferingId());
         // 清除学生选课缓存
         selectionCacheManager.clearStudentCache(enrollment.getStudentId(), enrollment.getRoundId());
@@ -1011,14 +1047,16 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         }
 
         // 3. 原地改指向目标开课，重置为未抽签选中
-        enrollment.setCourseOfferingId(newOfferingId);
-        enrollment.setResultStatus("1");
-        enrollment.setLotteryResult("0");
-        enrollment.setWaitlistRank(null);
-        enrollment.setDropTime(null);
-        enrollment.setSelectTime(new Date());
-        enrollment.setUpdateTime(DateUtils.getNowDate());
-        tpmSelectionEnrollmentMapper.updateTpmSelectionEnrollment(enrollment);
+        // T-3 并发收口：迁移必须带「旧开课」栅栏。原先两条并发改选都会 occupySeat(新) 成功，
+        // 随后各自 releaseSeat(旧)：新开课被占两次而记录只指过去一次，旧开课被释放两次，
+        // 两边名额同时漂移。改不到说明记录已被另一路改走/退掉，把刚占到的名额当场归还
+        // （仍在本事务内，与上面的 occupySeat 成对提交，净额为零）。
+        Date swapTime = new Date();
+        if (tpmSelectionEnrollmentMapper.swapIfEnrolled(enrollId, oldOfferingId, newOfferingId, swapTime) == 0)
+        {
+            tpmCourseOfferingMapper.releaseSeat(newOfferingId);
+            return AjaxResult.error("当前选课记录状态不允许改选（可能已被并发操作处理）");
+        }
 
         // 4. 记录已指向新课后释放旧名额；若本步或上一步抛错，整个事务回滚，新名额自动归还
         tpmCourseOfferingMapper.releaseSeat(oldOfferingId);

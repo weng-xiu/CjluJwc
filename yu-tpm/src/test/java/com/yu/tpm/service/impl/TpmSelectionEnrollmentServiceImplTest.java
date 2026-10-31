@@ -1,6 +1,7 @@
 package com.yu.tpm.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -27,9 +28,11 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.yu.common.core.domain.AjaxResult;
+import com.yu.common.exception.ServiceException;
 import com.yu.common.monitor.BizMetrics;
 import com.yu.framework.cache.SelectionCacheManager;
 import com.yu.tpm.domain.TpmCourseLibrary;
@@ -51,7 +54,7 @@ import com.yu.tpm.service.ITpmSelectionRuleService;
  *
  * <p>覆盖 T6 公平抽签（确定性随机种子、超/未满容量分支、候补排名）、候补递补（按空余名额递补 + DB 占名额）、
  * 选课/退课/改选的名额增减（T-3：DB 条件更新 occupySeat / releaseSeat）、
- * 选课冲突检测（时间冲突判定）。</p>
+ * 选课冲突检测（时间冲突判定）、重复选课拦截与唯一键冲突转译（P-2）。</p>
  */
 @ExtendWith(MockitoExtension.class)
 class TpmSelectionEnrollmentServiceImplTest {
@@ -295,6 +298,7 @@ class TpmSelectionEnrollmentServiceImplTest {
         when(enrollmentMapper.selectWaitlistByOffering(20L)).thenReturn(new ArrayList<>(Arrays.asList(
                 enroll(11L, 201L, 20L), enroll(12L, 202L, 20L), enroll(13L, 203L, 20L))));
         when(offeringMapper.occupySeat(20L)).thenReturn(1); // 名额充裕
+        when(enrollmentMapper.promoteFromWaitlist(anyLong(), any())).thenReturn(1); // 条件迁移命中
 
         Map<String, Object> r = service.promoteWaitlist(20L);
 
@@ -313,11 +317,31 @@ class TpmSelectionEnrollmentServiceImplTest {
                 enroll(11L, 201L, 20L), enroll(12L, 202L, 20L), enroll(13L, 203L, 20L)));
         when(enrollmentMapper.selectWaitlistByOffering(20L)).thenReturn(waitlist);
         when(offeringMapper.occupySeat(20L)).thenReturn(1, 0); // 第二个名额已被别人占走
+        when(enrollmentMapper.promoteFromWaitlist(anyLong(), any())).thenReturn(1);
 
         Map<String, Object> r = service.promoteWaitlist(20L);
 
         assertEquals(1, r.get("promoted"), "名额抢不到就停，不能把候补拔到容量外");
         verify(enrollmentMapper, times(1)).promoteFromWaitlist(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("候补递补并发：候补行已被另一路递补时归还名额并停止")
+    void promoteWaitlist_lostRace_returnsSeat() {
+        TpmCourseOffering off = new TpmCourseOffering(); off.setMaxStudents(5);
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(off);
+        when(enrollmentMapper.countAdmittedByOffering(20L)).thenReturn(4); // 空 1
+        when(enrollmentMapper.selectWaitlistByOffering(20L)).thenReturn(new ArrayList<>(Arrays.asList(
+                enroll(11L, 201L, 20L))));
+        when(offeringMapper.occupySeat(20L)).thenReturn(1);
+        // 递补条件迁移失败：该行已被另一路退课触发的递补升为中签
+        when(enrollmentMapper.promoteFromWaitlist(anyLong(), any())).thenReturn(0);
+
+        Map<String, Object> r = service.promoteWaitlist(20L);
+
+        assertEquals(0, r.get("promoted"), "没改到记录就不能算递补成功");
+        verify(offeringMapper).releaseSeat(20L); // 刚占的名额必须归还
+        verify(cacheManager, times(0)).clearStudentCache(anyLong(), anyLong());
     }
 
     @Test
@@ -419,6 +443,22 @@ class TpmSelectionEnrollmentServiceImplTest {
                 && x.getMessage().contains("先修")));
     }
 
+    @Test
+    @DisplayName("P-2：冲突预检对重复选课返回 DUPLICATE_COURSE，而不是自撞的时间冲突")
+    void checkConflicts_duplicateCourse() {
+        ReflectionTestUtils.setField(service, "defaultMaxCredits", 30.0);
+        // 同一门课的排课当然与自己重叠：不先判重就会报成「第3-4节 与 第3-4节 冲突」
+        when(scheduleMapper.selectTpmScheduleList(any())).thenReturn(new ArrayList<>(Arrays.asList(sched(3, 3, 4, 1, 16))));
+        when(enrollmentMapper.selectByStudentAndRound(101L, 1L))
+                .thenReturn(new ArrayList<>(Arrays.asList(enroll(1L, 101L, 20L))));
+
+        List<ConflictWarning> w = service.checkSelectionConflicts(101L, 20L, 1L);
+
+        assertEquals(1, w.size(), "重复选课只报一条，不再叠加时间/学分误报");
+        assertEquals("DUPLICATE_COURSE", w.get(0).getConflictType());
+        assertTrue(w.get(0).getMessage().contains("已选过该课程"));
+    }
+
     // ==================== dropCourse ====================
 
     @Test
@@ -433,11 +473,14 @@ class TpmSelectionEnrollmentServiceImplTest {
         TpmCourseOffering off20 = new TpmCourseOffering(); off20.setMaxStudents(5);
         when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(off20);
         when(enrollmentMapper.countAdmittedByOffering(20L)).thenReturn(5);
+        // T-3 并发收口：状态迁移改为条件更新，只有 affected=1 才允许释放名额
+        when(enrollmentMapper.dropIfEnrolled(eq(1L), any())).thenReturn(1);
 
         AjaxResult r = service.dropCourse(1L);
 
         assertEquals(200, r.get(AjaxResult.CODE_TAG));
-        assertEquals("3", e.getResultStatus());
+        verify(enrollmentMapper).dropIfEnrolled(eq(1L), any());
+        verify(enrollmentMapper, times(0)).updateTpmSelectionEnrollment(any());
         verify(offeringMapper).releaseSeat(20L);
         verify(cacheManager).clearStudentCache(101L, 1L);
         // 中签者退课应触发候补递补查询
@@ -454,7 +497,25 @@ class TpmSelectionEnrollmentServiceImplTest {
         AjaxResult r = service.dropCourse(1L);
 
         assertEquals(500, r.get(AjaxResult.CODE_TAG));
-        verify(enrollmentMapper, times(0)).updateTpmSelectionEnrollment(any());
+        verify(enrollmentMapper, times(0)).dropIfEnrolled(anyLong(), any());
+        verify(offeringMapper, times(0)).releaseSeat(anyLong());
+    }
+
+    @Test
+    @DisplayName("退课并发：条件迁移被抢时（affected=0）不得重复释放名额")
+    void dropCourse_lostRace_doesNotReleaseSeat() {
+        TpmSelectionEnrollment e = enroll(1L, 101L, 20L);
+        when(enrollmentMapper.selectTpmSelectionEnrollmentByEnrollId(1L)).thenReturn(e);
+        TpmSelectionRound round = new TpmSelectionRound(); round.setRoundStatus("1");
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(round);
+        // 另一路已把记录退掉：条件迁移返回 0
+        when(enrollmentMapper.dropIfEnrolled(eq(1L), any())).thenReturn(0);
+
+        AjaxResult r = service.dropCourse(1L);
+
+        assertEquals(500, r.get(AjaxResult.CODE_TAG));
+        verify(offeringMapper, times(0)).releaseSeat(anyLong());
+        verify(cacheManager, times(0)).clearStudentCache(anyLong(), anyLong());
     }
 
     // ==================== enrollWithValidation（T-3 名额） ====================
@@ -520,6 +581,40 @@ class TpmSelectionEnrollmentServiceImplTest {
         verify(bizMetrics, times(0)).recordOversell();
     }
 
+    @Test
+    @DisplayName("P-2：重复选同一门课在占名额前就被拦下，不消耗名额")
+    void enroll_duplicateCourse_rejectedBeforeOccupy() {
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(openRound());
+        when(enrollmentMapper.selectByStudentAndRound(101L, 1L))
+                .thenReturn(new ArrayList<>(Arrays.asList(enroll(1L, 101L, 20L))));
+        when(scheduleMapper.selectTpmScheduleList(any())).thenReturn(new ArrayList<>(Arrays.asList(sched(3, 3, 4, 1, 16))));
+
+        AjaxResult r = service.enrollWithValidation(101L, 20L, 1L, null);
+
+        assertEquals(500, r.get(AjaxResult.CODE_TAG));
+        assertTrue(String.valueOf(r.get(AjaxResult.MSG_TAG)).contains("已选过该课程"),
+                "重复选课要说真实原因，不能报成与自己时间冲突：" + r.get(AjaxResult.MSG_TAG));
+        verify(offeringMapper, times(0)).occupySeat(anyLong());
+        verify(enrollmentMapper, times(0)).insertTpmSelectionEnrollment(any());
+    }
+
+    @Test
+    @DisplayName("P-2：并发重复提交被唯一键拦下时抛业务异常（让事务回滚、占的名额一起撤销）")
+    void enroll_duplicateKey_throwsServiceException() {
+        stubCleanEnrollPath(20L, 50);
+        when(offeringMapper.occupySeat(20L)).thenReturn(1);
+        when(enrollmentMapper.insertTpmSelectionEnrollment(any()))
+                .thenThrow(new DuplicateKeyException(
+                        "Duplicate entry '1-101-20-1' for key 'tpm_selection_enrollment.uk_enroll_active'"));
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> service.enrollWithValidation(101L, 20L, 1L, null));
+
+        assertTrue(ex.getMessage().contains("请勿重复提交"), "必须是可读的业务提示，而不是 MySQL 原文：" + ex.getMessage());
+        // 不能吞异常去返回 AjaxResult：返回值会让事务提交，刚占的名额就永久泄漏了
+        verify(cacheManager, times(0)).clearStudentCache(anyLong(), anyLong());
+    }
+
     // ==================== swapCourse（T-3 先占后放） ====================
 
     @Test
@@ -537,15 +632,43 @@ class TpmSelectionEnrollmentServiceImplTest {
         when(offeringMapper.selectTpmCourseOfferingByOfferingId(21L)).thenReturn(off21);
         when(ruleService.validate(1L, 101L, 21L)).thenReturn(new ArrayList<>());
         when(offeringMapper.occupySeat(21L)).thenReturn(1);
+        when(enrollmentMapper.swapIfEnrolled(eq(1L), eq(20L), eq(21L), any())).thenReturn(1);
 
         AjaxResult r = service.swapCourse(1L, 21L);
 
         assertEquals(200, r.get(AjaxResult.CODE_TAG));
-        assertEquals(21L, e.getCourseOfferingId(), "报名记录必须已改指向目标开课");
+        verify(enrollmentMapper).swapIfEnrolled(eq(1L), eq(20L), eq(21L), any());
+        verify(enrollmentMapper, times(0)).updateTpmSelectionEnrollment(any());
         InOrder io = inOrder(offeringMapper);
         io.verify(offeringMapper).occupySeat(21L);
         io.verify(offeringMapper).releaseSeat(20L);
         verify(cacheManager).clearStudentCache(101L, 1L);
+    }
+
+    @Test
+    @DisplayName("改选并发：条件迁移被抢时（affected=0）归还新名额且不释放旧名额")
+    void swapCourse_lostRace_returnsNewSeatOnly() {
+        TpmSelectionEnrollment e = enroll(1L, 101L, 20L);
+        when(enrollmentMapper.selectTpmSelectionEnrollmentByEnrollId(1L)).thenReturn(e);
+        TpmSelectionRound round = new TpmSelectionRound();
+        round.setRoundId(1L);
+        round.setAllowDropAdjust("1");
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(round);
+        when(enrollmentMapper.selectByStudentAndRound(101L, 1L)).thenReturn(new ArrayList<>());
+        when(scheduleMapper.selectTpmScheduleList(any())).thenReturn(new ArrayList<>());
+        TpmCourseOffering off21 = new TpmCourseOffering(); off21.setMaxStudents(50); off21.setEnrolledCount(1);
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(21L)).thenReturn(off21);
+        when(ruleService.validate(1L, 101L, 21L)).thenReturn(new ArrayList<>());
+        when(offeringMapper.occupySeat(21L)).thenReturn(1);
+        // 记录已被另一路改走/退掉：旧开课栅栏不命中
+        when(enrollmentMapper.swapIfEnrolled(eq(1L), eq(20L), eq(21L), any())).thenReturn(0);
+
+        AjaxResult r = service.swapCourse(1L, 21L);
+
+        assertEquals(500, r.get(AjaxResult.CODE_TAG));
+        verify(offeringMapper).releaseSeat(21L); // 刚占的新名额要归还
+        verify(offeringMapper, times(0)).releaseSeat(20L); // 旧名额不得释放（记录还在旧课上）
+        verify(cacheManager, times(0)).clearStudentCache(anyLong(), anyLong());
     }
 
     @Test
