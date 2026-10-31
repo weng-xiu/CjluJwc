@@ -6,8 +6,9 @@
  *  R1 主键必有：db/ci/01-schema.sql 里每张 CREATE TABLE 必须声明 PRIMARY KEY。
  *  R2 基线必同步：db/migration/*.sql 里 `ADD INDEX|KEY` 的每条索引，必须在
  *     db/ci/01-schema.sql 中以**完全相同的列序**存在。
- *  R3 热点必在位：REQUIRED_HOT_INDEXES 登记的索引（P-1 四张热点表的性能索引 +
- *     V20261031.1 的 uk_enroll_active）必须在基线中存在且列序一致。
+ *  R3 热点必在位：REQUIRED_HOT_INDEXES 登记的索引（P-1 两批热点表的性能索引——
+ *     V20261031.3 的选课/课表/成绩/用户四表 + V20261031.4 的开课/教师/调停课/用户角色四表，
+ *     以及 V20261031.1 的 uk_enroll_active）必须在基线中存在且列序一致。
  *  R4 不许重复：同一张表上两个索引列集合完全相同 → FAIL（纯写放大）。
  *     非唯一索引是另一索引的严格左前缀 → WARN（有冗余，但历史债不全在本批清）。
  *
@@ -59,7 +60,25 @@ const REQUIRED_HOT_INDEXES = [
     ['semester_id', 'course_id'], false, 'V20261031_3'],
   // V20261031.3：用户登录取用户 / 部门树筛选（普通索引，不是 UNIQUE，见迁移头注）
   ['sys_user', 'idx_user_name', ['user_name', 'del_flag'], false, 'V20261031_3'],
-  ['sys_user', 'idx_user_dept_status', ['dept_id', 'status'], false, 'V20261031_3']
+  ['sys_user', 'idx_user_dept_status', ['dept_id', 'status'], false, 'V20261031_3'],
+  // V20261031.4：P-1 余面四表（V5.32 批次 C 第三项）
+  // 开课表：学期+开课状态（选课/排课/门户三条链路）、教师打头（只给教师时也能用）
+  ['tpm_course_offering', 'idx_offering_semester_status',
+    ['semester_id', 'del_flag', 'offering_status', 'status'], false, 'V20261031_4'],
+  ['tpm_course_offering', 'idx_offering_teacher',
+    ['teacher_id', 'semester_id'], false, 'V20261031_4'],
+  // 教师表：工号（导入逐行校验，N+1）、用户（门户按登录用户取档案）、部门+状态（列表/候选池）
+  ['brm_teacher', 'idx_teacher_code', ['teacher_code'], false, 'V20261031_4'],
+  ['brm_teacher', 'idx_teacher_user', ['user_id'], false, 'V20261031_4'],
+  ['brm_teacher', 'idx_teacher_dept_status', ['dept_id', 'status'], false, 'V20261031_4'],
+  // 调停课：待审列表按 approve_status、门户「我的申请」按 create_by（**不是**报告的 approve_by——
+  // 该列全仓只在 SET 里出现，零 WHERE 过滤，见迁移头注 ①）
+  ['tpm_schedule_adjustment', 'idx_adjust_appr_status',
+    ['approve_status', 'del_flag', 'create_time'], false, 'V20261031_4'],
+  ['tpm_schedule_adjustment', 'idx_adjust_creator',
+    ['create_by', 'del_flag', 'create_time'], false, 'V20261031_4'],
+  // 用户角色：主键 (user_id, role_id) 服务不了「按角色查用户」；带 user_id 成覆盖索引
+  ['sys_user_role', 'idx_user_role_role', ['role_id', 'user_id'], false, 'V20261031_4']
 ];
 
 const argv = process.argv.slice(2);

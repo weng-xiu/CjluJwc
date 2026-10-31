@@ -536,7 +536,10 @@ CREATE TABLE `brm_teacher` (
   `update_by` varchar(64) COLLATE utf8mb4_general_ci DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '备注',
-  PRIMARY KEY (`teacher_id`)
+  PRIMARY KEY (`teacher_id`),
+  KEY `idx_teacher_code` (`teacher_code`),
+  KEY `idx_teacher_user` (`user_id`),
+  KEY `idx_teacher_dept_status` (`dept_id`,`status`)
 ) ENGINE=InnoDB AUTO_INCREMENT=101 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='教师表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `brm_teacher_position`;
@@ -2319,7 +2322,8 @@ DROP TABLE IF EXISTS `sys_user_role`;
 CREATE TABLE `sys_user_role` (
   `user_id` bigint NOT NULL COMMENT '用户ID',
   `role_id` bigint NOT NULL COMMENT '角色ID',
-  PRIMARY KEY (`user_id`,`role_id`)
+  PRIMARY KEY (`user_id`,`role_id`),
+  KEY `idx_user_role_role` (`role_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户和角色关联表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tpm_course_library`;
@@ -2372,7 +2376,9 @@ CREATE TABLE `tpm_course_offering` (
   `update_by` varchar(64) COLLATE utf8mb4_general_ci DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '备注',
-  PRIMARY KEY (`offering_id`)
+  PRIMARY KEY (`offering_id`),
+  KEY `idx_offering_semester_status` (`semester_id`,`del_flag`,`offering_status`,`status`),
+  KEY `idx_offering_teacher` (`teacher_id`,`semester_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9724 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='开课计划表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tpm_credit_structure`;
@@ -2467,7 +2473,9 @@ CREATE TABLE `tpm_schedule_adjustment` (
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '备注',
   `del_flag` char(1) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0' COMMENT '删除标志（0代表存在 2代表删除）',
-  PRIMARY KEY (`adjust_id`)
+  PRIMARY KEY (`adjust_id`),
+  KEY `idx_adjust_appr_status` (`approve_status`,`del_flag`,`create_time`),
+  KEY `idx_adjust_creator` (`create_by`,`del_flag`,`create_time`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9752 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='调停课申请表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tpm_selection_enrollment`;
