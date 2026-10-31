@@ -179,6 +179,14 @@ jobs:
       - name: Check @Transactional rollback semantics
         run: node bin/tx-scan.js
 
+      # V5.31 P-1：DDL 索引与主键门禁。CI 用 db/ci/01-schema.sql 建空库跑集成测试——
+      # 迁移里加了索引却没同步基线，空库就没有该索引，性能回归永远测不出来；反之
+      # 只在开发库手工 ALTER 不落脚本，就是「库里能跑、仓库里没有」的漂移。
+      # 规则见 bin/schema-index-check.js 头注释（R1 主键必有 / R2 基线必同步 /
+      # R3 热点必在位 / R4 不许重复）。
+      - name: Check schema primary keys & index sync
+        run: node bin/schema-index-check.js
+
   build-images:
     # Q2 部署阶段：三门禁全绿后构建后端/管理端/门户三镜像；main 推送时打 sha + latest 双标签并推 GHCR，
     # PR 仅跑一次 docker build 验证 Dockerfile 可构建（push=false，不登录不推送），提前暴露镜像层回归。

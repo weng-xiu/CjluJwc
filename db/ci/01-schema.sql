@@ -169,7 +169,9 @@ CREATE TABLE `aem_grade_record` (
   `submit_time` datetime DEFAULT NULL COMMENT '提交时间',
   `lock_time` datetime DEFAULT NULL COMMENT '锁定时间',
   PRIMARY KEY (`grade_id`),
-  KEY `idx_grade_submit_status` (`submit_status`)
+  KEY `idx_grade_submit_status` (`submit_status`),
+  KEY `idx_grade_student_semester` (`student_id`,`semester_id`),
+  KEY `idx_grade_semester_course` (`semester_id`,`course_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9732 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='成绩记录表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `aem_grade_review`;
@@ -2284,7 +2286,9 @@ CREATE TABLE `sys_user` (
   `account_status` varchar(20) DEFAULT 'active' COMMENT '??????',
   `enrollment_date` date DEFAULT NULL COMMENT '??/????',
   `graduation_date` date DEFAULT NULL COMMENT '??/????',
-  PRIMARY KEY (`user_id`)
+  PRIMARY KEY (`user_id`),
+  KEY `idx_user_name` (`user_name`,`del_flag`),
+  KEY `idx_user_dept_status` (`dept_id`,`status`)
 ) ENGINE=InnoDB AUTO_INCREMENT=102 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户信息表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `sys_user_mfa`;
@@ -2432,7 +2436,9 @@ CREATE TABLE `tpm_schedule` (
   `update_by` varchar(64) COLLATE utf8mb4_general_ci DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '备注',
-  PRIMARY KEY (`schedule_id`)
+  PRIMARY KEY (`schedule_id`),
+  KEY `idx_schedule_offering` (`offering_id`,`week_day`,`start_period`),
+  KEY `idx_schedule_classroom` (`classroom_id`,`week_day`,`start_period`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9346 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='排课表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tpm_schedule_adjustment`;
@@ -2487,7 +2493,9 @@ CREATE TABLE `tpm_selection_enrollment` (
   `priority` int DEFAULT NULL COMMENT '志愿优先级（1=第一志愿，越小越优先；weighted抽签按此加权）',
   `active_slot` tinyint GENERATED ALWAYS AS ((case when ((`del_flag` = _utf8mb4'0') and (`result_status` in (_utf8mb4'1',_utf8mb4'2'))) then 1 else NULL end)) STORED COMMENT '活跃行标记（1=在册/候补，退课或删除为 NULL）；仅用于唯一约束，业务不读写',
   PRIMARY KEY (`enroll_id`),
-  UNIQUE KEY `uk_enroll_active` (`round_id`,`student_id`,`course_offering_id`,`active_slot`)
+  UNIQUE KEY `uk_enroll_active` (`round_id`,`student_id`,`course_offering_id`,`active_slot`),
+  KEY `idx_enroll_offering` (`course_offering_id`,`result_status`,`del_flag`),
+  KEY `idx_enroll_student` (`student_id`,`result_status`,`del_flag`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9350 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='选课名单表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tpm_selection_round`;
