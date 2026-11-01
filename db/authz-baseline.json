@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "note": "S-11 授权基线：已人工确认的「登录即可调」写接口。新增接口必须先加 @PreAuthorize，确认属于设计如此的才可加到这里。当前存量分三类：①自服务类（个人资料/头像/改密/MFA/消息已读/登录注册解锁屏）——只能操作当前登录人自己的数据；②模板下载类（importTemplate）——返回静态表头，不含数据；③代码内自校类（PortalAdjustmentController 的 approve/reject/pendingList）——不经 @PreAuthorize，而是在方法里调 checkApprover() 校 tpm.adjust.approver 配置。",
+  "unannotatedWrite": [
+    "yu-admin/src/main/java/com/yu/web/controller/common/CommonController.java#CommonController.uploadFile",
+    "yu-admin/src/main/java/com/yu/web/controller/common/CommonController.java#CommonController.uploadFiles",
+    "yu-admin/src/main/java/com/yu/web/controller/system/SysIndexController.java#SysIndexController.index",
+    "yu-admin/src/main/java/com/yu/web/controller/system/SysIndexController.java#SysIndexController.unlockScreen",
+    "yu-admin/src/main/java/com/yu/web/controller/system/SysLoginController.java#SysLoginController.login",
+    "yu-admin/src/main/java/com/yu/web/controller/system/SysMfaController.java#SysMfaController.bind",
+    "yu-admin/src/main/java/com/yu/web/controller/system/SysMfaController.java#SysMfaController.confirm",
+    "yu-admin/src/main/java/com/yu/web/controller/system/SysMfaController.java#SysMfaController.unbind",
+    "yu-admin/src/main/java/com/yu/web/controller/system/SysNoticeController.java#SysNoticeController.markRead",
+    "yu-admin/src/main/java/com/yu/web/controller/system/SysNoticeController.java#SysNoticeController.markReadAll",
+    "yu-admin/src/main/java/com/yu/web/controller/system/SysProfileController.java#SysProfileController.avatar",
+    "yu-admin/src/main/java/com/yu/web/controller/system/SysProfileController.java#SysProfileController.updateProfile",
+    "yu-admin/src/main/java/com/yu/web/controller/system/SysProfileController.java#SysProfileController.updatePwd",
+    "yu-admin/src/main/java/com/yu/web/controller/system/SysRegisterController.java#SysRegisterController.register",
+    "yu-admin/src/main/java/com/yu/web/controller/system/SysUserController.java#SysUserController.importTemplate",
+    "yu-aem/src/main/java/com/yu/aem/controller/AemEvaluationQuestionController.java#AemEvaluationQuestionController.importTemplate",
+    "yu-aem/src/main/java/com/yu/aem/controller/AemExamInvigilationController.java#AemExamInvigilationController.importTemplate",
+    "yu-aem/src/main/java/com/yu/aem/controller/AemExamSeatController.java#AemExamSeatController.importTemplate",
+    "yu-aem/src/main/java/com/yu/aem/controller/AemGradeRecordController.java#AemGradeRecordController.importTemplate",
+    "yu-brm/src/main/java/com/yu/brm/controller/BrmClassroomController.java#BrmClassroomController.importTemplate",
+    "yu-brm/src/main/java/com/yu/brm/controller/BrmTeacherController.java#BrmTeacherController.importTemplate",
+    "yu-portal/src/main/java/com/yu/portal/controller/PortalAdjustmentController.java#PortalAdjustmentController.approve",
+    "yu-portal/src/main/java/com/yu/portal/controller/PortalAdjustmentController.java#PortalAdjustmentController.reject",
+    "yu-sam/src/main/java/com/yu/sam/controller/SamStudentController.java#SamStudentController.importTemplate",
+    "yu-tpm/src/main/java/com/yu/tpm/controller/TpmCourseLibraryController.java#TpmCourseLibraryController.importTemplate",
+    "yu-tpm/src/main/java/com/yu/tpm/controller/TpmTrainingPlanController.java#TpmTrainingPlanController.importTemplate"
+  ]
+}

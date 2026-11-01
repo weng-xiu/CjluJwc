@@ -141,6 +141,7 @@ public class BrmClassroomBorrowServiceImpl implements IBrmClassroomBorrowService
         }
         catch (NumberFormatException ignored)
         {
+            // empty-catch-ok: 星期字段非数字（如已存成文字）时原样返回，课表展示不因此中断
         }
         return String.valueOf(weekDay);
     }

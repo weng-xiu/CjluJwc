@@ -2,6 +2,8 @@ package com.yu.sam.service.impl;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,8 @@ import com.yu.sam.service.ISamStudentCipherMigrationService;
 @Service
 public class SamStudentCipherMigrationServiceImpl implements ISamStudentCipherMigrationService
 {
+    private static final Logger log = LoggerFactory.getLogger(SamStudentCipherMigrationServiceImpl.class);
+
     @Autowired
     private SamStudentMapper samStudentMapper;
 
@@ -98,7 +102,10 @@ public class SamStudentCipherMigrationServiceImpl implements ISamStudentCipherMi
             }
             catch (Exception ignore)
             {
-                // 密钥不符/密文损坏 → 回退明文列，保证读路径不因迁移而失败
+                // 密钥不符/密文损坏 → 回退明文列，保证读路径不因迁移而失败。
+                // Q-1：回退本身是对的，但它是"PII 加密默默失效"的信号，必须留痕，
+                // 否则密钥配错时全站静默读明文而无人发现。
+                log.warn("身份证密文解密失败，回退明文列 studentId={}：{}", studentId, ignore.getMessage());
             }
         }
         return student.getIdCard();

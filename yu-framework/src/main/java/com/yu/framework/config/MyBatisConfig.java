@@ -10,6 +10,8 @@ import org.apache.ibatis.io.VFS;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.boot.autoconfigure.SpringBootVFS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,6 +34,8 @@ import com.yu.common.utils.StringUtils;
 @Configuration
 public class MyBatisConfig
 {
+    private static final Logger log = LoggerFactory.getLogger(MyBatisConfig.class);
+
     @Autowired
     private Environment env;
 
@@ -106,7 +110,9 @@ public class MyBatisConfig
                 }
                 catch (IOException e)
                 {
-                    // ignore
+                    // Q-1：XML 没加载进来不会启动失败，而是运行期报 "Invalid bound statement"。
+                    // 把通配符和原因留在这里，才能一眼对上是哪个模块的 mapperLocations 写错了。
+                    log.warn("mapper 资源加载失败，跳过 pattern={}：{}", mapperLocation, e.getMessage());
                 }
             }
         }

@@ -221,7 +221,7 @@ public class UserAgentUtils
         }
         catch (NumberFormatException e)
         {
-            // 版本号解析失败，返回原始值
+            // empty-catch-ok: 版本号超出 int 范围时直接回退原始字符串，不阻断 UA 解析
         }
         return fullVersion;
     }

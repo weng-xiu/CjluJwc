@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
+import jakarta.validation.constraints.NotNull;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -80,7 +81,7 @@ public class SamCertificateController extends BaseController
     @PreAuthorize("@ss.hasPermi('sam:certificate:edit')")
     @Log(title = "证书管理", businessType = BusinessType.UPDATE)
     @PutMapping("/issue")
-    public AjaxResult issue(@RequestBody IssueForm form)
+    public AjaxResult issue(@Validated @RequestBody IssueForm form)
     {
         SamCertificate cert = samCertificateService.selectSamCertificateByCertId(form.getCertId());
         if (cert == null) { return error("证书记录不存在"); }
@@ -92,9 +93,10 @@ public class SamCertificateController extends BaseController
         return toAjax(samCertificateService.updateSamCertificate(update));
     }
 
-    /** 发放登记表单 */
+    /** 发放登记表单（S-6：certId 缺失时旧实现会先去查 null 再报「不存在」，错误信息误导到数据面） */
     public static class IssueForm
     {
+        @NotNull(message = "证书ID不能为空")
         private Long certId;
         private String receiver;
         @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd")

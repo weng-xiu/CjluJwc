@@ -81,6 +81,10 @@ services:
       DOC_ENDPOINT_PERMIT_ALL: ${DOC_ENDPOINT_PERMIT_ALL:-false}
       SWAGGER_UI_ENABLED: ${SWAGGER_UI_ENABLED:-false}
       LOG_MAX_HISTORY: ${LOG_MAX_HISTORY:-30}
+      # V5.33：慢 SQL 采集（阈值/级别可注入）。慢 SQL 独立落 logs/slow-sql.log，
+      # 以 WARN 级别与系统错误隔离；聚合与基线见 bin/slow-sql-report.js
+      SLOW_SQL_MILLIS: ${SLOW_SQL_MILLIS:-1000}
+      SLOW_SQL_LOG_LEVEL: ${SLOW_SQL_LOG_LEVEL:-WARN}
       # Q3 可观测性：独立管理端口（与业务 JWT 过滤器链隔离），便于 Prometheus 容器内网无凭证抓取；
       # 管理端口不对宿主暴露，仅同网内 Prometheus 可达；prod profile 默认仅 health,info，此处显式放开指标面。
       MANAGEMENT_SERVER_PORT: ${MGMT_SERVER_PORT:-8081}

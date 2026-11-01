@@ -25,6 +25,7 @@ import com.yu.common.enums.BusinessStatus;
 import com.yu.common.enums.HttpMethod;
 import com.yu.common.filter.PropertyPreExcludeFilter;
 import com.yu.common.utils.ExceptionUtil;
+import com.yu.common.utils.OperLogRedactor;
 import com.yu.common.utils.SecurityUtils;
 import com.yu.common.utils.ServletUtils;
 import com.yu.common.utils.StringUtils;
@@ -112,7 +113,8 @@ public class LogAspect
             if (e != null)
             {
                 operLog.setStatus(BusinessStatus.FAIL.ordinal());
-                operLog.setErrorMsg(StringUtils.substring(Convert.toStr(e.getMessage(), ExceptionUtil.getExceptionMessage(e)), 0, 2000));
+                // S-9：异常消息常带 SQL 片段（如 Duplicate entry '990101199001011234'），同样要脱敏
+                operLog.setErrorMsg(redactAndTrim(Convert.toStr(e.getMessage(), ExceptionUtil.getExceptionMessage(e)), 2000));
             }
             // 设置方法名称
             String className = joinPoint.getTarget().getClass().getName();
@@ -129,9 +131,9 @@ public class LogAspect
         }
         catch (Exception exp)
         {
-            // 记录本地异常日志
-            log.error("异常信息:{}", exp.getMessage());
-            exp.printStackTrace();
+            // Q-1：切面自身抛异常不能影响业务，但必须带堆栈落日志框架（原 printStackTrace
+            // 只写控制台，容器化部署后直接丢失，且不进 app.json 采集）
+            log.error("操作日志记录异常：{}", exp.getMessage(), exp);
         }
         finally
         {
@@ -163,7 +165,8 @@ public class LogAspect
         // 是否需要保存response，参数和值
         if (log.isSaveResponseData() && StringUtils.isNotNull(jsonResult))
         {
-            operLog.setJsonResult(StringUtils.substring(JSON.toJSONString(jsonResult), 0, 2000));
+            // S-9：响应体常带手机号/身份证（详情查询），落库前统一脱敏
+            operLog.setJsonResult(redactAndTrim(JSON.toJSONString(jsonResult), 2000));
         }
     }
 
@@ -184,7 +187,8 @@ public class LogAspect
         }
         else
         {
-            operLog.setOperParam(StringUtils.substring(JSON.toJSONString(paramsMap, excludePropertyPreFilter(excludeParamNames)), 0, PARAM_MAX_LENGTH));
+            // S-9：参数串落库前脱敏（键名命中 + 值形态兜底）
+            operLog.setOperParam(redactAndTrim(JSON.toJSONString(paramsMap, excludePropertyPreFilter(excludeParamNames)), PARAM_MAX_LENGTH));
         }
     }
 
@@ -202,7 +206,8 @@ public class LogAspect
                 {
                     try
                     {
-                        String jsonObj = JSON.toJSONString(o, excludePropertyPreFilter(excludeParamNames));
+                        // S-9：先脱敏再拼，避免身份证号被 PARAM_MAX_LENGTH 切成半截后不再命中脱敏正则
+                        String jsonObj = OperLogRedactor.redact(JSON.toJSONString(o, excludePropertyPreFilter(excludeParamNames)));
                         params.append(jsonObj).append(" ");
                         if (params.length() >= PARAM_MAX_LENGTH)
                         {
@@ -217,6 +222,16 @@ public class LogAspect
             }
         }
         return params.toString();
+    }
+
+    /**
+     * 先脱敏再截断（S-9）。
+     *
+     * <p>顺序不能反：先截断会把身份证号/手机号切成半截，脱敏正则不再命中，半截明文照样进库。
+     */
+    private String redactAndTrim(String text, int maxLength)
+    {
+        return StringUtils.substring(OperLogRedactor.redact(text), 0, maxLength);
     }
 
     /**

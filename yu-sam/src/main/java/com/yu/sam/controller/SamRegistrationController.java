@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -83,7 +86,7 @@ public class SamRegistrationController extends BaseController
     @PreAuthorize("@ss.hasPermi('sam:registration:register')")
     @Log(title = "学期注册", businessType = BusinessType.UPDATE)
     @PutMapping("/batchRegister")
-    public AjaxResult batchRegister(@RequestBody RegisterForm form)
+    public AjaxResult batchRegister(@Validated @RequestBody RegisterForm form)
     {
         int rows = samRegistrationService.batchRegister(
                 form.getRegistrationIds(), form.getStatus(), form.getDeferReason(), getUsername());
@@ -123,10 +126,13 @@ public class SamRegistrationController extends BaseController
         return success(samRegistrationService.statByDept(semesterId));
     }
 
-    /** 批量注册请求体 */
+    /** 批量注册请求体（S-6：空 ID 数组会让批量 update 命中 0 行却返回成功；
+     *  status 旧实现未校验，传任意字符串会写入非法注册状态） */
     public static class RegisterForm
     {
+        @NotEmpty(message = "注册记录ID不能为空")
         private Long[] registrationIds;
+        @NotBlank(message = "注册状态不能为空")
         private String status;
         private String deferReason;
 

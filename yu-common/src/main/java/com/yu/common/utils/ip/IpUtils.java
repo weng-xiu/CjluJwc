@@ -224,6 +224,7 @@ public class IpUtils
         }
         catch (UnknownHostException e)
         {
+            // empty-catch-ok: 容器内 hostname 未配 hosts 时取不到本机 IP，回环地址足以满足注册中心上报
         }
         return "127.0.0.1";
     }
@@ -241,6 +242,7 @@ public class IpUtils
         }
         catch (UnknownHostException e)
         {
+            // empty-catch-ok: 主机名仅用于日志落盘路径，取不到就回退字面量，不影响业务
         }
         return "未知";
     }

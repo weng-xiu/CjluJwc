@@ -110,7 +110,8 @@ public class AcademicWarningEngine
             }
             catch (Exception ignore)
             {
-                // 指标写入失败不影响预警落库
+                // Q-6：埋点失败不影响预警落库，但监控面板会少一条，必须留痕才能发现“漏计”
+                log.warn("预警埋点写入失败 type={} level={}：{}", w.getWarningType(), w.getWarningLevel(), ignore.getMessage());
             }
         }
 
@@ -158,7 +159,7 @@ public class AcademicWarningEngine
                 for (SamWarning w : warnings)
                 {
                     int lv = 0;
-                    try { lv = w.getWarningLevel() == null ? 0 : Integer.parseInt(w.getWarningLevel()); } catch (Exception ignore) { }
+                    try { lv = w.getWarningLevel() == null ? 0 : Integer.parseInt(w.getWarningLevel()); } catch (Exception ignore) { /* empty-catch-ok: 级别码非数字按 0 级处理，推送不能因此不发 */ }
                     if (lv > maxLevel) { maxLevel = lv; }
                     if (reasons.length() > 0) { reasons.append("\n"); }
                     reasons.append(w.getWarningReason());

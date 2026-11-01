@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "description": "慢 SQL 指纹基线（P-1 余面）。thresholds.absoluteMs 必须与 yu-admin/src/main/resources/application-druid.yml 的 filter.stat.slow-sql-millis 一致；fingerprints 由 bin/slow-sql-report.js --write-baseline 固化，勿手改 sql 字段。",
+  "thresholds": {
+    "absoluteMs": 1000,
+    "regressionRatio": 1.5,
+    "minSamples": 3
+  },
+  "fingerprints": {}
+}

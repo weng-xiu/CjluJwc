@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -32,6 +34,8 @@ import jakarta.servlet.ServletResponse;
 @Configuration
 public class DruidConfig
 {
+    private static final Logger log = LoggerFactory.getLogger(DruidConfig.class);
+
     @Bean
     @ConfigurationProperties("spring.datasource.druid.master")
     public DataSource masterDataSource(DruidProperties druidProperties)
@@ -75,6 +79,9 @@ public class DruidConfig
         }
         catch (Exception e)
         {
+            // Q-1：注册失败不阻断启动，但必须留痕——否则 @DataSource 切到该源时只会报
+            // "找不到数据源"，看不到真正原因是 bean 不存在。
+            log.warn("动态数据源注册跳过 source={} bean={}：{}", sourceName, beanName, e.getMessage());
         }
     }
 

@@ -100,6 +100,7 @@ public class DashboardStatServiceImpl implements IDashboardStatService
         }
         catch (NumberFormatException ignore)
         {
+            // empty-catch-ok: 预警级别码非数字时回落“未知”，看板不能因单条脏数据整体 500
         }
         return "未知";
     }
@@ -116,6 +117,7 @@ public class DashboardStatServiceImpl implements IDashboardStatService
         }
         catch (NumberFormatException ignore)
         {
+            // empty-catch-ok: 报名结果码非数字时回落“其他”，看板不能因单条脏数据整体 500
         }
         return "其他";
     }

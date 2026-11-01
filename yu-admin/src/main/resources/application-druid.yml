@@ -56,9 +56,15 @@ spring:
             filter:
                 stat:
                     enabled: true
-                    # 慢SQL记录
+                    # 慢SQL记录（V5.33：采集 → 落盘 → 聚合三件套的入口，见 bin/slow-sql-report.js）
                     log-slow-sql: true
-                    slow-sql-millis: 1000
+                    # 慢 SQL 阈值（毫秒）。改这里必须同步改 db/slow-sql-baseline.json 的
+                    # thresholds.absoluteMs，否则 bin/slow-sql-report.js --check-config 会报口径漂移
+                    slow-sql-millis: ${SLOW_SQL_MILLIS:1000}
+                    # Druid 的 slowSqlLogLevel 默认是 ERROR：慢 SQL 会混进 sys-error.log 与错误告警。
+                    # 慢 SQL 是性能告警而不是错误，故基线改为 WARN；消息由 logger
+                    # com.alibaba.druid.filter.stat.StatFilter 独立落到 logs/slow-sql.log（见 logback.xml）
+                    slow-sql-log-level: ${SLOW_SQL_LOG_LEVEL:WARN}
                     merge-sql: true
                 wall:
                     config:

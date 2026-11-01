@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
+import jakarta.validation.constraints.NotNull;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -95,7 +96,7 @@ public class SamThesisController extends BaseController
     @PreAuthorize("@ss.hasPermi('sam:thesis:audit')")
     @Log(title = "毕业论文环节审核", businessType = BusinessType.UPDATE)
     @PostMapping("/stage/audit")
-    public AjaxResult audit(@RequestBody ThesisAction action)
+    public AjaxResult audit(@Validated @RequestBody ThesisAction action)
     {
         return toAjax(samThesisService.auditStage(action.getThesisId(), action.getStage(),
                 Boolean.TRUE.equals(action.getPass()), action.getScore(), action.getOpinion(), getUsername()));
@@ -105,7 +106,7 @@ public class SamThesisController extends BaseController
     @PreAuthorize("@ss.hasPermi('sam:thesis:edit')")
     @Log(title = "毕业论文材料补录", businessType = BusinessType.INSERT)
     @PostMapping("/stage/submit")
-    public AjaxResult submit(@RequestBody ThesisAction action)
+    public AjaxResult submit(@Validated @RequestBody ThesisAction action)
     {
         return toAjax(samThesisService.submitStage(action.getThesisId(), action.getStage(), action.getTitle(),
                 action.getContent(), action.getAttachment(), getUsername()));
@@ -115,7 +116,7 @@ public class SamThesisController extends BaseController
     @PreAuthorize("@ss.hasPermi('sam:thesis:audit')")
     @Log(title = "毕业论文查重登记", businessType = BusinessType.INSERT)
     @PostMapping("/check")
-    public AjaxResult check(@RequestBody ThesisAction action)
+    public AjaxResult check(@Validated @RequestBody ThesisAction action)
     {
         return toAjax(samThesisService.recordCheck(action.getThesisId(), action.getScore(),
                 action.getAttachment(), action.getOpinion(), getUsername()));
@@ -125,7 +126,7 @@ public class SamThesisController extends BaseController
     @PreAuthorize("@ss.hasPermi('sam:thesis:audit')")
     @Log(title = "毕业论文成绩归档", businessType = BusinessType.INSERT)
     @PostMapping("/archive")
-    public AjaxResult archive(@RequestBody ThesisAction action)
+    public AjaxResult archive(@Validated @RequestBody ThesisAction action)
     {
         return toAjax(samThesisService.archiveGrade(action.getThesisId(), action.getTotalScore(),
                 action.getDefenseScore(), action.getOpinion(), getUsername()));
@@ -135,7 +136,7 @@ public class SamThesisController extends BaseController
     @PreAuthorize("@ss.hasPermi('sam:thesis:sample')")
     @Log(title = "毕业论文抽检", businessType = BusinessType.UPDATE)
     @PutMapping("/sample")
-    public AjaxResult sample(@RequestBody ThesisAction action)
+    public AjaxResult sample(@Validated @RequestBody ThesisAction action)
     {
         return toAjax(samThesisService.markSample(action.getThesisId(), action.getSampleStatus(),
                 action.getOpinion(), getUsername()));
@@ -151,9 +152,12 @@ public class SamThesisController extends BaseController
 
     /**
      * 环节动作入参（不同动作取用不同字段，避免为每个动作单独定义 DTO）
+     * <p>S-6：thesisId 是唯一必填项 —— 缺省时 Service 会以 null 主键落库，
+     * 表现为「操作成功但一行未改」或 NPE，无法从前端感知，因此入口即拒。</p>
      */
     public static class ThesisAction
     {
+        @NotNull(message = "论文ID不能为空")
         private Long thesisId;
         private String stage;
         private String title;

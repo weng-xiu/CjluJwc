@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
+import jakarta.validation.constraints.NotNull;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -83,7 +84,7 @@ public class SamCertReissueApplyController extends BaseController
     @PreAuthorize("@ss.hasPermi('sam:certReissue:audit')")
     @Log(title = "证书补办", businessType = BusinessType.UPDATE)
     @PutMapping("/approve")
-    public AjaxResult approve(@RequestBody AuditForm form)
+    public AjaxResult approve(@Validated @RequestBody AuditForm form)
     {
         return toAjax(samCertReissueApplyService.approve(form.getApplyId(), form.getAuditOpinion(), getUsername()));
     }
@@ -92,7 +93,7 @@ public class SamCertReissueApplyController extends BaseController
     @PreAuthorize("@ss.hasPermi('sam:certReissue:audit')")
     @Log(title = "证书补办", businessType = BusinessType.UPDATE)
     @PutMapping("/reject")
-    public AjaxResult reject(@RequestBody AuditForm form)
+    public AjaxResult reject(@Validated @RequestBody AuditForm form)
     {
         return toAjax(samCertReissueApplyService.reject(form.getApplyId(), form.getAuditOpinion(), getUsername()));
     }
@@ -105,9 +106,10 @@ public class SamCertReissueApplyController extends BaseController
         return toAjax(samCertReissueApplyService.deleteSamCertReissueApplyByApplyIds(applyIds));
     }
 
-    /** 受理表单 */
+    /** 受理表单（S-6：applyId 为定位参数，缺失时 update 会命中 0 行却返回成功） */
     public static class AuditForm
     {
+        @NotNull(message = "申请ID不能为空")
         private Long applyId;
         private String auditOpinion;
         public Long getApplyId() { return applyId; }

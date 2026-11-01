@@ -9,6 +9,8 @@ import com.yu.sam.domain.SamStudent;
 import com.yu.sam.mapper.SamStudentMapper;
 import com.yu.tpm.domain.TpmSelectionRule;
 import com.yu.tpm.mapper.TpmSelectionEnrollmentMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,8 +24,10 @@ import com.yu.tpm.service.ITpmSelectionRuleService;
  * @date 2026-05-09
  */
 @Service
-public class TpmSelectionRuleServiceImpl implements ITpmSelectionRuleService 
+public class TpmSelectionRuleServiceImpl implements ITpmSelectionRuleService
 {
+    private static final Logger log = LoggerFactory.getLogger(TpmSelectionRuleServiceImpl.class);
+
     /** 规则类型：专业限制 */
     private static final String RULE_TYPE_MAJOR = "1";
     /** 规则类型：年级限制 */
@@ -156,7 +160,9 @@ public class TpmSelectionRuleServiceImpl implements ITpmSelectionRuleService
                 }
                 catch (NumberFormatException e)
                 {
-                    // 配置非法，跳过该规则
+                    // Q-1：容量规则配成非数字 → 上限静默不生效，学生会越额录取。
+                    // 这里用 debug：校验按学生×课程重复触发，warn 会刷屏；排查时把本类降到 DEBUG 即可。
+                    log.debug("容量规则 restrictValue 非数字，跳过校验 ruleName={} value={}", rule.getRuleName(), restrictValue);
                 }
             }
             else if (RULE_TYPE_PREREQUISITE.equals(ruleType))

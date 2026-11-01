@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
+import jakarta.validation.constraints.NotNull;
 import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
@@ -80,7 +81,7 @@ public class SamGraduationProcedureController extends BaseController
     @PreAuthorize("@ss.hasPermi('sam:graduationProcedure:handle')")
     @Log(title = "离校手续", businessType = BusinessType.UPDATE)
     @PutMapping("/toggle")
-    public AjaxResult toggle(@RequestBody ToggleForm form)
+    public AjaxResult toggle(@Validated @RequestBody ToggleForm form)
     {
         return toAjax(samGraduationProcedureService.toggleItem(form.getProcedureId(), form.getStepId(), Boolean.TRUE.equals(form.getDone()), getUsername()));
     }
@@ -103,11 +104,14 @@ public class SamGraduationProcedureController extends BaseController
         return success(samGraduationProcedureService.statOverview());
     }
 
-    /** 环节办理表单 */
+    /** 环节办理表单（S-6：procedureId 定位、done 是目标状态，两个都缺不得 ——
+     *  旧实现把 null 的 done 当成 false，前端漏传就会把已办结的环节反向撤销） */
     public static class ToggleForm
     {
+        @NotNull(message = "离校手续ID不能为空")
         private Long procedureId;
         private Long stepId;
+        @NotNull(message = "办理状态不能为空")
         private Boolean done;
         public Long getProcedureId() { return procedureId; }
         public void setProcedureId(Long procedureId) { this.procedureId = procedureId; }

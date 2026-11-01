@@ -84,6 +84,26 @@
         </encoder>
     </appender>
 	
+	<!-- 慢 SQL 专用通道（V5.33）
+	     Druid StatFilter 的慢 SQL 走 logger com.alibaba.druid.filter.stat.StatFilter
+	     （LogFactory.getLog(StatFilter.class)），消息形态：“slow sql {millis} millis.{sql}\n{parameters}”。
+	     单独落盘有两个理由：① file_info 是 LevelFilter INFO 精确匹配、file_error 只收 ERROR，
+	     而慢 SQL 走 WARN（application-druid.yml 的 slow-sql-log-level），不加这条 appender
+	     就只会在控制台和 app.json 里存在，文本日志整段丢失；② 聚合脚本 bin/slow-sql-report.js
+	     需要一份不含其他业务日志的输入，才能按 SQL 指纹统计 p95 与基线对比。 -->
+	<appender name="file_slow_sql" class="ch.qos.logback.core.rolling.RollingFileAppender">
+	    <file>${log.path}/slow-sql.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${log.path}/slow-sql.%d{yyyy-MM-dd}.log</fileNamePattern>
+			<!-- 慢 SQL 是性能调优输入，不是审计证据，故只留 30 天（审计口径仍看 sys-info / sys-error 的 180 天） -->
+			<maxHistory>30</maxHistory>
+			<totalSizeCap>512MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${log.pattern}</pattern>
+        </encoder>
+    </appender>
+
 	<!-- 系统模块日志级别控制  -->
 	<!-- 级别基线（V4.0 §7.3）：生产以 info/warn 为主，application-prod.yml 会进一步收敛；
 	     logback 的 logger 级别会覆盖 logging.level，故此处不再写死 debug，由 profile 决定 -->
@@ -106,4 +126,10 @@
     <logger name="sys-user" level="info">
         <appender-ref ref="sys-user"/>
     </logger>
+
+	<!-- 慢 SQL：level=warn 与 slow-sql-log-level 对齐；additivity 保持 true，
+	     让 app.json（ELK/Loki 采集）仍能拿到，便于外部告警；专用文件由 file_slow_sql 负责。 -->
+	<logger name="com.alibaba.druid.filter.stat.StatFilter" level="warn" additivity="true">
+		<appender-ref ref="file_slow_sql" />
+	</logger>
 </configuration> 

@@ -1578,6 +1578,7 @@ public class ExcelUtil<T>
             }
             catch (NumberFormatException e)
             {
+                // empty-catch-ok: 统计列遇到非数字单元格时该行不计入求和，不能让整张导出失败
             }
             statistics.put(index, statistics.get(index) + temp);
         }

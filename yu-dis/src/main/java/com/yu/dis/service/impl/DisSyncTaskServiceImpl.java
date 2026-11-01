@@ -374,7 +374,12 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
                 cfg = JSON.parseObject(system.getAuthConfig());
             }
         }
-        catch (Exception ignore) { /* authConfig 非法 JSON，忽略 */ }
+        catch (Exception ignore)
+        {
+            // Q-1：authConfig 写坏不会阻塞调用，但会让认证头缺失 → 对端 401，
+            // 真正原因得从这里才看得出来
+            log.warn("同步系统 authConfig 非合法 JSON，按无配置处理 systemId={}：{}", system.getSystemId(), ignore.getMessage());
+        }
         String type = system.getAuthType().toUpperCase();
         if ("TOKEN".equals(type))
         {

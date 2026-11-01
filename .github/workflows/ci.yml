@@ -187,6 +187,36 @@ jobs:
       - name: Check schema primary keys & index sync
         run: node bin/schema-index-check.js
 
+      # V5.33 P-1 余面：慢 SQL 采集链路的静态门禁——阈值/级别/专用 appender/基线口径。
+      # Druid 的 slowSqlLogLevel 默认 ERROR，且 file_info 是 LevelFilter INFO 精确匹配、
+      # file_error 只收 ERROR，慢 SQL 改 WARN 后若没有独立 appender，文本日志会整段丢失，
+      # 聚合脚本也就没了输入。这条门禁保证「采集→落盘→聚合」三件套不会静默断裂。
+      - name: Check slow-sql observability wiring
+        run: node bin/slow-sql-report.js --check-config
+
+      # V5.34 Q-1/Q-6：空 catch 门禁。异常被完全吞掉的代码不会报错、不会留日志，
+      # 出问题时只能反推「大概是这里没接住」——AcademicWarningEngine 的埋点异常、
+      # MyBatisConfig 的 mapper 加载失败都属于这一类。确实需要静默的地方必须写
+      # `// empty-catch-ok: <理由>`，让豁免和理由一起进 review。
+      - name: Check empty catch blocks
+        run: node bin/empty-catch-scan.js
+
+      # V5.34 S-11：接口授权棘轮门禁。SecurityConfig 的 anyRequest().authenticated() 只挡住
+      # 未登录，挡不住「登录即可调」——一个没 @PreAuthorize 的写接口，任何已登录学生都能打。
+      # 存量 26 个已人工确认并落在 db/authz-baseline.json（自服务/模板下载/代码内 checkApprover），
+      # 新增写接口若未加 @PreAuthorize 且不在基线内，这里直接红——棘轮只进不退。
+      - name: Check handler authorization (S-11 ratchet)
+        run: node bin/authz-scan.js
+
+      # V5.35 S-6：入参校验棘轮。先把话说清楚：@Validated 防不住 mass assignment——
+      # 它只校验已声明字段，不会丢弃客户端多传的字段；真正的口子是「控制器直接把领域实体当
+      # @RequestBody」，而 Mapper 的 update 会写 update_by = #{updateBy}（实测 97 条），
+      # 客户端自带 createBy/updateBy 就能把「这条数据算谁的」一起改掉，S-5 按 createBy 判归属随之失效。
+      # 存量 89 个未校验入参 + 204 个实体直绑已落 db/body-validation-baseline.json；
+      # 同时守 BaseEntity 审计四字段的 @JsonProperty(READ_ONLY)，摘了同样判红。
+      - name: Check request-body validation (S-6 ratchet)
+        run: node bin/body-validation-scan.js
+
   build-images:
     # Q2 部署阶段：三门禁全绿后构建后端/管理端/门户三镜像；main 推送时打 sha + latest 双标签并推 GHCR，
     # PR 仅跑一次 docker build 验证 Dockerfile 可构建（push=false，不登录不推送），提前暴露镜像层回归。
