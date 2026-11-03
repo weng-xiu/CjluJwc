@@ -1,5 +1,7 @@
 package com.yu.framework.web.service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Date;
@@ -25,7 +27,9 @@ import com.yu.common.utils.ip.AddressUtils;
 import com.yu.common.utils.ip.IpUtils;
 import com.yu.common.utils.uuid.IdUtils;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SigningKeyResolverAdapter;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -55,6 +59,18 @@ public class TokenService
     @Value("${token.maxLifetime:720}")
     private int maxLifetime;
 
+    // S-4：当前签名密钥的 kid。留空时由 secret 的摘要自动派生（多实例无需额外配置即可一致）
+    @Value("${token.kid:}")
+    private String configuredKid;
+
+    // S-4：轮换过渡期的上一代密钥。配置后，用旧密钥签发的令牌在过渡期内仍可通过验签
+    @Value("${token.previousSecret:}")
+    private String previousSecret;
+
+    // S-4：上一代密钥的 kid。留空时同样由 previousSecret 派生
+    @Value("${token.previousKid:}")
+    private String configuredPreviousKid;
+
     protected static final long MILLIS_SECOND = 1000;
 
     protected static final long MILLIS_MINUTE = 60 * MILLIS_SECOND;
@@ -77,6 +93,15 @@ public class TokenService
      * 既保证长度合规，又对同一 secret 确定性可复现（多实例可互验）。
      */
     private javax.crypto.SecretKey signKey;
+
+    /** 当前签名密钥的 kid，写入 JWT 头部 {@code kid}，解析时据此选择验签密钥（S-4）。 */
+    private String signKeyId;
+
+    /** 上一代验签密钥（仅验签、不签发），用于密钥轮换过渡期；未配置时为 null（S-4）。 */
+    private javax.crypto.SecretKey previousSignKey;
+
+    /** 上一代验签密钥的 kid；未配置或派生失败时为 null（S-4）。 */
+    private String previousSignKeyId;
 
     /**
      * Q4 安全加固：令牌密钥启动校验。
@@ -106,15 +131,61 @@ public class TokenService
                     secret.length());
         }
         // K3：派生固定长度的 HMAC 签名密钥（SHA-512 摘要 → 64 字节 → HS512）
+        this.signKey = deriveSignKey(secret);
+
+        // S-4：kid 默认由 secret 派生，同一 secret 的多实例得到同一个 kid，无需集中配置；
+        // 显式配置 token.kid 时以配置为准（便于人工指定轮换顺序）。
+        this.signKeyId = StringUtils.isNotEmpty(configuredKid) ? configuredKid.trim() : deriveKid(secret);
+
+        // S-4：配置上一代密钥即开启轮换过渡期——旧令牌仍可验签，新令牌一律用当前密钥签发。
+        if (StringUtils.isNotEmpty(previousSecret))
+        {
+            this.previousSignKey = deriveSignKey(previousSecret);
+            this.previousSignKeyId = StringUtils.isNotEmpty(configuredPreviousKid)
+                    ? configuredPreviousKid.trim() : deriveKid(previousSecret);
+            if (previousSignKeyId.equals(signKeyId))
+            {
+                // 两代 kid 相同说明 prev 与当前是同一把密钥，轮换配置无效：宁可启动失败也不静默失效
+                throw new IllegalStateException("token.previousSecret 与 token.secret 相同（kid=" + signKeyId
+                        + "），轮换配置无效；请确认是否漏改上一代密钥。");
+            }
+            log.warn("已启用令牌密钥轮换过渡：当前 kid={}，同时接受上一代 kid={} 签发的令牌。"
+                    + "待旧令牌全部过期后请移除 token.previousSecret。", signKeyId, previousSignKeyId);
+        }
+        log.info("令牌签名密钥已就绪，kid={}", signKeyId);
+    }
+
+    /** 由明文密钥派生固定长度的 HMAC 签名密钥（SHA-512 摘要 → 64 字节 → HS512）。 */
+    private static javax.crypto.SecretKey deriveSignKey(String rawSecret)
+    {
         try
         {
-            byte[] keyBytes = java.security.MessageDigest.getInstance("SHA-512")
-                    .digest(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            this.signKey = Keys.hmacShaKeyFor(keyBytes);
+            byte[] keyBytes = MessageDigest.getInstance("SHA-512").digest(rawSecret.getBytes(StandardCharsets.UTF_8));
+            return Keys.hmacShaKeyFor(keyBytes);
         }
         catch (java.security.NoSuchAlgorithmException e)
         {
             throw new IllegalStateException("SHA-512 不可用，无法初始化令牌签名密钥", e);
+        }
+    }
+
+    /**
+     * S-4：由密钥派生 kid（SHA-256 摘要前 12 位十六进制）。
+     *
+     * <p>kid 只是密钥的公开标识，不泄露密钥本身（无法从摘要反推 64 字节随机密钥）；
+     * 用派生的好处是同一 secret 的所有实例自动得到同一个 kid，无需额外的集中配置项。
+     */
+    private static String deriveKid(String rawSecret)
+    {
+        try
+        {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(rawSecret.getBytes(StandardCharsets.UTF_8));
+            // 取前 6 字节（48 位）已足够区分密钥代次；HexFormat 保证字节转十六进制不带符号扩展
+            return java.util.HexFormat.of().formatHex(digest, 0, 6);
+        }
+        catch (java.security.NoSuchAlgorithmException e)
+        {
+            throw new IllegalStateException("SHA-256 不可用，无法派生令牌 kid", e);
         }
     }
 
@@ -278,7 +349,9 @@ public class TokenService
     String createToken(Map<String, Object> claims, Date expiration)
     {
         // K3 jjwt 0.11.x：signWith(SecretKey) 由密钥长度自动选定 HS512
+        // S-4：头部写入 kid，轮换期内解析端才能判定该用哪一代密钥验签
         return Jwts.builder()
+                .setHeaderParam(JwsHeader.KEY_ID, signKeyId)
                 .setClaims(claims)
                 .setExpiration(expiration)
                 .signWith(signKey).compact();
@@ -292,12 +365,44 @@ public class TokenService
      */
     private Claims parseToken(String token)
     {
-        // K3 jjwt 0.11.x：parserBuilder().setSigningKey(SecretKey).build()
+        // K3 jjwt 0.11.x：parserBuilder().build().parseClaimsJws(token)
+        // S-4：按头部 kid 选择验签密钥，支持新旧两代密钥并存
         return Jwts.parserBuilder()
-                .setSigningKey(signKey)
+                .setSigningKeyResolver(new SigningKeyResolverAdapter()
+                {
+                    @Override
+                    public java.security.Key resolveSigningKey(JwsHeader jwsHeader, Claims claims)
+                    {
+                        Object kid = jwsHeader.get(JwsHeader.KEY_ID);
+                        return resolveVerifyKey(kid == null ? null : kid.toString());
+                    }
+                })
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    /**
+     * S-4：按 kid 选出验签密钥。
+     *
+     * <p>无 kid 的旧令牌（轮换上线前签发）回落到当前密钥，避免升级瞬间把在线用户全部踢下线；
+     * 未知 kid 直接拒绝——这正是轮换的意义：被淘汰的密钥不再能验签。
+     */
+    private java.security.Key resolveVerifyKey(String kid)
+    {
+        if (StringUtils.isEmpty(kid))
+        {
+            return signKey;
+        }
+        if (signKeyId.equals(kid))
+        {
+            return signKey;
+        }
+        if (previousSignKey != null && previousSignKeyId != null && previousSignKeyId.equals(kid))
+        {
+            return previousSignKey;
+        }
+        throw new IllegalArgumentException("未知的令牌密钥标识 kid=" + kid + "，请确认 TOKEN_SECRET/TOKEN_PREVIOUS_SECRET 配置");
     }
 
     /**

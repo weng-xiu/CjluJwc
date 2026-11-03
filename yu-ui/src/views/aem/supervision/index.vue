@@ -54,12 +54,13 @@
 <script>
 import { listSupervision, getSupervision, delSupervision, addSupervision, updateSupervision } from "@/api/aem/supervision"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "Supervision", dicts: ['aem_evaluation_level', 'aem_record_type'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, supervisionList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, supervisor: null, teacherId: null, recordType: null },
-    form: {}, rules: { supervisor: [{ required: true, message: "督导姓名不能为空", trigger: "blur" }] } }
+    form: {}, rules: { supervisor: [req("督导姓名")] } }
   },
   created() { this.getList() },
   methods: {

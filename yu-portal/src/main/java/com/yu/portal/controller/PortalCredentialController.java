@@ -100,9 +100,10 @@ public class PortalCredentialController extends BaseController
         {
             return error("凭证不存在");
         }
-        // 归属校验：非管理员仅可打开本人凭证
+        // 归属校验：非管理员仅可打开本人凭证（S-5 修正：原实现传入的是凭证接收人，导致 admin 反而被拒）
         Long receiveId = record.getReceiveId();
-        if (receiveId == null || !(receiveId.equals(getUserId()) || com.yu.common.utils.SecurityUtils.isAdmin(receiveId)))
+        boolean self = receiveId != null && receiveId.equals(getUserId());
+        if (!self && !com.yu.common.utils.SecurityUtils.isAdmin(getUserId()))
         {
             return error("无权访问该凭证");
         }

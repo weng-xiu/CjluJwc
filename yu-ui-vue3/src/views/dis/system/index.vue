@@ -56,11 +56,12 @@
 <script>
 import { listSystem, getSystem, delSystem, addSystem, updateSystem } from "@/api/dis/system"
 import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 export default {
   name: "DisSystem", dicts: ['sys_normal_disable', 'dis_system_type', 'dis_auth_type'], mixins: [dialogGuard],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, systemList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, systemName: null, systemCode: null, status: null },
-    form: {}, rules: { systemName: [{ required: true, message: "系统名称不能为空", trigger: "blur" }], systemCode: [{ required: true, message: "系统编码不能为空", trigger: "blur" }], systemType: [{ required: true, message: "系统类型不能为空", trigger: "change" }] } }
+    form: {}, rules: { systemName: [req("系统名称")], systemCode: [req("系统编码")], systemType: [reqChange("系统类型")] } }
   },
   created() { this.getList() },
   methods: {

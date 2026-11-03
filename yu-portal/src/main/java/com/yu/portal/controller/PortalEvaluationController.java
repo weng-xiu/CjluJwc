@@ -141,11 +141,21 @@ public class PortalEvaluationController extends BaseController
         return success(resultList);
     }
 
-    /** 教师端：评教结果查询 */
+    /** 教师端：评教结果查询（非管理员强制只查本人任教课程） */
     @PreAuthorize("@ss.hasPermi('portal:evalResult:list') and @ss.hasAnyRoles('admin,teacher')")
     @GetMapping("/resultList")
     public TableDataInfo resultList(AemEvaluationResult aemEvaluationResult)
     {
+        if (!com.yu.common.utils.SecurityUtils.isAdmin(getUserId()))
+        {
+            // S-5：此前不绑定登录教师，任何 teacher 可拉全校评教明细（含匿名评语）
+            BrmTeacher mine = brmTeacherService.selectBrmTeacherByUserId(getUserId());
+            if (mine == null)
+            {
+                return getDataTable(new java.util.ArrayList<>());
+            }
+            aemEvaluationResult.setTeacherId(mine.getTeacherId());
+        }
         startPage();
         List<AemEvaluationResult> list = aemEvaluationResultService.selectAemEvaluationResultList(aemEvaluationResult);
         return getDataTable(list);
@@ -177,13 +187,23 @@ public class PortalEvaluationController extends BaseController
         return success(aemEvaluationStatService.teacherReport(teacher.getTeacherId()));
     }
 
-    /** 教师端：获取某门课程的真实评语列表（非空评语） */
+    /** 教师端：获取某门课程的真实评语列表（非管理员仅限本人任教课程） */
     @PreAuthorize("@ss.hasPermi('portal:evalResult:list') and @ss.hasAnyRoles('admin,teacher')")
     @GetMapping("/comments/{courseId}")
     public AjaxResult courseComments(@PathVariable Long courseId)
     {
         AemEvaluationResult query = new AemEvaluationResult();
         query.setCourseId(courseId);
+        if (!com.yu.common.utils.SecurityUtils.isAdmin(getUserId()))
+        {
+            // S-5：归属条件与 courseId 同时下推，课程不属于本人时查询结果为空（不外泄他人评语）
+            BrmTeacher mine = brmTeacherService.selectBrmTeacherByUserId(getUserId());
+            if (mine == null)
+            {
+                return success(new java.util.ArrayList<String>());
+            }
+            query.setTeacherId(mine.getTeacherId());
+        }
         List<AemEvaluationResult> list = aemEvaluationResultService.selectAemEvaluationResultList(query);
         List<String> comments = list.stream()
                 .map(AemEvaluationResult::getComment)

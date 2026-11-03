@@ -1,5 +1,6 @@
 package com.yu.tpm.service.impl;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -235,6 +236,54 @@ class TpmSelectionEnrollmentServiceImplTest {
         List<Integer> sizes = cap.getAllValues().stream().map(List::size).collect(Collectors.toList());
         assertEquals(Arrays.asList(500, 500, 200), sizes, "1200 行必须切成 500+500+200 三条语句");
         verify(enrollmentMapper, times(0)).updateTpmSelectionEnrollment(any());
+    }
+
+    @Test
+    @DisplayName("T-5：抽签进度按分块回调（首帧 total 已就位，末帧 processed=total）")
+    void runLottery_progressCallbackReportsChunks() {
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(openRound());
+        List<TpmSelectionEnrollment> list = new ArrayList<>();
+        for (long i = 1; i <= 1200; i++) {
+            list.add(enroll(i, 2000L + i, 20L));
+        }
+        when(enrollmentMapper.selectTpmSelectionEnrollmentList(any())).thenReturn(list);
+        TpmCourseOffering off = new TpmCourseOffering(); off.setMaxStudents(1200); // 未超容量
+        when(offeringMapper.selectTpmCourseOfferingByOfferingId(20L)).thenReturn(off);
+
+        List<int[]> frames = new ArrayList<>();
+        service.runLottery(1L, 4242L, (processed, total, admitted, rejected) ->
+                frames.add(new int[] { processed, total, admitted, rejected }));
+
+        assertEquals(4, frames.size(), "1 次首帧 + 3 次分块回调");
+        assertArrayEquals(new int[] { 0, 1200, 1200, 0 }, frames.get(0), "首帧就要给出 total，否则前端只能显示 0/0");
+        assertArrayEquals(new int[] { 500, 1200, 1200, 0 }, frames.get(1));
+        assertArrayEquals(new int[] { 1000, 1200, 1200, 0 }, frames.get(2));
+        assertArrayEquals(new int[] { 1200, 1200, 1200, 0 }, frames.get(3), "末帧必须恰好等于总数");
+    }
+
+    @Test
+    @DisplayName("T-5：软失败结果带 success=false（异步执行方据此落失败态）")
+    void runLottery_softFailureFlagged() {
+        when(roundMapper.selectTpmSelectionRoundByRoundId(9L)).thenReturn(null);
+        assertEquals(Boolean.FALSE, service.runLottery(9L, 1L).get("success"), "轮次不存在属软失败");
+
+        TpmSelectionRound closed = new TpmSelectionRound();
+        closed.setRoundId(2L); closed.setRoundStatus("2");
+        when(roundMapper.selectTpmSelectionRoundByRoundId(2L)).thenReturn(closed);
+        assertEquals(Boolean.FALSE, service.runLottery(2L, 1L).get("success"), "已结束轮次属软失败");
+    }
+
+    @Test
+    @DisplayName("T-5：无待抽签记录算任务成功（0/0），不是失败")
+    void runLottery_emptyIsSuccess() {
+        when(roundMapper.selectTpmSelectionRoundByRoundId(1L)).thenReturn(openRound());
+        when(enrollmentMapper.selectTpmSelectionEnrollmentList(any())).thenReturn(new ArrayList<>());
+
+        Map<String, Object> r = service.runLottery(1L, 1L);
+
+        assertEquals(Boolean.TRUE, r.get("success"));
+        assertEquals(0, r.get("successCount"));
+        assertEquals(0, r.get("lotteryCourses"));
     }
 
     @Test

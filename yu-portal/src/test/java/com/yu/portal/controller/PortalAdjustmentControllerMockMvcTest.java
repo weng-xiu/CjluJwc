@@ -32,10 +32,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.yu.common.core.domain.entity.SysUser;
 import com.yu.common.core.domain.model.LoginUser;
 import com.yu.common.exception.ServiceException;
+import com.yu.portal.security.PortalAdjustmentApproverPolicy;
 import com.yu.tpm.domain.TpmCourseOffering;
 import com.yu.tpm.domain.TpmSchedule;
 import com.yu.tpm.domain.TpmScheduleAdjustment;
@@ -71,6 +73,9 @@ class PortalAdjustmentControllerMockMvcTest {
 
     @BeforeEach
     void setUp() {
+        // S-5：审批资格由 PortalAdjustmentApproverPolicy 统一裁决（admin / 权限字符 / 配置名单）
+        ReflectionTestUtils.setField(controller, "portalAdjustmentApprover",
+                new PortalAdjustmentApproverPolicy("admin", ""));
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
         loginAs(1L); // 默认 admin（userId=1）
     }
@@ -309,6 +314,24 @@ class PortalAdjustmentControllerMockMvcTest {
                 .andExpect(jsonPath("$.code").value(200));
 
         verify(tpmScheduleAdjustmentService).reject(eq(3L), eq("材料不全"));
+    }
+
+    @Test
+    @DisplayName("pendingList：配置名单内的非管理员教师可审批")
+    void pendingList_allowsConfiguredApprover() throws Exception {
+        loginAs(100L);
+        ReflectionTestUtils.setField(controller, "portalAdjustmentApprover",
+                new PortalAdjustmentApproverPolicy("admin", "tester"));
+        when(tpmScheduleAdjustmentService.selectTpmScheduleAdjustmentList(any(TpmScheduleAdjustment.class)))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/portal/adjustment/pendingList"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+
+        ArgumentCaptor<TpmScheduleAdjustment> captor = ArgumentCaptor.forClass(TpmScheduleAdjustment.class);
+        verify(tpmScheduleAdjustmentService).selectTpmScheduleAdjustmentList(captor.capture());
+        Assertions.assertEquals("0", captor.getValue().getApproveStatus());
     }
 
     private TpmScheduleAdjustment validAdjustment() {

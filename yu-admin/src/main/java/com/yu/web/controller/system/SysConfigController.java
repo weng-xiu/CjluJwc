@@ -86,6 +86,7 @@ public class SysConfigController extends BaseController
      * <p>S-1（质陷报告）：原实现无任何权限注解，任意登录用户（含学生）可遍历 key 读取敏感运营参数。
      * 现改为白名单键公开 + 其余需 system:config:query。</p>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(value = "/configKey/{configKey}")
     public AjaxResult getConfigKey(@PathVariable String configKey)
     {

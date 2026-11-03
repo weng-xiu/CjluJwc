@@ -161,6 +161,7 @@
 import { listEquip, getEquip, delEquip, addEquip, updateEquip } from "@/api/brm/equip"
 
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "Equip",
@@ -184,9 +185,7 @@ export default {
       },
       form: {},
       rules: {
-        equipName: [
-          { required: true, message: "设备名称不能为空", trigger: "blur" }
-        ]
+        equipName: [req("设备名称")]
       }
     }
   },

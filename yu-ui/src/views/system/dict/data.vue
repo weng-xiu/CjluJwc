@@ -197,6 +197,7 @@ import { listData, getData, delData, addData, updateData } from "@/api/system/di
 import { optionselect as getDictOptionselect, getType } from "@/api/system/dict/type"
 
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "Data",
@@ -264,15 +265,9 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        dictLabel: [
-          { required: true, message: "数据标签不能为空", trigger: "blur" }
-        ],
-        dictValue: [
-          { required: true, message: "数据键值不能为空", trigger: "blur" }
-        ],
-        dictSort: [
-          { required: true, message: "数据顺序不能为空", trigger: "blur" }
-        ]
+        dictLabel: [req("数据标签")],
+        dictValue: [req("数据键值")],
+        dictSort: [req("数据顺序")]
       }
     }
   },

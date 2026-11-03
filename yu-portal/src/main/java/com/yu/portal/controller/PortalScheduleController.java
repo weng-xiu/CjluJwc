@@ -12,6 +12,7 @@ import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.core.page.TableDataInfo;
 import com.yu.common.enums.LimitType;
+import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.SecurityUtils;
 import com.yu.tpm.domain.TpmSchedule;
 import com.yu.tpm.service.ITpmScheduleService;
@@ -41,13 +42,20 @@ public class PortalScheduleController extends BaseController
         return getDataTable(list);
     }
 
-    /** 学生端：查询个人课表 */
+    /** 学生端：查询个人课表（非管理员强制只查本人，admin 可查全量供排错） */
     @PreAuthorize("@ss.hasPermi('portal:schedule:list')")
     @RateLimiter(time = 60, count = 300, limitType = LimitType.IP)
     @GetMapping("/list")
     public TableDataInfo list(TpmSchedule tpmSchedule)
     {
         startPage();
+        if (!SecurityUtils.isAdmin(getUserId()))
+        {
+            // S-5：此前直接透传客户端查询条件，学生不传参数即可遍历全校排课；
+            // 现收敛为与 /myList 同口径，仅返回本人课表（保留客户端学期号作为筛选）。
+            List<TpmSchedule> mine = tpmScheduleService.selectStudentScheduleList(getUserId(), tpmSchedule.getSemesterId());
+            return getDataTable(mine);
+        }
         List<TpmSchedule> list = tpmScheduleService.selectTpmScheduleList(tpmSchedule);
         return getDataTable(list);
     }
@@ -69,11 +77,40 @@ public class PortalScheduleController extends BaseController
         return getDataTable(list);
     }
 
-    /** 学生端：课表详情 */
+    /** 学生端：课表详情（仅本人任课/本人选课可见，admin 放行） */
     @GetMapping(value = "/detail")
     @PreAuthorize("@ss.hasPermi('portal:schedule:query')")
     public AjaxResult detail(TpmSchedule tpmSchedule)
     {
-        return success(tpmScheduleService.selectTpmScheduleList(tpmSchedule));
+        Long scheduleId = tpmSchedule.getScheduleId();
+        if (scheduleId == null)
+        {
+            throw new ServiceException("课表ID不能为空");
+        }
+        TpmSchedule schedule = tpmScheduleService.selectTpmScheduleByScheduleId(scheduleId);
+        if (schedule == null)
+        {
+            throw new ServiceException("课表不存在");
+        }
+        if (!SecurityUtils.isAdmin(getUserId()) && !isVisibleToSelf(schedule))
+        {
+            throw new ServiceException("无权查看该课表", com.yu.common.constant.HttpStatus.FORBIDDEN);
+        }
+        // 归属通过后固定主键查询，丢弃客户端其余过滤条件，避免借条件拼接读取他人排课
+        TpmSchedule pinned = new TpmSchedule();
+        pinned.setScheduleId(scheduleId);
+        return success(tpmScheduleService.selectTpmScheduleList(pinned));
+    }
+
+    /** 课表归属：教师本人任课，或学生本人已选课（按本人课表集合命中） */
+    private boolean isVisibleToSelf(TpmSchedule schedule)
+    {
+        Long userId = getUserId();
+        if (userId.equals(schedule.getTeacherId()))
+        {
+            return true;
+        }
+        List<TpmSchedule> mine = tpmScheduleService.selectStudentScheduleList(userId, schedule.getSemesterId());
+        return mine != null && mine.stream().anyMatch(s -> schedule.getScheduleId().equals(s.getScheduleId()));
     }
 }

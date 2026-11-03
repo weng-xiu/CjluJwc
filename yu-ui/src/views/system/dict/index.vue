@@ -208,6 +208,7 @@ import DictDataDrawer from './detail'
 import { listType, getType, delType, addType, updateType, refreshCache } from "@/api/system/dict/type"
 
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "Dict",
@@ -251,12 +252,8 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        dictName: [
-          { required: true, message: "字典名称不能为空", trigger: "blur" }
-        ],
-        dictType: [
-          { required: true, message: "字典类型不能为空", trigger: "blur" }
-        ]
+        dictName: [req("字典名称")],
+        dictType: [req("字典类型")]
       }
     }
   },

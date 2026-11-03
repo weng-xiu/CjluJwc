@@ -326,6 +326,7 @@ import "@riophae/vue-treeselect/dist/vue-treeselect.css"
 import IconSelect from "@/components/IconSelect"
 
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "Menu",
@@ -360,15 +361,9 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        menuName: [
-          { required: true, message: "菜单名称不能为空", trigger: "blur" }
-        ],
-        orderNum: [
-          { required: true, message: "菜单顺序不能为空", trigger: "blur" }
-        ],
-        path: [
-          { required: true, message: "路由地址不能为空", trigger: "blur" }
-        ]
+        menuName: [req("菜单名称")],
+        orderNum: [req("菜单顺序")],
+        path: [req("路由地址")]
       }
     }
   },

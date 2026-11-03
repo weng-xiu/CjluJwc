@@ -47,12 +47,13 @@
 <script>
 import { listPosition, getPosition, delPosition, addPosition, updatePosition } from "@/api/brm/position"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "Position", dicts: ['sys_yes_no'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, positionList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, positionTitle: null, isCurrent: null },
-    form: {}, rules: { teacherId: [{ required: true, message: "教师ID不能为空", trigger: "blur" }], positionTitle: [{ required: true, message: "任职岗位不能为空", trigger: "blur" }] } }
+    form: {}, rules: { teacherId: [req("教师ID")], positionTitle: [req("任职岗位")] } }
   },
   created() { this.getList() },
   methods: {

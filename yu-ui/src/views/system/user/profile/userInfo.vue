@@ -24,6 +24,7 @@
 
 <script>
 import { updateUserProfile } from "@/api/system/user"
+import { req } from "@/utils/validate"
 
 export default {
   props: {
@@ -36,11 +37,9 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        nickName: [
-          { required: true, message: "用户昵称不能为空", trigger: "blur" }
-        ],
+        nickName: [req("用户昵称")],
         email: [
-          { required: true, message: "邮箱地址不能为空", trigger: "blur" },
+          req("邮箱地址"),
           {
             type: "email",
             message: "请输入正确的邮箱地址",
@@ -48,7 +47,7 @@ export default {
           }
         ],
         phonenumber: [
-          { required: true, message: "手机号码不能为空", trigger: "blur" },
+          req("手机号码"),
           {
             pattern: /^1[3|4|5|6|7|8|9][0-9]\d{8}$/,
             message: "请输入正确的手机号码",

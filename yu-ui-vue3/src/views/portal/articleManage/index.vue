@@ -176,6 +176,7 @@
 import { listArticle, getArticle, delArticle, addArticle, updateArticle, publishArticle, submitArticle, approveArticle, rejectArticle, withdrawArticle } from '@/api/portal/article'
 import { listColumn } from '@/api/portal/column'
 import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 
 export default {
   name: 'PortalArticleManage',
@@ -204,9 +205,9 @@ export default {
       },
       form: {},
       rules: {
-        title: [{ required: true, message: '文章标题不能为空', trigger: 'blur' }],
-        columnId: [{ required: true, message: '所属栏目不能为空', trigger: 'change' }],
-        content: [{ required: true, message: '正文内容不能为空', trigger: 'blur' }]
+        title: [req("文章标题")],
+        columnId: [reqChange("所属栏目")],
+        content: [req("正文内容")]
       }
     }
   },

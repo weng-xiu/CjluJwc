@@ -86,7 +86,7 @@
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增/修改对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="form.studentId" placeholder="请输入学生ID" /></el-form-item>
         <el-form-item label="学年">
@@ -105,11 +105,11 @@
         <el-form-item label="预警日期" prop="warningDate"><el-date-picker clearable v-model="form.warningDate" type="date" value-format="yyyy-MM-dd" placeholder="请选择" /></el-form-item>
         <el-form-item label="是否解除"><el-radio-group v-model="form.isResolved"><el-radio label="0">否</el-radio><el-radio label="1">是</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
 
     <!-- 手动生成预警对话框 -->
-    <el-dialog :close-on-click-modal="false" title="手动生成预警" :visible.sync="generateOpen" width="500px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="手动生成预警" :visible.sync="generateOpen" width="500px" append-to-body :before-close="done => guardedSlotBeforeClose('generate', done, '生成条件已修改但尚未提交，确定要关闭吗？')">
       <el-form ref="generateForm" :model="generateForm" label-width="80px">
         <el-form-item label="学年">
           <el-select v-model="generateYearId" placeholder="请选择学年" clearable @change="handleGenerateYearChange" style="width: 100%">
@@ -122,7 +122,7 @@
           </el-select>
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" :loading="generateLoading" @click="submitGenerate">确 定</el-button><el-button @click="generateOpen = false">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" :loading="generateLoading" @click="submitGenerate">确 定</el-button><el-button @click="guardedSlotCancel('generate', cancelGenerate, '生成条件已修改但尚未提交，确定要关闭吗？')">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
@@ -130,14 +130,23 @@
 import { listWarning, getWarning, delWarning, addWarning, updateWarning, getWarningStatistics, generateBatch } from "@/api/sam/warning"
 import { listYear } from "@/api/brm/year"
 import { listSemester, getSemester } from "@/api/brm/semester"
+import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   name: "Warning",
+  mixins: [dialogGuard],
+  // 学年下拉直接绑在 formYearId 上（不在 form 内），必须显式纳入主框比对；
+  // formSemesterList 是学年派生出来的候选项，不纳入：它只随 formYearId 变化，
+  // 把它算进去只会在"切学年后列表晚到"时制造一条无意义的未保存提示
+  guardWatch: ['formYearId'],
+  // 手动生成框绑 generateForm + generateYearId，与主框无关：单独一个命名槽位
+  guardSlots: { generate: ['generateForm', 'generateYearId'] },
   data() { return {
     loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, list: [], title: "", open: false, semesterNameMap: {},
     stats: null, generateOpen: false, generateLoading: false,
     generateForm: { semesterId: null },
     queryParams: { pageNum: 1, pageSize: 10, studentId: null, semesterId: null, warningType: null, warningLevel: null },
-    form: {}, rules: { studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }] },
+    form: {}, rules: { studentId: [req("学生ID")] },
     yearList: [],
     selectedYearId: null, semesterList: [],
     formYearId: null, formSemesterList: [],
@@ -183,7 +192,7 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList(); this.loadStats() },
     resetQuery() { this.selectedYearId = null; this.semesterList = []; this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.warningId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加学籍预警" },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加学籍预警"; this.captureDialogSnapshot() },
     handleUpdate(row) {
       this.reset()
       const id = row.warningId || this.ids
@@ -191,11 +200,18 @@ export default {
         this.form = response.data
         this.open = true
         this.title = "修改学籍预警"
+        // 本页回程有三层（form -> formYearId -> formSemesterList）：
+        // 先采一次兜底（链上任一环失败也不至于退化成"永不判脏"），
+        // 再在最内层重采一次，避开"下拉列表晚到被当成用户编辑，一打开就提示未保存"
+        this.captureDialogSnapshot()
         if (this.form.semesterId) {
           getSemester(this.form.semesterId).then(res => {
             if (res.data && res.data.academicYearId) {
               this.formYearId = res.data.academicYearId
-              listSemester({ academicYearId: this.formYearId, pageNum: 1, pageSize: 50 }).then(r => { this.formSemesterList = r.rows })
+              listSemester({ academicYearId: this.formYearId, pageNum: 1, pageSize: 50 }).then(r => {
+                this.formSemesterList = r.rows
+                this.captureDialogSnapshot()
+              })
             }
           })
         }
@@ -209,11 +225,15 @@ export default {
       this.generateSemesterList = this.selectedYearId ? [...this.semesterList] : []
       this.generateForm.semesterId = this.queryParams.semesterId || null
       this.generateOpen = true
+      // 生成框不拉异步数据，打开时直接采基线
+      this.captureSlotSnapshot('generate')
     },
+    cancelGenerate() { this.generateOpen = false },
     submitGenerate() {
       if (!this.generateForm.semesterId) { this.$modal.msgWarning("请选择学期"); return }
       this.generateLoading = true
       generateBatch(this.generateForm.semesterId).then(response => {
+        this.resetSlotSnapshot('generate')
         this.$modal.msgSuccess("预警生成完成：共处理" + response.data.totalStudents + "名学生，生成" + response.data.totalWarnings + "条预警")
         this.generateOpen = false; this.getList(); this.loadStats()
       }).finally(() => { this.generateLoading = false })

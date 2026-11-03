@@ -73,6 +73,7 @@ import { listPlan } from "@/api/tpm/plan"
 
 import dialogGuard from "@/utils/dialogGuard"
 import scrollToError from "@/utils/scrollToError"
+import { reqChange, req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard, scrollToError],
   name: "CreditStruct",
@@ -84,9 +85,9 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, planId: null, creditType: null, creditTypeName: null, status: null },
       form: {},
       rules: {
-        planId: [{ required: true, message: "所属方案不能为空", trigger: "change" }],
-        creditType: [{ required: true, message: "学分类型不能为空", trigger: "change" }],
-        creditTypeName: [{ required: true, message: "学分类型名称不能为空", trigger: "blur" }]
+        planId: [reqChange("所属方案")],
+        creditType: [reqChange("学分类型")],
+        creditTypeName: [req("学分类型名称")]
       }
     }
   },

@@ -52,7 +52,7 @@
     <app-empty v-if="!loading && !planList.length" description="暂无培养方案，可新增方案或使用「导入」批量录入" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :title="title" :visible.sync="open" width="1100px" append-to-body :close-on-click-modal="false">
+    <el-dialog :title="title" :visible.sync="open" width="1100px" append-to-body :close-on-click-modal="false" :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
           <el-col :span="12">
@@ -189,7 +189,7 @@
           </el-table>
         </el-tab-pane>
       </el-tabs>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
 
     <!-- P7：培养方案导入对话框 -->
@@ -211,10 +211,16 @@ import { listMajor } from "@/api/brm/major"
 import { listDept } from "@/api/brm/dept"
 import ExcelImportDialog from "@/components/ExcelImportDialog"
 import RemoteSelect from "@/components/RemoteSelect"
+import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 
 export default {
   name: "Plan",
   components: { ExcelImportDialog, RemoteSelect },
+  mixins: [dialogGuard],
+  // 两张子表是与 form 平级的独立 data，且由 Promise.all 回程写入：
+  // 必须纳入脏检查，否则改了课程/学分明细点关闭不会被拦（E7 第三种反例）
+  guardWatch: ['courseList', 'creditList'],
   dicts: ['sys_normal_disable', 'tpm_plan_publish_status', 'tpm_course_type', 'tpm_course_category', 'tpm_assessment', 'tpm_credit_type'],
   data() {
     return {
@@ -230,7 +236,7 @@ export default {
       ],
       queryParams: { pageNum: 1, pageSize: 10, planName: null, majorId: null, deptId: null, publishStatus: null, status: null },
       form: {},
-      rules: { planName: [{ required: true, message: "方案名称不能为空", trigger: "blur" }] }
+      rules: { planName: [req("方案名称")] }
     }
   },
   computed: {
@@ -264,7 +270,7 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.planId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加培养方案" },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加培养方案"; this.captureDialogSnapshot() },
     handleUpdate(row) {
       this.reset()
       const planId = row.planId || this.ids
@@ -280,6 +286,9 @@ export default {
         ]).then(([courseRes, creditRes]) => {
           this.courseList = courseRes.rows || []
           this.creditList = creditRes.rows || []
+          // 采集点必须在回程之后：若跟在 open = true 后面，子表异步填充会被算成用户编辑，
+          // 表现为“一打开修改框就提示未保存”（V5.19 已把这条写进 codemod 硬闸）
+          this.captureDialogSnapshot()
         })
       })
     },

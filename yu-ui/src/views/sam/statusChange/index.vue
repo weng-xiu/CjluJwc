@@ -46,11 +46,11 @@
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
     <!-- S5：审批意见对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="auditTitle" :visible.sync="auditOpen" width="460px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="auditTitle" :visible.sync="auditOpen" width="460px" append-to-body :before-close="done => guardedSlotBeforeClose('audit', done, '审批意见尚未提交，确定要关闭吗？')">
       <el-form label-width="80px">
         <el-form-item label="审批意见"><el-input v-model="auditComment" type="textarea" :rows="3" placeholder="请输入审批意见（可选）" /></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" :loading="auditLoading" @click="submitAudit">确 定</el-button><el-button @click="auditOpen = false">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" :loading="auditLoading" @click="submitAudit">确 定</el-button><el-button @click="guardedSlotCancel('audit', cancelAudit, '审批意见尚未提交，确定要关闭吗？')">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
@@ -58,13 +58,16 @@
 import { listStatusChange, getStatusChange, delStatusChange, addStatusChange, updateStatusChange, submitStatusChange, approveStatusChange, rejectStatusChange } from "@/api/sam/statusChange"
 import { listTodoTask } from "@/api/oa/workflow"
 import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "StatusChange",
+  // 审批意见框绑的是裸标量 auditComment，不在主框 form 里：命名槽位单独采集
+  guardSlots: { audit: ['auditComment'] },
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, list: [], title: "", open: false,
     auditOpen: false, auditLoading: false, auditTitle: "", auditComment: "", auditAction: "", auditRow: null,
     queryParams: { pageNum: 1, pageSize: 10, studentId: null, changeType: null, approveStatus: null },
-    form: {}, rules: { studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }], changeType: [{ required: true, message: "异动类型不能为空", trigger: "change" }] } }
+    form: {}, rules: { studentId: [req("学生ID")], changeType: [reqChange("异动类型")] } }
   },
   created() { this.getList() },
   methods: {
@@ -97,7 +100,9 @@ export default {
     handleReject(row) { this.openAudit("驳回", "reject", row); },
     openAudit(label, action, row) {
       this.auditTitle = "异动审批 - " + label; this.auditAction = action; this.auditRow = row; this.auditComment = ""; this.auditOpen = true;
+      this.captureSlotSnapshot('audit');
     },
+    cancelAudit() { this.auditOpen = false; },
     submitAudit() {
       const row = this.auditRow;
       this.auditLoading = true;
@@ -107,7 +112,7 @@ export default {
         const req = this.auditAction === "approve" ? approveStatusChange(row.changeId, payload) : rejectStatusChange(row.changeId, payload);
         return req.then(() => {
           this.$modal.msgSuccess(this.auditAction === "approve" ? "审批通过（如为末级将自动回写学籍状态）" : "已驳回");
-          this.auditOpen = false; this.getList();
+          this.auditOpen = false; this.resetSlotSnapshot('audit'); this.getList();
         });
       }).catch(() => {}).finally(() => { this.auditLoading = false; });
     }

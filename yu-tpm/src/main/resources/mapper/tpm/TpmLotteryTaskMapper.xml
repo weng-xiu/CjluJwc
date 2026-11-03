@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yu.tpm.mapper.TpmLotteryTaskMapper">
+
+    <resultMap type="TpmLotteryTask" id="TpmLotteryTaskResult">
+        <result property="taskId"         column="task_id"         />
+        <result property="roundId"        column="round_id"        />
+        <result property="taskStatus"     column="task_status"     />
+        <result property="lotterySeed"    column="lottery_seed"    />
+        <result property="lotteryCourses" column="lottery_courses" />
+        <result property="totalCount"     column="total_count"     />
+        <result property="processedCount" column="processed_count" />
+        <result property="admittedCount"  column="admitted_count"  />
+        <result property="rejectedCount"  column="rejected_count"  />
+        <result property="errorMsg"       column="error_msg"       />
+        <result property="startTime"      column="start_time"      />
+        <result property="endTime"        column="end_time"        />
+        <result property="delFlag"        column="del_flag"        />
+        <result property="createBy"       column="create_by"       />
+        <result property="createTime"     column="create_time"     />
+        <result property="updateBy"       column="update_by"       />
+        <result property="updateTime"     column="update_time"     />
+        <result property="remark"         column="remark"          />
+        <result property="roundName"      column="round_name"      />
+    </resultMap>
+
+    <!-- active_round 是生成列（仅承载唯一约束），任何 DML 都不得写它 -->
+    <sql id="selectTpmLotteryTaskVo">
+        select t.task_id, t.round_id, t.task_status, t.lottery_seed, t.lottery_courses,
+               t.total_count, t.processed_count, t.admitted_count, t.rejected_count,
+               t.error_msg, t.start_time, t.end_time, t.del_flag,
+               t.create_by, t.create_time, t.update_by, t.update_time, t.remark,
+               r.round_name as round_name
+        from tpm_lottery_task t
+        left join tpm_selection_round r on t.round_id = r.round_id
+    </sql>
+
+    <select id="selectTpmLotteryTaskByTaskId" parameterType="Long" resultMap="TpmLotteryTaskResult">
+        <include refid="selectTpmLotteryTaskVo"/>
+        where t.task_id = #{taskId} and t.del_flag = '0'
+    </select>
+
+    <select id="selectLatestTaskByRoundId" parameterType="Long" resultMap="TpmLotteryTaskResult">
+        <include refid="selectTpmLotteryTaskVo"/>
+        where t.round_id = #{roundId} and t.del_flag = '0'
+        order by t.task_id desc
+        limit 1
+    </select>
+
+    <select id="selectTpmLotteryTaskList" parameterType="TpmLotteryTask" resultMap="TpmLotteryTaskResult">
+        <include refid="selectTpmLotteryTaskVo"/>
+        <where>
+            t.del_flag = '0'
+            <if test="roundId != null"> and t.round_id = #{roundId}</if>
+            <if test="taskStatus != null and taskStatus != ''"> and t.task_status = #{taskStatus}</if>
+        </where>
+        order by t.task_id desc
+    </select>
+
+    <insert id="insertTpmLotteryTask" parameterType="TpmLotteryTask" useGeneratedKeys="true" keyProperty="taskId">
+        insert into tpm_lottery_task
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="roundId != null">round_id,</if>
+            <if test="taskStatus != null">task_status,</if>
+            <if test="lotterySeed != null">lottery_seed,</if>
+            <if test="lotteryCourses != null">lottery_courses,</if>
+            <if test="totalCount != null">total_count,</if>
+            <if test="processedCount != null">processed_count,</if>
+            <if test="admittedCount != null">admitted_count,</if>
+            <if test="rejectedCount != null">rejected_count,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+            del_flag,
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="roundId != null">#{roundId},</if>
+            <if test="taskStatus != null">#{taskStatus},</if>
+            <if test="lotterySeed != null">#{lotterySeed},</if>
+            <if test="lotteryCourses != null">#{lotteryCourses},</if>
+            <if test="totalCount != null">#{totalCount},</if>
+            <if test="processedCount != null">#{processedCount},</if>
+            <if test="admittedCount != null">#{admittedCount},</if>
+            <if test="rejectedCount != null">#{rejectedCount},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+            '0',
+        </trim>
+    </insert>
+
+    <!-- T-5：'0' 待执行 → '1' 执行中。旧状态谓词是幂等的根：两个执行者只有一个能拿到 1 行 -->
+    <update id="markRunning">
+        update tpm_lottery_task
+        set task_status = '1',
+            start_time = #{startTime},
+            update_time = #{startTime}
+        where task_id = #{taskId} and task_status = '0' and del_flag = '0'
+    </update>
+
+    <!-- 进度快照：只在执行中推进；total_count 一并写入（抽签开始时已确定，只作快照不是实时值） -->
+    <update id="updateProgress">
+        update tpm_lottery_task
+        set processed_count = #{processedCount},
+            total_count = #{totalCount},
+            admitted_count = #{admittedCount},
+            rejected_count = #{rejectedCount},
+            update_time = now()
+        where task_id = #{taskId} and task_status = '1' and del_flag = '0'
+    </update>
+
+    <!-- '1' 执行中 → '2' 成功；error_msg 显式清空，避免重试成功后残留上次的失败原因 -->
+    <update id="markSucceeded" parameterType="TpmLotteryTask">
+        update tpm_lottery_task
+        set task_status = '2',
+            lottery_seed = #{lotterySeed},
+            lottery_courses = #{lotteryCourses},
+            total_count = #{totalCount},
+            processed_count = #{processedCount},
+            admitted_count = #{admittedCount},
+            rejected_count = #{rejectedCount},
+            error_msg = null,
+            end_time = #{endTime},
+            update_time = #{endTime}
+        where task_id = #{taskId} and task_status = '1' and del_flag = '0'
+    </update>
+
+    <!-- '0'/'1' → '3' 失败：待执行也可能直接失败（线程池拒绝、轮次状态不符） -->
+    <update id="markFailed">
+        update tpm_lottery_task
+        set task_status = '3',
+            error_msg = #{errorMsg},
+            end_time = #{endTime},
+            update_time = #{endTime}
+        where task_id = #{taskId} and task_status in ('0','1') and del_flag = '0'
+    </update>
+
+    <update id="deleteTpmLotteryTaskByTaskId" parameterType="Long">
+        update tpm_lottery_task set del_flag = '2' where task_id = #{taskId}
+    </update>
+
+</mapper>

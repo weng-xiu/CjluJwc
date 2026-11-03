@@ -55,17 +55,21 @@ class PortalScheduleControllerMockMvcTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
-        // BaseController.getUserId() 依赖 SecurityContext，standalone 模式手动注入登录用户（userId=1）
-        SysUser sysUser = new SysUser();
-        sysUser.setUserName("tester");
-        LoginUser loginUser = new LoginUser(1L, 2L, sysUser, Collections.emptySet());
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(loginUser, null));
+        loginAs(1L);
     }
 
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+    }
+
+    /** standalone 模式手动注入登录用户（userId=1 为 admin） */
+    private void loginAs(Long userId) {
+        SysUser sysUser = new SysUser();
+        sysUser.setUserName("tester");
+        LoginUser loginUser = new LoginUser(userId, 2L, sysUser, Collections.emptySet());
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(loginUser, null));
     }
 
     @Test
@@ -135,14 +139,57 @@ class PortalScheduleControllerMockMvcTest {
     @Test
     @DisplayName("detail：课表详情返回列表落 data（而非 rows）")
     void detail_putsListInData() throws Exception {
-        TpmSchedule s = new TpmSchedule();
-        s.setScheduleId(102L);
+        TpmSchedule target = new TpmSchedule();
+        target.setScheduleId(102L);
+        target.setTeacherId(7L);
+        when(tpmScheduleService.selectTpmScheduleByScheduleId(102L)).thenReturn(target);
         when(tpmScheduleService.selectTpmScheduleList(any(TpmSchedule.class)))
-                .thenReturn(List.of(s));
+                .thenReturn(List.of(target));
 
         mockMvc.perform(get("/portal/schedule/detail").param("scheduleId", "102"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data[0].scheduleId").value(102));
+    }
+
+    @Test
+    @DisplayName("detail：S-5 非管理员查看本人任课课表放行，查看他人课表拒绝")
+    void detail_checksOwnershipForNonAdmin() throws Exception {
+        loginAs(500L);
+        TpmSchedule mine = new TpmSchedule();
+        mine.setScheduleId(201L);
+        mine.setTeacherId(500L);
+        TpmSchedule other = new TpmSchedule();
+        other.setScheduleId(202L);
+        other.setTeacherId(999L);
+        when(tpmScheduleService.selectTpmScheduleByScheduleId(201L)).thenReturn(mine);
+        when(tpmScheduleService.selectTpmScheduleByScheduleId(202L)).thenReturn(other);
+        when(tpmScheduleService.selectTpmScheduleList(any(TpmSchedule.class))).thenReturn(List.of(mine));
+        when(tpmScheduleService.selectStudentScheduleList(eq(500L), isNull())).thenReturn(List.of());
+
+        mockMvc.perform(get("/portal/schedule/detail").param("scheduleId", "201"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+
+        TpmSchedule foreign = new TpmSchedule();
+        foreign.setScheduleId(202L);
+        com.yu.common.exception.ServiceException ex = Assertions.assertThrows(
+                com.yu.common.exception.ServiceException.class, () -> controller.detail(foreign));
+        Assertions.assertTrue(ex.getMessage().contains("无权查看该课表"));
+    }
+
+    @Test
+    @DisplayName("list：S-5 非管理员不传参数也仅返回本人课表（不再遍历全校）")
+    void list_nonAdminRestrictedToSelf() throws Exception {
+        loginAs(500L);
+        TpmSchedule mine = new TpmSchedule();
+        mine.setScheduleId(301L);
+        when(tpmScheduleService.selectStudentScheduleList(eq(500L), isNull())).thenReturn(List.of(mine));
+
+        mockMvc.perform(get("/portal/schedule/list"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.rows[0].scheduleId").value(301));
+
+        verify(tpmScheduleService, org.mockito.Mockito.never()).selectTpmScheduleList(any(TpmSchedule.class));
     }
 }

@@ -221,6 +221,7 @@ import { listSchedule, getSchedule, delSchedule, addSchedule, updateSchedule } f
 import { listUser } from "@/api/system/user"
 
 import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "OaSchedule",
@@ -250,10 +251,10 @@ export default {
       },
       form: {},
       rules: {
-        scheduleTitle: [{ required: true, message: "日程标题不能为空", trigger: "blur" }],
-        scheduleType: [{ required: true, message: "日程类型不能为空", trigger: "change" }],
-        startTime: [{ required: true, message: "开始时间不能为空", trigger: "change" }],
-        endTime: [{ required: true, message: "结束时间不能为空", trigger: "change" }]
+        scheduleTitle: [req("日程标题")],
+        scheduleType: [reqChange("日程类型")],
+        startTime: [reqChange("开始时间")],
+        endTime: [reqChange("结束时间")]
       }
     }
   },

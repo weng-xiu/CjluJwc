@@ -23,8 +23,6 @@
     "yu-aem/src/main/java/com/yu/aem/controller/AemGradeRecordController.java#AemGradeRecordController.importTemplate",
     "yu-brm/src/main/java/com/yu/brm/controller/BrmClassroomController.java#BrmClassroomController.importTemplate",
     "yu-brm/src/main/java/com/yu/brm/controller/BrmTeacherController.java#BrmTeacherController.importTemplate",
-    "yu-portal/src/main/java/com/yu/portal/controller/PortalAdjustmentController.java#PortalAdjustmentController.approve",
-    "yu-portal/src/main/java/com/yu/portal/controller/PortalAdjustmentController.java#PortalAdjustmentController.reject",
     "yu-sam/src/main/java/com/yu/sam/controller/SamStudentController.java#SamStudentController.importTemplate",
     "yu-tpm/src/main/java/com/yu/tpm/controller/TpmCourseLibraryController.java#TpmCourseLibraryController.importTemplate",
     "yu-tpm/src/main/java/com/yu/tpm/controller/TpmTrainingPlanController.java#TpmTrainingPlanController.importTemplate"

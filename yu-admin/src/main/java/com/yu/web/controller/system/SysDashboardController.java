@@ -1,6 +1,7 @@
 package com.yu.web.controller.system;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,6 +26,7 @@ public class SysDashboardController extends BaseController
     /**
      * 驾驶舱总览：当前学期 + 核心指标 + 预警分布 + 低通过率课程TOP + 选课结果分布
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/overview")
     public AjaxResult overview()
     {

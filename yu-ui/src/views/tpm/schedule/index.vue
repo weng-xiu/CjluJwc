@@ -57,7 +57,7 @@
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增/修改对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="开课" prop="offeringId">
           <remote-select v-model="form.offeringId" :api="apiListOffering" search-key="courseName" value-key="offeringId" :formatter="offeringLabel" :initial-option="offeringInitial" placeholder="输入课程名搜索开课" style="width:100%" />
@@ -86,7 +86,7 @@
         </el-row>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
 
     <!-- 冲突检测对话框 -->
@@ -238,8 +238,21 @@ import { listSemester } from "@/api/brm/semester"
 import { detectConflicts, findAvailableClassrooms, autoAssignClassrooms, checkSlotConflict, dragAdjust } from "@/api/tpm/scheduleOpt"
 import WeekTimetable from "./components/WeekTimetable"
 import RemoteSelect from "@/components/RemoteSelect"
+import dialogGuard from "@/utils/dialogGuard"
+import { reqChange } from "@/utils/validate"
 export default {
   name: "Schedule", components: { WeekTimetable, RemoteSelect }, dicts: ['sys_normal_disable', 'tpm_schedule_type'],
+  mixins: [dialogGuard],
+  /*
+   * E7 定案：本页 7 个对话框只给主编辑框挂脏检查，其余 6 个均不接入，
+   * 因为它们丢失的都不是「未提交的业务数据」：
+   *   - 冲突检测结果 / 自动分配结果 / 排课详情：纯只读回显；
+   *   - 选择学期：每次打开都把 semesterDialogValue 置 null，关掉无状态可丢，且选中后立刻被 确定 消费；
+   *   - 可用教室推荐：classroomQuery 是只读结果集的筛选条件，选中的教室要么当即落库、
+   *     要么回填 form（由主框守卫），关掉属于主动放弃；
+   *   - 周课表视图：weekFilter 是视图筛选，openWeekView 每次打开都重置，更无丢失风险。
+   * 给这 6 个框挂哨的结果只会是每次「查完就关」都弹确认，反而诱发用户盲点确定。
+   */
   data() {
     return {
       loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0,
@@ -282,7 +295,7 @@ export default {
       ],
       queryParams: { pageNum: 1, pageSize: 10, semesterId: null, offeringId: null, classroomId: null, status: null },
       form: {},
-      rules: { offeringId: [{ required: true, message: "开课不能为空", trigger: "change" }] }
+      rules: { offeringId: [reqChange("开课")] }
     }
   },
   computed: {
@@ -328,7 +341,7 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.scheduleId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加排课" },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加排课"; this.captureDialogSnapshot() },
     handleUpdate(row) {
       this.reset()
       const scheduleId = row.scheduleId || this.ids
@@ -339,6 +352,8 @@ export default {
         this.form.teacherName = this.form.teacherName || src.teacherName
         this.form.classroomName = this.form.classroomName || src.classroomName
         this.open = true; this.title = "修改排课"
+        // 采集点必须在 form 回填之后
+        this.captureDialogSnapshot()
       })
     },
     submitForm() {

@@ -94,6 +94,7 @@
 // .sync → v-model:xxx；slot="footer" → <template #footer>；el-input slot="append" → <template #append>；
 // type="text" → link；size mini → small；@keyup.enter.native → @keyup.enter。业务逻辑与 Vue2 保持一致。
 import { listCertReissue, certsOfStudent, submitCertReissue, approveCertReissue, rejectCertReissue, delCertReissue } from "@/api/sam/certReissue"
+import { req } from "@/utils/validate"
 
 export default {
   name: "CertReissue",
@@ -106,9 +107,9 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, studentNo: null, studentName: null, applyStatus: null },
       form: {},
       rules: {
-        studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }],
+        studentId: [req("学生ID")],
         origCertId: [{ required: true, message: "请选择原证书", trigger: "change" }],
-        reason: [{ required: true, message: "补办原因不能为空", trigger: "blur" }]
+        reason: [req("补办原因")]
       }
     }
   },

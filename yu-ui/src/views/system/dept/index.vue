@@ -184,6 +184,7 @@ import Treeselect from "@riophae/vue-treeselect"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css"
 
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "Dept",
@@ -218,15 +219,9 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        parentId: [
-          { required: true, message: "上级部门不能为空", trigger: "blur" }
-        ],
-        deptName: [
-          { required: true, message: "部门名称不能为空", trigger: "blur" }
-        ],
-        orderNum: [
-          { required: true, message: "显示排序不能为空", trigger: "blur" }
-        ],
+        parentId: [req("上级部门")],
+        deptName: [req("部门名称")],
+        orderNum: [req("显示排序")],
         email: [
           {
             type: "email",

@@ -63,6 +63,7 @@
 // .sync → v-model:xxx；slot="footer" → <template #footer>；type="text" → link；size mini → small；
 // el-radio label → value；@keyup.enter.native → @keyup.enter。业务逻辑与 Vue2 保持一致。
 import { listDegreeConfig, getDegreeConfig, delDegreeConfig, addDegreeConfig, updateDegreeConfig, setDefaultDegreeConfig, getEffectiveDegreeConfig } from "@/api/sam/degreeConfig"
+import { req } from "@/utils/validate"
 export default {
   name: "DegreeConfig",
   dicts: ['sys_normal_disable'],
@@ -73,8 +74,8 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, configName: null, status: null },
       form: {},
       rules: {
-        configName: [{ required: true, message: "配置名称不能为空", trigger: "blur" }],
-        gpaThreshold: [{ required: true, message: "GPA门槛不能为空", trigger: "blur" }]
+        configName: [req("配置名称")],
+        gpaThreshold: [req("GPA门槛")]
       }
     }
   },

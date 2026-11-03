@@ -230,6 +230,7 @@ import { obeDashboard, calculateByStudent, listImprovement, addImprovement, upda
 import { listPlan } from "@/api/tpm/plan"
 import { listSemester } from "@/api/brm/semester"
 import { listStudent } from "@/api/sam/student"
+import { req } from "@/utils/validate"
 
 export default {
   name: "ObeAttainment",
@@ -244,7 +245,7 @@ export default {
       requirements: [],
       // F3 持续改进台账
       impList: [], impLoading: false, impOpen: false, impTitle: '', impForm: {},
-      impRules: { measure: [{ required: true, message: '改进措施不能为空', trigger: 'blur' }] }
+      impRules: { measure: [req("改进措施")] }
     }
   },
   computed: {

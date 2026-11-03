@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,6 +31,8 @@ public class PortalCommonController extends BaseController
     private IBrmSemesterService brmSemesterService;
 
     /** 学期下拉：启用学期按学期ID倒序（最新在前），仅回传下拉所需字段 */
+    // S-11：显式标注为「登录即可读」，不再依赖扫描器默认豁免
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/semesters")
     public AjaxResult semesters()
     {

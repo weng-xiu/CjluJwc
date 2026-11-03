@@ -115,6 +115,7 @@ import { listExamSeat } from "@/api/aem/examSeat"
 import { listInvigilation } from "@/api/aem/invigilation"
 import MasterDetailPanel from "../components/MasterDetailPanel"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "ExamPlan",
@@ -126,7 +127,7 @@ export default {
       activeTab: {}, conflictOpen: false, conflictList: [],
       queryParams: { pageNum: 1, pageSize: 10, examName: null, examType: null, planStatus: null },
       form: {},
-      rules: { examName: [{ required: true, message: "考试名称不能为空", trigger: "blur" }] },
+      rules: { examName: [req("考试名称")] },
       seatColumns: [
         { prop: 'classroomId', label: '教室ID', width: 90, type: 'number', required: true },
         { prop: 'studentId', label: '学生ID', width: 110, type: 'number', required: true },

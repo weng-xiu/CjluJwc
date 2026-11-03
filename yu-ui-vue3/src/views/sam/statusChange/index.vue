@@ -61,12 +61,13 @@
 <script>
 import { listStatusChange, getStatusChange, delStatusChange, addStatusChange, updateStatusChange, submitStatusChange, approveStatusChange, rejectStatusChange } from "@/api/sam/statusChange"
 import { listTodoTask } from "@/api/oa/workflow"
+import { req, reqChange } from "@/utils/validate"
 export default {
   name: "StatusChange",
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, list: [], title: "", open: false,
     auditOpen: false, auditLoading: false, auditTitle: "", auditComment: "", auditAction: "", auditRow: null,
     queryParams: { pageNum: 1, pageSize: 10, studentId: null, changeType: null, approveStatus: null },
-    form: {}, rules: { studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }], changeType: [{ required: true, message: "异动类型不能为空", trigger: "change" }] } }
+    form: {}, rules: { studentId: [req("学生ID")], changeType: [reqChange("异动类型")] } }
   },
   created() { this.getList() },
   methods: {

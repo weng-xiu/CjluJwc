@@ -51,12 +51,13 @@
 // type="text" → link；el-radio :label → :value；size mini → small；value-format yyyy-MM-dd → YYYY-MM-DD。业务逻辑与 Vue2 保持一致。
 import { listQualification, getQualification, delQualification, addQualification, updateQualification } from "@/api/brm/qualification"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   name: "Qualification", dicts: ['sys_normal_disable'],
   mixins: [dialogGuard],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, qualificationList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, courseCategory: null, status: null },
-    form: {}, rules: { teacherId: [{ required: true, message: "教师ID不能为空", trigger: "blur" }], courseCategory: [{ required: true, message: "可授课程类别不能为空", trigger: "blur" }] } }
+    form: {}, rules: { teacherId: [req("教师ID")], courseCategory: [req("可授课程类别")] } }
   },
   created() { this.getList() },
   methods: {

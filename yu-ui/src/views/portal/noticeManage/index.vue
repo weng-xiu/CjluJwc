@@ -55,13 +55,14 @@
 <script>
 import { listNoticeManage, getNoticeManage, delNotice, addNotice, updateNotice } from "@/api/portal/notice"
 import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "PortalNoticeManage",
   dicts: ['sys_normal_disable', 'portal_notice_type'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, noticeList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, noticeTitle: null, noticeType: null, status: null },
-    form: {}, rules: { noticeTitle: [{ required: true, message: "通知标题不能为空", trigger: "blur" }], noticeType: [{ required: true, message: "通知类型不能为空", trigger: "change" }] } }
+    form: {}, rules: { noticeTitle: [req("通知标题")], noticeType: [reqChange("通知类型")] } }
   },
   created() { this.getList() },
   methods: {

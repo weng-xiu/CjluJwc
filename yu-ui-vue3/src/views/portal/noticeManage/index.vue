@@ -149,6 +149,7 @@
 import { listNoticeManage, getNoticeManage, delNotice, addNotice, updateNotice } from '@/api/portal/notice'
 import { PORTAL_NOTICE_TYPE, PORTAL_PUBLISH_STATUS, PORTAL_TARGET_ROLE } from '@/views/portal/dicts'
 import dialogGuard from '@/utils/dialogGuard'
+import { req, reqChange } from "@/utils/validate"
 
 export default {
   name: 'PortalNoticeManage',
@@ -177,8 +178,8 @@ export default {
       },
       form: {},
       rules: {
-        noticeTitle: [{ required: true, message: '通知标题不能为空', trigger: 'blur' }],
-        noticeType: [{ required: true, message: '通知类型不能为空', trigger: 'change' }]
+        noticeTitle: [req("通知标题")],
+        noticeType: [reqChange("通知类型")]
       }
     }
   },

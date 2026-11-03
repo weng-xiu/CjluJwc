@@ -1,0 +1,208 @@
+{
+  "updatedAt": "2026-11-01",
+  "note": "S-7 动态 SQL 拼接面基线：SQL 类 ${} 位置 + 允许的无 @DataScope mapper 调用点 + 动态标识符的本层断言落点。新增未登记即 FAIL。",
+  "sqlSites": [
+    {
+      "file": "yu-aem/src/main/resources/mapper/aem/AemExamPlanMapper.xml",
+      "expr": "params.dataScope",
+      "kind": "DATASCOPE",
+      "count": 1
+    },
+    {
+      "file": "yu-aem/src/main/resources/mapper/aem/AemGradeRecordMapper.xml",
+      "expr": "params.dataScope",
+      "kind": "DATASCOPE",
+      "count": 1
+    },
+    {
+      "file": "yu-aem/src/main/resources/mapper/aem/AemSupervisionRecordMapper.xml",
+      "expr": "params.dataScope",
+      "kind": "DATASCOPE",
+      "count": 1
+    },
+    {
+      "file": "yu-brm/src/main/resources/mapper/brm/BrmClassMapper.xml",
+      "expr": "params.dataScope",
+      "kind": "DATASCOPE",
+      "count": 1
+    },
+    {
+      "file": "yu-brm/src/main/resources/mapper/brm/BrmTeacherMapper.xml",
+      "expr": "params.dataScope",
+      "kind": "DATASCOPE",
+      "count": 1
+    },
+    {
+      "file": "yu-dis/src/main/resources/mapper/dis/SyncPersistenceMapper.xml",
+      "expr": "col",
+      "kind": "IDENT",
+      "count": 3
+    },
+    {
+      "file": "yu-dis/src/main/resources/mapper/dis/SyncPersistenceMapper.xml",
+      "expr": "table",
+      "kind": "IDENT",
+      "count": 1
+    },
+    {
+      "file": "yu-generator/src/main/resources/mapper/generator/GenTableMapper.xml",
+      "expr": "sql",
+      "kind": "IDENT",
+      "count": 1
+    },
+    {
+      "file": "yu-sam/src/main/resources/mapper/sam/SamProcedureItemMapper.xml",
+      "expr": "column",
+      "kind": "IDENT",
+      "count": 1
+    },
+    {
+      "file": "yu-sam/src/main/resources/mapper/sam/SamStatusChangeMapper.xml",
+      "expr": "params.dataScope",
+      "kind": "DATASCOPE",
+      "count": 1
+    },
+    {
+      "file": "yu-sam/src/main/resources/mapper/sam/SamStudentMapper.xml",
+      "expr": "params.dataScope",
+      "kind": "DATASCOPE",
+      "count": 1
+    },
+    {
+      "file": "yu-system/src/main/resources/mapper/system/SysDeptMapper.xml",
+      "expr": "params.dataScope",
+      "kind": "DATASCOPE",
+      "count": 1
+    },
+    {
+      "file": "yu-system/src/main/resources/mapper/system/SysRoleMapper.xml",
+      "expr": "params.dataScope",
+      "kind": "DATASCOPE",
+      "count": 1
+    },
+    {
+      "file": "yu-system/src/main/resources/mapper/system/SysStudentMapper.xml",
+      "expr": "params.dataScope",
+      "kind": "DATASCOPE",
+      "count": 1
+    },
+    {
+      "file": "yu-system/src/main/resources/mapper/system/SysTeacherLinkMapper.xml",
+      "expr": "params.dataScope",
+      "kind": "DATASCOPE",
+      "count": 1
+    },
+    {
+      "file": "yu-system/src/main/resources/mapper/system/SysUserMapper.xml",
+      "expr": "params.dataScope",
+      "kind": "DATASCOPE",
+      "count": 3
+    },
+    {
+      "file": "yu-tpm/src/main/resources/mapper/tpm/TpmCourseOfferingMapper.xml",
+      "expr": "params.dataScope",
+      "kind": "DATASCOPE",
+      "count": 1
+    },
+    {
+      "file": "yu-tpm/src/main/resources/mapper/tpm/TpmTrainingPlanMapper.xml",
+      "expr": "params.dataScope",
+      "kind": "DATASCOPE",
+      "count": 1
+    }
+  ],
+  "dataScopeCallers": [
+    {
+      "file": "yu-system/src/main/java/com/yu/system/service/impl/AccountSyncServiceImpl.java",
+      "method": "syncTeacherAccounts",
+      "stmt": "selectBrmTeacherList",
+      "reason": "内部构造查询对象，无外部输入（params 由本方法 new 出，不来自请求绑定）"
+    },
+    {
+      "file": "yu-brm/src/main/java/com/yu/brm/service/impl/BrmMajorServiceImpl.java",
+      "method": "deleteBrmMajorByMajorId",
+      "stmt": "selectBrmClassList",
+      "reason": "内部构造查询对象，无外部输入（params 由本方法 new 出，不来自请求绑定）"
+    },
+    {
+      "file": "yu-brm/src/main/java/com/yu/brm/service/impl/BrmMajorServiceImpl.java",
+      "method": "deleteBrmMajorByMajorIds",
+      "stmt": "selectBrmClassList",
+      "reason": "内部构造查询对象，无外部输入（params 由本方法 new 出，不来自请求绑定）"
+    },
+    {
+      "file": "yu-tpm/src/main/java/com/yu/tpm/service/impl/TpmCourseLibraryServiceImpl.java",
+      "method": "deleteTpmCourseLibraryByCourseId",
+      "stmt": "selectTpmCourseOfferingList",
+      "reason": "内部构造查询对象，无外部输入（params 由本方法 new 出，不来自请求绑定）"
+    },
+    {
+      "file": "yu-tpm/src/main/java/com/yu/tpm/service/impl/TpmCourseLibraryServiceImpl.java",
+      "method": "deleteTpmCourseLibraryByCourseIds",
+      "stmt": "selectTpmCourseOfferingList",
+      "reason": "内部构造查询对象，无外部输入（params 由本方法 new 出，不来自请求绑定）"
+    },
+    {
+      "file": "yu-tpm/src/main/java/com/yu/tpm/service/impl/TpmSelectionEnrollmentServiceImpl.java",
+      "method": "getAlternativeCourses",
+      "stmt": "selectTpmCourseOfferingList",
+      "reason": "内部构造查询对象，无外部输入（params 由本方法 new 出，不来自请求绑定）"
+    },
+    {
+      "file": "yu-tpm/src/main/java/com/yu/tpm/service/impl/TpmTrainingPlanServiceImpl.java",
+      "method": "maxVersionOfSiblings",
+      "stmt": "selectTpmTrainingPlanList",
+      "reason": "内部构造查询对象，无外部输入（params 由本方法 new 出，不来自请求绑定）"
+    },
+    {
+      "file": "yu-aem/src/main/java/com/yu/aem/service/impl/AemExamInvigilationServiceImpl.java",
+      "method": "autoDispatchInvigilators",
+      "stmt": "selectBrmTeacherList",
+      "reason": "内部构造查询对象，无外部输入（params 由本方法 new 出，不来自请求绑定）"
+    },
+    {
+      "file": "yu-sam/src/main/java/com/yu/sam/service/impl/SamStudentServiceImpl.java",
+      "method": "deleteSamStudentByStudentId",
+      "stmt": "selectSamStatusChangeList",
+      "reason": "内部构造查询对象，无外部输入（params 由本方法 new 出，不来自请求绑定）"
+    },
+    {
+      "file": "yu-sam/src/main/java/com/yu/sam/service/impl/SamStudentServiceImpl.java",
+      "method": "deleteSamStudentByStudentIds",
+      "stmt": "selectSamStatusChangeList",
+      "reason": "内部构造查询对象，无外部输入（params 由本方法 new 出，不来自请求绑定）"
+    },
+    {
+      "file": "yu-sam/src/main/java/com/yu/sam/service/impl/SamStudentServiceImpl.java",
+      "method": "insertSamStudent",
+      "stmt": "selectSamStudentList",
+      "reason": "内部构造查询对象，无外部输入（params 由本方法 new 出，不来自请求绑定）"
+    }
+  ],
+  "identifierGuards": [
+    {
+      "file": "yu-dis/src/main/resources/mapper/dis/SyncPersistenceMapper.xml",
+      "expr": "col",
+      "guardFile": "yu-dis/src/main/java/com/yu/dis/service/impl/DisSyncTaskServiceImpl.java",
+      "guardCall": "SqlUtil.assertIdentifier"
+    },
+    {
+      "file": "yu-dis/src/main/resources/mapper/dis/SyncPersistenceMapper.xml",
+      "expr": "table",
+      "guardFile": "yu-dis/src/main/java/com/yu/dis/service/impl/DisSyncTaskServiceImpl.java",
+      "guardCall": "SqlUtil.assertIdentifier"
+    },
+    {
+      "file": "yu-generator/src/main/resources/mapper/generator/GenTableMapper.xml",
+      "expr": "sql",
+      "guardFile": "yu-generator/src/main/java/com/yu/generator/service/GenTableServiceImpl.java",
+      "guardCall": "SqlUtil.assertCreateTableStatement"
+    },
+    {
+      "file": "yu-sam/src/main/resources/mapper/sam/SamProcedureItemMapper.xml",
+      "expr": "column",
+      "guardFile": "yu-sam/src/main/java/com/yu/sam/service/impl/SamGraduationProcedureServiceImpl.java",
+      "guardCall": "SqlUtil.assertIdentifier"
+    }
+  ]
+}

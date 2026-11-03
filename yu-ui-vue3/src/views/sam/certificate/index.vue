@@ -106,6 +106,7 @@
 // type="text" → link；size mini → small；el-radio label → value；this.$set → 直接赋值；
 // @keyup.enter.native → @keyup.enter。业务逻辑与 Vue2 保持一致。
 import { listCertificate, getCertificate, delCertificate, addCertificate, updateCertificate, previewNumber, batchGenerate, issueCertificate } from "@/api/sam/certificate"
+import { req, reqChange } from "@/utils/validate"
 export default {
   name: "Certificate",
   dicts: ['sam_cert_reissue_type'],
@@ -117,7 +118,7 @@ export default {
     genProgressOpen: false, genRunning: false, genTotal: 0, genSuccess: 0, genFailed: 0,
     issueOpen: false, issueForm: { certId: null, receiver: null, issueDate: null },
     queryParams: { pageNum: 1, pageSize: 10, studentNo: null, studentName: null, certType: null, certNumber: null },
-    form: {}, rules: { studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }], certType: [{ required: true, message: "证书类型不能为空", trigger: "change" }] } }
+    form: {}, rules: { studentId: [req("学生ID")], certType: [reqChange("证书类型")] } }
   },
   created() { this.getList() },
   methods: {

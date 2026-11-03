@@ -169,6 +169,7 @@ import { deptTreeSelect } from "@/api/system/user"
 import Treeselect from "@riophae/vue-treeselect"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css"
 import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 
 export default {
   name: "OaNotice",
@@ -201,9 +202,9 @@ export default {
       },
       form: {},
       rules: {
-        noticeTitle: [{ required: true, message: "公告标题不能为空", trigger: "blur" }],
-        noticeType: [{ required: true, message: "公告类型不能为空", trigger: "change" }],
-        publishScope: [{ required: true, message: "发布范围不能为空", trigger: "change" }]
+        noticeTitle: [req("公告标题")],
+        noticeType: [reqChange("公告类型")],
+        publishScope: [reqChange("发布范围")]
       }
     }
   },

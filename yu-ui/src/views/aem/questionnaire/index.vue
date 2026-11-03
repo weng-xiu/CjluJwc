@@ -87,6 +87,7 @@ import { listYear } from "@/api/brm/year"
 import { listSemester, getSemester } from "@/api/brm/semester"
 import MasterDetailPanel from "../components/MasterDetailPanel"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "Questionnaire",
@@ -94,7 +95,7 @@ export default {
   dicts: ['aem_eval_status', 'aem_is_anonymous', 'aem_question_type'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, questionnaireList: [], title: "", open: false, semesterNameMap: {},
     queryParams: { pageNum: 1, pageSize: 10, title: null, evalStatus: null },
-    form: {}, rules: { title: [{ required: true, message: "问卷标题不能为空", trigger: "blur" }] },
+    form: {}, rules: { title: [req("问卷标题")] },
     yearList: [], formYearId: null, formSemesterList: [],
     questionColumns: [
       { prop: 'questionType', label: '题目类型', width: 110, type: 'dict', dict: 'aem_question_type', required: true },

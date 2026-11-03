@@ -116,6 +116,7 @@ import ExcelImportDialog from "@/components/ExcelImportDialog"
 
 import dialogGuard from "@/utils/dialogGuard"
 import scrollToError from "@/utils/scrollToError"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard, scrollToError],
   name: "CourseLib",
@@ -128,8 +129,8 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, courseName: null, courseCode: null, planId: null, courseType: null, status: null },
       form: {},
       rules: {
-        courseCode: [{ required: true, message: "课程编码不能为空", trigger: "blur" }],
-        courseName: [{ required: true, message: "课程名称不能为空", trigger: "blur" }]
+        courseCode: [req("课程编码")],
+        courseName: [req("课程名称")]
       }
     }
   },

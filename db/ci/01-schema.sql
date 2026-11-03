@@ -2534,6 +2534,34 @@ CREATE TABLE `tpm_selection_round` (
   PRIMARY KEY (`round_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9712 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='选课轮次表';
 /*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `tpm_lottery_task`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tpm_lottery_task` (
+  `task_id` bigint NOT NULL AUTO_INCREMENT COMMENT '抽签任务ID',
+  `round_id` bigint NOT NULL COMMENT '选课轮次ID',
+  `task_status` char(1) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0' COMMENT '任务状态（0待执行 1执行中 2成功 3失败）',
+  `lottery_seed` bigint DEFAULT NULL COMMENT '本次抽签随机种子（成功后可复现审计）',
+  `lottery_courses` int NOT NULL DEFAULT '0' COMMENT '参与抽签课程数（超容量需洗牌的课程数）',
+  `total_count` int NOT NULL DEFAULT '0' COMMENT '待抽签记录数（任务快照，非实时）',
+  `processed_count` int NOT NULL DEFAULT '0' COMMENT '已落库记录数（进度快照，按分块推进）',
+  `admitted_count` int NOT NULL DEFAULT '0' COMMENT '中签人数',
+  `rejected_count` int NOT NULL DEFAULT '0' COMMENT '落选人数',
+  `error_msg` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '失败原因（超长截断）',
+  `start_time` datetime DEFAULT NULL COMMENT '开始执行时间',
+  `end_time` datetime DEFAULT NULL COMMENT '结束时间（成功或失败）',
+  `del_flag` char(1) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0' COMMENT '删除标志（0代表存在 2代表删除）',
+  `create_by` varchar(64) COLLATE utf8mb4_general_ci DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) COLLATE utf8mb4_general_ci DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  `remark` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '备注',
+  `active_round` bigint GENERATED ALWAYS AS ((case when ((`del_flag` = _utf8mb4'0') and (`task_status` in (_utf8mb4'0',_utf8mb4'1'))) then `round_id` else NULL end)) STORED COMMENT '活动任务轮次（仅用于唯一约束，业务不读写）',
+  PRIMARY KEY (`task_id`),
+  UNIQUE KEY `uk_lottery_task_active` (`active_round`),
+  KEY `idx_lottery_task_round` (`round_id`,`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='选课抽签任务表';
+/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `tpm_selection_rule`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;

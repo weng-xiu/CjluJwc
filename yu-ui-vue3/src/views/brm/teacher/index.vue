@@ -107,6 +107,7 @@
 import { listTeacher, getTeacher, delTeacher, addTeacher, updateTeacher } from "@/api/brm/teacher"
 import ExcelImportDialog from "@/components/ExcelImportDialog"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   name: "Teacher", dicts: ['sys_normal_disable', 'sys_user_sex'],
   components: { ExcelImportDialog },
@@ -115,7 +116,7 @@ export default {
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, teacherList: [], title: "", open: false,
     positionList: [], checkedPosition: [], qualificationList: [], checkedQualification: [],
     queryParams: { pageNum: 1, pageSize: 10, teacherCode: null, teacherName: null, status: null },
-    form: {}, rules: { teacherCode: [{ required: true, message: "教师工号不能为空", trigger: "blur" }], teacherName: [{ required: true, message: "教师姓名不能为空", trigger: "blur" }] } }
+    form: {}, rules: { teacherCode: [req("教师工号")], teacherName: [req("教师姓名")] } }
   },
   created() { this.getList() },
   methods: {

@@ -108,6 +108,7 @@ import { listGradeEntry, addGradeEntry, updateGradeEntry } from '@/api/portal/gr
 import { GRADE_EXAM_TYPE, PORTAL_SUBMIT_STATUS } from '@/views/portal/dicts'
 import GradeEntryMatrix from '@/components/GradeEntryMatrix'
 import dialogGuard from '@/utils/dialogGuard'
+import { req } from "@/utils/validate"
 
 export default {
   name: 'PortalGradeEntry',
@@ -137,8 +138,8 @@ export default {
       },
       form: {},
       rules: {
-        regularScore: [{ required: true, message: '平时成绩不能为空', trigger: 'blur' }],
-        examScore: [{ required: true, message: '考试成绩不能为空', trigger: 'blur' }]
+        regularScore: [req("平时成绩")],
+        examScore: [req("考试成绩")]
       }
     }
   },

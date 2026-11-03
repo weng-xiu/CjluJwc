@@ -44,12 +44,13 @@
 import { listCampus, getCampus, delCampus, addCampus, updateCampus } from "@/api/brm/campus"
 import dialogGuard from "@/utils/dialogGuard"
 import scrollToError from "@/utils/scrollToError"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard, scrollToError],
   name: "Campus", dicts: ['sys_normal_disable'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, campusList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, campusName: null, status: null },
-    form: {}, rules: { campusName: [{ required: true, message: "校区名称不能为空", trigger: "blur" }] } }
+    form: {}, rules: { campusName: [req("校区名称")] } }
   },
   created() { this.getList() },
   methods: {

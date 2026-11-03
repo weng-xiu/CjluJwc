@@ -376,6 +376,7 @@
 // 补录对话框数据字段 submitForm 改名 materialForm（Vue3 中 methods 优先级高于 data，
 // 与同名 submitForm 方法冲突会导致模板取到方法而非数据对象）。业务逻辑与 Vue2 保持一致。
 import { listThesis, getThesis, statThesis, addThesis, updateThesis, delThesis, auditThesisStage, submitThesisStage, recordThesisCheck, archiveThesisGrade, markThesisSample } from "@/api/sam/thesis"
+import { req } from "@/utils/validate"
 export default {
   name: "Thesis",
   dicts: ['sam_thesis_stage', 'sam_thesis_stage_status', 'sam_thesis_grade', 'sam_thesis_sample_status'],
@@ -393,9 +394,9 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, planYear: null, studentNo: null, studentName: null, topicName: null, advisor: null, currentStage: null, stageStatus: null, isQualified: null, sampleStatus: null },
       form: {},
       rules: {
-        planYear: [{ required: true, message: "届别不能为空", trigger: "blur" }],
-        studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }],
-        topicName: [{ required: true, message: "论文题目不能为空", trigger: "blur" }]
+        planYear: [req("届别")],
+        studentId: [req("学生ID")],
+        topicName: [req("论文题目")]
       }
     }
   },

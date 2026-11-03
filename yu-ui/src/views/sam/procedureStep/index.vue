@@ -70,6 +70,7 @@ import { listProcedureStep, getProcedureStep, addProcedureStep, updateProcedureS
 
 import dialogGuard from "@/utils/dialogGuard"
 import scrollToError from "@/utils/scrollToError"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard, scrollToError],
   name: "ProcedureStep",
@@ -80,8 +81,8 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, stepName: null, status: null },
       form: {},
       rules: {
-        stepKey: [{ required: true, message: "环节编码不能为空", trigger: "blur" }],
-        stepName: [{ required: true, message: "环节名称不能为空", trigger: "blur" }]
+        stepKey: [req("环节编码")],
+        stepName: [req("环节名称")]
       }
     }
   },

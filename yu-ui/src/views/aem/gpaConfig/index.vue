@@ -51,6 +51,7 @@ import { listGpaConfig, getGpaConfig, delGpaConfig, addGpaConfig, updateGpaConfi
 import MappingDialog from "./mappingDialog"
 import dialogGuard from "@/utils/dialogGuard"
 import scrollToError from "@/utils/scrollToError"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard, scrollToError],
   name: "GpaConfig",
@@ -72,8 +73,8 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, algorithmCode: null, algorithmName: null, status: null },
       form: {},
       rules: {
-        algorithmCode: [{ required: true, message: "算法代码不能为空", trigger: "blur" }],
-        algorithmName: [{ required: true, message: "算法名称不能为空", trigger: "blur" }]
+        algorithmCode: [req("算法代码")],
+        algorithmName: [req("算法名称")]
       }
     }
   },

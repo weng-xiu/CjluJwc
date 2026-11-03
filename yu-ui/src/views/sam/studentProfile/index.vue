@@ -230,6 +230,7 @@ import { getStudentProfile } from "@/api/sam/studentProfile"
 import { listStudent } from "@/api/sam/student"
 import { listIntervention, addIntervention, updateIntervention, delIntervention, previewInterventionEffect } from "@/api/sam/intervention"
 import { listSemester } from "@/api/brm/semester"
+import { reqChange, req } from "@/utils/validate"
 
 export default {
   name: "StudentProfile",
@@ -254,8 +255,8 @@ export default {
         { value: '2', label: '出勤预警' }, { value: '3', label: '其他' }
       ],
       interventionRules: {
-        interventionType: [{ required: true, message: "干预类型不能为空", trigger: "change" }],
-        measure: [{ required: true, message: "干预措施不能为空", trigger: "blur" }]
+        interventionType: [reqChange("干预类型")],
+        measure: [req("干预措施")]
       }
     }
   },

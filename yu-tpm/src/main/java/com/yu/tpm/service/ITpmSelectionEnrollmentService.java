@@ -77,6 +77,23 @@ public interface ITpmSelectionEnrollmentService
     public Map<String, Object> runLottery(Long roundId, Long seed);
 
     /**
+     * T-5/P-3：执行抽签并在每个落库分块后回调进度。
+     *
+     * <p>同步版本（{@link #runLottery(Long, Long)}）只是本方法传入
+     * {@link LotteryProgressListener#NOOP} 的薄包装；异步任务由
+     * {@code LotteryTaskRunner} 传入写任务表的监听器。</p>
+     *
+     * <p>整个抽签仍在**单事务**内完成：进度回调只写任务表（独立事务），
+     * 不构成提交边界，中途失败会整体回滚，修复后可直接重新提交任务。</p>
+     *
+     * @param roundId  轮次ID
+     * @param seed     随机种子；为空时自动生成并记录到轮次
+     * @param listener 进度回调；null 视为 {@link LotteryProgressListener#NOOP}
+     * @return 抽签结果统计（含实际使用的种子）
+     */
+    public Map<String, Object> runLottery(Long roundId, Long seed, LotteryProgressListener listener);
+
+    /**
      * T6：候补递补——当中签者退课释放容量时，按候补排名顺序将落选学生递补为中签。
      *
      * @param offeringId 开课ID

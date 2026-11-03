@@ -50,12 +50,13 @@
 <script>
 import { listFieldMapping, getFieldMapping, delFieldMapping, addFieldMapping, updateFieldMapping } from "@/api/dis/fieldMapping"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "DisFieldMapping", dicts: ['sys_normal_disable'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, mappingList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, interfaceId: null, targetTable: null, status: null },
-    form: {}, rules: { interfaceId: [{ required: true, message: "接口ID不能为空", trigger: "blur" }], targetTable: [{ required: true, message: "目标业务表不能为空", trigger: "blur" }], sourceField: [{ required: true, message: "源字段不能为空", trigger: "blur" }], targetColumn: [{ required: true, message: "目标列不能为空", trigger: "blur" }] } }
+    form: {}, rules: { interfaceId: [req("接口ID")], targetTable: [req("目标业务表")], sourceField: [req("源字段")], targetColumn: [req("目标列")] } }
   },
   created() { this.getList() },
   methods: {

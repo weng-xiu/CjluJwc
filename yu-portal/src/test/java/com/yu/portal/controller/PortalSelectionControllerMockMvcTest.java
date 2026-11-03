@@ -71,17 +71,21 @@ class PortalSelectionControllerMockMvcTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
-        // BaseController.getUserId() 依赖 SecurityContext，standalone 模式手动注入登录用户（userId=1）
-        SysUser sysUser = new SysUser();
-        sysUser.setUserName("tester");
-        LoginUser loginUser = new LoginUser(1L, 2L, sysUser, Collections.emptySet());
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(loginUser, null));
+        loginAs(1L);
     }
 
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+    }
+
+    /** standalone 模式手动注入登录用户（userId=1 为 admin），供 getUserId() 使用 */
+    private void loginAs(Long userId) {
+        SysUser sysUser = new SysUser();
+        sysUser.setUserName("tester");
+        LoginUser loginUser = new LoginUser(userId, 2L, sysUser, Collections.emptySet());
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(loginUser, null));
     }
 
     @Test
@@ -198,11 +202,13 @@ class PortalSelectionControllerMockMvcTest {
     @Test
     @DisplayName("drop：报名ID走路径变量，删除成功/失败映射 toAjax 双分支")
     void drop_pathVariableAndBothBranches() throws Exception {
+        when(tpmSelectionEnrollmentService.selectTpmSelectionEnrollmentByEnrollId(eq(7L))).thenReturn(ownEnrollment(7L, 1L));
         when(tpmSelectionEnrollmentService.deleteTpmSelectionEnrollmentByEnrollId(eq(7L))).thenReturn(1);
         mockMvc.perform(delete("/portal/selection/drop/7"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));
 
+        when(tpmSelectionEnrollmentService.selectTpmSelectionEnrollmentByEnrollId(eq(8L))).thenReturn(ownEnrollment(8L, 1L));
         when(tpmSelectionEnrollmentService.deleteTpmSelectionEnrollmentByEnrollId(eq(8L))).thenReturn(0);
         mockMvc.perform(delete("/portal/selection/drop/8"))
                 .andExpect(status().isOk())
@@ -210,6 +216,47 @@ class PortalSelectionControllerMockMvcTest {
 
         verify(tpmSelectionEnrollmentService).deleteTpmSelectionEnrollmentByEnrollId(eq(7L));
         verify(tpmSelectionEnrollmentService).deleteTpmSelectionEnrollmentByEnrollId(eq(8L));
+    }
+
+    @Test
+    @DisplayName("drop：S-5 归属校验——记录不存在或归属他人时均拒绝且不调用删除")
+    void drop_rejectsMissingOrForeignEnrollment() throws Exception {
+        mockMvc.perform(delete("/portal/selection/drop/9"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(500))
+                .andExpect(jsonPath("$.msg").value("选课记录不存在"));
+
+        // 普通学生（userId=100）试图退掉 2L 的选课记录：直接调用断言越权异常（standalone 不注册全局异常处理器）
+        loginAs(100L);
+        when(tpmSelectionEnrollmentService.selectTpmSelectionEnrollmentByEnrollId(eq(10L))).thenReturn(ownEnrollment(10L, 2L));
+        com.yu.common.exception.ServiceException ex = Assertions.assertThrows(
+                com.yu.common.exception.ServiceException.class, () -> controller.drop(10L));
+        Assertions.assertTrue(ex.getMessage().contains("无权访问他人数据"));
+
+        verify(tpmSelectionEnrollmentService, never()).deleteTpmSelectionEnrollmentByEnrollId(any());
+    }
+
+    @Test
+    @DisplayName("export：S-5 非管理员导出强制绑定登录学生，不可导出全量")
+    void export_forcesOwnStudentForNonAdmin() throws Exception {
+        loginAs(100L);
+        when(tpmSelectionEnrollmentService.selectTpmSelectionEnrollmentList(any(TpmSelectionEnrollment.class)))
+                .thenReturn(List.of());
+
+        mockMvc.perform(post("/portal/selection/export"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<TpmSelectionEnrollment> captor = ArgumentCaptor.forClass(TpmSelectionEnrollment.class);
+        verify(tpmSelectionEnrollmentService).selectTpmSelectionEnrollmentList(captor.capture());
+        Assertions.assertEquals(Long.valueOf(100L), captor.getValue().getStudentId());
+    }
+
+    /** 构造指定归属的选课记录，供归属校验用例使用 */
+    private TpmSelectionEnrollment ownEnrollment(Long enrollId, Long studentId) {
+        TpmSelectionEnrollment e = new TpmSelectionEnrollment();
+        e.setEnrollId(enrollId);
+        e.setStudentId(studentId);
+        return e;
     }
 
     @Test

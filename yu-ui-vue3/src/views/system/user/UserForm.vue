@@ -112,6 +112,7 @@ import { getUser, addUser, updateUser, deptTreeSelect } from '@/api/system/user'
 import passwordRule from '@/utils/passwordRule'
 import dialogGuard from '@/utils/dialogGuard'
 import TeacherForm from './TeacherForm.vue'
+import { req } from "@/utils/validate"
 
 export default {
   name: 'UserForm',
@@ -137,12 +138,10 @@ export default {
       // 表单校验
       rules: {
         userName: [
-          { required: true, message: '用户名称不能为空', trigger: 'blur' },
+          req("用户名称"),
           { min: 2, max: 20, message: '用户名称长度必须介于 2 和 20 之间', trigger: 'blur' }
         ],
-        nickName: [
-          { required: true, message: '用户昵称不能为空', trigger: 'blur' }
-        ],
+        nickName: [req("用户昵称")],
         email: [
           {
             type: 'email',
@@ -164,7 +163,7 @@ export default {
     // 覆盖 mixin 的 pwdValidator，升级密码强度校验
     pwdValidator() {
       return [
-        { required: true, message: '密码不能为空', trigger: 'blur' },
+        req("密码"),
         { min: 8, max: 20, message: '密码长度必须介于 8 和 20 之间', trigger: 'blur' },
         { pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, message: '密码必须包含大小写字母和数字', trigger: 'blur' }
       ]

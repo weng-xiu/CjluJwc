@@ -72,6 +72,11 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       TOKEN_SECRET: ${TOKEN_SECRET:-}
+      # S-4：kid 默认由 TOKEN_SECRET 派生（留空即可）；轮换期间填上一代密钥，旧令牌仍可验签
+      TOKEN_KID: ${TOKEN_KID:-}
+      TOKEN_PREVIOUS_SECRET: ${TOKEN_PREVIOUS_SECRET:-}
+      TOKEN_PREVIOUS_KID: ${TOKEN_PREVIOUS_KID:-}
+      TOKEN_MAX_LIFETIME: ${TOKEN_MAX_LIFETIME:-720}
       # 数据库版本管理（Flyway）默认关闭，避免影响现有本地库；新库首启可置 true
       FLYWAY_ENABLED: ${FLYWAY_ENABLED:-false}
       # Druid 监控台/文档端点：prod profile 下基线关闭，仅按需显式放开

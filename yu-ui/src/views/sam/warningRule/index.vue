@@ -68,6 +68,7 @@ import { listYear } from "@/api/brm/year"
 import { listSemester, getSemester } from "@/api/brm/semester"
 import dialogGuard from "@/utils/dialogGuard"
 import scrollToError from "@/utils/scrollToError"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard, scrollToError],
   name: "WarningRule",
@@ -75,8 +76,8 @@ export default {
     loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, ruleList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, ruleCode: null, ruleName: null, warningType: null, warningLevel: null, isEnabled: null },
     form: {}, rules: {
-      ruleCode: [{ required: true, message: "规则代码不能为空", trigger: "blur" }],
-      ruleName: [{ required: true, message: "规则名称不能为空", trigger: "blur" }]
+      ruleCode: [req("规则代码")],
+      ruleName: [req("规则名称")]
     },
     yearList: [], formYearId: null, formSemesterList: []
   }},

@@ -66,13 +66,14 @@
 import { listStudent, getStudent, delStudent, addStudent, updateStudent } from "@/api/sam/student"
 import ExcelImportDialog from "@/components/ExcelImportDialog"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "Student", dicts: ['sys_normal_disable'],
   components: { ExcelImportDialog },
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, studentList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, studentNo: null, studentName: null, studentStatus: null },
-    form: {}, rules: { studentNo: [{ required: true, message: "学号不能为空", trigger: "blur" }], studentName: [{ required: true, message: "姓名不能为空", trigger: "blur" }] } }
+    form: {}, rules: { studentNo: [req("学号")], studentName: [req("姓名")] } }
   },
   created() { this.getList() },
   methods: {

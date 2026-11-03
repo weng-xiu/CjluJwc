@@ -140,7 +140,10 @@ public class DataScopeAspect
             if (StringUtils.isNotNull(params) && params instanceof BaseEntity)
             {
                 BaseEntity baseEntity = (BaseEntity) params;
-                baseEntity.getParams().put(DATA_SCOPE, " AND (" + sqlString.substring(4) + ")");
+                // S-7：不再直写 params.dataScope。该键可被查询串/请求体绑定（WebDataBinder 会拿
+                // getParams() 返回的 Map 直接 put，绕过 setter），故改成写入 BaseEntity 的
+                // 不可绑定字段，由 getParams() 在取用时覆盖，外部值进不了 Mapper。
+                baseEntity.applyDataScope(" AND (" + sqlString.substring(4) + ")");
             }
         }
     }
@@ -154,7 +157,7 @@ public class DataScopeAspect
         if (StringUtils.isNotNull(params) && params instanceof BaseEntity)
         {
             BaseEntity baseEntity = (BaseEntity) params;
-            baseEntity.getParams().put(DATA_SCOPE, "");
+            baseEntity.applyDataScope("");
         }
     }
 }

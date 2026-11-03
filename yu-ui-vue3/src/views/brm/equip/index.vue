@@ -96,6 +96,7 @@
 // type="text" → link；el-radio :label → :value；size mini → small；value-format yyyy-MM-dd → YYYY-MM-DD。业务逻辑与 Vue2 保持一致。
 import { listEquip, getEquip, delEquip, addEquip, updateEquip } from "@/api/brm/equip"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 
 export default {
   name: "Equip",
@@ -120,9 +121,7 @@ export default {
       },
       form: {},
       rules: {
-        equipName: [
-          { required: true, message: "设备名称不能为空", trigger: "blur" }
-        ]
+        equipName: [req("设备名称")]
       }
     }
   },

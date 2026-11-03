@@ -256,6 +256,7 @@ import JobDetail from './detail'
 import Crontab from '@/components/Crontab'
 
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   components: { Crontab, JobDetail },
@@ -299,15 +300,9 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        jobName: [
-          { required: true, message: "任务名称不能为空", trigger: "blur" }
-        ],
-        invokeTarget: [
-          { required: true, message: "调用目标字符串不能为空", trigger: "blur" }
-        ],
-        cronExpression: [
-          { required: true, message: "cron执行表达式不能为空", trigger: "blur" }
-        ]
+        jobName: [req("任务名称")],
+        invokeTarget: [req("调用目标字符串")],
+        cronExpression: [req("cron执行表达式")]
       }
     }
   },

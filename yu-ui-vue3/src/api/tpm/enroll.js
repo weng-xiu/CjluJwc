@@ -40,9 +40,19 @@ export function getSuggestions(courseOfferingId, query) {
   return request({ url: '/tpm/enroll/suggestions/' + courseOfferingId, method: 'get', params: query })
 }
 
-// 发起抽签（可传随机种子以复现）
+// T-5 发起抽签：不再同步返回统计，只落任务行并返回 taskId（可传随机种子以复现）
 export function runLottery(roundId, seed) {
   return request({ url: '/tpm/enroll/lottery/' + roundId, method: 'post', params: { seed } })
+}
+
+// T-5 按任务号查询抽签进度
+export function getLotteryTask(taskId) {
+  return request({ url: '/tpm/enroll/lottery/task/' + taskId, method: 'get' })
+}
+
+// T-5 查询轮次最近一次抽签任务（刷新页面后仍能续上进度，从未抽过签时 data 为 null）
+export function getLatestLotteryTask(roundId) {
+  return request({ url: '/tpm/enroll/lottery/task/round/' + roundId, method: 'get' })
 }
 
 // T6：候补递补（按空出容量顺序递补候补队列）

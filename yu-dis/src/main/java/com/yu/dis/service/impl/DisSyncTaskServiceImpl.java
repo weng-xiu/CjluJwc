@@ -22,6 +22,7 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.SecurityUtils;
+import com.yu.common.utils.sql.SqlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -287,6 +288,11 @@ public class DisSyncTaskServiceImpl implements IDisSyncTaskService
                         valueRows.add(vr);
                     }
                     if (columns.isEmpty() || valueRows.isEmpty()) { continue; }
+                    // S-7：${table}/${columns} 是字面拼接。SyncResponseParser 只做了「标识符正则」，
+                    // 而目标表名来自 dis_field_mapping 配置；把断言放在绑定前，本层就能自证，
+                    // 不用赌每一个上游调用方都记得校验。
+                    SqlUtil.assertIdentifier(table, "同步目标表名");
+                    SqlUtil.assertIdentifiers(columns, "同步目标列名");
                     syncPersistenceMapper.upsertBatch(table, columns, valueRows);
                     persistedRows += rows.size();
                     tables.add(table);

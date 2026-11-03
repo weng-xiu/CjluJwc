@@ -66,16 +66,21 @@ class PortalCredentialControllerMockMvcTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
-        SysUser sysUser = new SysUser();
-        sysUser.setUserName("tester");
-        LoginUser loginUser = new LoginUser(1L, 2L, sysUser, Collections.emptySet());
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(loginUser, null));
+        loginAs(1L);
     }
 
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+    }
+
+    /** standalone 下手动注入登录态；userId=1 为 admin，其余为普通用户 */
+    private void loginAs(Long userId) {
+        SysUser sysUser = new SysUser();
+        sysUser.setUserName("tester");
+        LoginUser loginUser = new LoginUser(userId, 2L, sysUser, Collections.emptySet());
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(loginUser, null));
     }
 
     @Test
@@ -198,17 +203,32 @@ class PortalCredentialControllerMockMvcTest {
     }
 
     @Test
-    @DisplayName("print：归属他人（非本人且非管理员）拒绝访问")
+    @DisplayName("print：普通用户访问他人凭证拒绝（S-5：判定改为当前登录人是否 admin）")
     void print_notOwnerRejected() throws Exception {
+        loginAs(100L);
         SysPrintRecord record = new SysPrintRecord();
         record.setBizType("GRADE");
-        record.setReceiveId(2L); // 登录用户为 1L，非本人且 receiveId 非管理员
+        record.setReceiveId(2L);
         when(sysPrintService.selectRecordById(11L)).thenReturn(record);
 
         mockMvc.perform(get("/portal/credential/print/11"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.msg").value("无权访问该凭证"));
+    }
+
+    @Test
+    @DisplayName("print：管理员可打开他人凭证（修正原先误传 receiveId 导致的误拒）")
+    void print_adminOpensOthers() throws Exception {
+        SysPrintRecord record = new SysPrintRecord();
+        record.setBizType("GRADE");
+        record.setReceiveId(2L);
+        when(sysPrintService.selectRecordById(13L)).thenReturn(record);
+        when(sysPrintService.renderByRecord(13L)).thenReturn("<html>other</html>");
+
+        mockMvc.perform(get("/portal/credential/print/13"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
     }
 
     @Test

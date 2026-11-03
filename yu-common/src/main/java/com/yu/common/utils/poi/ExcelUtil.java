@@ -81,6 +81,7 @@ import com.yu.common.exception.UtilException;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.DictUtils;
 import com.yu.common.utils.StringUtils;
+import com.yu.common.utils.file.DownloadOwnershipRegistry;
 import com.yu.common.utils.file.FileTypeUtils;
 import com.yu.common.utils.file.FileUtils;
 import com.yu.common.utils.file.ImageUtils;
@@ -1628,6 +1629,9 @@ public class ExcelUtil<T>
         {
             desc.getParentFile().mkdirs();
         }
+        // S-3：下载目录是全局共享区，文件一旦落盘就与请求无关了，必须在这里登记归属，
+        // 下载时（CommonController#fileDownload）才能校验“这个文件是不是你导出的”
+        DownloadOwnershipRegistry.register(filename);
         return downloadPath;
     }
 

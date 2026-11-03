@@ -8,6 +8,7 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -46,6 +47,7 @@ public class SysMfaController
     /**
      * 查询当前用户 MFA 状态。
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/status")
     public AjaxResult status()
     {
@@ -112,6 +114,7 @@ public class SysMfaController
      *
      * <p>密钥仅在服务端渲染为图片，不经前端/第三方二维码服务中转，避免明文密钥泄露。</p>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/qrcode")
     public AjaxResult qrcode()
     {

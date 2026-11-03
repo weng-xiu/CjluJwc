@@ -159,6 +159,7 @@ import { listStudent, getStudent, addStudent, updateStudent, delStudent, changeS
 import { deptTreeSelect } from "@/api/system/user";
 import Treeselect from "@riophae/vue-treeselect";
 import "@riophae/vue-treeselect/dist/vue-treeselect.css";
+import { req } from "@/utils/validate"
 
 export default {
   name: "Student",
@@ -182,9 +183,9 @@ export default {
         studentStatus: undefined
       },
       studentRules: {
-        studentCode: [{ required: true, message: "学号不能为空", trigger: "blur" }],
-        nickName: [{ required: true, message: "姓名不能为空", trigger: "blur" }],
-        userName: [{ required: true, message: "用户名不能为空", trigger: "blur" }]
+        studentCode: [req("学号")],
+        nickName: [req("姓名")],
+        userName: [req("用户名")]
       }
     };
   },

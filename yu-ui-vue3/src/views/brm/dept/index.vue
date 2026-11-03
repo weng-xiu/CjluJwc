@@ -142,6 +142,7 @@
 // 其余同常规口径（el-icon-* → 图标组件名；slot-scope → #default；:visible.sync → v-model；.sync → v-model:xxx；
 //  type="text" → link；el-radio :label → :value；size mini → small）。业务逻辑与 Vue2 保持一致。
 import { listDept, getDept, delDept, addDept, updateDept, syncFromSys } from "@/api/brm/dept"
+import { req } from "@/utils/validate"
 
 export default {
   name: "Dept",
@@ -164,10 +165,10 @@ export default {
       },
       form: {},
       rules: {
-        parentId: [{ required: true, message: "上级院系不能为空", trigger: "blur" }],
-        deptName: [{ required: true, message: "院系名称不能为空", trigger: "blur" }],
-        deptCode: [{ required: true, message: "院系编码不能为空", trigger: "blur" }],
-        orderNum: [{ required: true, message: "显示排序不能为空", trigger: "blur" }]
+        parentId: [req("上级院系")],
+        deptName: [req("院系名称")],
+        deptCode: [req("院系编码")],
+        orderNum: [req("显示排序")]
       }
     }
   },

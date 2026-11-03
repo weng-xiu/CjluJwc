@@ -131,6 +131,7 @@ import Treeselect from "@riophae/vue-treeselect"
 import "@riophae/vue-treeselect/dist/vue-treeselect.css"
 
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "Dept",
@@ -152,10 +153,10 @@ export default {
       },
       form: {},
       rules: {
-        parentId: [{ required: true, message: "上级院系不能为空", trigger: "blur" }],
-        deptName: [{ required: true, message: "院系名称不能为空", trigger: "blur" }],
-        deptCode: [{ required: true, message: "院系编码不能为空", trigger: "blur" }],
-        orderNum: [{ required: true, message: "显示排序不能为空", trigger: "blur" }]
+        parentId: [req("上级院系")],
+        deptName: [req("院系名称")],
+        deptCode: [req("院系编码")],
+        orderNum: [req("显示排序")]
       }
     }
   },

@@ -56,13 +56,14 @@
 import { listGradeEntry, addGradeEntry, updateGradeEntry } from "@/api/portal/grade"
 import GradeEntryMatrix from "@/components/GradeEntryMatrix"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "PortalGradeEntry", components: { GradeEntryMatrix }, dicts: ['sys_normal_disable'],
   data() { return { loading: true, ids: [], single: true, showSearch: true, total: 0, gradeList: [], title: "", open: false, matrixOpen: false,
     examTypeOptions: [ { value: "0", label: "正考" }, { value: "1", label: "补考" }, { value: "2", label: "重修" } ],
     queryParams: { pageNum: 1, pageSize: 10, courseName: null, studentName: null },
-    form: {}, rules: { regularScore: [{ required: true, message: "平时成绩不能为空", trigger: "blur" }], examScore: [{ required: true, message: "考试成绩不能为空", trigger: "blur" }] } }
+    form: {}, rules: { regularScore: [req("平时成绩")], examScore: [req("考试成绩")] } }
   },
   created() { this.getList() },
   methods: {

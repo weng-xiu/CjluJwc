@@ -132,6 +132,7 @@
 // 缩略图/图片上传依赖本轮补齐的 ImagePreview / ImageUpload 全局组件。
 import { listBanner, getBanner, delBanner, addBanner, updateBanner } from '@/api/portal/banner'
 import dialogGuard from '@/utils/dialogGuard'
+import { req, reqChange } from "@/utils/validate"
 
 export default {
   name: 'PortalBannerManage',
@@ -155,8 +156,8 @@ export default {
       },
       form: {},
       rules: {
-        title: [{ required: true, message: '标题不能为空', trigger: 'blur' }],
-        imageUrl: [{ required: true, message: '轮播图片不能为空', trigger: 'change' }]
+        title: [req("标题")],
+        imageUrl: [reqChange("轮播图片")]
       }
     }
   },

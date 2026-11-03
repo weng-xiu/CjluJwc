@@ -30,6 +30,7 @@ import com.yu.common.constant.GenConstants;
 import com.yu.common.core.text.CharsetKit;
 import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.StringUtils;
+import com.yu.common.utils.sql.SqlUtil;
 import com.yu.generator.domain.GenTable;
 import com.yu.generator.domain.GenTableColumn;
 import com.yu.generator.mapper.GenTableColumnMapper;
@@ -160,6 +161,10 @@ public class GenTableServiceImpl implements IGenTableService
     @Override
     public boolean createTable(String sql)
     {
+        // S-7：${sql} 是全仓唯一「整条语句直拼」点。上游 GenController 已做 filterKeyword + JSqlParser
+        // 只取 CREATE TABLE，但那是 Controller 层的保护；这里再钉一次前缀，
+        // 让将来任何新增的服务层调用方也绕不过去（本层可验证，不依赖调用方自觉）。
+        SqlUtil.assertCreateTableStatement(sql);
         return genTableMapper.createTable(sql) == 0;
     }
 

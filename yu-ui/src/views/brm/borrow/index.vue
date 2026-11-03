@@ -77,7 +77,7 @@
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增/修改申请 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="620px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="620px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="教室" prop="classroomId">
           <el-select v-model="form.classroomId" filterable placeholder="请选择教室" style="width:100%" @change="preCheckConflict">
@@ -122,12 +122,12 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
 
     <!-- 审批对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="approveTitle" :visible.sync="approveOpen" width="520px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="approveTitle" :visible.sync="approveOpen" width="520px" append-to-body :before-close="done => guardedSlotBeforeClose('approve', done, '审批意见尚未提交，确定要关闭吗？')">
       <el-descriptions :column="1" border size="small" style="margin-bottom:12px">
         <el-descriptions-item label="教室">{{ approveRow.classroomName || approveRow.classroomId }}</el-descriptions-item>
         <el-descriptions-item label="申请人">{{ approveRow.applicant }}</el-descriptions-item>
@@ -149,7 +149,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="doApprove">确 定</el-button>
-        <el-button @click="approveOpen = false">取 消</el-button>
+        <el-button @click="guardedSlotCancel('approve', cancelApprove, '审批意见尚未提交，确定要关闭吗？')">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -167,7 +167,9 @@
       <el-empty v-else description="暂无流程记录" :image-size="60" />
     </el-dialog>
 
-    <!-- 教室占用日历 -->
+    <!-- 教室占用日历：本体是只读视图，只带一个查询筛选器（occQuery/occRange）——
+         筛选条件丢失不造成任何未保存数据损失，故只守护主编辑框与审批框，
+         不给这个框挂脏检查（否则每次“查完就关”都会弹确认，只会诱发用户盲点“确定”） -->
     <el-dialog title="教室占用日历" :visible.sync="occOpen" width="760px" append-to-body>
       <el-form :inline="true" size="small">
         <el-form-item label="教室">
@@ -223,9 +225,14 @@ import { listBorrow, getBorrow, delBorrow, addBorrow, updateBorrow,
          submitBorrow, deptApproveBorrow, aaApproveBorrow, cancelBorrow,
          checkBorrowConflict, borrowOccupancy, borrowTrace } from "@/api/brm/borrow"
 import { listClassroom } from "@/api/brm/classroom"
+import dialogGuard from "@/utils/dialogGuard"
+import { reqChange, req } from "@/utils/validate"
 
 export default {
   name: "Borrow",
+  mixins: [dialogGuard],
+  // 审批框绑 approveForm（与主框 form 不是同一份 data）：命名槽位单独采集
+  guardSlots: { approve: ['approveForm'] },
   data() {
     return {
       loading: true,
@@ -261,9 +268,9 @@ export default {
       occQuery: { classroomId: null },
       occupancy: {},
       rules: {
-        classroomId: [{ required: true, message: "教室不能为空", trigger: "change" }],
-        applicant: [{ required: true, message: "申请人不能为空", trigger: "blur" }],
-        borrowDate: [{ required: true, message: "借用日期不能为空", trigger: "change" }]
+        classroomId: [reqChange("教室")],
+        applicant: [req("申请人")],
+        borrowDate: [reqChange("借用日期")]
       }
     }
   },
@@ -335,12 +342,14 @@ export default {
       this.reset()
       this.open = true
       this.title = "新增教室借用申请"
+      this.captureDialogSnapshot()
     },
     handleUpdate(row) {
       this.reset()
       getBorrow(row.borrowId).then(response => {
         this.form = response.data
         this.open = true
+        this.captureDialogSnapshot()
         this.title = "修改教室借用申请"
       })
     },
@@ -397,13 +406,16 @@ export default {
       this.approveStage = stage
       this.approveForm = { approved: true, opinion: null }
       this.approveOpen = true
+      this.captureSlotSnapshot('approve')
     },
+    cancelApprove() { this.approveOpen = false },
     doApprove() {
       const data = { approved: this.approveForm.approved, opinion: this.approveForm.opinion }
       const fn = this.approveStage === 'dept' ? deptApproveBorrow : aaApproveBorrow
       fn(this.approveRow.borrowId, data).then(() => {
         this.$modal.msgSuccess(this.approveForm.approved ? "已通过" : "已驳回")
         this.approveOpen = false
+        this.resetSlotSnapshot('approve')
         this.getList()
       })
     },

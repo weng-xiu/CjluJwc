@@ -132,6 +132,12 @@ token:
   expireTime: 30
   # 令牌绝对有效期（分钟，S-4）：写入 JWT exp，是滑动续期的上限；默认 12 小时
   maxLifetime: ${TOKEN_MAX_LIFETIME:720}
+  # 密钥标识 kid（S-4）：留空则由 secret 的 SHA-256 摘要自动派生（多实例自动一致）
+  kid: ${TOKEN_KID:}
+  # 上一代密钥（S-4 轮换过渡）：配置后旧令牌在过渡期内仍可验签，新令牌仍用 secret 签发
+  previousSecret: ${TOKEN_PREVIOUS_SECRET:}
+  # 上一代密钥的 kid：留空则由 previousSecret 自动派生
+  previousKid: ${TOKEN_PREVIOUS_KID:}
 
 # MyBatis配置
 mybatis:

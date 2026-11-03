@@ -221,6 +221,7 @@ import { listDocument, getDocument, delDocument, addDocument, updateDocument, su
 import { listUser, deptTreeSelect } from "@/api/system/user"
 import FileUpload from "@/components/FileUpload"
 import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 
 export default {
   name: "OaDocument",
@@ -255,11 +256,11 @@ export default {
       },
       form: {},
       rules: {
-        title: [{ required: true, message: "公文标题不能为空", trigger: "blur" }],
-        documentNo: [{ required: true, message: "文号不能为空", trigger: "blur" }],
-        documentType: [{ required: true, message: "公文类型不能为空", trigger: "change" }],
-        secretLevel: [{ required: true, message: "密级不能为空", trigger: "change" }],
-        urgentLevel: [{ required: true, message: "紧急程度不能为空", trigger: "change" }]
+        title: [req("公文标题")],
+        documentNo: [req("文号")],
+        documentType: [reqChange("公文类型")],
+        secretLevel: [reqChange("密级")],
+        urgentLevel: [reqChange("紧急程度")]
       }
     }
   },

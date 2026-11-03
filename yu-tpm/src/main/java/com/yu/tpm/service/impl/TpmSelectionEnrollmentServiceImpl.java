@@ -27,6 +27,7 @@ import com.yu.tpm.mapper.TpmCourseOfferingMapper;
 import com.yu.tpm.mapper.TpmScheduleMapper;
 import com.yu.tpm.mapper.TpmSelectionRoundMapper;
 import com.yu.tpm.service.ITpmSelectionRuleService;
+import com.yu.tpm.service.LotteryProgressListener;
 import com.yu.brm.mapper.BrmTeacherMapper;
 import com.yu.brm.domain.BrmTeacher;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -639,7 +640,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
     @Override
     public Map<String, Object> runLottery(Long roundId)
     {
-        return runLottery(roundId, null);
+        return runLottery(roundId, null, LotteryProgressListener.NOOP);
     }
 
     /**
@@ -650,13 +651,33 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
-    @BizMetric("lottery")
     public Map<String, Object> runLottery(Long roundId, Long seed)
+    {
+        return runLottery(roundId, seed, LotteryProgressListener.NOOP);
+    }
+
+    /**
+     * T-5/P-3：带进度回调的抽签实现。
+     *
+     * <p><b>事务边界不变</b>：整轮抽签仍在**单个事务**内（分块只切分 SQL 体积与锁粒度，不是提交边界）。
+     * 进度回调写在另一个事务里（{@code TpmLotteryTaskServiceImpl} 标了 REQUIRES_NEW），
+     * 因此外部能实时查到“跑到第几块”，而抽签本身仍然可以整体回滚。</p>
+     *
+     * <p><b>为什么三个重载都标 {@code @Transactional}</b>：短版入口内部自调用长版不会经过 Spring 代理，
+     * 若只在长版上声明，从 {@link #runLottery(Long)} 进来的调用会彻底失去事务。三处同标后，
+     * 无论从哪个入口进入（同步接口 / 异步任务），最外层都由代理开启事务。</p>
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    @BizMetric("lottery")
+    public Map<String, Object> runLottery(Long roundId, Long seed, LotteryProgressListener listener)
     {
         Map<String, Object> result = new HashMap<>();
         TpmSelectionRound round = tpmSelectionRoundMapper.selectTpmSelectionRoundByRoundId(roundId);
         if (round == null)
         {
+            // T-5：异步执行方靠 success 区分“软失败”与“0 条可抽”，不能只靠 message 字符串
+            result.put("success", false);
             result.put("message", "轮次不存在");
             return result;
         }
@@ -665,6 +686,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         // 不会对已产生的中签结果重新洗牌覆盖（学生已按结果缴费排课的事故形态）。
         if (!"1".equals(round.getRoundStatus()))
         {
+            result.put("success", false);
             result.put("message", "轮次当前状态不允许抽签（仅进行中可抽签，已结束请先重置轮次状态）");
             return result;
         }
@@ -679,6 +701,11 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
 
         if (allEnrollments == null || allEnrollments.isEmpty())
         {
+            // 无待抽签记录不是失败：任务成功结束，统计全为 0（前端展示“本次无需抽签”）
+            result.put("success", true);
+            result.put("lotteryCourses", 0);
+            result.put("successCount", 0);
+            result.put("failCount", 0);
             result.put("message", "无选课记录需要抽签");
             return result;
         }
@@ -773,10 +800,16 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         // 改为按块切片，每块一条 CASE WHEN 同时更新 lottery_result / result_status / waitlist_rank。
         // toUpdate 为空时不调用 Mapper：空列表会拼出 `case enroll_id end` 这种非法 SQL。
         Date lotteryUpdateTime = new Date();
-        for (int from = 0; from < toUpdate.size(); from += LOTTERY_UPDATE_CHUNK)
+        int total = toUpdate.size();
+        LotteryProgressListener progress = listener == null ? LotteryProgressListener.NOOP : listener;
+        // 先把总数写给任务表：第一块还没落完时前端就能显示 0/N，而不是一片空白
+        progress.onProgress(0, total, successCount, failCount);
+        for (int from = 0; from < total; from += LOTTERY_UPDATE_CHUNK)
         {
-            int to = Math.min(from + LOTTERY_UPDATE_CHUNK, toUpdate.size());
+            int to = Math.min(from + LOTTERY_UPDATE_CHUNK, total);
             tpmSelectionEnrollmentMapper.batchUpdateLotteryResult(toUpdate.subList(from, to), lotteryUpdateTime);
+            // 进度是「已发往数据库」的累计，不是「已提交」：抽签仍是单事务，回调方必须用独立事务写进度
+            progress.onProgress(to, total, successCount, failCount);
         }
 
         // T-3：抽签把部分「已选中」改成了「落选/候补」，占用数必须按报名表全量重算（幂等）。
@@ -793,6 +826,7 @@ public class TpmSelectionEnrollmentServiceImpl implements ITpmSelectionEnrollmen
         round.setUpdateTime(new Date());
         tpmSelectionRoundMapper.updateTpmSelectionRound(round);
 
+        result.put("success", true);
         result.put("lotteryCourses", lotteryCount);
         result.put("successCount", successCount);
         result.put("failCount", failCount);

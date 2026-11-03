@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.page.TableDataInfo;
+import com.yu.common.utils.SecurityUtils;
 import com.yu.aem.domain.AemExamPlan;
 import com.yu.aem.domain.AemExamInvigilation;
 import com.yu.aem.service.IAemExamPlanService;
@@ -46,11 +47,16 @@ public class PortalExamController extends BaseController
         return getDataTable(list);
     }
 
-    /** 教师端：监考安排查询（附带考试名称、教室名称，供移动端卡片展示） */
+    /** 教师端：监考安排查询（附带考试名称、教室名称，非管理员强制只查本人监考） */
     @PreAuthorize("@ss.hasPermi('portal:invigilation:list') and @ss.hasAnyRoles('admin,teacher')")
     @GetMapping("/invigilationList")
     public TableDataInfo invigilationList(AemExamInvigilation aemExamInvigilation)
     {
+        if (!SecurityUtils.isAdmin(getUserId()))
+        {
+            // S-5：此前不绑定登录教师，任何 teacher 不传 teacherId 即可拿到全校监考安排
+            aemExamInvigilation.setTeacherId(getUserId());
+        }
         startPage();
         List<AemExamInvigilation> list = aemExamInvigilationService.selectAemExamInvigilationList(aemExamInvigilation);
         // 逐页填充关联展示字段（分页后最多 pageSize 条，本地缓存去重避免重复查询）

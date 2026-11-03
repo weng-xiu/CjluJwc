@@ -133,6 +133,7 @@
 import { listMeetingRoom, getMeetingRoom, delMeetingRoom, addMeetingRoom, updateMeetingRoom, exportMeetingRoom, roomOccupancy } from "@/api/oa/meetingRoom"
 import { listUser } from "@/api/system/user"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 
 export default {
   name: "OaMeetingRoom",
@@ -165,9 +166,9 @@ export default {
       },
       form: {},
       rules: {
-        roomName: [{ required: true, message: "会议室名称不能为空", trigger: "blur" }],
-        roomLocation: [{ required: true, message: "会议室位置不能为空", trigger: "blur" }],
-        capacity: [{ required: true, message: "容纳人数不能为空", trigger: "blur" }]
+        roomName: [req("会议室名称")],
+        roomLocation: [req("会议室位置")],
+        capacity: [req("容纳人数")]
       }
     }
   },

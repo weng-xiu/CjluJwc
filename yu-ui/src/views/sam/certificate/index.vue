@@ -39,7 +39,7 @@
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
 
     <!-- 新增/修改对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学生ID" prop="studentId"><el-input v-model="form.studentId" placeholder="请输入学生ID" /></el-form-item>
         <el-form-item label="证书类型" prop="certType"><el-select v-model="form.certType" @change="onCertTypeChange"><el-option label="毕业证书" value="0"/><el-option label="学位证书" value="1"/><el-option label="结业证书" value="2"/></el-select></el-form-item>
@@ -55,17 +55,17 @@
         <el-form-item label="发放日期" prop="issueDate"><el-date-picker clearable v-model="form.issueDate" type="date" value-format="yyyy-MM-dd" placeholder="请选择" /></el-form-item>
         <el-form-item label="领取人" prop="receiver"><el-input v-model="form.receiver" placeholder="请输入领取人" /></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
 
     <!-- 批量生成对话框 -->
-    <el-dialog :close-on-click-modal="false" title="批量生成证书" :visible.sync="genOpen" width="460px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="批量生成证书" :visible.sync="genOpen" width="460px" append-to-body :before-close="done => guardedSlotBeforeClose('gen', done, '生成条件已修改但尚未提交，确定要关闭吗？')">
       <el-form label-width="100px">
         <el-form-item label="证书类型"><el-select v-model="genForm.certType" style="width:100%"><el-option label="毕业证书" value="0"/><el-option label="学位证书" value="1"/><el-option label="结业证书" value="2"/></el-select></el-form-item>
         <el-form-item label="毕业年份"><el-input v-model="genForm.gradYear" placeholder="可选，如 2026，留空不限" /></el-form-item>
       </el-form>
       <div style="color:var(--dt-text-secondary);font-size:12px;padding-left:100px;">将为已通过审核且尚无该类型证书的学生批量生成证书，编号自动唯一分配。</div>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" :loading="genLoading" @click="submitGenerate">确 定</el-button><el-button @click="genOpen=false">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" :loading="genLoading" @click="submitGenerate">确 定</el-button><el-button @click="guardedSlotCancel('gen', cancelGenerate, '生成条件已修改但尚未提交，确定要关闭吗？')">取 消</el-button></div>
     </el-dialog>
 
     <!-- U3/E3 批量操作反馈：批量生成证书进度与结果汇总 -->
@@ -81,19 +81,25 @@
       @closed="getList" />
 
     <!-- 发放登记对话框 -->
-    <el-dialog :close-on-click-modal="false" title="证书发放登记" :visible.sync="issueOpen" width="460px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="证书发放登记" :visible.sync="issueOpen" width="460px" append-to-body :before-close="done => guardedSlotBeforeClose('issue', done, '发放登记尚未提交，确定要关闭吗？')">
       <el-form label-width="100px">
         <el-form-item label="领取人"><el-input v-model="issueForm.receiver" placeholder="请输入领取人" /></el-form-item>
         <el-form-item label="发放日期"><el-date-picker v-model="issueForm.issueDate" type="date" value-format="yyyy-MM-dd" placeholder="默认今天" style="width:100%"/></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitIssue">确 定</el-button><el-button @click="issueOpen=false">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitIssue">确 定</el-button><el-button @click="guardedSlotCancel('issue', cancelIssue, '发放登记尚未提交，确定要关闭吗？')">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
 <script>
 import { listCertificate, getCertificate, delCertificate, addCertificate, updateCertificate, previewNumber, batchGenerate, issueCertificate } from "@/api/sam/certificate"
+import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 export default {
   name: "Certificate",
+  mixins: [dialogGuard],
+  // 批量生成框（genForm）与发放登记框（issueForm）都是与主框 form 平级的独立 data：
+  // 各自一个命名槽位，互不影响主框脏判定
+  guardSlots: { gen: ['genForm'], issue: ['issueForm'] },
   dicts: ['sam_cert_reissue_type'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, list: [], title: "", open: false,
     genOpen: false, genLoading: false, genForm: { certType: '0', gradYear: null },
@@ -101,7 +107,7 @@ export default {
     genProgressOpen: false, genRunning: false, genTotal: 0, genSuccess: 0, genFailed: 0,
     issueOpen: false, issueForm: { certId: null, receiver: null, issueDate: null },
     queryParams: { pageNum: 1, pageSize: 10, studentNo: null, studentName: null, certType: null, certNumber: null },
-    form: {}, rules: { studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }], certType: [{ required: true, message: "证书类型不能为空", trigger: "change" }] } }
+    form: {}, rules: { studentId: [req("学生ID")], certType: [reqChange("证书类型")] } }
   },
   created() { this.getList() },
   methods: {
@@ -111,15 +117,16 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.certId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加证书" },
-    handleUpdate(row) { this.reset(); const id = row.certId || this.ids[0]; getCertificate(id).then(response => { this.form = response.data; this.open = true; this.title = "修改证书" }) },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "添加证书" },
+    handleUpdate(row) { this.reset(); const id = row.certId || this.ids[0]; getCertificate(id).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改证书" }) },
     onCertTypeChange() { if (this.form.certId == null) this.handlePreview() },
     handlePreview() {
       if (!this.form.certType) { this.$modal.msgError("请先选择证书类型"); return }
       previewNumber(this.form.certType, null).then(res => { this.$set(this.form, 'certNumber', res.data) })
     },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.certId != null) { updateCertificate(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addCertificate(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
-    openGenerate() { this.genForm = { certType: '0', gradYear: null }; this.genOpen = true },
+    openGenerate() { this.genForm = { certType: '0', gradYear: null }; this.genOpen = true; this.captureSlotSnapshot('gen') },
+    cancelGenerate() { this.genOpen = false },
     submitGenerate() {
       this.genLoading = true
       // U3/E3 批量反馈：同步生成接口用不定模式进度层，结果回填汇总态
@@ -128,6 +135,7 @@ export default {
       this.genProgressOpen = true
       batchGenerate(this.genForm.certType, this.genForm.gradYear).then(res => {
         this.genOpen = false
+        this.resetSlotSnapshot('gen')
         // 后端契约：data 含 candidates/generated 统计，转入结果汇总态
         const stat = res.data || {}
         this.genTotal = Number(stat.candidates) || 0
@@ -140,8 +148,9 @@ export default {
         this.genProgressOpen = false
       }).finally(() => { this.genLoading = false })
     },
-    openIssue(row) { this.issueForm = { certId: row.certId, receiver: row.receiver || null, issueDate: null }; this.issueOpen = true },
-    submitIssue() { issueCertificate(this.issueForm).then(() => { this.$modal.msgSuccess("发放成功"); this.issueOpen = false; this.getList() }) },
+    openIssue(row) { this.issueForm = { certId: row.certId, receiver: row.receiver || null, issueDate: null }; this.issueOpen = true; this.captureSlotSnapshot('issue') },
+    cancelIssue() { this.issueOpen = false },
+    submitIssue() { issueCertificate(this.issueForm).then(() => { this.$modal.msgSuccess("发放成功"); this.issueOpen = false; this.resetSlotSnapshot('issue'); this.getList() }) },
     handleDelete(row) { const ids = row.certId || this.ids; this.$modal.confirm('是否确认删除？').then(function() { return delCertificate(ids) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleExport() { this.download('sam/certificate/export', { ...this.queryParams }, `certificate_${new Date().getTime()}.xlsx`) }
   }

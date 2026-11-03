@@ -2,6 +2,7 @@ package com.yu.web.controller.system;
 
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -44,6 +45,7 @@ public class SysProfileController extends BaseController
     /**
      * 个人信息
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public AjaxResult profile()
     {

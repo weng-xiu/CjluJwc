@@ -11,6 +11,7 @@ import org.springframework.util.FastByteArrayOutputStream;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.google.code.kaptcha.Producer;
+import com.yu.common.annotation.Anonymous;
 import com.yu.common.config.RuoYiConfig;
 import com.yu.common.constant.CacheConstants;
 import com.yu.common.constant.Constants;
@@ -42,6 +43,8 @@ public class CaptchaController
     /**
      * 生成验证码
      */
+    // S-11：登录前公开接口，显式标注 @Anonymous（不再靠扫描器默认豁免）
+    @Anonymous
     @GetMapping("/captchaImage")
     public AjaxResult getCode(HttpServletResponse response) throws IOException
     {

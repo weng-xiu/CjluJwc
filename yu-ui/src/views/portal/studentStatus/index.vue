@@ -28,10 +28,11 @@
 </template>
 <script>
 import { listStudentStatus, addStatusChange } from "@/api/portal/studentStatus"
+import { reqChange, req } from "@/utils/validate"
 export default {
   name: "PortalStudentStatus",
   data() { return { loading: true, studentInfo: {}, title: "", open: false,
-    form: {}, rules: { changeType: [{ required: true, message: "异动类型不能为空", trigger: "change" }], reason: [{ required: true, message: "申请原因不能为空", trigger: "blur" }] } }
+    form: {}, rules: { changeType: [reqChange("异动类型")], reason: [req("申请原因")] } }
   },
   created() { this.getInfo() },
   methods: {

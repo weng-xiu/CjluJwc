@@ -116,6 +116,7 @@ import { getUserProfile, updateUserProfile, updateUserPwd } from '@/api/system/u
 import { getToken } from '@/utils/auth'
 import defAva from '@/assets/images/profile.jpg'
 import { OfficeBuilding, Avatar, Clock, Phone } from '@element-plus/icons-vue'
+import { req } from "@/utils/validate"
 
 export default {
   name: 'Profile',
@@ -130,19 +131,19 @@ export default {
       form: { dept: {} },
       password: { oldPassword: undefined, newPassword: undefined, confirmPassword: undefined },
       rules: {
-        nickName: [{ required: true, message: '用户昵称不能为空', trigger: 'blur' }],
+        nickName: [req("用户昵称")],
         email: [
-          { required: true, message: '邮箱地址不能为空', trigger: 'blur' },
+          req("邮箱地址"),
           { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
         ],
         phonenumber: [{ pattern: /^1[3|4|5|6|7|8|9][0-9]\d{8}$/, message: '请输入正确的手机号码', trigger: 'blur' }],
-        oldPassword: [{ required: true, message: '原始密码不能为空', trigger: 'blur' }],
+        oldPassword: [req("原始密码")],
         newPassword: [
-          { required: true, message: '新密码不能为空', trigger: 'blur' },
+          req("新密码"),
           { min: 6, max: 20, message: '长度必须介于 6 和 20 之间', trigger: 'blur' }
         ],
         confirmPassword: [
-          { required: true, message: '确认密码不能为空', trigger: 'blur' },
+          req("确认密码"),
           {
             validator: (rule, value, callback) => {
               if (value !== this.password.newPassword) {

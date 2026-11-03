@@ -133,6 +133,7 @@
 import { listPrintTemplate, getPrintTemplate, addPrintTemplate, updatePrintTemplate, delPrintTemplate, previewPrintTemplate } from "@/api/system/printTemplate"
 
 import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "PrintTemplate",
@@ -161,12 +162,12 @@ export default {
       form: {},
       rules: {
         templateCode: [
-          { required: true, message: "模板编码不能为空", trigger: "blur" },
+          req("模板编码"),
           { pattern: /^[A-Za-z0-9_]+$/, message: "模板编码仅支持字母、数字与下划线", trigger: "blur" }
         ],
-        templateName: [{ required: true, message: "模板名称不能为空", trigger: "blur" }],
-        bizType: [{ required: true, message: "凭证类型不能为空", trigger: "change" }],
-        content: [{ required: true, message: "模板内容不能为空", trigger: "blur" }]
+        templateName: [req("模板名称")],
+        bizType: [reqChange("凭证类型")],
+        content: [req("模板内容")]
       }
     }
   },

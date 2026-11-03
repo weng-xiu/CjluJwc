@@ -1,7 +1,6 @@
 package com.yu.tpm.controller;
 
 import java.util.List;
-import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +20,11 @@ import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.enums.BusinessType;
 import com.yu.common.enums.LimitType;
+import com.yu.tpm.domain.TpmLotteryTask;
 import com.yu.tpm.domain.TpmSelectionEnrollment;
 import com.yu.tpm.domain.dto.ConflictWarning;
 import com.yu.tpm.domain.dto.CourseSuggestion;
+import com.yu.tpm.service.ITpmLotteryTaskService;
 import com.yu.tpm.service.ITpmSelectionEnrollmentService;
 import com.yu.framework.cache.DistributedLock;
 import com.yu.framework.cache.SelectionAdmission;
@@ -46,6 +47,10 @@ public class TpmSelectionEnrollmentController extends BaseController
     /** A3：多实例下保护抽签/递补等全量重算写路径的竞态 */
     @Autowired
     private DistributedLock distributedLock;
+
+    /** T-5：抽签任务表（提交异步任务、查询进度） */
+    @Autowired
+    private ITpmLotteryTaskService tpmLotteryTaskService;
 
     /** A1：选课尖峰削峰与排队号发号 */
     @Autowired
@@ -166,33 +171,56 @@ public class TpmSelectionEnrollmentController extends BaseController
     }
 
     /**
-     * 执行抽签
-     * T6：可选传入随机种子（seed），传入相同种子可复现同一抽签结果用于审计；不传则自动生成并记录。
+     * 执行抽签（T-5：同步请求 → 异步任务）
+     *
+     * <p>契约变更：本端不再在请求内跑完抽签（万级记录的批量落库会长时间挂起连接），
+     * 而是落一条任务行并立即返回 taskId；执行结果与进度请查
+     * {@code GET /tpm/enroll/lottery/task/{taskId}} 或 {@code /lottery/task/round/{roundId}}。</p>
+     *
+     * <p>T6：可选传入随机种子（seed），传入相同种子可复现同一抽签结果用于审计；不传则执行阶段自动生成。</p>
      */
     @PreAuthorize("@ss.hasPermi('tpm:enroll:edit')")
-    // V4.0 §7.3/A1：抽签属全量重算，全局限 3 次/分（集群多实例下的竞态由 A3 分布式锁收口）
+    // V4.0 §7.3/A1：抽签属全量重算，全局限 3 次/分（重复提交另由任务表唯一索引挡住）
     @RateLimiter(time = 60, count = 3)
     @PostMapping("/lottery/{roundId}")
     @Log(title = "选课抽签", businessType = BusinessType.UPDATE)
     public AjaxResult lottery(@PathVariable Long roundId,
                               @RequestParam(required = false) Long seed)
     {
-        // A3：抽签为轮次级全量重算，加分布式锁防多实例并发重复抽取；锁在事务提交后（控制器层）释放
-        String lockKey = "selection:lottery:" + roundId;
-        String token = distributedLock.tryLock(lockKey, 0L, 30000L);
-        if (token == null)
+        TpmLotteryTask task = tpmLotteryTaskService.submitLotteryTask(roundId, seed);
+        if (TpmLotteryTask.STATUS_FAILED.equals(task.getTaskStatus()))
         {
-            return error("该轮次抽签正在进行中，请稍后重试");
+            // 提交即失败（线程池拒绝）：任务行已置失败，把原因直接给前端，避免“看起来提交成功却永远不动”
+            return AjaxResult.error(task.getErrorMsg());
         }
-        try
+        return AjaxResult.success(
+                "抽签任务已提交（任务号 " + task.getTaskId() + "），可在当前页查看进度", task);
+    }
+
+    /**
+     * T-5：按任务号查询抽签进度
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:enroll:list') or @ss.hasPermi('tpm:enroll:edit')")
+    @GetMapping("/lottery/task/{taskId}")
+    public AjaxResult lotteryTask(@PathVariable Long taskId)
+    {
+        TpmLotteryTask task = tpmLotteryTaskService.selectTpmLotteryTaskByTaskId(taskId);
+        if (task == null)
         {
-            Map<String, Object> result = tpmSelectionEnrollmentService.runLottery(roundId, seed);
-            return success(result);
+            return error("抽签任务不存在");
         }
-        finally
-        {
-            distributedLock.unlock(lockKey, token);
-        }
+        return success(task);
+    }
+
+    /**
+     * T-5：查询轮次最近一次抽签任务（前端刷新页面后仍能续上进度）
+     */
+    @PreAuthorize("@ss.hasPermi('tpm:enroll:list') or @ss.hasPermi('tpm:enroll:edit')")
+    @GetMapping("/lottery/task/round/{roundId}")
+    public AjaxResult latestLotteryTask(@PathVariable Long roundId)
+    {
+        // 从未提交过时返回 null，前端据此判断“还没抽过签”
+        return success(tpmLotteryTaskService.selectLatestTaskByRoundId(roundId));
     }
 
     /**
@@ -204,20 +232,15 @@ public class TpmSelectionEnrollmentController extends BaseController
     @Log(title = "选课候补递补", businessType = BusinessType.UPDATE)
     public AjaxResult promoteWaitlist(@PathVariable Long offeringId)
     {
-        // A3：同一开课的候补递补需串行，加分布式锁避免并发超卖/重复递补
+        // A3：同一开课的候补递补需串行；T-5：改用带看门狗的句柄，递补耗时超过租约也不会丢锁
         String lockKey = "selection:promote:" + offeringId;
-        String token = distributedLock.tryLock(lockKey, 0L, 20000L);
-        if (token == null)
+        try (DistributedLock.LockHandle handle = distributedLock.tryAcquire(lockKey, 0L, 20000L))
         {
-            return error("该开课递补正在进行中，请稍后重试");
-        }
-        try
-        {
+            if (handle == null)
+            {
+                return error("该开课递补正在进行中，请稍后重试");
+            }
             return success(tpmSelectionEnrollmentService.promoteWaitlist(offeringId));
-        }
-        finally
-        {
-            distributedLock.unlock(lockKey, token);
         }
     }
 

@@ -71,7 +71,7 @@
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
     <!-- 添加或修改文章对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="900px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="900px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="24">
@@ -134,7 +134,7 @@
       </div>
     </el-dialog>
     <!-- 审核对话框 -->
-    <el-dialog title="文章审核" :visible.sync="reviewOpen" width="500px" append-to-body>
+    <el-dialog title="文章审核" :visible.sync="reviewOpen" width="500px" append-to-body :before-close="done => guardedSlotBeforeClose('review', done, '审核意见尚未提交，确定要关闭吗？')">
       <el-form ref="reviewForm" :model="reviewForm" label-width="100px">
         <el-form-item label="文章标题">
           <span>{{ reviewForm.title }}</span>
@@ -146,7 +146,7 @@
       <div slot="footer" class="dialog-footer">
         <el-button type="success" @click="handleApprove">通过</el-button>
         <el-button type="danger" @click="handleReject">驳回</el-button>
-        <el-button @click="reviewOpen = false">取 消</el-button>
+        <el-button @click="guardedSlotCancel('review', cancelReview, '审核意见尚未提交，确定要关闭吗？')">取 消</el-button>
       </div>
     </el-dialog>
   </div>
@@ -154,9 +154,14 @@
 <script>
 import { listArticle, getArticle, delArticle, addArticle, updateArticle, publishArticle, submitArticle, approveArticle, rejectArticle, withdrawArticle } from "@/api/portal/article"
 import { listColumn } from "@/api/portal/column"
+import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 
 export default {
   name: "PortalArticleManage",
+  mixins: [dialogGuard],
+  // 审核框绑 reviewForm，与主框 form 无关：命名槽位单独采集
+  guardSlots: { review: ['reviewForm'] },
   dicts: ['portal_article_status', 'sys_yes_no'],
   data() {
     return {
@@ -181,9 +186,9 @@ export default {
       },
       form: {},
       rules: {
-        title: [{ required: true, message: "文章标题不能为空", trigger: "blur" }],
-        columnId: [{ required: true, message: "所属栏目不能为空", trigger: "change" }],
-        content: [{ required: true, message: "正文内容不能为空", trigger: "blur" }]
+        title: [req("文章标题")],
+        columnId: [reqChange("所属栏目")],
+        content: [req("正文内容")]
       }
     }
   },
@@ -260,6 +265,7 @@ export default {
     handleAdd() {
       this.reset()
       this.open = true
+      this.captureDialogSnapshot()
       this.title = "添加文章"
     },
     /** 修改按钮操作 */
@@ -269,6 +275,7 @@ export default {
       getArticle(articleId).then(response => {
         this.form = response.data
         this.open = true
+        this.captureDialogSnapshot()
         this.title = "修改文章"
       })
     },
@@ -337,12 +344,15 @@ export default {
         reviewComment: null
       }
       this.reviewOpen = true
+      this.captureSlotSnapshot('review')
     },
+    cancelReview() { this.reviewOpen = false },
     /** 审核通过 */
     handleApprove() {
       const data = { reviewComment: this.reviewForm.reviewComment }
       approveArticle(this.reviewForm.articleId, data).then(() => {
         this.reviewOpen = false
+        this.resetSlotSnapshot('review')
         this.getList()
         this.$modal.msgSuccess("审核通过")
       })
@@ -356,6 +366,7 @@ export default {
       const data = { reviewComment: this.reviewForm.reviewComment }
       rejectArticle(this.reviewForm.articleId, data).then(() => {
         this.reviewOpen = false
+        this.resetSlotSnapshot('review')
         this.getList()
         this.$modal.msgSuccess("已驳回")
       })

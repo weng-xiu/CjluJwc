@@ -142,6 +142,7 @@ import { listRoomtype, getRoomtype, delRoomtype, addRoomtype, updateRoomtype } f
 
 import dialogGuard from "@/utils/dialogGuard"
 import scrollToError from "@/utils/scrollToError"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard, scrollToError],
   name: "Roomtype",
@@ -165,9 +166,7 @@ export default {
       },
       form: {},
       rules: {
-        typeName: [
-          { required: true, message: "类型名称不能为空", trigger: "blur" }
-        ]
+        typeName: [req("类型名称")]
       }
     }
   },

@@ -18,6 +18,8 @@ import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.core.page.TableDataInfo;
 import com.yu.common.enums.BusinessType;
 import com.yu.common.enums.LimitType;
+import com.yu.common.security.PortalDataScope;
+import com.yu.common.utils.SecurityUtils;
 import com.yu.common.utils.StringUtils;
 import com.yu.common.utils.poi.ExcelUtil;
 import com.yu.tpm.domain.TpmCourseOffering;
@@ -107,23 +109,34 @@ public class PortalSelectionController extends BaseController
         return toAjax(tpmSelectionEnrollmentService.insertTpmSelectionEnrollment(tpmSelectionEnrollment));
     }
 
-    /** 选课结果导出 */
+    /** 选课结果导出（非管理员强制只导出本人选课，防越权导出全量） */
     @PreAuthorize("@ss.hasPermi('portal:selection:export') and @ss.hasAnyRoles('admin,student')")
     @Log(title = "选课记录", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, TpmSelectionEnrollment tpmSelectionEnrollment)
     {
+        if (!SecurityUtils.isAdmin(getUserId()))
+        {
+            PortalDataScope.restrictToSelf(tpmSelectionEnrollment, TpmSelectionEnrollment::setStudentId);
+        }
         List<TpmSelectionEnrollment> list = tpmSelectionEnrollmentService.selectTpmSelectionEnrollmentList(tpmSelectionEnrollment);
         ExcelUtil<TpmSelectionEnrollment> util = new ExcelUtil<TpmSelectionEnrollment>(TpmSelectionEnrollment.class);
         util.exportExcel(response, list, "选课记录数据");
     }
 
-    /** 学生退课 */
+    /** 学生退课（仅可退本人选课记录，admin 可代管） */
     @PreAuthorize("@ss.hasPermi('portal:selection:drop') and @ss.hasAnyRoles('admin,student')")
     @Log(title = "退课操作", businessType = BusinessType.DELETE)
     @DeleteMapping("/drop/{enrollmentId}")
     public AjaxResult drop(@PathVariable Long enrollmentId)
     {
+        TpmSelectionEnrollment enrollment = tpmSelectionEnrollmentService.selectTpmSelectionEnrollmentByEnrollId(enrollmentId);
+        if (enrollment == null)
+        {
+            return error("选课记录不存在");
+        }
+        // 归属校验：仅可退本人选课（admin 例外），避免伪造 enrollmentId 退他人课
+        PortalDataScope.assertSelf(enrollment.getStudentId());
         return toAjax(tpmSelectionEnrollmentService.deleteTpmSelectionEnrollmentByEnrollId(enrollmentId));
     }
 

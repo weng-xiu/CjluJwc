@@ -9,8 +9,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.Collections;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +24,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -31,6 +35,8 @@ import com.yu.aem.service.IAemExamInvigilationService;
 import com.yu.aem.service.IAemExamPlanService;
 import com.yu.brm.domain.BrmClassroom;
 import com.yu.brm.service.IBrmClassroomService;
+import com.yu.common.core.domain.entity.SysUser;
+import com.yu.common.core.domain.model.LoginUser;
 
 /**
  * 门户考试与监考接口层测试（Q1 第十七批：MockMvc standalone）。
@@ -59,6 +65,21 @@ class PortalExamControllerMockMvcTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        loginAs(1L);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    /** standalone 模式手动注入登录用户（userId=1 为 admin） */
+    private void loginAs(Long userId) {
+        SysUser sysUser = new SysUser();
+        sysUser.setUserName("tester");
+        LoginUser loginUser = new LoginUser(userId, 2L, sysUser, Collections.emptySet());
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(loginUser, null));
     }
 
     @Test
@@ -137,5 +158,21 @@ class PortalExamControllerMockMvcTest {
         ArgumentCaptor<AemExamInvigilation> captor = ArgumentCaptor.forClass(AemExamInvigilation.class);
         verify(aemExamInvigilationService).selectAemExamInvigilationList(captor.capture());
         Assertions.assertNull(captor.getValue().getExamName());
+    }
+
+    @Test
+    @DisplayName("invigilationList：S-5 非管理员强制绑定登录教师，不传参数也只看本人监考")
+    void invigilationList_nonAdminForcesOwnTeacher() throws Exception {
+        loginAs(600L);
+        when(aemExamInvigilationService.selectAemExamInvigilationList(any(AemExamInvigilation.class)))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/portal/exam/invigilationList").param("teacherId", "999"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+
+        ArgumentCaptor<AemExamInvigilation> captor = ArgumentCaptor.forClass(AemExamInvigilation.class);
+        verify(aemExamInvigilationService).selectAemExamInvigilationList(captor.capture());
+        Assertions.assertEquals(Long.valueOf(600L), captor.getValue().getTeacherId());
     }
 }

@@ -213,7 +213,7 @@
     </el-dialog>
 
     <!-- 后台问答自测 -->
-    <el-dialog title="智能问答自测（后台口径，留痕记为 admin）" :visible.sync="askOpen" width="860px" append-to-body>
+    <el-dialog title="智能问答自测（后台口径，留痕记为 admin）" :visible.sync="askOpen" width="860px" append-to-body :before-close="done => guardedSlotBeforeClose('ask', done, '已输入的问题尚未提问，确定要关闭吗？')">
       <el-input v-model="askQuestion" placeholder="输入师生可能提出的问题，回车自测" @keyup.enter.native="handleAsk" :disabled="asking">
         <el-button slot="append" icon="el-icon-magic-stick" :loading="asking" @click="handleAsk" v-hasPermi="['system:aiKnowledge:ask']">提问</el-button>
       </el-input>
@@ -246,7 +246,7 @@
         </div>
       </div>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="askOpen = false">关 闭</el-button>
+        <el-button @click="guardedSlotCancel('ask', closeAsk, '已输入的问题尚未提问，确定要关闭吗？')">关 闭</el-button>
       </div>
     </el-dialog>
   </div>
@@ -257,10 +257,13 @@ import { listAiKnowledge, getAiKnowledge, addAiKnowledge, updateAiKnowledge, del
   getAiKnowledgeStat, getAiEngine, askAiKnowledge, suggestAiQuestion } from "@/api/system/aiKnowledge"
 
 import dialogGuard from "@/utils/dialogGuard"
+import { reqChange, req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "AiKnowledge",
   dicts: ['sys_ai_category', 'sys_ai_answer_source'],
+  // 问答自测框的输入是裸标量 askQuestion，与主框的 form 无关：命名槽位单独采集
+  guardSlots: { ask: ['askQuestion'] },
   data() {
     return {
       loading: true,
@@ -293,12 +296,12 @@ export default {
       },
       form: {},
       rules: {
-        category: [{ required: true, message: "知识分类不能为空", trigger: "change" }],
+        category: [reqChange("知识分类")],
         title: [
-          { required: true, message: "条目名称不能为空", trigger: "blur" },
+          req("条目名称"),
           { max: 200, message: "条目名称长度不能超过200个字符", trigger: "blur" }
         ],
-        content: [{ required: true, message: "解答正文不能为空", trigger: "blur" }]
+        content: [req("解答正文")]
       }
     }
   },
@@ -467,12 +470,15 @@ export default {
     handleAskOpen() {
       this.askOpen = true
       this.answer = {}
+      // 打开时先把上一轮遗留的输入作为基线，避免“刚打开就提示未保存”
+      this.captureSlotSnapshot('ask')
       if (!this.suggests.length) {
         suggestAiQuestion(8).then(response => {
           this.suggests = response.data || []
         })
       }
     },
+    closeAsk() { this.askOpen = false },
     handleAsk() {
       if (!this.askQuestion || !this.askQuestion.trim()) {
         this.$modal.msgWarning("请先输入问题")
@@ -483,6 +489,8 @@ export default {
         this.answer = response.data || {}
       }).finally(() => {
         this.asking = false
+        // 已成功提问就把当前问题作为新基线：此时关闭属于正常结束，不该再弹确认
+        this.captureSlotSnapshot('ask')
         this.getList()
       })
     }

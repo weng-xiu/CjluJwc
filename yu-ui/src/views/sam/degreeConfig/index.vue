@@ -58,6 +58,7 @@
 import { listDegreeConfig, getDegreeConfig, delDegreeConfig, addDegreeConfig, updateDegreeConfig, setDefaultDegreeConfig, getEffectiveDegreeConfig } from "@/api/sam/degreeConfig"
 import dialogGuard from "@/utils/dialogGuard"
 import scrollToError from "@/utils/scrollToError"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard, scrollToError],
   name: "DegreeConfig",
@@ -69,8 +70,8 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, configName: null, status: null },
       form: {},
       rules: {
-        configName: [{ required: true, message: "配置名称不能为空", trigger: "blur" }],
-        gpaThreshold: [{ required: true, message: "GPA门槛不能为空", trigger: "blur" }]
+        configName: [req("配置名称")],
+        gpaThreshold: [req("GPA门槛")]
       }
     }
   },

@@ -164,6 +164,7 @@ import { listPost, getPost, delPost, addPost, updatePost } from "@/api/system/po
 
 import dialogGuard from "@/utils/dialogGuard"
 import scrollToError from "@/utils/scrollToError"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard, scrollToError],
   name: "Post",
@@ -200,15 +201,9 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        postName: [
-          { required: true, message: "岗位名称不能为空", trigger: "blur" }
-        ],
-        postCode: [
-          { required: true, message: "岗位编码不能为空", trigger: "blur" }
-        ],
-        postSort: [
-          { required: true, message: "岗位顺序不能为空", trigger: "blur" }
-        ]
+        postName: [req("岗位名称")],
+        postCode: [req("岗位编码")],
+        postSort: [req("岗位顺序")]
       }
     }
   },

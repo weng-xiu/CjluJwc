@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.yu.common.annotation.DataScope;
 import com.yu.common.constant.CacheConstants;
 import com.yu.common.constant.UserConstants;
 import com.yu.common.core.domain.entity.SysUser;
@@ -39,10 +40,16 @@ public class SysTeacherLinkServiceImpl implements ISysTeacherLinkService
     /**
      * 查询教师关联列表
      *
+     * S-7：Mapper 里早就写了 ${params.dataScope} 与别名 d，但本方法原先没挂 @DataScope——
+     * 于是那段过滤位永远是空串（写了过滤但永不生效），而 params.dataScope 仍可被查询串绑定。
+     * 补回注解后：命中该 statement 的唯一调用路径必须经过切面（清空 → 重写）。
+     * 当前本 Service 无 Controller 调用，所以此改动无运行时可见变化。
+     *
      * @param link 教师关联信息
      * @return 教师关联信息集合
      */
     @Override
+    @DataScope(deptAlias = "d")
     public List<SysTeacherLink> selectTeacherLinkList(SysTeacherLink link)
     {
         return teacherLinkMapper.selectTeacherLinkList(link);

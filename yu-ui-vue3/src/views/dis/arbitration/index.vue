@@ -81,6 +81,7 @@
 <script>
 import { listPriority, getPriority, delPriority, addPriority, updatePriority, previewArbitration } from "@/api/dis/priority"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   name: "DisArbitration",
   dicts: ['sys_normal_disable'],
@@ -91,8 +92,8 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, sourceCode: null, status: null },
       form: {},
       rules: {
-        sourceCode: [{ required: true, message: "来源系统编码不能为空", trigger: "blur" }],
-        priority: [{ required: true, message: "优先级不能为空", trigger: "blur" }]
+        sourceCode: [req("来源系统编码")],
+        priority: [req("优先级")]
       },
       pv: { businessKey: "", candidates: [{ sourceCode: "", updateTime: "" }] },
       pvLoading: false,

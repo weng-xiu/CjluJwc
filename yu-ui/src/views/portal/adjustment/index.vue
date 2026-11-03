@@ -39,12 +39,13 @@ import { listAdjustment, addAdjustment } from "@/api/portal/adjustment"
 // 调停课类型与审批状态沿用前端内置枚举（portal_adjust_type / portal_approve_status 未入库）
 import { PORTAL_ADJUST_TYPE, PORTAL_APPROVE_STATUS } from "../dicts"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "PortalAdjustment",
   data() { return { PORTAL_ADJUST_TYPE, PORTAL_APPROVE_STATUS, loading: true, showSearch: true, total: 0, adjustmentList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, courseName: null, approveStatus: null },
-    form: {}, rules: { courseName: [{ required: true, message: "课程不能为空", trigger: "blur" }], originTime: [{ required: true, message: "原上课时间不能为空", trigger: "blur" }], newTime: [{ required: true, message: "调整后时间不能为空", trigger: "blur" }], reason: [{ required: true, message: "申请原因不能为空", trigger: "blur" }] } }
+    form: {}, rules: { courseName: [req("课程")], originTime: [req("原上课时间")], newTime: [req("调整后时间")], reason: [req("申请原因")] } }
   },
   created() { this.getList() },
   methods: {

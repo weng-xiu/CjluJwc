@@ -1,7 +1,9 @@
 package com.yu.tpm.controller;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -11,8 +13,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,13 +30,18 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.framework.cache.DistributedLock;
+import com.yu.tpm.domain.TpmLotteryTask;
 import com.yu.tpm.domain.TpmSelectionEnrollment;
+import com.yu.tpm.service.ITpmLotteryTaskService;
 import com.yu.tpm.service.ITpmSelectionEnrollmentService;
 
 /**
  * 选课名单接口层测试（Q1 第三批：MockMvc standalone）。
  * 校验 HTTP 路由、@Validated 请求体校验、PathVariable/RequestParam 绑定与抽签 seed 透传契约；
  * 抽签/递补/冲突判定等业务算法由 TpmSelectionEnrollmentServiceImplTest 纯单测覆盖。
+ *
+ * <p>T-5 契约变更：{@code POST /lottery/{roundId}} 不再同步返回中签统计，而是落任务行并返回 taskId，
+ * 进度与结果改走 {@code GET /lottery/task/{taskId}} 与 {@code /lottery/task/round/{roundId}}。</p>
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -49,6 +54,10 @@ class TpmSelectionEnrollmentControllerMockMvcTest {
     @Mock
     private DistributedLock distributedLock;
 
+    /** T-5：抽签改为异步任务，控制器依赖任务 Service */
+    @Mock
+    private ITpmLotteryTaskService tpmLotteryTaskService;
+
     @InjectMocks
     private TpmSelectionEnrollmentController controller;
 
@@ -57,9 +66,17 @@ class TpmSelectionEnrollmentControllerMockMvcTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
-        // 默认令抽签/递补获锁成功，返回非空 token 进入业务分支
-        when(distributedLock.tryLock(org.mockito.ArgumentMatchers.any(), anyLong(), anyLong()))
-                .thenReturn("mock-token");
+        // 默认令递补获锁成功，进入业务分支
+        when(distributedLock.tryAcquire(any(String.class), anyLong(), anyLong())).thenReturn(null);
+    }
+
+    private TpmLotteryTask task(String status)
+    {
+        TpmLotteryTask task = new TpmLotteryTask();
+        task.setTaskId(88L);
+        task.setRoundId(3L);
+        task.setTaskStatus(status);
+        return task;
     }
 
     @Test
@@ -125,28 +142,91 @@ class TpmSelectionEnrollmentControllerMockMvcTest {
     }
 
     @Test
-    @DisplayName("lottery：传入seed时原样透传用于可复现抽签")
-    void lottery_withSeed() throws Exception {
-        when(tpmSelectionEnrollmentService.runLottery(eq(3L), eq(99L)))
-                .thenReturn(Map.of("passed", 5));
+    @DisplayName("lottery：不再同步执行，只落任务行并返回 taskId（传入seed原样透传）")
+    void lottery_submitsTaskWithSeed() throws Exception {
+        when(tpmLotteryTaskService.submitLotteryTask(eq(3L), eq(99L))).thenReturn(task(TpmLotteryTask.STATUS_PENDING));
 
         mockMvc.perform(post("/tpm/enroll/lottery/3").param("seed", "99"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.passed").value(5));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.taskId").value(88))
+                .andExpect(jsonPath("$.data.taskStatus").value(TpmLotteryTask.STATUS_PENDING));
 
-        verify(tpmSelectionEnrollmentService).runLottery(eq(3L), eq(99L));
+        verify(tpmLotteryTaskService).submitLotteryTask(eq(3L), eq(99L));
+        // 关键契约：请求线程绝不触碰抽签业务，否则又退化成同步长请求
+        verify(tpmSelectionEnrollmentService, never()).runLottery(anyLong(), any(), any());
     }
 
     @Test
-    @DisplayName("lottery：不传seed时以null调用（服务侧自动生成并记录）")
-    void lottery_withoutSeed() throws Exception {
-        when(tpmSelectionEnrollmentService.runLottery(eq(3L), eq(null)))
-                .thenReturn(new LinkedHashMap<>());
+    @DisplayName("lottery：不传seed时以null提交（执行阶段自动生成并记录）")
+    void lottery_submitsTaskWithoutSeed() throws Exception {
+        when(tpmLotteryTaskService.submitLotteryTask(eq(3L), isNull())).thenReturn(task(TpmLotteryTask.STATUS_PENDING));
 
         mockMvc.perform(post("/tpm/enroll/lottery/3"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.msg").value(org.hamcrest.Matchers.containsString("抽签任务已提交")));
 
-        verify(tpmSelectionEnrollmentService).runLottery(eq(3L), eq(null));
+        verify(tpmLotteryTaskService).submitLotteryTask(eq(3L), isNull());
+    }
+
+    @Test
+    @DisplayName("lottery：提交即失败（线程池拒绝）时返回错误码并透出原因，不让前端误以为已排队")
+    void lottery_rejectedReturnsError() throws Exception {
+        TpmLotteryTask failed = task(TpmLotteryTask.STATUS_FAILED);
+        failed.setErrorMsg("抽签任务队列已满，请稍后重试");
+        when(tpmLotteryTaskService.submitLotteryTask(eq(3L), isNull())).thenReturn(failed);
+
+        mockMvc.perform(post("/tpm/enroll/lottery/3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(500))
+                .andExpect(jsonPath("$.msg").value("抽签任务队列已满，请稍后重试"));
+    }
+
+    @Test
+    @DisplayName("lotteryTask：按任务号查询进度")
+    void lotteryTask_returnsProgress() throws Exception {
+        TpmLotteryTask running = task(TpmLotteryTask.STATUS_RUNNING);
+        running.setTotalCount(1200);
+        running.setProcessedCount(500);
+        when(tpmLotteryTaskService.selectTpmLotteryTaskByTaskId(eq(88L))).thenReturn(running);
+
+        mockMvc.perform(get("/tpm/enroll/lottery/task/88"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.taskStatus").value(TpmLotteryTask.STATUS_RUNNING))
+                .andExpect(jsonPath("$.data.processedCount").value(500));
+    }
+
+    @Test
+    @DisplayName("lotteryTask：任务号不存在时返回可读错误")
+    void lotteryTask_notFound() throws Exception {
+        when(tpmLotteryTaskService.selectTpmLotteryTaskByTaskId(eq(404L))).thenReturn(null);
+
+        mockMvc.perform(get("/tpm/enroll/lottery/task/404"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(500))
+                .andExpect(jsonPath("$.msg").value("抽签任务不存在"));
+    }
+
+    @Test
+    @DisplayName("latestLotteryTask：从未抽过签时返回 data=null，供前端判断是否续接进度")
+    void latestLotteryTask_nullWhenNeverRun() throws Exception {
+        when(tpmLotteryTaskService.selectLatestTaskByRoundId(eq(3L))).thenReturn(null);
+
+        mockMvc.perform(get("/tpm/enroll/lottery/task/round/3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("promoteWaitlist：拿不到分布式锁时返回忙提示，不进入业务")
+    void promoteWaitlist_lockBusy() throws Exception {
+        mockMvc.perform(post("/tpm/enroll/promoteWaitlist/20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(500))
+                .andExpect(jsonPath("$.msg").value("该开课递补正在进行中，请稍后重试"));
+
+        verify(tpmSelectionEnrollmentService, never()).promoteWaitlist(anyLong());
     }
 
     @Test

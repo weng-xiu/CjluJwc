@@ -80,16 +80,21 @@ class PortalEvaluationControllerMockMvcTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
-        SysUser sysUser = new SysUser();
-        sysUser.setUserName("tester");
-        LoginUser loginUser = new LoginUser(1L, 2L, sysUser, Collections.emptySet());
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(loginUser, null));
+        loginAs(1L);
     }
 
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+    }
+
+    /** standalone 模式手动注入登录用户（userId=1 为 admin） */
+    private void loginAs(Long userId) {
+        SysUser sysUser = new SysUser();
+        sysUser.setUserName("tester");
+        LoginUser loginUser = new LoginUser(userId, 2L, sysUser, Collections.emptySet());
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(loginUser, null));
     }
 
     private AemEvaluationQuestionnaire q(long id) {
@@ -276,5 +281,44 @@ class PortalEvaluationControllerMockMvcTest {
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.length()").value(1))
                 .andExpect(jsonPath("$.data[0]").value("讲课生动"));
+    }
+
+    @Test
+    @DisplayName("resultList：S-5 非管理员强制按本人教师档案过滤（含越权 teacherId 覆盖）")
+    void resultList_nonAdminForcesOwnTeacher() throws Exception {
+        loginAs(700L);
+        BrmTeacher mine = new BrmTeacher();
+        mine.setTeacherId(88L);
+        when(brmTeacherService.selectBrmTeacherByUserId(700L)).thenReturn(mine);
+        when(aemEvaluationResultService.selectAemEvaluationResultList(any(AemEvaluationResult.class)))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/portal/evaluation/resultList").param("teacherId", "999"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+
+        ArgumentCaptor<AemEvaluationResult> captor = ArgumentCaptor.forClass(AemEvaluationResult.class);
+        verify(aemEvaluationResultService).selectAemEvaluationResultList(captor.capture());
+        Assertions.assertEquals(Long.valueOf(88L), captor.getValue().getTeacherId());
+    }
+
+    @Test
+    @DisplayName("courseComments：S-5 非管理员查询他人课程评语时归属条件使结果为空")
+    void courseComments_nonAdminPinsOwnTeacher() throws Exception {
+        loginAs(700L);
+        BrmTeacher mine = new BrmTeacher();
+        mine.setTeacherId(88L);
+        when(brmTeacherService.selectBrmTeacherByUserId(700L)).thenReturn(mine);
+        when(aemEvaluationResultService.selectAemEvaluationResultList(any(AemEvaluationResult.class)))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/portal/evaluation/comments/20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()").value(0));
+
+        ArgumentCaptor<AemEvaluationResult> captor = ArgumentCaptor.forClass(AemEvaluationResult.class);
+        verify(aemEvaluationResultService).selectAemEvaluationResultList(captor.capture());
+        Assertions.assertEquals(Long.valueOf(88L), captor.getValue().getTeacherId());
+        Assertions.assertEquals(Long.valueOf(20L), captor.getValue().getCourseId());
     }
 }

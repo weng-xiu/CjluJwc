@@ -73,6 +73,7 @@
 // el-radio label → value；@keyup.enter.native → @keyup.enter。业务逻辑与 Vue2 保持一致。
 import { listProcedureStep, getProcedureStep, addProcedureStep, updateProcedureStep, delProcedureStep } from "@/api/sam/procedureStep"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 
 export default {
   name: "ProcedureStep",
@@ -84,8 +85,8 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, stepName: null, status: null },
       form: {},
       rules: {
-        stepKey: [{ required: true, message: "环节编码不能为空", trigger: "blur" }],
-        stepName: [{ required: true, message: "环节名称不能为空", trigger: "blur" }]
+        stepKey: [req("环节编码")],
+        stepName: [req("环节名称")]
       }
     }
   },

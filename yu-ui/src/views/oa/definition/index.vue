@@ -153,6 +153,7 @@
 <script>
 import { listDefinition, delDeployment, getDefinitionXml, deployProcess, createDefinition } from "@/api/oa/workflow"
 import Sortable from 'sortablejs'
+import { req } from "@/utils/validate"
 
 export default {
   name: "OaDefinition",
@@ -183,13 +184,13 @@ export default {
         bpmnXml: ""
       },
       addRules: {
-        processName: [{ required: true, message: "流程名称不能为空", trigger: "blur" }],
-        bpmnXml: [{ required: true, message: "BPMN XML不能为空", trigger: "blur" }]
+        processName: [req("流程名称")],
+        bpmnXml: [req("BPMN XML")]
       },
       designRules: {
-        processName: [{ required: true, message: "流程名称不能为空", trigger: "blur" }],
+        processName: [req("流程名称")],
         processKey: [
-          { required: true, message: "流程标识不能为空", trigger: "blur" },
+          req("流程标识"),
           { pattern: /^[a-zA-Z][a-zA-Z0-9_-]*$/, message: "字母开头，仅允许字母、数字、下划线和短横线", trigger: "blur" }
         ]
       },

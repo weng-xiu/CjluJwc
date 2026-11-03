@@ -117,6 +117,7 @@
 import { listColumn, getColumn, delColumn, addColumn, updateColumn } from "@/api/portal/column"
 
 import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "PortalColumnManage",
@@ -141,9 +142,9 @@ export default {
       },
       form: {},
       rules: {
-        columnName: [{ required: true, message: "栏目名称不能为空", trigger: "blur" }],
-        columnCode: [{ required: true, message: "栏目编码不能为空", trigger: "blur" }],
-        columnType: [{ required: true, message: "栏目类型不能为空", trigger: "change" }]
+        columnName: [req("栏目名称")],
+        columnCode: [req("栏目编码")],
+        columnType: [reqChange("栏目类型")]
       }
     }
   },

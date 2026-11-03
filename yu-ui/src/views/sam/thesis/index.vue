@@ -185,7 +185,7 @@
     </el-dialog>
 
     <!-- 新增/修改档案 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="680px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="680px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="12">
@@ -236,12 +236,12 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitArchiveForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
 
     <!-- 环节审核 -->
-    <el-dialog :close-on-click-modal="false" title="环节审核" :visible.sync="auditOpen" width="560px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="环节审核" :visible.sync="auditOpen" width="560px" append-to-body :before-close="done => guardedSlotBeforeClose('audit', done, '审核结果尚未提交，确定要关闭吗？')">
       <el-form label-width="90px">
         <el-form-item label="学生">{{ auditRow.studentName }}（{{ auditRow.studentNo }}）</el-form-item>
         <el-form-item label="审核环节">
@@ -263,12 +263,12 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitAudit">确 定</el-button>
-        <el-button @click="auditOpen = false">取 消</el-button>
+        <el-button @click="guardedSlotCancel('audit', cancelAudit, '审核结果尚未提交，确定要关闭吗？')">取 消</el-button>
       </div>
     </el-dialog>
 
     <!-- 查重登记 -->
-    <el-dialog :close-on-click-modal="false" title="查重结果登记" :visible.sync="checkOpen" width="560px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="查重结果登记" :visible.sync="checkOpen" width="560px" append-to-body :before-close="done => guardedSlotBeforeClose('check', done, '查重结果尚未提交，确定要关闭吗？')">
       <el-form label-width="90px">
         <el-form-item label="学生">{{ checkRow.studentName }}（{{ checkRow.studentNo }}）</el-form-item>
         <el-form-item label="重复率">
@@ -284,12 +284,12 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitCheck">确 定</el-button>
-        <el-button @click="checkOpen = false">取 消</el-button>
+        <el-button @click="guardedSlotCancel('check', cancelCheck, '查重结果尚未提交，确定要关闭吗？')">取 消</el-button>
       </div>
     </el-dialog>
 
     <!-- 成绩归档 -->
-    <el-dialog :close-on-click-modal="false" title="成绩归档" :visible.sync="archiveOpen" width="560px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="成绩归档" :visible.sync="archiveOpen" width="560px" append-to-body :before-close="done => guardedSlotBeforeClose('archive', done, '归档成绩尚未提交，确定要关闭吗？')">
       <el-form label-width="90px">
         <el-form-item label="学生">{{ archiveRow.studentName }}（{{ archiveRow.studentNo }}）</el-form-item>
         <el-form-item label="答辩成绩">
@@ -306,12 +306,12 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitArchive">确 定</el-button>
-        <el-button @click="archiveOpen = false">取 消</el-button>
+        <el-button @click="guardedSlotCancel('archive', cancelArchive, '归档成绩尚未提交，确定要关闭吗？')">取 消</el-button>
       </div>
     </el-dialog>
 
     <!-- 抽检维护 -->
-    <el-dialog :close-on-click-modal="false" title="论文抽检" :visible.sync="sampleOpen" width="560px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="论文抽检" :visible.sync="sampleOpen" width="560px" append-to-body :before-close="done => guardedSlotBeforeClose('sample', done, '抽检结论尚未提交，确定要关闭吗？')">
       <el-form label-width="90px">
         <el-form-item label="学生">{{ sampleRow.studentName }}（{{ sampleRow.studentNo }}）</el-form-item>
         <el-form-item label="抽检状态">
@@ -326,12 +326,12 @@
       <div class="sample-tip">抽检结论为「不合格」时将同步把论文置为不合格，学位审核随即不通过。</div>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitSample">确 定</el-button>
-        <el-button @click="sampleOpen = false">取 消</el-button>
+        <el-button @click="guardedSlotCancel('sample', cancelSample, '抽检结论尚未提交，确定要关闭吗？')">取 消</el-button>
       </div>
     </el-dialog>
 
     <!-- 材料补录 -->
-    <el-dialog :close-on-click-modal="false" title="环节材料补录" :visible.sync="submitOpen" width="560px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="环节材料补录" :visible.sync="submitOpen" width="560px" append-to-body :before-close="done => guardedSlotBeforeClose('submit', done, '补录材料尚未提交，确定要关闭吗？')">
       <el-form label-width="90px">
         <el-form-item label="学生">{{ submitRow.studentName }}（{{ submitRow.studentNo }}）</el-form-item>
         <el-form-item label="环节">
@@ -351,7 +351,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitStageMaterial">确 定</el-button>
-        <el-button @click="submitOpen = false">取 消</el-button>
+        <el-button @click="guardedSlotCancel('submit', cancelSubmit, '补录材料尚未提交，确定要关闭吗？')">取 消</el-button>
       </div>
     </el-dialog>
   </div>
@@ -359,8 +359,20 @@
 
 <script>
 import { listThesis, getThesis, statThesis, addThesis, updateThesis, delThesis, auditThesisStage, submitThesisStage, recordThesisCheck, archiveThesisGrade, markThesisSample } from "@/api/sam/thesis"
+import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   name: "Thesis",
+  mixins: [dialogGuard],
+  // 五个业务弹框（审核/查重/归档/抽检/补录）各自绑独立 data，均与主框 form 无关：
+  // 一个弹框一个槽位，并把弹框里的选择一并纳入（否则“只改审核结论不改意见”会被漏判）
+  guardSlots: {
+    audit: ['auditForm'],
+    check: ['checkForm'],
+    archive: ['archiveForm'],
+    sample: ['sampleForm'],
+    submit: ['submitForm']
+  },
   dicts: ['sam_thesis_stage', 'sam_thesis_stage_status', 'sam_thesis_grade', 'sam_thesis_sample_status'],
   data() {
     return {
@@ -376,9 +388,9 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, planYear: null, studentNo: null, studentName: null, topicName: null, advisor: null, currentStage: null, stageStatus: null, isQualified: null, sampleStatus: null },
       form: {},
       rules: {
-        planYear: [{ required: true, message: "届别不能为空", trigger: "blur" }],
-        studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }],
-        topicName: [{ required: true, message: "论文题目不能为空", trigger: "blur" }]
+        planYear: [req("届别")],
+        studentId: [req("学生ID")],
+        topicName: [req("论文题目")]
       }
     }
   },
@@ -439,10 +451,10 @@ export default {
     },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.thesisId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "新增论文档案" },
+    handleAdd() { this.reset(); this.open = true; this.captureDialogSnapshot(); this.title = "新增论文档案" },
     handleUpdate(row) {
       this.reset()
-      getThesis(row.thesisId).then(response => { this.form = response.data; this.open = true; this.title = "修改论文档案" })
+      getThesis(row.thesisId).then(response => { this.form = response.data; this.open = true; this.captureDialogSnapshot(); this.title = "修改论文档案" })
     },
     // 注意：不可命名为 submitForm —— data 中存在同名 submitForm（重新提交弹窗表单），
     // Vue2 中 data 会覆盖同名 method，会导致本按钮点击失效。
@@ -468,54 +480,64 @@ export default {
       this.auditRow = row
       this.auditForm = { thesisId: row.thesisId, stage: row.currentStage, pass: true, score: null, opinion: null }
       this.auditOpen = true
+      this.captureSlotSnapshot('audit')
     },
+    cancelAudit() { this.auditOpen = false },
     submitAudit() {
       auditThesisStage(this.auditForm).then(() => {
-        this.$modal.msgSuccess("审核完成"); this.auditOpen = false; this.getList(); this.getStat()
+        this.$modal.msgSuccess("审核完成"); this.auditOpen = false; this.resetSlotSnapshot('audit'); this.getList(); this.getStat()
       })
     },
     handleCheck(row) {
       this.checkRow = row
       this.checkForm = { thesisId: row.thesisId, score: row.checkRate == null ? null : row.checkRate, attachment: null, opinion: null }
       this.checkOpen = true
+      this.captureSlotSnapshot('check')
     },
+    cancelCheck() { this.checkOpen = false },
     submitCheck() {
       if (this.checkForm.score == null) { this.$modal.msgError("请填写查重重复率"); return }
       recordThesisCheck(this.checkForm).then(() => {
-        this.$modal.msgSuccess("查重结果已登记"); this.checkOpen = false; this.getList(); this.getStat()
+        this.$modal.msgSuccess("查重结果已登记"); this.checkOpen = false; this.resetSlotSnapshot('check'); this.getList(); this.getStat()
       })
     },
     handleArchive(row) {
       this.archiveRow = row
       this.archiveForm = { thesisId: row.thesisId, totalScore: row.totalScore == null ? null : row.totalScore, defenseScore: null, opinion: null }
       this.archiveOpen = true
+      this.captureSlotSnapshot('archive')
     },
+    cancelArchive() { this.archiveOpen = false },
     submitArchive() {
       if (this.archiveForm.totalScore == null) { this.$modal.msgError("请填写总评成绩"); return }
       archiveThesisGrade(this.archiveForm).then(() => {
-        this.$modal.msgSuccess("成绩已归档"); this.archiveOpen = false; this.getList(); this.getStat()
+        this.$modal.msgSuccess("成绩已归档"); this.archiveOpen = false; this.resetSlotSnapshot('archive'); this.getList(); this.getStat()
       })
     },
     handleSample(row) {
       this.sampleRow = row
       this.sampleForm = { thesisId: row.thesisId, sampleStatus: row.sampleStatus || '0', opinion: null }
       this.sampleOpen = true
+      this.captureSlotSnapshot('sample')
     },
+    cancelSample() { this.sampleOpen = false },
     submitSample() {
       markThesisSample(this.sampleForm).then(() => {
-        this.$modal.msgSuccess("抽检状态已更新"); this.sampleOpen = false; this.getList(); this.getStat()
+        this.$modal.msgSuccess("抽检状态已更新"); this.sampleOpen = false; this.resetSlotSnapshot('sample'); this.getList(); this.getStat()
       })
     },
     handleSubmitMaterial(row) {
       this.submitRow = row
       this.submitForm = { thesisId: row.thesisId, stage: row.currentStage, title: null, content: null, attachment: null }
       this.submitOpen = true
+      this.captureSlotSnapshot('submit')
     },
+    cancelSubmit() { this.submitOpen = false },
     submitStageMaterial() {
       if (!this.submitForm.stage) { this.$modal.msgError("请选择补录环节"); return }
       if (!this.submitForm.content && !this.submitForm.attachment) { this.$modal.msgError("材料内容与附件至少填写一项"); return }
       submitThesisStage(this.submitForm).then(() => {
-        this.$modal.msgSuccess("材料已补录"); this.submitOpen = false; this.getList(); this.getStat()
+        this.$modal.msgSuccess("材料已补录"); this.submitOpen = false; this.resetSlotSnapshot('submit'); this.getList(); this.getStat()
       })
     },
     handleDelete(row) {

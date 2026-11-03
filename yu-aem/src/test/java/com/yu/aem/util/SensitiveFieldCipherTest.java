@@ -59,9 +59,13 @@ class SensitiveFieldCipherTest {
     @DisplayName("密文被篡改时解密失败（encrypt-then-MAC 防篡改）")
     void tamperDetected() {
         String cipher = SensitiveFieldCipher.encrypt("important-data", KEY);
-        char[] arr = cipher.toCharArray();
-        arr[arr.length - 3] = arr[arr.length - 3] == 'A' ? 'B' : 'A';
-        String tampered = new String(arr);
+        // V5.36：不能直接改 base64 末尾字符——末字符的低位是 padding 位，解码器会丢弃它们，
+        // 改动落到这些位上时字节流根本没变，实测约 1/4 概率不报错（run1/run2 绿、run3 红）。
+        // 改为解码后翻转一个真实字节，再按原格式（SM4: + base64）拼回去。
+        int sep = cipher.indexOf(':') + 1;
+        byte[] raw = Base64.getDecoder().decode(cipher.substring(sep));
+        raw[raw.length - 1] ^= 0x01;
+        String tampered = cipher.substring(0, sep) + Base64.getEncoder().encodeToString(raw);
         assertThrows(IllegalStateException.class, () -> SensitiveFieldCipher.decrypt(tampered, KEY));
     }
 

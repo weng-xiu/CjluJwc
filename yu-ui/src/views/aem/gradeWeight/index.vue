@@ -79,6 +79,7 @@ import { listGradeWeight, getGradeWeight, delGradeWeight, addGradeWeight, update
 import { listCourseLib } from "@/api/tpm/courseLib"
 import dialogGuard from "@/utils/dialogGuard"
 import scrollToError from "@/utils/scrollToError"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard, scrollToError],
   name: "GradeWeight",
@@ -98,8 +99,8 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, courseId: null, courseCategory: null, status: null },
       form: {},
       rules: {
-        regularRatio: [{ required: true, message: "平时占比不能为空", trigger: "blur" }],
-        examRatio: [{ required: true, message: "考试占比不能为空", trigger: "blur" }]
+        regularRatio: [req("平时占比")],
+        examRatio: [req("考试占比")]
       }
     }
   },

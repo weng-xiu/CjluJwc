@@ -49,6 +49,7 @@
   </div>
 </template>
 <script>
+import { reqChange } from "@/utils/validate"
 export default {
   inheritAttrs: false,
   props: ['showFileName'],
@@ -64,11 +65,7 @@ export default {
           message: '请输入文件名',
           trigger: 'blur'
         }],
-        type: [{
-          required: true,
-          message: '生成类型不能为空',
-          trigger: 'change'
-        }]
+        type: [reqChange("生成类型")]
       },
       typeOptions: [{
         label: '页面',

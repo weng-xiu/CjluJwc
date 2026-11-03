@@ -188,6 +188,7 @@
 // .sync → v-model:xxx；slot="footer" → <template #footer>；type="text" → link；size mini → small；
 // el-radio :label(true/false) → :value；@keyup.enter.native → @keyup.enter。业务逻辑与 Vue2 保持一致。
 import { listThesisTopic, getThesisTopic, delThesisTopic, addThesisTopic, updateThesisTopic, auditThesisTopic, changeThesisTopicStatus } from "@/api/sam/thesis"
+import { req } from "@/utils/validate"
 export default {
   name: "ThesisTopic",
   dicts: ['sam_thesis_topic_source', 'sam_thesis_topic_status'],
@@ -200,9 +201,9 @@ export default {
       form: {},
       auditForm: { pass: true, opinion: null },
       rules: {
-        planYear: [{ required: true, message: "届别不能为空", trigger: "blur" }],
-        topicName: [{ required: true, message: "论文题目不能为空", trigger: "blur" }],
-        capacity: [{ required: true, message: "可选题人数不能为空", trigger: "blur" }]
+        planYear: [req("届别")],
+        topicName: [req("论文题目")],
+        capacity: [req("可选题人数")]
       }
     }
   },

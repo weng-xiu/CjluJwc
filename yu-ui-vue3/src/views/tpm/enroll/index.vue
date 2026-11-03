@@ -110,7 +110,7 @@
 
     <!-- 发起抽签对话框 -->
     <el-dialog title="发起选课抽签" v-model="lotteryOpen" width="420px" append-to-body>
-      <el-form label-width="80px">
+      <el-form label-width="80px" :disabled="lotteryRunning">
         <el-form-item label="选择轮次">
           <el-select v-model="lotteryRoundId" placeholder="请选择要抽签的轮次" style="width:100%">
             <el-option v-for="item in roundOptions" :key="item.roundId" :label="item.roundName" :value="item.roundId"/>
@@ -120,10 +120,16 @@
           <el-input v-model="lotterySeed" placeholder="留空则系统自动生成；填写相同种子可复现抽签结果" clearable/>
         </el-form-item>
       </el-form>
+      <!-- T-5：抽签改为后台任务，提交后在弹窗内轮询进度 -->
+      <div v-if="lotteryTask" class="lottery-progress">
+        <div>{{ lotteryStatusText }}</div>
+        <el-progress :percentage="lotteryPercent" :status="lotteryTask.taskStatus === '3' ? 'exception' : ''"/>
+      </div>
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="submitLottery">确 定</el-button>
-          <el-button @click="lotteryOpen = false">取 消</el-button>
+          <el-button v-if="!lotteryRunning" type="primary" @click="submitLottery">确 定</el-button>
+          <el-button v-else type="primary" disabled>抽签进行中…</el-button>
+          <el-button @click="closeLottery">关 闭</el-button>
         </div>
       </template>
     </el-dialog>
@@ -134,7 +140,7 @@
 // :showSearch.sync/:page.sync/:limit.sync→v-model:*；:visible.sync→v-model；slot-scope→#default；type="text"→link；
 // value-format yyyy-MM-dd→YYYY-MM-DD；<div slot="footer">→<template #footer>；this.$alert/$prompt→ElMessageBox.alert/prompt。
 import { ElMessageBox } from 'element-plus'
-import { listEnroll, getEnroll, delEnroll, addEnroll, updateEnroll, runLottery, promoteWaitlist, dropCourse } from "@/api/tpm/enroll"
+import { listEnroll, getEnroll, delEnroll, addEnroll, updateEnroll, runLottery, getLotteryTask, promoteWaitlist, dropCourse } from "@/api/tpm/enroll"
 import { listRound } from "@/api/tpm/round"
 import { listOffering } from "@/api/tpm/offering"
 import { listStudent } from "@/api/sam/student"
@@ -149,6 +155,8 @@ export default {
       enrollList: [], roundOptions: [], studentOptions: [], offeringOptions: [],
       title: "", open: false,
       lotteryOpen: false, lotteryRoundId: null, lotterySeed: null,
+      // T-5：抽签为异步任务，需保存任务快照与轮询定时器
+      lotteryTask: null, lotteryTimer: null,
       queryParams: { pageNum: 1, pageSize: 10, roundId: null, studentId: null, resultStatus: null, lotteryResult: null },
       form: {},
       rules: {
@@ -158,7 +166,27 @@ export default {
       }
     }
   },
+  computed: {
+    lotteryRunning() { return !!this.lotteryTask && (this.lotteryTask.taskStatus === '0' || this.lotteryTask.taskStatus === '1') },
+    lotteryPercent() {
+      const t = this.lotteryTask || {}
+      if (t.taskStatus === '2') { return 100 }
+      const total = Number(t.totalCount || 0)
+      const done = Number(t.processedCount || 0)
+      // 总数要等执行体统计出人数才回填，此前只给一个“在动”的起步值
+      if (!total) { return t.taskStatus === '1' ? 5 : 0 }
+      return Math.min(99, Math.round(done * 100 / total))
+    },
+    lotteryStatusText() {
+      const t = this.lotteryTask || {}
+      if (t.taskStatus === '0') { return '任务已排队（任务号 ' + t.taskId + '），等待执行…' }
+      if (t.taskStatus === '1') { return '正在抽签 ' + (t.processedCount || 0) + '/' + (t.totalCount || 0) }
+      if (t.taskStatus === '2') { return '抽签完成' }
+      return t.errorMsg || '抽签失败'
+    }
+  },
   created() { this.getList(); this.getRounds(); this.getStudents(); this.getOfferings() },
+  beforeUnmount() { this.stopLotteryPoll() },
   methods: {
     getList() {
       this.loading = true
@@ -205,16 +233,47 @@ export default {
     handleDrop(row) {
       this.$modal.confirm('是否确认退课？退课后将回补课程容量。').then(() => dropCourse(row.enrollId)).then(() => { this.$modal.msgSuccess("退课成功"); this.getList() }).catch(() => {})
     },
-    handleLottery() { this.lotteryRoundId = null; this.lotterySeed = null; this.lotteryOpen = true },
+    handleLottery() { this.lotteryRoundId = null; this.lotterySeed = null; this.lotteryTask = null; this.lotteryOpen = true },
+    closeLottery() { this.stopLotteryPoll(); this.lotteryOpen = false },
     submitLottery() {
       if (this.lotteryRoundId == null) { this.$modal.msgWarning("请选择轮次"); return }
+      if (this.lotteryRunning) { return }
       const seed = (this.lotterySeed === '' || this.lotterySeed == null) ? undefined : this.lotterySeed
+      // T-5：本接口只落任务行并返回 taskId，真正执行在服务端线程池，因此改为轮询进度
       runLottery(this.lotteryRoundId, seed).then(response => {
-        this.lotteryOpen = false
-        const data = response.data || {}
-        ElMessageBox.alert(data.message || "抽签完成", "抽签结果", { confirmButtonText: "确定" })
-        this.getList()
+        // 提交即失败（如任务队列已满）时后端直接返回错误码，不会走到这里
+        this.lotteryTask = response.data || {}
+        this.pollLotteryTask()
       })
+    },
+    pollLotteryTask() {
+      const taskId = this.lotteryTask && this.lotteryTask.taskId
+      if (!taskId) { return }
+      getLotteryTask(taskId).then(response => {
+        const task = response.data || {}
+        this.lotteryTask = task
+        if (task.taskStatus === '2' || task.taskStatus === '3') { this.finishLottery(); return }
+        this.lotteryTimer = setTimeout(() => this.pollLotteryTask(), 1500)
+      }).catch(() => {
+        // 单次查询失败不代表任务失败：服务端仍在跑，稍后重试；刷新页面可用“最近一次任务”续上
+        this.lotteryTimer = setTimeout(() => this.pollLotteryTask(), 3000)
+      })
+    },
+    finishLottery() {
+      this.stopLotteryPoll()
+      const task = this.lotteryTask || {}
+      const succeeded = task.taskStatus === '2'
+      this.lotteryOpen = false
+      ElMessageBox.alert(
+        succeeded
+          ? '抽签完成：开课 ' + (task.lotteryCourses || 0) + ' 门，中签 ' + (task.admittedCount || 0) + ' 人，落选 ' + (task.rejectedCount || 0) + ' 人'
+          : (task.errorMsg || '抽签失败'),
+        succeeded ? "抽签结果" : "抽签失败",
+        { confirmButtonText: "确定" })
+      this.getList()
+    },
+    stopLotteryPoll() {
+      if (this.lotteryTimer) { clearTimeout(this.lotteryTimer); this.lotteryTimer = null }
     },
     handlePromoteWaitlist() {
       ElMessageBox.prompt('请输入开课ID以执行候补递补（按空出容量顺序递补候补队列）', '候补递补', { confirmButtonText: '确定', cancelButtonText: '取消', inputPattern: /^\d+$/, inputErrorMessage: '开课ID必须为数字' })

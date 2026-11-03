@@ -70,13 +70,13 @@
     </el-dialog>
 
     <!-- 受理意见对话框 -->
-    <el-dialog :close-on-click-modal="false" :title="auditTitle" :visible.sync="auditOpen" width="460px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="auditTitle" :visible.sync="auditOpen" width="460px" append-to-body :before-close="done => guardedSlotBeforeClose('audit', done, '受理意见尚未提交，确定要关闭吗？')">
       <el-form label-width="90px">
         <el-form-item label="受理意见">
           <el-input v-model="auditOpinion" type="textarea" :rows="3" placeholder="请填写受理意见（可选）"/>
         </el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitAudit">确 定</el-button><el-button @click="auditOpen=false">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitAudit">确 定</el-button><el-button @click="guardedSlotCancel('audit', cancelAudit, '受理意见尚未提交，确定要关闭吗？')">取 消</el-button></div>
     </el-dialog>
   </div>
 </template>
@@ -85,10 +85,14 @@
 import { listCertReissue, certsOfStudent, submitCertReissue, approveCertReissue, rejectCertReissue, delCertReissue } from "@/api/sam/certReissue"
 
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "CertReissue",
   dicts: ['sam_cert_reissue_status'],
+  // 受理意见框绑的是裸标量 auditOpinion，不在主框 form 里：
+  // 用命名槽位单独采集（V5.20 已实测这类裸标量会被旧盘点判据漏掉）
+  guardSlots: { audit: ['auditOpinion'] },
   data() {
     return {
       loading: true, ids: [], multiple: true, showSearch: true, total: 0, list: [],
@@ -97,9 +101,9 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, studentNo: null, studentName: null, applyStatus: null },
       form: {},
       rules: {
-        studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }],
+        studentId: [req("学生ID")],
         origCertId: [{ required: true, message: "请选择原证书", trigger: "change" }],
-        reason: [{ required: true, message: "补办原因不能为空", trigger: "blur" }]
+        reason: [req("补办原因")]
       }
     }
   },
@@ -124,12 +128,13 @@ export default {
         submitCertReissue(this.form).then(() => { this.$modal.msgSuccess("申请已提交"); this.open = false; this.getList() })
       })
     },
-    handleApprove(row) { this.auditAction = 'approve'; this.auditId = row.applyId; this.auditTitle = '受理通过（将自动生成补办证书）'; this.auditOpinion = ''; this.auditOpen = true },
-    handleReject(row) { this.auditAction = 'reject'; this.auditId = row.applyId; this.auditTitle = '驳回申请'; this.auditOpinion = ''; this.auditOpen = true },
+    handleApprove(row) { this.auditAction = 'approve'; this.auditId = row.applyId; this.auditTitle = '受理通过（将自动生成补办证书）'; this.auditOpinion = ''; this.auditOpen = true; this.captureSlotSnapshot('audit') },
+    handleReject(row) { this.auditAction = 'reject'; this.auditId = row.applyId; this.auditTitle = '驳回申请'; this.auditOpinion = ''; this.auditOpen = true; this.captureSlotSnapshot('audit') },
+    cancelAudit() { this.auditOpen = false; },
     submitAudit() {
       const payload = { applyId: this.auditId, auditOpinion: this.auditOpinion }
       const fn = this.auditAction === 'approve' ? approveCertReissue : rejectCertReissue
-      fn(payload).then(() => { this.$modal.msgSuccess("操作成功"); this.auditOpen = false; this.getList() })
+      fn(payload).then(() => { this.$modal.msgSuccess("操作成功"); this.auditOpen = false; this.resetSlotSnapshot('audit'); this.getList() })
     },
     handleDelete(row) {
       const applyIds = row.applyId ? [row.applyId] : this.ids

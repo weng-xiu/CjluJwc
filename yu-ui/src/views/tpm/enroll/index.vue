@@ -105,8 +105,8 @@
     </el-dialog>
 
     <!-- 发起抽签对话框 -->
-    <el-dialog :close-on-click-modal="false" title="发起选课抽签" :visible.sync="lotteryOpen" width="420px" append-to-body>
-      <el-form label-width="80px">
+    <el-dialog :close-on-click-modal="false" title="发起选课抽签" :visible.sync="lotteryOpen" width="420px" append-to-body :before-close="handleLotteryClose">
+      <el-form label-width="80px" :disabled="lotteryRunning">
         <el-form-item label="选择轮次">
           <el-select v-model="lotteryRoundId" placeholder="请选择要抽签的轮次" style="width:100%">
             <el-option v-for="item in roundOptions" :key="item.roundId" :label="item.roundName" :value="item.roundId"/>
@@ -116,14 +116,20 @@
           <el-input v-model="lotterySeed" placeholder="留空则系统自动生成；填写相同种子可复现抽签结果" clearable/>
         </el-form-item>
       </el-form>
+      <!-- T-5：抽签改为后台任务，提交后在弹窗内轮询进度 -->
+      <div v-if="lotteryTask" class="lottery-progress">
+        <div>{{ lotteryStatusText }}</div>
+        <el-progress :percentage="lotteryPercent" :status="lotteryTask.taskStatus === '3' ? 'exception' : null"/>
+      </div>
       <div slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="submitLottery">确 定</el-button>
-        <el-button @click="lotteryOpen = false">取 消</el-button>
+        <el-button v-if="!lotteryRunning" type="primary" @click="submitLottery">确 定</el-button>
+        <el-button v-else type="primary" disabled>抽签进行中…</el-button>
+        <el-button @click="closeLottery">关 闭</el-button>
       </div>
     </el-dialog>
 
     <!-- F2-2 退改选对话框 -->
-    <el-dialog :close-on-click-modal="false" title="改选课程" :visible.sync="swapOpen" width="460px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="改选课程" :visible.sync="swapOpen" width="460px" append-to-body :before-close="done => guardedSlotBeforeClose('swap', done, '目标课程已选择但尚未提交，确定要关闭吗？')">
       <el-form label-width="90px">
         <el-form-item label="当前课程"><span>{{ swapRow.courseName }}</span></el-form-item>
         <el-form-item label="目标开课">
@@ -132,45 +138,69 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" :disabled="!swapNewOfferingId" @click="submitSwap">确认改选</el-button>
-        <el-button @click="swapOpen = false">取 消</el-button>
+        <el-button @click="guardedSlotCancel('swap', cancelSwap, '目标课程已选择但尚未提交，确定要关闭吗？')">取 消</el-button>
       </div>
     </el-dialog>
   </div>
 </template>
 <script>
-import { listEnroll, getEnroll, delEnroll, addEnroll, updateEnroll, runLottery, promoteWaitlist, dropCourse, swapCourse } from "@/api/tpm/enroll"
+import { listEnroll, getEnroll, delEnroll, addEnroll, updateEnroll, runLottery, getLotteryTask, promoteWaitlist, dropCourse, swapCourse } from "@/api/tpm/enroll"
 import { listRound } from "@/api/tpm/round"
 import { listOffering } from "@/api/tpm/offering"
 import { listStudent } from "@/api/sam/student"
 import RemoteSelect from "@/components/RemoteSelect"
 
 import dialogGuard from "@/utils/dialogGuard"
+import { reqChange } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "Enroll",
   dicts: ['tpm_lottery_result', 'tpm_enroll_result'],
   components: { RemoteSelect },
+  // 抽签框与改选框都不是主编辑框，各自绑裸标量：用命名槽位采集
+  // （与 guardWatch 一样放在组件级选项，不放 data，避免两种写法混用）
+  guardSlots: { lottery: ['lotteryRoundId', 'lotterySeed'], swap: ['swapNewOfferingId'] },
   data() {
     return {
       loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0,
       enrollList: [], roundOptions: [], apiListStudent: listStudent, apiListOffering: listOffering,
       title: "", open: false,
       lotteryOpen: false, lotteryRoundId: null, lotterySeed: null,
+      // T-5：抽签为异步任务，需保存任务快照与轮询定时器
+      lotteryTask: null, lotteryTimer: null,
       swapOpen: false, swapRow: {}, swapNewOfferingId: null,
       queryParams: { pageNum: 1, pageSize: 10, roundId: null, studentId: null, resultStatus: null, lotteryResult: null },
       form: {},
       rules: {
-        roundId: [{ required: true, message: "轮次不能为空", trigger: "change" }],
-        studentId: [{ required: true, message: "学生不能为空", trigger: "change" }],
-        courseOfferingId: [{ required: true, message: "开课不能为空", trigger: "change" }]
+        roundId: [reqChange("轮次")],
+        studentId: [reqChange("学生")],
+        courseOfferingId: [reqChange("开课")]
       }
     }
   },
   computed: {
+    lotteryRunning() { return !!this.lotteryTask && (this.lotteryTask.taskStatus === '0' || this.lotteryTask.taskStatus === '1') },
+    lotteryPercent() {
+      const t = this.lotteryTask || {}
+      if (t.taskStatus === '2') { return 100 }
+      const total = Number(t.totalCount || 0)
+      const done = Number(t.processedCount || 0)
+      // 总数要等执行体统计出人数才回填，此前只给一个“在动”的起步值
+      if (!total) { return t.taskStatus === '1' ? 5 : 0 }
+      return Math.min(99, Math.round(done * 100 / total))
+    },
+    lotteryStatusText() {
+      const t = this.lotteryTask || {}
+      if (t.taskStatus === '0') { return '任务已排队（任务号 ' + t.taskId + '），等待执行…' }
+      if (t.taskStatus === '1') { return '正在抽签 ' + (t.processedCount || 0) + '/' + (t.totalCount || 0) }
+      if (t.taskStatus === '2') { return '抽签完成' }
+      return t.errorMsg || '抽签失败'
+    },
     studentInitial() { return this.form && this.form.studentId != null ? { value: this.form.studentId, label: this.fmtStudent(this.form) } : null },
     offeringInitial() { return this.form && this.form.courseOfferingId != null ? { value: this.form.courseOfferingId, label: this.fmtOffering(this.form) } : null }
   },
   created() { this.getList(); this.getRounds() },
+  beforeDestroy() { this.stopLotteryPoll() },
   methods: {
     fmtStudent(row) { return (row.studentNo || row.studentCode || '') + ' ' + (row.studentName || '') },
     fmtOffering(row) { return (row.courseName || '') + '-' + (row.teacherName || '') },
@@ -225,25 +255,71 @@ export default {
       this.swapRow = row
       this.swapNewOfferingId = null
       this.swapOpen = true
+      this.captureSlotSnapshot('swap')
     },
+    cancelSwap() { this.swapOpen = false },
     submitSwap() {
       if (!this.swapNewOfferingId) { this.$modal.msgWarning("请选择目标开课"); return }
       swapCourse(this.swapRow.enrollId, this.swapNewOfferingId).then(res => {
         this.swapOpen = false
+        this.resetSlotSnapshot('swap')
         this.$modal.msgSuccess((res && res.msg) || "改选成功")
         this.getList()
       })
     },
-    handleLottery() { this.lotteryRoundId = null; this.lotterySeed = null; this.lotteryOpen = true },
+    handleLottery() { this.lotteryRoundId = null; this.lotterySeed = null; this.lotteryTask = null; this.lotteryOpen = true; this.captureSlotSnapshot('lottery') },
+    closeLottery() { this.stopLotteryPoll(); this.lotteryOpen = false },
+    /**
+     * 抽签框的关闭拦截：
+     * 1) 任务运行中不允许关：原本只挡遮罩，点 X / ESC 会把轮询定时器留成悬空任务；
+     * 2) 未运行但改过参数：二次确认，避免选好轮次/种子后误关。
+     */
+    handleLotteryClose(done) {
+      if (this.lotteryRunning) {
+        this.$modal.msgWarning("抽签任务进行中，请等待完成后再关闭")
+        return
+      }
+      this.guardedSlotBeforeClose('lottery', () => { this.closeLottery(); done() }, '抽签参数尚未提交，确定要关闭吗？')
+    },
     submitLottery() {
       if (this.lotteryRoundId == null) { this.$modal.msgWarning("请选择轮次"); return }
+      if (this.lotteryRunning) { return }
       const seed = (this.lotterySeed === '' || this.lotterySeed == null) ? undefined : this.lotterySeed
+      // T-5：本接口只落任务行并返回 taskId，真正执行在服务端线程池，因此改为轮询进度
       runLottery(this.lotteryRoundId, seed).then(response => {
-        this.lotteryOpen = false
-        const data = response.data || {}
-        this.$alert(data.message || "抽签完成", "抽签结果", { confirmButtonText: "确定" })
-        this.getList()
+        // 提交即失败（如任务队列已满）时后端直接返回错误码，不会走到这里
+        this.lotteryTask = response.data || {}
+        this.pollLotteryTask()
       })
+    },
+    pollLotteryTask() {
+      const taskId = this.lotteryTask && this.lotteryTask.taskId
+      if (!taskId) { return }
+      getLotteryTask(taskId).then(response => {
+        const task = response.data || {}
+        this.lotteryTask = task
+        if (task.taskStatus === '2' || task.taskStatus === '3') { this.finishLottery(); return }
+        this.lotteryTimer = setTimeout(() => this.pollLotteryTask(), 1500)
+      }).catch(() => {
+        // 单次查询失败不代表任务失败：服务端仍在跑，稍后重试；刷新页面可用“最近一次任务”续上
+        this.lotteryTimer = setTimeout(() => this.pollLotteryTask(), 3000)
+      })
+    },
+    finishLottery() {
+      this.stopLotteryPoll()
+      const task = this.lotteryTask || {}
+      const succeeded = task.taskStatus === '2'
+      this.lotteryOpen = false
+      this.$alert(
+        succeeded
+          ? '抽签完成：开课 ' + (task.lotteryCourses || 0) + ' 门，中签 ' + (task.admittedCount || 0) + ' 人，落选 ' + (task.rejectedCount || 0) + ' 人'
+          : (task.errorMsg || '抽签失败'),
+        succeeded ? "抽签结果" : "抽签失败",
+        { confirmButtonText: "确定" })
+      this.getList()
+    },
+    stopLotteryPoll() {
+      if (this.lotteryTimer) { clearTimeout(this.lotteryTimer); this.lotteryTimer = null }
     },
     handlePromoteWaitlist() {
       this.$prompt('请输入开课ID以执行候补递补（按空出容量顺序递补候补队列）', '候补递补', { confirmButtonText: '确定', cancelButtonText: '取消', inputPattern: /^\d+$/, inputErrorMessage: '开课ID必须为数字' })

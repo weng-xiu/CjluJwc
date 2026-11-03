@@ -231,6 +231,7 @@ import { listBorrow, getBorrow, delBorrow, addBorrow, updateBorrow,
          submitBorrow, deptApproveBorrow, aaApproveBorrow, cancelBorrow,
          checkBorrowConflict, borrowOccupancy, borrowTrace } from "@/api/brm/borrow"
 import { listClassroom } from "@/api/brm/classroom"
+import { reqChange, req } from "@/utils/validate"
 
 export default {
   name: "Borrow",
@@ -269,9 +270,9 @@ export default {
       occQuery: { classroomId: null },
       occupancy: {},
       rules: {
-        classroomId: [{ required: true, message: "教室不能为空", trigger: "change" }],
-        applicant: [{ required: true, message: "申请人不能为空", trigger: "blur" }],
-        borrowDate: [{ required: true, message: "借用日期不能为空", trigger: "change" }]
+        classroomId: [reqChange("教室")],
+        applicant: [req("申请人")],
+        borrowDate: [reqChange("借用日期")]
       }
     }
   },

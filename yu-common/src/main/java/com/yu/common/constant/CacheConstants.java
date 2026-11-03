@@ -67,4 +67,15 @@ public class CacheConstants
      * 系统配置缓存过期时间（分钟）
      */
     public static final int SYS_CONFIG_CACHE_EXPIRATION = 120;
+
+    /**
+     * 导出件归属登记 key（S-3）：下载目录是全局共享区，落盘时登记 {fileName -> 归属人}，
+     * 下载时据此校验归属，避免任意登录用户猜名下载他人导出件
+     */
+    public static final String DOWNLOAD_OWNER_KEY = "download:owner:";
+
+    /**
+     * 导出件归属登记过期时间（分钟）：覆盖“导出→下载”的正常间隔，同时限定猜名窗口
+     */
+    public static final int DOWNLOAD_OWNER_EXPIRATION = 120;
 }

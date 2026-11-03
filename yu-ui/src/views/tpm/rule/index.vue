@@ -102,6 +102,7 @@ import { listRule, getRule, delRule, addRule, updateRule } from "@/api/tpm/rule"
 import { listRound } from "@/api/tpm/round"
 
 import dialogGuard from "@/utils/dialogGuard"
+import { reqChange, req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "Rule",
@@ -113,9 +114,9 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, ruleName: null, ruleType: null, status: null, roundId: null },
       form: {},
       rules: {
-        roundId: [{ required: true, message: "轮次不能为空", trigger: "change" }],
-        ruleName: [{ required: true, message: "规则名称不能为空", trigger: "blur" }],
-        ruleType: [{ required: true, message: "规则类型不能为空", trigger: "change" }]
+        roundId: [reqChange("轮次")],
+        ruleName: [req("规则名称")],
+        ruleType: [reqChange("规则类型")]
       }
     }
   },

@@ -217,6 +217,22 @@ jobs:
       - name: Check request-body validation (S-6 ratchet)
         run: node bin/body-validation-scan.js
 
+      # V5.36 S-7：动态 SQL 拼接面棘轮。MyBatis 的 ${} 是字面拼接，安不安全只取决于值从哪来——
+      # 实测 22 处 SQL ${}（16 处 ${params.dataScope} + 5 处表名/列名 + 1 处整条语句），另有 23 处
+      # 是 BPMN 变量解析（非拼接）。真实的炸点不是写法，而是「某个调用方漏挂 @DataScope 时没人发现」：
+      # params 是请求可绑定的 Map，漏挂就等于把请求串直接拼进 WHERE。五条规则（R1 新位置 / R2 BaseEntity
+      # 双层守卫 / R3 无注解调用点 / R4 标识符本层断言 / R5 基线陈旧）见 bin/sql-inject-scan.js 头注释；
+      # 基线 db/sql-inject-baseline.json 缺失即红，不存在「CI 没基线所以空跑通过」这条路。
+      - name: Check dynamic SQL concatenation (S-7 ratchet)
+        run: node bin/sql-inject-scan.js
+
+      # V6.4 E7：dialogGuard「主槽 + 命名槽位」契约门禁。mixin 的槽位靠字符串名约定，
+      # 槽位名拼错、声明了却不采集、把 guardSlots 写进 data() 都不会报错——只是静默退化成
+      # “永不判脏”，评审时几乎看不出来。本步纯文本扫描两栈全部 .vue（不需要 npm install），
+      # R1~R4 判 FAIL、R5~R6 判 WARN，见 bin/dialog-guard-contract-check.js 头注释。
+      - name: Check dialogGuard slot contract (E7)
+        run: node bin/dialog-guard-contract-check.js
+
   build-images:
     # Q2 部署阶段：三门禁全绿后构建后端/管理端/门户三镜像；main 推送时打 sha + latest 双标签并推 GHCR，
     # PR 仅跑一次 docker build 验证 Dockerfile 可构建（push=false，不登录不推送），提前暴露镜像层回归。

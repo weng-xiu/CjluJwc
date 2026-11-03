@@ -82,7 +82,7 @@
 
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="780px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="780px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="90px">
         <el-row>
           <el-col :span="24">
@@ -130,11 +130,12 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
 
-    <el-dialog :close-on-click-modal="false" title="会议纪要" :visible.sync="minutesOpen" width="700px" append-to-body>
+    <!-- 会议纪要：正文用富文本编辑器，故靠 $nextTick 采集基线，避“一打开就判脏” -->
+    <el-dialog :close-on-click-modal="false" title="会议纪要" :visible.sync="minutesOpen" width="700px" append-to-body :before-close="done => guardedSlotBeforeClose('minutes', done, '纪要尚未保存，确定要关闭吗？')">
       <el-form ref="minutesForm" :model="minutesForm" label-width="80px">
         <el-form-item label="会议ID">
           <el-input v-model="minutesForm.meetingId" disabled />
@@ -145,7 +146,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitMinutes">保 存</el-button>
-        <el-button @click="minutesOpen = false">取 消</el-button>
+        <el-button @click="guardedSlotCancel('minutes', cancelMinutes, '纪要尚未保存，确定要关闭吗？')">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -192,9 +193,14 @@
 import { listMeeting, getMeeting, delMeeting, addMeeting, updateMeeting, checkMeetingConflict, saveMinutes } from "@/api/oa/meeting"
 import { listMeetingRoom } from "@/api/oa/meetingRoom"
 import { listUser } from "@/api/system/user"
+import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 
 export default {
   name: "OaMeeting",
+  mixins: [dialogGuard],
+  // 会议纪要框绑 minutesForm（富文本），与主框 form 无关：命名槽位单独采集
+  guardSlots: { minutes: ['minutesForm'] },
   dicts: ['oa_meeting_type', 'oa_meeting_status', 'oa_attend_status'],
   data() {
     return {
@@ -224,11 +230,11 @@ export default {
       form: {},
       minutesForm: {},
       rules: {
-        meetingTheme: [{ required: true, message: "会议主题不能为空", trigger: "blur" }],
+        meetingTheme: [req("会议主题")],
         roomId: [{ required: true, message: "请选择会议室", trigger: "change" }],
         meetingType: [{ required: true, message: "请选择会议类型", trigger: "change" }],
-        startTime: [{ required: true, message: "开始时间不能为空", trigger: "change" }],
-        endTime: [{ required: true, message: "结束时间不能为空", trigger: "change" }]
+        startTime: [reqChange("开始时间")],
+        endTime: [reqChange("结束时间")]
       }
     }
   },
@@ -309,6 +315,7 @@ export default {
     handleAdd() {
       this.reset()
       this.open = true
+      this.captureDialogSnapshot()
       this.title = "添加会议"
     },
     handleUpdate(row) {
@@ -320,6 +327,7 @@ export default {
           this.selectedParticipantIds = this.form.participantList.map(p => p.userId)
         }
         this.open = true
+        this.captureDialogSnapshot()
         this.title = "修改会议"
       })
     },
@@ -376,11 +384,14 @@ export default {
         minutesContent: row.minutes ? row.minutes.minutesContent : undefined
       }
       this.minutesOpen = true
+      this.captureSlotSnapshot('minutes')
     },
+    cancelMinutes() { this.minutesOpen = false },
     submitMinutes() {
       saveMinutes(this.minutesForm).then(() => {
         this.$modal.msgSuccess("保存成功")
         this.minutesOpen = false
+        this.resetSlotSnapshot('minutes')
         this.getList()
       })
     }

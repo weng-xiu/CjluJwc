@@ -1,9 +1,7 @@
 package com.yu.framework.manager;
 
 import java.util.TimerTask;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import com.yu.common.utils.Threads;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import com.yu.common.utils.spring.SpringUtils;
 
 /**
@@ -14,14 +12,9 @@ import com.yu.common.utils.spring.SpringUtils;
 public class AsyncManager
 {
     /**
-     * 操作延迟10毫秒
+     * 异步操作任务线程池（T-6）：审计日志专用池，有界队列 + 队满回压，详见 {@code ThreadPoolConfig}
      */
-    private final int OPERATE_DELAY_TIME = 10;
-
-    /**
-     * 异步操作任务调度线程池
-     */
-    private ScheduledExecutorService executor = SpringUtils.getBean("scheduledExecutorService");
+    private ThreadPoolTaskExecutor executor = SpringUtils.getBean("asyncLogExecutor");
 
     /**
      * 单例模式
@@ -42,7 +35,9 @@ public class AsyncManager
      */
     public void execute(TimerTask task)
     {
-        executor.schedule(task, OPERATE_DELAY_TIME, TimeUnit.MILLISECONDS);
+        // 原实现用 schedule(task, 10ms) 把日志推迟出请求窗口；换成专用池后不再需要“先拖 10ms”这种
+        // 粗糙手段——日志本来就在别的线程上跑，再拖只会拉长停机时的排空时间
+        executor.execute(task);
     }
 
     /**
@@ -50,6 +45,7 @@ public class AsyncManager
      */
     public void shutdown()
     {
-        Threads.shutdownAndAwaitTermination(executor);
+        // 池的 waitForTasksToCompleteOnShutdown/awaitTermination 已在 ThreadPoolConfig 中设定
+        executor.shutdown();
     }
 }

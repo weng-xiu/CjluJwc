@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +19,7 @@ import com.yu.common.core.page.TableDataInfo;
 import com.yu.common.enums.BusinessType;
 import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.SecurityUtils;
+import com.yu.portal.security.PortalAdjustmentApproverPolicy;
 import com.yu.tpm.domain.TpmCourseOffering;
 import com.yu.tpm.domain.TpmSchedule;
 import com.yu.tpm.domain.TpmScheduleAdjustment;
@@ -51,9 +51,9 @@ public class PortalAdjustmentController extends BaseController
     @Autowired
     private ITpmCourseOfferingService tpmCourseOfferingService;
 
-    /** 调停课审批人（与 TpmScheduleAdjustmentServiceImpl 同配置键，P5 移动端审批） */
-    @Value("${tpm.adjust.approver:admin}")
-    private String adjustApprover;
+    /** 调停课审批人策略：admin / portal:adjustment:approve 权限字符 / tpm.adjust.approver(s) 配置名单 */
+    @Autowired
+    private PortalAdjustmentApproverPolicy portalAdjustmentApprover;
 
     /** 教师端：调停课申请列表查询（强制本人，进度含审批状态/意见/时间） */
     @PreAuthorize("@ss.hasPermi('portal:adjustment:list') and @ss.hasAnyRoles('admin,teacher')")
@@ -117,7 +117,8 @@ public class PortalAdjustmentController extends BaseController
         return toAjax(tpmScheduleAdjustmentService.cancelByApplicant(adjustId, getUsername()));
     }
 
-    /** 审批人：待审调停课列表（P5 移动端审批，仅配置的审批人/admin 可用） */
+    /** 审批人：待审调停课列表（P5 移动端审批，权限字符/配置名单/admin 可用） */
+    @PreAuthorize("@ss.hasAnyRoles('admin') or @ss.hasPermi('portal:adjustment:approve') or @portalAdjustmentApprover.isApprover(authentication.name)")
     @GetMapping("/pendingList")
     public TableDataInfo pendingList(TpmScheduleAdjustment query)
     {
@@ -129,6 +130,7 @@ public class PortalAdjustmentController extends BaseController
     }
 
     /** 审批人：通过（同步回写待办/消息通知申请人） */
+    @PreAuthorize("@ss.hasAnyRoles('admin') or @ss.hasPermi('portal:adjustment:approve') or @portalAdjustmentApprover.isApprover(authentication.name)")
     @Log(title = "调停课审批通过", businessType = BusinessType.UPDATE)
     @PostMapping("/approve/{adjustId}")
     public AjaxResult approve(@PathVariable("adjustId") Long adjustId,
@@ -140,6 +142,7 @@ public class PortalAdjustmentController extends BaseController
     }
 
     /** 审批人：驳回 */
+    @PreAuthorize("@ss.hasAnyRoles('admin') or @ss.hasPermi('portal:adjustment:approve') or @portalAdjustmentApprover.isApprover(authentication.name)")
     @Log(title = "调停课审批驳回", businessType = BusinessType.UPDATE)
     @PostMapping("/reject/{adjustId}")
     public AjaxResult reject(@PathVariable("adjustId") Long adjustId,
@@ -150,12 +153,15 @@ public class PortalAdjustmentController extends BaseController
         return success();
     }
 
-    /** 审批人校验：仅配置的 tpm.adjust.approver 或 admin 可执行审批（不用权限字符，避免门户角色 403） */
+    /**
+     * 审批人校验（纵深防御）：与 @PreAuthorize 同源，统一走 {@link PortalAdjustmentApproverPolicy}。
+     * 注解负责拦截，本方法负责给出明确业务提示，避免只依赖注解表达式被误改。
+     */
     private void checkApprover()
     {
-        if (!SecurityUtils.isAdmin(getUserId()) && !getUsername().equals(adjustApprover))
+        if (!portalAdjustmentApprover.canApprove(getLoginUser()))
         {
-            throw new ServiceException("仅调停课审批人可执行审批操作");
+            throw new ServiceException("仅调停课审批人可执行审批操作", com.yu.common.constant.HttpStatus.FORBIDDEN);
         }
     }
 

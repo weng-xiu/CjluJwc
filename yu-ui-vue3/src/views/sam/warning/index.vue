@@ -134,6 +134,7 @@
 import { listWarning, getWarning, delWarning, addWarning, updateWarning, getWarningStatistics, generateBatch } from "@/api/sam/warning"
 import { listYear } from "@/api/brm/year"
 import { listSemester, getSemester } from "@/api/brm/semester"
+import { req } from "@/utils/validate"
 export default {
   name: "Warning",
   data() { return {
@@ -141,7 +142,7 @@ export default {
     stats: null, generateOpen: false, generateLoading: false,
     generateForm: { semesterId: null },
     queryParams: { pageNum: 1, pageSize: 10, studentId: null, semesterId: null, warningType: null, warningLevel: null },
-    form: {}, rules: { studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }] },
+    form: {}, rules: { studentId: [req("学生ID")] },
     yearList: [],
     selectedYearId: null, semesterList: [],
     formYearId: null, formSemesterList: [],

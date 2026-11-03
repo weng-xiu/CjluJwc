@@ -59,6 +59,7 @@ public class SysMsgCenterController extends BaseController
     }
 
     /** 未读消息数 */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/message/unreadCount")
     public AjaxResult unreadCount()
     {
@@ -86,6 +87,7 @@ public class SysMsgCenterController extends BaseController
     }
 
     /** 待办数量 */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/todo/pendingCount")
     public AjaxResult pendingCount()
     {

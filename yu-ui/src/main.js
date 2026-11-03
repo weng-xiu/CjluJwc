@@ -24,6 +24,7 @@ import './permission' // permission control
 import { getDicts } from "@/api/system/dict/data"
 import { getConfigKey } from "@/api/system/config"
 import { parseTime, resetForm, addDateRange, selectDictLabel, selectDictLabels, handleTree } from "@/utils/ruoyi"
+import { t, setLocale, initI18n } from "@/utils/i18n" // E6 轻量 i18n（零依赖自建，未引 vue-i18n）
 // 分页组件
 import Pagination from "@/components/Pagination"
 // 自定义表格工具组件
@@ -56,6 +57,10 @@ Vue.prototype.selectDictLabel = selectDictLabel
 Vue.prototype.selectDictLabels = selectDictLabels
 Vue.prototype.download = download
 Vue.prototype.handleTree = handleTree
+// E6：页面用 $t('common.confirm', '确定') 取词；字典缺词自动回退到中文原文，渲染结果与硬编码一致
+Vue.prototype.$t = t
+Vue.prototype.$setLocale = setLocale
+initI18n() // 启动即把 <html lang> 对齐到已记忆的语言（index.html 里是静态值）
 
 // 全局组件挂载
 Vue.component('DictTag', DictTag)

@@ -59,6 +59,7 @@ public class SysMenuController extends BaseController
     /**
      * 获取菜单下拉树列表
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/treeselect")
     public AjaxResult treeselect(SysMenu menu, @RequestParam(value = "platform", required = false) String platform)
     {
@@ -77,6 +78,7 @@ public class SysMenuController extends BaseController
     /**
      * 加载对应角色菜单列表树
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(value = "/roleMenuTreeselect/{roleId}")
     public AjaxResult roleMenuTreeselect(@PathVariable("roleId") Long roleId, @RequestParam(value = "platform", required = false) String platform)
     {

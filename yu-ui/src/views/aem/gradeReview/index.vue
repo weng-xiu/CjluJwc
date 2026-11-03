@@ -62,7 +62,7 @@
     </el-dialog>
 
     <!-- 审批对话框（流程按当前阶段自动路由：初审/终审） -->
-    <el-dialog :close-on-click-modal="false" :title="approveTitle" :visible.sync="approveOpen" width="520px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="approveTitle" :visible.sync="approveOpen" width="520px" append-to-body :before-close="done => guardedSlotBeforeClose('approve', done, '审批意见尚未提交，确定要关闭吗？')">
       <el-descriptions :column="1" border size="small" style="margin-bottom:12px">
         <el-descriptions-item label="学生ID">{{ approveRow.studentId }}</el-descriptions-item>
         <el-descriptions-item label="课程ID">{{ approveRow.courseId }}</el-descriptions-item>
@@ -82,7 +82,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="doApprove">确 定</el-button>
-        <el-button @click="approveOpen = false">取 消</el-button>
+        <el-button @click="guardedSlotCancel('approve', cancelApprove, '审批意见尚未提交，确定要关闭吗？')">取 消</el-button>
       </div>
     </el-dialog>
 
@@ -105,12 +105,16 @@
 import { listGradeReview, getGradeReview, delGradeReview, addGradeReview, updateGradeReview,
          approveReview, submitReview, cancelReview, traceReview } from "@/api/aem/gradeReview"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "GradeReview", dicts: ['aem_review_type', 'aem_approve_status'],
+  // 审批框绑的是 approveForm，与主框的 form 不是同一份 data：
+  // 用命名槽位单独采集，两边互不污染（V6.4 E7 契约扩展）
+  guardSlots: { approve: ['approveForm'] },
   data() { return { loading: true, ids: [], multiple: true, showSearch: true, total: 0, gradeReviewList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, studentId: null, courseId: null, reviewType: null, approveStatus: null },
-    form: {}, rules: { gradeId: [{ required: true, message: "成绩ID不能为空", trigger: "blur" }], studentId: [{ required: true, message: "学生ID不能为空", trigger: "blur" }], reviewReason: [{ required: true, message: "复核原因不能为空", trigger: "blur" }] },
+    form: {}, rules: { gradeId: [req("成绩ID")], studentId: [req("学生ID")], reviewReason: [req("复核原因")] },
     // 审批
     approveOpen: false, approveRow: {}, approveForm: { approved: true, opinion: null },
     // 追溯
@@ -154,13 +158,14 @@ export default {
       this.$modal.confirm('确认提交成绩变更申请（编号' + row.reviewId + '）进入审批流程？').then(() => submitReview(row.reviewId))
         .then(() => { this.$modal.msgSuccess("已提交，等待课程负责人初审"); this.getList() }).catch(() => {})
     },
-    handleApprove(row) { this.approveRow = row; this.approveForm = { approved: true, opinion: null }; this.approveOpen = true },
+    handleApprove(row) { this.approveRow = row; this.approveForm = { approved: true, opinion: null }; this.approveOpen = true; this.captureSlotSnapshot('approve') },
+    cancelApprove() { this.approveOpen = false },
     doApprove() {
       if (!this.approveForm.approved && !(this.approveForm.opinion && this.approveForm.opinion.trim())) {
         this.$modal.msgError("驳回必须填写审批意见"); return
       }
       approveReview(this.approveRow.reviewId, this.approveForm.approved, this.approveForm.opinion || '').then(() => {
-        this.$modal.msgSuccess(this.approveForm.approved ? "已通过" : "已驳回"); this.approveOpen = false; this.getList()
+        this.$modal.msgSuccess(this.approveForm.approved ? "已通过" : "已驳回"); this.approveOpen = false; this.resetSlotSnapshot('approve'); this.getList()
       })
     },
     handleCancel(row) {

@@ -79,7 +79,7 @@
     <pagination v-show="total > 0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改选题 -->
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="720px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="720px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="12">
@@ -152,12 +152,12 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
-        <el-button @click="cancel">取 消</el-button>
+        <el-button @click="guardedCancel(cancel)">取 消</el-button>
       </div>
     </el-dialog>
 
     <!-- 题目审核 -->
-    <el-dialog :close-on-click-modal="false" title="题目审核" :visible.sync="auditOpen" width="520px" append-to-body>
+    <el-dialog :close-on-click-modal="false" title="题目审核" :visible.sync="auditOpen" width="520px" append-to-body :before-close="done => guardedSlotBeforeClose('audit', done, '审核结果尚未提交，确定要关闭吗？')">
       <el-form label-width="90px">
         <el-form-item label="论文题目">{{ auditRow.topicName }}</el-form-item>
         <el-form-item label="指导教师">{{ auditRow.advisorName || auditRow.advisor }}</el-form-item>
@@ -173,7 +173,7 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitAudit">确 定</el-button>
-        <el-button @click="auditOpen = false">取 消</el-button>
+        <el-button @click="guardedSlotCancel('audit', cancelAudit, '审核结果尚未提交，确定要关闭吗？')">取 消</el-button>
       </div>
     </el-dialog>
   </div>
@@ -181,8 +181,13 @@
 
 <script>
 import { listThesisTopic, getThesisTopic, delThesisTopic, addThesisTopic, updateThesisTopic, auditThesisTopic, changeThesisTopicStatus } from "@/api/sam/thesis"
+import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   name: "ThesisTopic",
+  mixins: [dialogGuard],
+  // 审核框绑 auditForm（结论+意见），与主框 form 无关：单独一个命名槽位
+  guardSlots: { audit: ['auditForm'] },
   dicts: ['sam_thesis_topic_source', 'sam_thesis_topic_status'],
   data() {
     return {
@@ -193,9 +198,9 @@ export default {
       form: {},
       auditForm: { pass: true, opinion: null },
       rules: {
-        planYear: [{ required: true, message: "届别不能为空", trigger: "blur" }],
-        topicName: [{ required: true, message: "论文题目不能为空", trigger: "blur" }],
-        capacity: [{ required: true, message: "可选题人数不能为空", trigger: "blur" }]
+        planYear: [req("届别")],
+        topicName: [req("论文题目")],
+        capacity: [req("可选题人数")]
       }
     }
   },
@@ -215,10 +220,16 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.topicId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加毕业论文选题" },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加毕业论文选题"; this.captureDialogSnapshot() },
     handleUpdate(row) {
       this.reset()
-      getThesisTopic(row.topicId || this.ids).then(response => { this.form = response.data; this.open = true; this.title = "修改毕业论文选题" })
+      getThesisTopic(row.topicId || this.ids).then(response => {
+        this.form = response.data
+        this.open = true
+        this.title = "修改毕业论文选题"
+        // 采集点必须在回程赋值之后，否则一打开就被判脏
+        this.captureDialogSnapshot()
+      })
     },
     submitForm() {
       this.$refs["form"].validate(valid => {
@@ -228,9 +239,16 @@ export default {
         }
       })
     },
-    handleAudit(row) { this.auditRow = row; this.auditForm = { pass: true, opinion: null }; this.auditOpen = true },
+    handleAudit(row) {
+      this.auditRow = row
+      this.auditForm = { pass: true, opinion: null }
+      this.auditOpen = true
+      this.captureSlotSnapshot('audit')
+    },
+    cancelAudit() { this.auditOpen = false },
     submitAudit() {
       auditThesisTopic(this.auditRow.topicId, this.auditForm.pass, this.auditForm.opinion).then(() => {
+        this.resetSlotSnapshot('audit')
         this.$modal.msgSuccess("审核完成"); this.auditOpen = false; this.getList()
       })
     },

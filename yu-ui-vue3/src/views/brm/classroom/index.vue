@@ -68,12 +68,13 @@ import { listCampus } from "@/api/brm/campus"
 import { listBuilding } from "@/api/brm/building"
 import { listRoomtype } from "@/api/brm/roomtype"
 import ExcelImportDialog from "@/components/ExcelImportDialog"
+import { req, reqChange } from "@/utils/validate"
 export default {
   name: "Classroom", dicts: ['sys_normal_disable'],
   components: { ExcelImportDialog },
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, classroomList: [], campusList: [], allBuildingList: [], queryBuildingList: [], formBuildingList: [], typeList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, classroomName: null, campusId: null, buildingId: null, typeId: null, status: null },
-    form: {}, rules: { classroomName: [{ required: true, message: "教室名称不能为空", trigger: "blur" }], buildingId: [{ required: true, message: "所属教学楼不能为空", trigger: "change" }], typeId: [{ required: true, message: "教室类型不能为空", trigger: "change" }] } }
+    form: {}, rules: { classroomName: [req("教室名称")], buildingId: [reqChange("所属教学楼")], typeId: [reqChange("教室类型")] } }
   },
   created() { this.getList(); this.loadBaseData() },
   methods: {

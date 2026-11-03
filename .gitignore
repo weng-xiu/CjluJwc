@@ -90,6 +90,8 @@ bin/
 !/bin/authz-scan.js
 # V5.35 S-6：入参校验棘轮门禁（CI 直接调用），须入库
 !/bin/body-validation-scan.js
+# V5.36 S-7：动态 SQL 拼接面棘轮门禁（CI 直接调用），须入库
+!/bin/sql-inject-scan.js
 
 ######################################################################
 # V4.0 §7.3/C1：含真实数据的整库 dump 禁止入库（Navicat 全量备份目录）

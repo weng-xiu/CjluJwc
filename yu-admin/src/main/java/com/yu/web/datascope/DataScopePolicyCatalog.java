@@ -85,6 +85,10 @@ public final class DataScopePolicyCatalog
                 "selectDeptList", "d", ""));
         list.add(new PolicyEntry("学生(系统)", "com.yu.system.service.impl.SysStudentServiceImpl",
                 "selectStudentList", "d", "u"));
+        // S-7：Mapper 里写了 ${params.dataScope} 与别名 d，但注解原先漏挂 → 过滤位永不生效。
+        // 登记后由 DataScopePolicyCatalogTest 反射守住，再漏挂即构建失败。
+        list.add(new PolicyEntry("教师账号关联", "com.yu.system.service.impl.SysTeacherLinkServiceImpl",
+                "selectTeacherLinkList", "d", ""));
         // 基础资源域（yu-brm）
         list.add(new PolicyEntry("教师", "com.yu.brm.service.impl.BrmTeacherServiceImpl",
                 "selectBrmTeacherList", "d", "t"));

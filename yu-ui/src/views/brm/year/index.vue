@@ -43,12 +43,13 @@
 <script>
 import { listYear, getYear, delYear, addYear, updateYear } from "@/api/brm/year"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "Year", dicts: ['sys_normal_disable'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, yearList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, yearName: null, status: null },
-    form: {}, rules: { yearName: [{ required: true, message: "学年名称不能为空", trigger: "blur" }] } }
+    form: {}, rules: { yearName: [req("学年名称")] } }
   },
   created() { this.getList() },
   methods: {

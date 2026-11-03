@@ -55,12 +55,13 @@
 <script>
 import { listInterface, getInterface, delInterface, addInterface, updateInterface } from "@/api/dis/interface"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "DisInterface", dicts: ['sys_normal_disable'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, interfaceList: [], title: "", open: false,
     queryParams: { pageNum: 1, pageSize: 10, interfaceName: null, requestMethod: null, status: null },
-    form: {}, rules: { interfaceName: [{ required: true, message: "接口名称不能为空", trigger: "blur" }], requestPath: [{ required: true, message: "请求路径不能为空", trigger: "blur" }] } }
+    form: {}, rules: { interfaceName: [req("接口名称")], requestPath: [req("请求路径")] } }
   },
   created() { this.getList() },
   methods: {

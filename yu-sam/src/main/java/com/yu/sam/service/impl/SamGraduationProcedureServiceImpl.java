@@ -10,6 +10,7 @@ import java.util.Set;
 import com.yu.common.exception.ServiceException;
 import com.yu.common.utils.DateUtils;
 import com.yu.common.utils.StringUtils;
+import com.yu.common.utils.sql.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -153,7 +154,7 @@ public class SamGraduationProcedureServiceImpl implements ISamGraduationProcedur
                     continue; // 自定义环节无旧列，跳过
                 }
             }
-            List<Long> okStudents = samProcedureItemMapper.selectAutoCheckStudentIds(source.toUpperCase(), column);
+            List<Long> okStudents = samProcedureItemMapper.selectAutoCheckStudentIds(source.toUpperCase(), SqlUtil.assertIdentifier(column, "离校旧字段列名"));
             if (okStudents == null || okStudents.isEmpty())
             {
                 continue;

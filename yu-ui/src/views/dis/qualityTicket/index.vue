@@ -80,6 +80,7 @@
 <script>
 import { listQualityTicket, getQualityTicket, addQualityTicket, updateQualityTicket, delQualityTicket, detectAnomaly } from "@/api/dis/qualityTicket"
 import dialogGuard from "@/utils/dialogGuard"
+import { reqChange } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "DisQualityTicket",
@@ -108,9 +109,9 @@ export default {
       queryParams: { pageNum: 1, pageSize: 10, taskName: null, anomalyType: null, severity: null, status: null, assignee: null },
       form: {},
       rules: {
-        anomalyType: [{ required: true, message: "异常类型不能为空", trigger: "change" }],
-        severity: [{ required: true, message: "严重程度不能为空", trigger: "change" }],
-        status: [{ required: true, message: "处置状态不能为空", trigger: "change" }]
+        anomalyType: [reqChange("异常类型")],
+        severity: [reqChange("严重程度")],
+        status: [reqChange("处置状态")]
       }
     }
   },

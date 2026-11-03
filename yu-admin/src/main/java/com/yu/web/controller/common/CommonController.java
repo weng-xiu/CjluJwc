@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,7 @@ import com.yu.common.config.RuoYiConfig;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.utils.SecurityUtils;
 import com.yu.common.utils.StringUtils;
+import com.yu.common.utils.file.DownloadOwnershipRegistry;
 import com.yu.common.utils.file.FileUploadUtils;
 import com.yu.common.utils.file.FileUtils;
 import com.yu.framework.config.ServerConfig;
@@ -43,9 +45,13 @@ public class CommonController
      * <p>S-3（质陷报告）：原实现 delete 参数由请求方完全控制，任意登录用户可删除全局下载目录内任意文件；
      * 现改为仅超管可传 delete=true，其余账号即使传了也忽略并记 warn 日志（不静默）。</p>
      *
+     * <p>S-3 余面：下载目录是全局共享落盘区，文件名一旦流出（日志/截图/分享链接）就能被任意登录用户拼 URL 拉走。
+     * 现要求归属校验：除超管外只允许导出人本人下载，未登记归属的存量文件同样拒绝（fail-closed）。</p>
+     *
      * @param fileName 文件名称
      * @param delete 是否删除（仅超管生效）
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/download")
     public void fileDownload(String fileName, Boolean delete, HttpServletResponse response, HttpServletRequest request)
     {
@@ -54,6 +60,13 @@ public class CommonController
             if (!FileUtils.checkAllowDownload(fileName))
             {
                 throw new Exception(StringUtils.format("文件名称({})非法，不允许下载。 ", fileName));
+            }
+            // S-3：只放行超管与导出人本人；归属登记查不到（存量件/已过期/Redis 异常）一律拒绝
+            if (!SecurityUtils.isAdmin() && !DownloadOwnershipRegistry.isOwner(fileName, SecurityUtils.getUserId()))
+            {
+                log.warn("拦截越权下载：fileName={}, userId={}", fileName, SecurityUtils.getUserId());
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "无权下载该文件");
+                return;
             }
             String realFileName = System.currentTimeMillis() + fileName.substring(fileName.indexOf("_") + 1);
             String filePath = RuoYiConfig.getDownloadPath() + fileName;
@@ -145,6 +158,7 @@ public class CommonController
     /**
      * 本地资源通用下载
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/download/resource")
     public void resourceDownload(String resource, HttpServletRequest request, HttpServletResponse response)
             throws Exception

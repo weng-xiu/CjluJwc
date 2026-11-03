@@ -62,7 +62,7 @@
     <app-empty v-if="!loading && !offeringList.length" description="暂无开课计划，可新增或使用「批量生成」按培养方案生成" />
     </app-skeleton>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList"/>
-    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :close-on-click-modal="false" :title="title" :visible.sync="open" width="600px" append-to-body :before-close="guardedBeforeClose">
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-row :gutter="20">
           <el-col :span="12">
@@ -118,10 +118,10 @@
         </el-form-item>
         <el-form-item label="状态"><el-radio-group v-model="form.status"><el-radio v-for="dict in dict.type.sys_normal_disable" :key="dict.value" :label="dict.value">{{dict.label}}</el-radio></el-radio-group></el-form-item>
       </el-form>
-      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>
+      <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="guardedCancel(cancel)">取 消</el-button></div>
     </el-dialog>
     <!-- T4：按培养方案批量生成开课 -->
-    <el-dialog title="批量生成开课计划" :visible.sync="batchOpen" width="620px" append-to-body>
+    <el-dialog title="批量生成开课计划" :visible.sync="batchOpen" width="620px" append-to-body :before-close="done => guardedSlotBeforeClose('batch', done, '生成参数已修改但尚未提交，确定要关闭吗？')">
       <el-form ref="batchForm" :model="batchForm" :rules="batchRules" label-width="120px">
         <el-row :gutter="20">
           <el-col :span="12"><el-form-item label="培养方案" prop="planId"><el-select v-model="batchForm.planId" placeholder="请选择培养方案" filterable clearable style="width:100%"><el-option v-for="item in planOptions" :key="item.planId" :label="item.planName + (item.planYear ? '（' + item.planYear + '）' : '')" :value="item.planId" /></el-select></el-form-item></el-col>
@@ -144,7 +144,7 @@
         :title="'扫描课程 ' + batchResult.scanned + ' 门，生成 ' + batchResult.generated + ' 条，跳过已存在 ' + batchResult.skippedExisting + ' 条，教师预分配 ' + batchResult.teacherAssigned + ' 条（教师池 ' + batchResult.teacherPoolSize + ' 人）'"/>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" :loading="batchLoading" @click="submitBatchGenerate">开始生成</el-button>
-        <el-button @click="batchOpen = false">关 闭</el-button>
+        <el-button @click="guardedSlotCancel('batch', cancelBatch, '生成参数已修改但尚未提交，确定要关闭吗？')">关 闭</el-button>
       </div>
     </el-dialog>
 
@@ -174,9 +174,14 @@ import { listCampus } from "@/api/brm/campus"
 import { listPlan } from "@/api/tpm/plan"
 import { listDept } from "@/api/brm/dept"
 import RemoteSelect from "@/components/RemoteSelect"
+import dialogGuard from "@/utils/dialogGuard"
+import { reqChange } from "@/utils/validate"
 export default {
   name: "Offering", dicts: ['sys_normal_disable', 'tpm_offering_status'],
   components: { RemoteSelect },
+  mixins: [dialogGuard],
+  // 批量生成框绑 batchForm 与主框 form 无关：单独一个命名槽位
+  guardSlots: { batch: ['batchForm'] },
   data() { return {
     loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, offeringList: [], title: "", open: false,
     semesterOptions: [], campusOptions: [], apiListCourseLib: listCourseLib, apiListTeacher: listTeacher,
@@ -185,9 +190,9 @@ export default {
     // U3/E3 批量生成进度反馈
     batchProgressOpen: false, batchRunning: false, batchTotal: 0, batchSuccess: 0, batchFailed: 0,
     batchForm: { planId: null, semesterId: null, semesterOrder: null, campusId: null, teacherDeptId: null, defaultCapacity: null, classCount: 1, skipExisting: true },
-    batchRules: { planId: [{ required: true, message: "培养方案不能为空", trigger: "change" }], semesterId: [{ required: true, message: "学期不能为空", trigger: "change" }] },
+    batchRules: { planId: [reqChange("培养方案")], semesterId: [reqChange("学期")] },
     queryParams: { pageNum: 1, pageSize: 10, semesterId: null, courseId: null, teacherId: null, offeringStatus: null, status: null },
-    form: {}, rules: { semesterId: [{ required: true, message: "学期不能为空", trigger: "change" }], courseId: [{ required: true, message: "课程不能为空", trigger: "change" }] }
+    form: {}, rules: { semesterId: [reqChange("学期")], courseId: [reqChange("课程")] }
   } },
   computed: {
     courseInitial() { return this.form && this.form.courseId != null ? { value: this.form.courseId, label: this.fmtCourse(this.form) } : null },
@@ -209,8 +214,8 @@ export default {
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.offeringId); this.single = selection.length !== 1; this.multiple = !selection.length },
-    handleAdd() { this.reset(); this.open = true; this.title = "添加开课计划" },
-    handleUpdate(row) { this.reset(); const offeringId = row.offeringId || this.ids; const src = row.offeringId ? row : (this.offeringList.find(o => String(o.offeringId) === String(this.ids)) || {}); getOffering(offeringId).then(response => { this.form = response.data; this.form.courseName = this.form.courseName || src.courseName; this.form.courseCode = this.form.courseCode || src.courseCode; this.form.teacherName = this.form.teacherName || src.teacherName; this.form.teacherCode = this.form.teacherCode || src.teacherCode; this.open = true; this.title = "修改开课计划" }) },
+    handleAdd() { this.reset(); this.open = true; this.title = "添加开课计划"; this.captureDialogSnapshot() },
+    handleUpdate(row) { this.reset(); const offeringId = row.offeringId || this.ids; const src = row.offeringId ? row : (this.offeringList.find(o => String(o.offeringId) === String(this.ids)) || {}); getOffering(offeringId).then(response => { this.form = response.data; this.form.courseName = this.form.courseName || src.courseName; this.form.courseCode = this.form.courseCode || src.courseCode; this.form.teacherName = this.form.teacherName || src.teacherName; this.form.teacherCode = this.form.teacherCode || src.teacherCode; this.open = true; this.title = "修改开课计划"; this.captureDialogSnapshot() }) },
     submitForm() { this.$refs["form"].validate(valid => { if (valid) { if (this.form.offeringId != null) { updateOffering(this.form).then(response => { this.$modal.msgSuccess("修改成功"); this.open = false; this.getList() }) } else { addOffering(this.form).then(response => { this.$modal.msgSuccess("新增成功"); this.open = false; this.getList() }) } } }) },
     handleDelete(row) { const offeringIds = row.offeringId || this.ids; this.$modal.confirm('是否确认删除开课计划编号为"' + offeringIds + '"的数据项？').then(function() { return delOffering(offeringIds) }).then(() => { this.getList(); this.$modal.msgSuccess("删除成功") }).catch(() => {}) },
     handleConfirm(row) {
@@ -225,7 +230,10 @@ export default {
       this.batchResult = null;
       this.batchForm = { planId: null, semesterId: this.queryParams.semesterId, semesterOrder: null, campusId: null, teacherDeptId: null, defaultCapacity: null, classCount: 1, skipExisting: true };
       this.batchOpen = true;
+      // 生成框的候选数据在 created 阶段就已就绪，打开即采集
+      this.captureSlotSnapshot('batch');
     },
+    cancelBatch() { this.batchOpen = false },
     /** T4：提交批量生成 */
     submitBatchGenerate() {
       this.$refs["batchForm"].validate(valid => {
@@ -236,6 +244,7 @@ export default {
         this.batchTotal = 0; this.batchSuccess = 0; this.batchFailed = 0;
         this.batchProgressOpen = true;
         batchGenerateOffering(this.batchForm).then(response => {
+          this.resetSlotSnapshot('batch');
           this.batchResult = response.data;
           this.batchOpen = false;
           if (this.batchForm.semesterId) { this.queryParams.semesterId = this.batchForm.semesterId; }

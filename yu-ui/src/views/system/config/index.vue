@@ -188,6 +188,7 @@ import { listConfig, getConfig, delConfig, addConfig, updateConfig, refreshCache
 
 import dialogGuard from "@/utils/dialogGuard"
 import scrollToError from "@/utils/scrollToError"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard, scrollToError],
   name: "Config",
@@ -226,15 +227,9 @@ export default {
       form: {},
       // 表单校验
       rules: {
-        configName: [
-          { required: true, message: "参数名称不能为空", trigger: "blur" }
-        ],
-        configKey: [
-          { required: true, message: "参数键名不能为空", trigger: "blur" }
-        ],
-        configValue: [
-          { required: true, message: "参数键值不能为空", trigger: "blur" }
-        ]
+        configName: [req("参数名称")],
+        configKey: [req("参数键名")],
+        configValue: [req("参数键值")]
       }
     }
   },

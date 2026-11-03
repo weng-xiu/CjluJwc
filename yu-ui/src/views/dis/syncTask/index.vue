@@ -75,13 +75,14 @@
 <script>
 import { listSyncTask, getSyncTask, delSyncTask, addSyncTask, updateSyncTask, executeSyncTask, repushSyncTask } from "@/api/dis/syncTask"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 export default {
   mixins: [dialogGuard],
   name: "DisSyncTask", dicts: ['sys_normal_disable'],
   data() { return { loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0, taskList: [], title: "", open: false,
     execOpen: false, execResult: null,
     queryParams: { pageNum: 1, pageSize: 10, taskName: null, status: null },
-    form: {}, rules: { taskName: [{ required: true, message: "任务名称不能为空", trigger: "blur" }], systemId: [{ required: true, message: "外部系统不能为空", trigger: "blur" }] } }
+    form: {}, rules: { taskName: [req("任务名称")], systemId: [req("外部系统")] } }
   },
   created() { this.getList() },
   methods: {

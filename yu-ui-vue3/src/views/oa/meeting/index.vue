@@ -198,6 +198,7 @@
 import { listMeeting, getMeeting, delMeeting, addMeeting, updateMeeting, exportMeeting, checkMeetingConflict, saveMinutes } from "@/api/oa/meeting"
 import { listMeetingRoom } from "@/api/oa/meetingRoom"
 import { listUser } from "@/api/system/user"
+import { req, reqChange } from "@/utils/validate"
 
 export default {
   name: "OaMeeting",
@@ -230,11 +231,11 @@ export default {
       form: {},
       minutesForm: {},
       rules: {
-        meetingTheme: [{ required: true, message: "会议主题不能为空", trigger: "blur" }],
+        meetingTheme: [req("会议主题")],
         roomId: [{ required: true, message: "请选择会议室", trigger: "change" }],
         meetingType: [{ required: true, message: "请选择会议类型", trigger: "change" }],
-        startTime: [{ required: true, message: "开始时间不能为空", trigger: "change" }],
-        endTime: [{ required: true, message: "结束时间不能为空", trigger: "change" }]
+        startTime: [reqChange("开始时间")],
+        endTime: [reqChange("结束时间")]
       }
     }
   },

@@ -28,6 +28,7 @@ import { download } from '@/utils/request'
 import { getDicts } from '@/api/system/dict/data'
 import { getConfigKey } from '@/api/system/config'
 import { parseTime, resetForm, addDateRange, selectDictLabel, selectDictLabels, handleTree } from '@/utils/ruoyi'
+import { t, setLocale, initI18n } from '@/utils/i18n' // E6 轻量 i18n（零依赖自建，未引 vue-i18n）
 
 import SvgIcon from '@/components/SvgIcon'
 import Pagination from '@/components/Pagination'
@@ -79,6 +80,9 @@ app.config.globalProperties.selectDictLabel = selectDictLabel
 app.config.globalProperties.selectDictLabels = selectDictLabels
 app.config.globalProperties.download = download
 app.config.globalProperties.handleTree = handleTree
+// E6：页面用 $t('common.confirm', '确定') 取词；字典缺词自动回退到中文原文，渲染结果与硬编码一致
+app.config.globalProperties.$t = t
+app.config.globalProperties.$setLocale = setLocale
 
 // 全局组件挂载
 app.component('DictTag', DictTag)
@@ -102,5 +106,6 @@ app.component('ImageUpload', ImageUpload) // 门户 CMS 图片上传
 import './permission' // 路由守卫
 
 initDarkMode() // U1 按已存偏好初始化暗色，挂载前执行避免首屏闪白
+initI18n() // E6 启动即把 <html lang> 对齐到已记忆的语言（index.html 里是静态值）
 applyThemeColor(getStoredThemeColor(), false) // U1 主题色：先应用本地偏好（机构值登录后对齐）
 app.mount('#app')

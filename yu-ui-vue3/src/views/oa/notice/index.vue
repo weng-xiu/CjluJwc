@@ -186,6 +186,7 @@
 import { listNotice, getNotice, delNotice, addNotice, updateNotice, publishNotice, revokeNotice, readNotice } from "@/api/oa/notice"
 import { deptTreeSelect } from "@/api/system/user"
 import dialogGuard from "@/utils/dialogGuard"
+import { req, reqChange } from "@/utils/validate"
 
 export default {
   name: "OaNotice",
@@ -217,9 +218,9 @@ export default {
       },
       form: {},
       rules: {
-        noticeTitle: [{ required: true, message: "公告标题不能为空", trigger: "blur" }],
-        noticeType: [{ required: true, message: "公告类型不能为空", trigger: "change" }],
-        publishScope: [{ required: true, message: "发布范围不能为空", trigger: "change" }]
+        noticeTitle: [req("公告标题")],
+        noticeType: [reqChange("公告类型")],
+        publishScope: [reqChange("发布范围")]
       }
     }
   },

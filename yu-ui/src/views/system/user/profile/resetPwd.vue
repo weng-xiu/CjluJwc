@@ -19,6 +19,7 @@
 <script>
 import { updateUserPwd } from "@/api/system/user"
 import passwordRule from "@/utils/passwordRule"
+import { req } from "@/utils/validate"
 
 export default {
   mixins: [passwordRule],
@@ -34,11 +35,9 @@ export default {
   computed: {
     formRules() {
       return {
-        oldPassword: [
-          { required: true, message: "旧密码不能为空", trigger: "blur" }
-        ],
+        oldPassword: [req("旧密码")],
         confirmPassword: [
-          { required: true, message: "确认密码不能为空", trigger: "blur" },
+          req("确认密码"),
           {
             validator: (rule, value, callback) => {
               if (this.user.newPassword !== value) {

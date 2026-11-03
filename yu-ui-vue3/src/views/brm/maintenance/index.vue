@@ -100,6 +100,7 @@
 // type="text" → link；el-radio :label → :value；size mini → small；value-format yyyy-MM-dd → YYYY-MM-DD。业务逻辑与 Vue2 保持一致。
 import { listMaintenance, getMaintenance, delMaintenance, addMaintenance, updateMaintenance } from "@/api/brm/maintenance"
 import dialogGuard from "@/utils/dialogGuard"
+import { req } from "@/utils/validate"
 
 export default {
   name: "Maintenance",
@@ -124,12 +125,8 @@ export default {
       },
       form: {},
       rules: {
-        equipId: [
-          { required: true, message: "设备ID不能为空", trigger: "blur" }
-        ],
-        faultDesc: [
-          { required: true, message: "故障描述不能为空", trigger: "blur" }
-        ]
+        equipId: [req("设备ID")],
+        faultDesc: [req("故障描述")]
       }
     }
   },
