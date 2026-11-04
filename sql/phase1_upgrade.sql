@@ -134,41 +134,28 @@ INSERT INTO `sam_warning_rule_config` (`rule_code`, `rule_name`, `warning_type`,
 ('ATTENDANCE_LOW', '出勤率低预警', '2', '80%', '0', '您的课程出勤率为{attendance_rate}%，低于预警阈值{threshold}%，请注意按时出勤', '1', '0', 'admin', sysdate(), '出勤率低于80%触发出勤预警');
 
 -- ===============================================
--- 6. 新增菜单数据（menu_id从2600开始，避开2550-2562）
+-- 6. 新增菜单数据（G4/V6.5 已重排号段，空库重放不再撞号）
+--    原稿三块分别取 2600/2610/2620，与 ry_portal_cms_menu.sql 的「门户内容管理」
+--    段直接撞主键。处置逐块交代：
+--      · 2600-2605 GPA 算法配置：删除——被 fix_gpa_config_menu.sql（0.27）
+--        的 2900-2906 取代，后者同 component、同 perms（aem:gpaConfig:*），
+--        且多一级「GPA算法」目录；两份并存只会让审计分不清哪个在生效。
+--      · 2610-2615 预警规则配置：改派 2352-2357（2300-2399 段内唯一空闲块，
+--        仍在 学籍管理 2301 目录下，跟同域菜单同段）。
+--      · 2620-2625 排课优化：删除——fix_schedule_opt_menu.sql（0.26）用
+--        INSERT IGNORE 先落同一组数据，_本脚本再裸 INSERT 必然主键冲突。
+--        来源：bin/db-menu-check.ps1 报 64 处撞号，db/ci/02-meta.sql（工作库
+--        导出实态）里 2600=门户内容管理、2620=排课优化（parent=2105）。
 -- ===============================================
 
 -- ====================
--- GPA算法配置管理 (parent=2205 成绩管理)
+-- 预警规则配置管理 (parent=2301 学籍管理)；2352-2357 为 2300 段空闲块
 -- ====================
-insert into sys_menu values('2600', 'GPA算法配置',   '2205', '4', 'gpaConfig',     'aem/gpaConfig/index',     '', '', 1, 0, 'C', '0', '0', 'aem:gpaConfig:list',   'slider',  'admin', sysdate(), '', null, '');
+insert into sys_menu values('2352', '预警规则配置', '2301', '4', 'warningRule',   'sam/warningRule/index',    '', '', 1, 0, 'C', '0', '0', 'sam:warningRule:list', 'rule',    'admin', sysdate(), '', null, '');
 
--- 按钮权限 - GPA算法配置 (parent=2600)
-insert into sys_menu values('2601', '配置查询',     '2600', '1', '', '', '', '', 1, 0, 'F', '0', '0', 'aem:gpaConfig:query',    '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('2602', '配置新增',     '2600', '2', '', '', '', '', 1, 0, 'F', '0', '0', 'aem:gpaConfig:add',      '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('2603', '配置修改',     '2600', '3', '', '', '', '', 1, 0, 'F', '0', '0', 'aem:gpaConfig:edit',     '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('2604', '配置删除',     '2600', '4', '', '', '', '', 1, 0, 'F', '0', '0', 'aem:gpaConfig:remove',   '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('2605', '配置导出',     '2600', '5', '', '', '', '', 1, 0, 'F', '0', '0', 'aem:gpaConfig:export',   '#', 'admin', sysdate(), '', null, '');
-
--- ====================
--- 预警规则配置管理 (parent=2301 学籍管理)
--- ====================
-insert into sys_menu values('2610', '预警规则配置', '2301', '4', 'warningRule',   'sam/warningRule/index',    '', '', 1, 0, 'C', '0', '0', 'sam:warningRule:list', 'rule',    'admin', sysdate(), '', null, '');
-
--- 按钮权限 - 预警规则配置 (parent=2610)
-insert into sys_menu values('2611', '规则查询',     '2610', '1', '', '', '', '', 1, 0, 'F', '0', '0', 'sam:warningRule:query',    '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('2612', '规则新增',     '2610', '2', '', '', '', '', 1, 0, 'F', '0', '0', 'sam:warningRule:add',      '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('2613', '规则修改',     '2610', '3', '', '', '', '', 1, 0, 'F', '0', '0', 'sam:warningRule:edit',     '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('2614', '规则删除',     '2610', '4', '', '', '', '', 1, 0, 'F', '0', '0', 'sam:warningRule:remove',   '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('2615', '规则导出',     '2610', '5', '', '', '', '', 1, 0, 'F', '0', '0', 'sam:warningRule:export',   '#', 'admin', sysdate(), '', null, '');
-
--- ====================
--- 排课优化 (parent=2105 开课与排课管理)
--- ====================
-insert into sys_menu values('2620', '排课优化',     '2105', '4', 'scheduleOpt',   'tpm/scheduleOpt/index',    '', '', 1, 0, 'C', '0', '0', 'tpm:scheduleOpt:list', 'tool',    'admin', sysdate(), '', null, '');
-
--- 按钮权限 - 排课优化 (parent=2620)
-insert into sys_menu values('2621', '优化查询',     '2620', '1', '', '', '', '', 1, 0, 'F', '0', '0', 'tpm:scheduleOpt:query',    '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('2622', '优化执行',     '2620', '2', '', '', '', '', 1, 0, 'F', '0', '0', 'tpm:scheduleOpt:execute',  '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('2623', '优化修改',     '2620', '3', '', '', '', '', 1, 0, 'F', '0', '0', 'tpm:scheduleOpt:edit',     '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('2624', '优化删除',     '2620', '4', '', '', '', '', 1, 0, 'F', '0', '0', 'tpm:scheduleOpt:remove',   '#', 'admin', sysdate(), '', null, '');
-insert into sys_menu values('2625', '优化导出',     '2620', '5', '', '', '', '', 1, 0, 'F', '0', '0', 'tpm:scheduleOpt:export',   '#', 'admin', sysdate(), '', null, '');
+-- 按钮权限 - 预警规则配置 (parent=2352)
+insert into sys_menu values('2353', '规则查询',     '2352', '1', '', '', '', '', 1, 0, 'F', '0', '0', 'sam:warningRule:query',    '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu values('2354', '规则新增',     '2352', '2', '', '', '', '', 1, 0, 'F', '0', '0', 'sam:warningRule:add',      '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu values('2355', '规则修改',     '2352', '3', '', '', '', '', 1, 0, 'F', '0', '0', 'sam:warningRule:edit',     '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu values('2356', '规则删除',     '2352', '4', '', '', '', '', 1, 0, 'F', '0', '0', 'sam:warningRule:remove',   '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu values('2357', '规则导出',     '2352', '5', '', '', '', '', 1, 0, 'F', '0', '0', 'sam:warningRule:export',   '#', 'admin', sysdate(), '', null, '');

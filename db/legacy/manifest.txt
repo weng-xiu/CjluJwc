@@ -26,8 +26,8 @@
 0.15|sql/ry_aem_menu.sql|Y|AEM 菜单 2300 段
 0.16|sql/ry_sam_menu.sql|Y|SAM 菜单 2400-2599 段
 0.17|sql/ry_dis_menu.sql|Y|DIS 菜单 2600 段
-0.18|sql/ry_oa_menu.sql|Y|OA 菜单 2600 段
-0.19|sql/ry_oa_menu_2700.sql|Y|OA 菜单补充 2700 段，勿与 0.18 调换顺序
+0.18|sql/ry_oa_menu.sql|N|作废：误占 2300 段与 SAM 撞号（G4/V6.5），由 0.19 完整取代，勿再执行
+0.19|sql/ry_oa_menu_2700.sql|Y|OA 菜单 2700 段，2300 段整段让位给 SAM（G4/V6.5 起为 OA 唯一入口）
 0.20|sql/ry_oa_dict.sql|Y|OA 字典
 0.21|sql/ry_portal_menu.sql|Y|门户菜单 2800 段
 0.22|sql/ry_portal_cms_menu.sql|Y|门户 CMS 菜单 2800 段

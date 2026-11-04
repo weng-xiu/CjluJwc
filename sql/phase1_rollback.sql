@@ -9,14 +9,16 @@
 -- 1. 删除新增菜单数据
 -- ===============================================
 
--- 排课优化菜单及按钮权限
-DELETE FROM `sys_menu` WHERE `menu_id` IN ('2620', '2621', '2622', '2623', '2624', '2625');
+-- 排课优化菜单（数据源头是 fix_schedule_opt_menu.sql，phase1 已不再重复建）
+-- 注意：不要再按 2620-2625 整段删！2621-2625 已被 ry_portal_cms_menu.sql 的
+-- 「文章管理」按钮占用，整段删会误删门户 CMS 的授权行。按 perms 精确删最安全。
+DELETE FROM `sys_menu` WHERE `perms` = 'tpm:scheduleOpt:list';
 
--- 预警规则配置管理菜单及按钮权限
-DELETE FROM `sys_menu` WHERE `menu_id` IN ('2610', '2611', '2612', '2613', '2614', '2615');
+-- 预警规则配置管理菜单及按钮权限（G4/V6.5：已从 2610-2615 改派到 2352-2357）
+DELETE FROM `sys_menu` WHERE `menu_id` IN ('2352', '2353', '2354', '2355', '2356', '2357');
 
--- GPA算法配置管理菜单及按钮权限
-DELETE FROM `sys_menu` WHERE `menu_id` IN ('2600', '2601', '2602', '2603', '2604', '2605');
+-- GPA 算法配置菜单：G4/V6.5 起由 fix_gpa_config_menu.sql 的 2900-2906 提供，
+-- 本回滚脚本不再处理；如需回滚该页，另写成对迁移（db/migration + db/rollback）。
 
 -- ===============================================
 -- 2. 删除新增索引

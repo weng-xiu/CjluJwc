@@ -23,6 +23,13 @@ DELETE FROM sys_user_post WHERE user_id IN (1, 100, 101);
 INSERT INTO sys_user_post (user_id, post_id) VALUES (1, 1);
 
 -- ---------- 2. 业务档案锚点 ----------
+-- 专业 1：下面的 sam_student / 选课种子都引用 major_id=1，但本文件以前只建学生不建专业，
+-- 导致 SamProgramQualityMapper.selectMajorBase 返回空 → 专业质量档案 available=false，
+-- G4 集成用例「专业 1 应能生成质量档案」必然红。补上这行锚点是修基线缺口，不是改断言。
+DELETE FROM brm_major WHERE major_id = 1;
+INSERT INTO brm_major (major_id, major_code, major_name, dept_id, education_level, duration, status, create_by, create_time, remark) VALUES
+(1, 'CI0001', '计算机科学与技术(CI 合成)', 201, '本科', 4, '0', 'admin', NOW(), 'CI 合成专业锚点');
+
 DELETE FROM brm_teacher WHERE teacher_id IN (1, 100);
 INSERT INTO brm_teacher (teacher_id, teacher_code, teacher_name, user_id, gender, dept_id, title, status, create_by, create_time) VALUES
 (1,   '2001', 'weng(测试)', 100, '0', 201, NULL,   '0', 'admin', NOW()),
@@ -47,4 +54,5 @@ SELECT 'ci_anchor_users' AS metric, COUNT(*) AS c FROM sys_user WHERE user_id IN
 UNION ALL SELECT 'ci_teacher', COUNT(*) FROM brm_teacher WHERE teacher_id IN (1,100)
 UNION ALL SELECT 'ci_student', COUNT(*) FROM sam_student WHERE student_id IN (101,10001)
 UNION ALL SELECT 'ci_semester', COUNT(*) FROM brm_semester WHERE semester_id = 1
-UNION ALL SELECT 'ci_campus', COUNT(*) FROM brm_campus WHERE campus_id = 1;
+UNION ALL SELECT 'ci_campus', COUNT(*) FROM brm_campus WHERE campus_id = 1
+UNION ALL SELECT 'ci_major', COUNT(*) FROM brm_major WHERE major_id = 1;

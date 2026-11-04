@@ -1,5 +1,6 @@
 -- 修复 GPA 算法配置页面 404
-USE `yu-CjluJwc`;
+-- 注：G4/V6.5 起不再写 USE `yu-CjluJwc`;——基线重放时库名由 bin/db-baseline.ps1 的 -DbName 指定，
+-- 硬编码库名会在 CI（yu_cjlujwc）与 Linux（库名大小写敏感）下直接报 Unknown database。
 
 -- 父级目录
 INSERT INTO sys_menu VALUES('2900', 'GPA算法', '2200', '4', 'gpa-group', NULL, '', '', 1, 0, 'M', '0', '0', '', 'example', 'admin', sysdate(), '', null, 'GPA算法目录');

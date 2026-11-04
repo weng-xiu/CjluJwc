@@ -12,6 +12,7 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.task.TaskDecorator;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import com.yu.common.utils.MdcUtils;
@@ -110,6 +111,27 @@ public class ThreadPoolConfig
     public ThreadPoolTaskExecutor asyncLogExecutor()
     {
         return boundedExecutor("async-log", 4, 8, 512, Overflow.BACKPRESSURE);
+    }
+
+    /**
+     * 通用池：补回被拆池挤掉的 {@code applicationTaskExecutor} 隐式契约。
+     *
+     * <p>Boot 的 {@code TaskExecutionAutoConfiguration} 给 {@code applicationTaskExecutor} 挂着
+     * {@code @ConditionalOnMissingBean(Executor.class)}——本类一旦声明了上面四个池，它就不再创建这个
+     * 通用执行器。而 Flowable 的 {@code ProcessEngineAutoConfiguration} 是按名字
+     * {@code @Qualifier("applicationTaskExecutor")} 找 AsyncTaskExecutor（异步作业执行器）的，
+     * 找不到则整个进程起不来：
+     * {@code No qualifying bean of type 'org.springframework.core.task.AsyncTaskExecutor'}。
+     * 这是拆池时被连带删掉的隐式契约，必须显式补回，而不是让三方组件去猜别的池。
+     *
+     * <p>规格按「通用、可回压」定：Flowable 异步作业与未指定池的 {@code @Async} 都落这里，
+     * 丢一个就是业务卡单，所以用 BACKPRESSURE 而不是 ABORT。
+     */
+    @Bean(name = "applicationTaskExecutor")
+    @Primary
+    public ThreadPoolTaskExecutor applicationTaskExecutor()
+    {
+        return boundedExecutor("application", 8, 16, 512, Overflow.BACKPRESSURE);
     }
 
     /** 某池累计拒绝次数（0 表示自启动以来从未拒绝）。 */

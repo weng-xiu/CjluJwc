@@ -195,25 +195,24 @@ INSERT INTO sys_dict_data (dict_code, dict_sort, dict_label, dict_value, dict_ty
 (9134,5,'先修课程','5','tpm_rule_type','','','N','0','admin',sysdate());
 
 -- =====================================================================
--- 4. 新增业务动作按钮权限（F 类型，幂等：按 perms 清理重复）
---    菜单ID使用 2700 段，避开已用 2100-2157 与排课优化 2620-2625
+-- 4. 业务动作按钮权限：G4（V6.5）定案为「不建行」
+--    原实现用 2700-2705 建 6 条 F 类型按钮权限，与 ry_oa_menu_2700.sql 的
+--    「OA管理」根目录（2700）及其子项撞号：空库重放执行到本节即主键冲突
+--    （Duplicate entry '2700' for key 'sys_menu.PRIMARY'），基线重放随之中断。
+--    处置：删掉 6 条 INSERT，保留下面的按 perms 清理（兼容在 OA 落库前跑过
+--    本脚本的环境）。判据是实测无引用，而非随口取舍——
+--      · 后端：tpm:plan:publish / tpm:offering:confirm / tpm:adjust:approve /
+--        tpm:round:operate / tpm:enroll:lottery / tpm:enroll:drop 在
+--        yu-*/src/main/java 下 0 处 @PreAuthorize 命中；
+--      · 前端：同 6 个权限字符在 yu-ui / yu-ui-vue3 的 v-hasPermi 中 0 处命中；
+--      · 实态：db/ci/02-meta.sql（2026-10-18 从工作库导出）2700 段是 OA 菜单，
+--        这 6 行从未落库。
+--    即：它们既拦不住任何人，也放不开任何按钮。若将来确有按钮要按权限收敛，
+--    请按「新按钮权限的父页面所在段」取号（TPM 段 2100-2199，当前已用到 2157）。
 -- =====================================================================
 DELETE FROM sys_menu WHERE perms IN
   ('tpm:plan:publish','tpm:offering:confirm','tpm:adjust:approve',
    'tpm:round:operate','tpm:enroll:lottery','tpm:enroll:drop');
 
--- 培养方案发布/废止（挂在培养方案菜单 2102 下）
-INSERT INTO sys_menu VALUES (2700,'方案发布','2102','6','','','','',1,0,'F','0','0','tpm:plan:publish','#','admin',sysdate(),'',NULL,'');
--- 开课确认/取消（挂在开课计划菜单 2106 下）
-INSERT INTO sys_menu VALUES (2701,'开课确认','2106','6','','','','',1,0,'F','0','0','tpm:offering:confirm','#','admin',sysdate(),'',NULL,'');
--- 调停课审批（挂在调停课管理菜单 2108 下）
-INSERT INTO sys_menu VALUES (2702,'调课审批','2108','6','','','','',1,0,'F','0','0','tpm:adjust:approve','#','admin',sysdate(),'',NULL,'');
--- 选课轮次开启/关闭（挂在选课轮次菜单 2110 下）
-INSERT INTO sys_menu VALUES (2703,'轮次操作','2110','6','','','','',1,0,'F','0','0','tpm:round:operate','#','admin',sysdate(),'',NULL,'');
--- 选课抽签（挂在选课名单菜单 2112 下）
-INSERT INTO sys_menu VALUES (2704,'选课抽签','2112','6','','','','',1,0,'F','0','0','tpm:enroll:lottery','#','admin',sysdate(),'',NULL,'');
--- 选课退课（挂在选课名单菜单 2112 下）
-INSERT INTO sys_menu VALUES (2705,'学生退课','2112','7','','','','',1,0,'F','0','0','tpm:enroll:drop','#','admin',sysdate(),'',NULL,'');
-
--- 注意：新按钮权限默认只授权给超级管理员（admin 角色拥有所有权限）。
--- 若需为其他角色开通，请在「系统管理-角色管理」中勾选上述按钮。
+-- 注：上述 6 个业务动作当前不做按钮级授权，仅靠接口层参数校验与状态机把关；
+-- 如日后新增真正的按钮权限，按本文件上方注释的取号规则补，并同步 db/migration。

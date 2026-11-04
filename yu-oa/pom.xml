@@ -12,8 +12,8 @@
     <artifactId>yu-oa</artifactId>
 
     <properties>
-        <!-- JaCoCo 行覆盖率防回归棘轮（当前实测 ~8.0%，下限保守取 0.07） -->
-        <jacoco.line.minimum>0.07</jacoco.line.minimum>
+        <!-- JaCoCo 行覆盖率防回归棘轮（当前实测 ~8.0%，下限保守取 0.07；G5/V6.6 全量复跑实测 15.38%（316/2055），下限上调至 0.13，留 2 个百分点） -->
+        <jacoco.line.minimum>0.13</jacoco.line.minimum>
     </properties>
 
     <description>

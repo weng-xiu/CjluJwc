@@ -12,8 +12,8 @@
     <artifactId>yu-portal</artifactId>
 
     <properties>
-        <!-- JaCoCo 行覆盖率防回归棘轮（当前实测 ~7.3%，下限保守取 0.06） -->
-        <jacoco.line.minimum>0.06</jacoco.line.minimum>
+        <!-- JaCoCo 行覆盖率防回归棘轮（当前实测 ~7.3%，下限保守取 0.06；G5/V6.6 全量复跑实测 63.35%（899/1419），下限上调至 0.61，留 2 个百分点） -->
+        <jacoco.line.minimum>0.61</jacoco.line.minimum>
     </properties>
 
     <description>

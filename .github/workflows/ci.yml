@@ -50,13 +50,8 @@ jobs:
       - name: Run yu-admin tests (system user/notice/role/menu/dept/dictType/post/config/dictData/profile/login/register/aiChat/credential/msgCenter/printTemplate MockMvc contract)
         run: mvn -B -o -pl yu-admin test
 
-      # G4 集成测试（@SpringBootTest 真实栈）已入库但未接入本 CI：
-      #   用例：yu-admin src/test/java/com/yu/integration/（登录链路/选课容量扣减/成绩审批回写，6 例）
-      #   默认套件由 surefire excludedGroups=integration 自动跳过（未起本地栈不会红）。
-      #   本地执行（需 MySQL3306+Redis6379+testdata/apply.ps1 基线）：
-      #     mvn -o -pl yu-admin test -Dexcluded.groups= -Dgroups=integration -Dtest=*IntegrationTest
-      #   CI 接入前置阻塞：空库重建需重放 sql/ 历史脚本，存在 64 处 sys_menu 撞号（见 bin/db-baseline.ps1 头部披露），
-      #   schema 撞号治理完成后再增 integration job（services: mysql+redis）。
+      # G4 集成测试（@SpringBootTest 真实栈，6 类 18 例）已接入独立作业 integration-tests，
+      # 见本文件下方。该作业自带 MySQL/Redis services 与确定性库基线，不依赖本作业。
 
       - name: Upload surefire reports on failure
         if: failure()
@@ -161,11 +156,11 @@ jobs:
         shell: pwsh
         run: ./bin/db-manifest-check.ps1
 
-      # -IgnoreLegacy：64 处历史 sys_menu 撞号（见 db/legacy/MANIFEST.md 「已知阻塞项」）
-      # 只拦新增冲突，存量冲突待基线重放时一次性解决
-      - name: Check sys_menu id segment collisions (new changes only)
+      # G4/V6.5 起放开 -IgnoreLegacy：2300/2600/2700 三段撞号已治理完毕（各归一个模块），
+      # 全量扫描应为 0 FAIL。再挂 -IgnoreLegacy 就等于允许历史撞号复活，所以这里只拦新增，不赦免存量。
+      - name: Check sys_menu id segment collisions (full scan)
         shell: pwsh
-        run: ./bin/db-menu-check.ps1 -IgnoreLegacy
+        run: ./bin/db-menu-check.ps1
 
       # V5.23 S-10：PII 仓库门禁（缺陷报告 S-10：种子文件曾含 821 个身份证号 / 36 个手机号，
       # 其中 78 个身份证校验位合法）。规则见 bin/pii-scan.js 头注释：只拦校验位合法的身份证
@@ -233,12 +228,93 @@ jobs:
       - name: Check dialogGuard slot contract (E7)
         run: node bin/dialog-guard-contract-check.js
 
+  integration-tests:
+    # G4：@SpringBootTest 真实栈（MySQL + Redis + Flowable + MyBatis + Security 全装配）。
+    # 防护对象是分层测试看不见的装配缺陷。接入当时它就抓到两个真故障，不是演练：
+    #   1) T-6 拆池声明了 4 个 Executor，Boot 的 applicationTaskExecutor 自动配置被
+    #      @ConditionalOnMissingBean(Executor.class) 挤掉，Flowable 按名字拿 AsyncTaskExecutor
+    #      拿不到——整个应用根本起不来（见 ThreadPoolConfig#applicationTaskExecutor）；
+    #   2) db/ci/03-anchors.sql 只建 sam_student 不建 brm_major，专业质量档案必然 available=false。
+    # 库基线不走“重放 sql/ 历史脚本”：那是 bin/db-baseline.ps1 的空库重建路径（且依赖 manifest 顺序）。
+    # 这里用 db/ci 三件套 + Flowable 官方 DDL + phase7 种子 + testdata 复位，全程确定性、秒级。
+    name: Integration tests (@SpringBootTest, MySQL + Redis)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: yu_cjlujwc
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_NAME: yu_cjlujwc
+      DB_USER: root
+      DB_PASSWORD: root
+      # 容器内 MySQL 无 TLS、且默认认证插件需要 public key retrieval
+      DB_USE_SSL: 'false'
+      DB_ALLOW_PUBLIC_KEY: 'true'
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: '6379'
+      REDIS_PASSWORD: ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      # 与 backend-tests 同套路：先装上游模块，避免 -am 连带跑无关存量用例
+      - name: Install upstream modules (skip tests)
+        run: mvn -B -pl yu-admin -am install -DskipTests -Djacoco.skip=true
+
+      # 加载顺序有讲究：01 结构 → 02 框架元数据 → Flowable 引擎表 → 03 合成锚点 → 业务种子 → 复位
+      # 注意 sql/flowable_create_all.sql 不能省：db/ci/01-schema.sql 按设计排除了 ACT_*/FLW_*，
+      # 而 it profile 的 flowable.database-schema-update=true 只会「升级」不会从零建，缺表即报
+      # Table 'ACT_GE_PROPERTY' doesn't exist。
+      - name: Load deterministic CI database baseline
+        run: |
+          set -euo pipefail
+          MYSQL="mysql -h127.0.0.1 -P3306 -uroot --default-character-set=utf8mb4 --max_allowed_packet=512M yu_cjlujwc"
+          $MYSQL < db/ci/01-schema.sql
+          $MYSQL < db/ci/02-meta.sql
+          $MYSQL < sql/flowable_create_all.sql
+          $MYSQL < db/ci/03-anchors.sql
+          $MYSQL < sql/phase7_portal_selection_seed.sql
+          $MYSQL -e "source testdata/reset-all.sql"
+
+      # -Dexcluded.groups= 清空 surefire 默认的 integration 排除，-Dgroups=integration 反选标签
+      - name: Run integration tests (6 classes / 18 cases)
+        run: mvn -B -o -pl yu-admin test -Dexcluded.groups= -Dgroups=integration
+
+      - name: Upload integration surefire reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-surefire-reports
+          path: build-temp/yu-admin/surefire-reports/
+
   build-images:
     # Q2 部署阶段：三门禁全绿后构建后端/管理端/门户三镜像；main 推送时打 sha + latest 双标签并推 GHCR，
     # PR 仅跑一次 docker build 验证 Dockerfile 可构建（push=false，不登录不推送），提前暴露镜像层回归。
     name: Build & Push Images (${{ matrix.image.name }})
     runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-build, frontend-lint-vue2, db-hygiene]
+    needs: [backend-tests, frontend-build, frontend-lint-vue2, db-hygiene, integration-tests]
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     permissions:
       contents: read

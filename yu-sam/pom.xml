@@ -12,8 +12,8 @@
     <artifactId>yu-sam</artifactId>
 
     <properties>
-        <!-- JaCoCo 行覆盖率防回归棘轮（Q1 第十六批收口 sam 长尾9控制器接口层：证书补办/学位配置/学位审核/毕业手续/手续环节/注册登记/预警/预警规则/预警帮扶，实测 ~26.4%，下限取 0.24）-->
-        <jacoco.line.minimum>0.24</jacoco.line.minimum>
+        <!-- JaCoCo 行覆盖率防回归棘轮（Q1 第十六批收口 sam 长尾9控制器接口层：证书补办/学位配置/学位审核/毕业手续/手续环节/注册登记/预警/预警规则/预警帮扶，实测 ~26.4%，下限取 0.24；G5/V6.6 全量复跑实测 38.72%（1566/4044），下限上调至 0.36）-->
+        <jacoco.line.minimum>0.36</jacoco.line.minimum>
     </properties>
 
     <description>

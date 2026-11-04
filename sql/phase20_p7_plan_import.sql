@@ -2,8 +2,10 @@
 -- phase20：P7 培养方案导入 —— 按钮权限菜单（tpm:plan:import）
 -- 菜单 ID 3000（方案按钮段 2113-2117 后紧跟课程 2118 无空隙，改用高位空闲段，全局 max=2992）
 -- 幂等：INSERT ... SELECT WHERE NOT EXISTS
+-- 注：G4/V6.5 起不再硬编码 USE `yu-CjluJwc`，库名由调用方指定
+--     （bin/db-baseline.ps1 -DbName / CI 的 yu_cjlujwc），
+--     否则 Linux 下库名大小写敏感会直接 Unknown database 中断重放。
 -- =============================================================
-USE `yu-CjluJwc`;
 
 INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark)
 SELECT 3000, '方案导入', 2102, 6, '', '', '', '', 1, 0, 'F', '0', '0', 'tpm:plan:import', '#', 'admin', sysdate(), 'P7 培养方案Excel导入'

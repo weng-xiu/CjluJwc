@@ -9,8 +9,8 @@
 # 清单来源：db/legacy/manifest.txt（execute=Y 的条目，按序号升序执行）
 # 台账表  ：db_legacy_baseline_log(order_no, script_path, sha256, ok, err, applied_at)
 #           —— 用于回答「这台库到底导到了第几步」，Flyway 基线之上的对账依据。
-# 已知阻塞：sql/ 历史脚本存在 64 处 sys_menu 撞号（见 bin/db-menu-check.ps1 输出），
-#           重放会在第二条 INSERT 处主键冲突中断；先跑 db-menu-check.ps1 确认。
+# 撞号现状：G4/V6.5 已治理完（2300/2600/2700 三段各归一个模块），bin/db-menu-check.ps1
+#           全量扫描 PASS。改动任何 sql/ 脚本或 manifest.txt 后重跑一次全量扫描再重放。
 # ============================================================
 param(
     [string]$DbHost     = "127.0.0.1",
@@ -168,7 +168,7 @@ Write-Output ""
 Write-Output "执行完成：成功 $okCount，跳过 $skipCount，失败 $($failed.Count)，目标库表数量 $tableCount（参考值 163+）"
 if ($failed.Count -gt 0) {
     Write-Output "首个失败点：$($failed[0].Order) $($failed[0].Path)"
-    Write-Output "提示：sys_menu 撞号类失败请用 bin/db-menu-check.ps1 定位，改派 3000+ 号段后 -Resume 续跑。"
+    Write-Output "提示：跑 bin/db-menu-check.ps1 定位撞号；修法三选一（INSERT IGNORE / 先 DELETE 该号 / 整段删并交代数据源），修复后 -Resume 续跑。"
     exit 1
 }
 Write-Output "下一步：以 FLYWAY_ENABLED=true 启动后端，Flyway 将以版本 0 打基线并执行 db/migration/V1 之后的变更。"

@@ -75,20 +75,65 @@ Flyway 社区版不提供 `undo`，因此约定：**每个 `db/migration/Vx__d.s
 | 2000 – 2099 | BRM 基础资源 | `ry_brm_menu.sql` |
 | 2100 – 2199 | TPM 培养过程 | `ry_tpm_menu.sql` |
 | 2200 – 2299 | AEM 考核评价 | `ry_aem_menu.sql` |
-| 2300 – 2399 | ⚠ OA 办公 与 SAM 学籍 **共用段**（历史撞号 45 处） | `ry_oa_menu.sql`、`ry_sam_menu.sql` |
+| 2300 – 2399 | **SAM 学籍学位独占**（G4/V6.5 起；2352-2357 为预警规则配置） | `ry_sam_menu.sql`、`phase1_upgrade.sql` |
 | 2400 – 2499 | DIS 数据对接 | `ry_dis_menu.sql` |
 | 2500 – 2599 | Portal 门户 / 用户管理增强 | `ry_portal_menu.sql`、`user_mgmt_upgrade.sql` |
-| 2600 – 2699 | ⚠ Portal CMS 与 phase1 增量 **共用段**（历史撞号 13 处） | `ry_portal_cms_menu.sql`、`phase1_upgrade.sql` |
-| 2700 – 2799 | ⚠ OA 补充与 phase4 增量 **共用段**（历史撞号 6 处） | `ry_oa_menu_2700.sql`、`phase4_tpm_enhancement.sql` |
+| 2600 – 2699 | **Portal CMS 独占**（2620 排课优化为 TPM 页面借驻） | `ry_portal_cms_menu.sql`、`fix_schedule_opt_menu.sql` |
+| 2700 – 2799 | **OA 办公独占**（G4/V6.5 起） | `ry_oa_menu_2700.sql` |
 | 2800 – 2899 | 空闲（历史上被当作设计意图登记，实际未使用） | — |
-| 2900 – 2999 | 菜单修正补丁 | `fix_gpa_config_menu.sql`、`fix_schedule_opt_menu.sql` |
+| 2900 – 2999 | 菜单修正补丁 | `fix_gpa_config_menu.sql` |
 | **3000 以上** | **基线之后的新增变更专用段** | `db/migration/` |
 
 > **新变更一律从 3000 往上取号，并先跑冲突校验**：
 > `powershell -File bin\db-menu-check.ps1 -Files db\migration\V20261002_1__xxx.sql`
 >
-> 带 ⚠ 的三段是历史遗留冲突，CI 以 `-IgnoreLegacy` 降为不计，但**不允许**
-> `db/migration/` 再往这些段里插菜单（会被判为与历史脚本的新增冲突）。
+> **G4/V6.5 治理结果（不要再照旧文档里「三段共用、64 处撞号」的说法）**：
+> 2300 / 2600 / 2700 三段已各自归属唯一模块，`bin\db-menu-check.ps1` 全量扫描
+> PASS（0 FAIL）。当年三类共用段的最终归属，均以**实态库**（`db/ci/02-meta.sql`）为准
+> （实测：2300-2399 的 45 行全是 SAM、`oa:*` 的 47 行全在 2700-2751）：
+>
+> - 2300-2399：SAM 赢。`ry_oa_menu.sql` 降为 `execute=N`（manifest 0.18），
+>   由 `ry_oa_menu_2700.sql`（0.19）完整重编号为 2700-2751 并改名 3 个路由（`oaNotice` /
+>   `oaSchedule-group` / `oaSchedule`，避开 RuoYi 路由重名）。
+> - 2600-2699：Portal CMS 赢。`phase1_upgrade.sql` 的 GPA（2600-2605）删（已由
+>   `fix_gpa_config_menu.sql` 的 2900-2906 取代）、排课优化按钮（2621-2625）删（CMS 已占，
+>   且 `tpm:scheduleOpt:*` 前后端均零引用）、预警规则配置改派 2352-2357；
+>   `fix_schedule_opt_menu.sql` 只保留 2620 一个页面菜单。
+> - 2700-2799：OA 赢。`phase4_tpm_enhancement.sql` 的 6 条 TPM 按钮权限删除，
+>   因为那 6 个 perms 后端 0 处 `@PreAuthorize`、前端 0 处 `v-hasPermi`，且从未落库。
+>
+> 门禁现在还能拦两类历史盲区：`INSERT IGNORE` 写法的撞号（以前正则只认
+> `insert into`，整份 `fix_schedule_opt_menu.sql` 被漏扫），以及同名重复但后执行者是
+> 裸 INSERT（名字一样也照样 1062）。
+
+> ⚠ **撞号不产生“双份行”，不要写“清场迁移”**：`sys_menu.menu_id` 是主键，
+> 两份声明重叠时**只有先落库的那份活着**，后者 `INSERT` 直接 1062。
+> 按“把 2300 段影子行删掉”的思路动手，删掉的正是 SAM 的有效菜单。
+> 治理撞号只改脚本；存量库除非先用 `SELECT perms, COUNT(*) … GROUP BY perms` 核对过，否则不动。
+
+## CI 确定性基线（`db/ci/`）
+
+集成测试**不重放 `sql/` 历史脚本**（那要依赖 manifest 顺序，且与存量库的实际顺序不同），
+而是用一小组确定性文件把空库建到“能跑业务用例”：
+
+| 顺序 | 文件 | 内容 |
+|---|---|---|
+| 1 | `db/ci/01-schema.sql` | 122 张业务表结构，**按设计不含 `ACT_*` / `FLW_*`** |
+| 2 | `db/ci/02-meta.sql` | 8 张框架元数据表（含 608 行 `sys_menu`），2026-10-18 工作库快照 |
+| 3 | `sql/flowable_create_all.sql` | 62 张 Flowable 引擎表 + `common.schema.version=7.1.0.2` |
+| 4 | `db/ci/03-anchors.sql` | 合成账号与业务锚点（学生 101 / 专业 1 / 教师 100 …） |
+| 5 | `sql/phase7_portal_selection_seed.sql` | 门户选课种子 |
+| 6 | `testdata/reset-all.sql` | 复位到用例断言口径 |
+
+两条容易踩的坑：
+
+- **第 3 步不能省**：`flowable.database-schema-update=true` 只会“升级”不会从零建，
+  缺表时启动直接 `Table 'ACT_GE_PROPERTY' doesn't exist`（it profile 原注释说 01-schema
+  含 `ACT_*`，与文件事实相反）。
+- **第 2 步是快照，不是最新态**：`02-meta.sql` 之后新增的菜单（如预警规则配置
+  2352-2357）与表行都不在其中。集成用例若要依赖某行元数据，必须在
+  `03-anchors.sql` 显式补锚点并写清判据（例：`brm_major` 缺失会让专业质量档案
+  永远 `available=false`），不要假设“存量库有”。
 
 ## 如何执行
 
