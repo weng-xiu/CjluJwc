@@ -11,6 +11,12 @@
 
     <artifactId>yu-quartz</artifactId>
 
+    <properties>
+        <!-- JaCoCo 行覆盖率防回归棘轮（G5/V6.7 首次建基线）：全量单测复跑实测 15.52%（81/522，6 例）；
+             本模块仅 522 行，新增一个未覆盖的类就能把比例拉掉 15 点以上，故比「实测 − 2 点」再多留 1 点，取 0.12 -->
+        <jacoco.line.minimum>0.12</jacoco.line.minimum>
+    </properties>
+
     <description>
         quartz定时任务
     </description>

@@ -11,6 +11,15 @@
 
     <artifactId>yu-system</artifactId>
 
+    <properties>
+        <!-- JaCoCo 行覆盖率防回归棘轮。V6.7 首次建基线 0.08（实测 10.05%，344/3423，54 例）；
+             V6.9 补 AiTextAnalyzer（静态纯函数，142/144 行）与 SysDeptServiceImpl（祖先链重算与院系同步，
+             85/95 行）共 38 例后，全量单测复跑实测 17.50%（598/3418，92 例），按「实测 − 2 点」上调到 0.15。
+             仍为零覆盖的大块：SysPrintServiceImpl（445 行）、SysAiChatServiceImpl（210 行）、
+             SysMenuServiceImpl（193 行）、SysAiEvalServiceImpl / SysNotifyServiceImpl（各 109 行）。 -->
+        <jacoco.line.minimum>0.15</jacoco.line.minimum>
+    </properties>
+
     <description>
         system系统模块
     </description>

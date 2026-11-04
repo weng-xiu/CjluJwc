@@ -72,7 +72,14 @@ public class Convert
         }
 
         final String valueStr = toStr(value, null);
-        return StringUtils.isEmpty(valueStr) ? defaultValue : valueStr.charAt(0);
+        if (StringUtils.isEmpty(valueStr))
+        {
+            // 不能写成三元表达式：defaultValue 是 Character，charAt 返回 char，
+            // 二者混合会让三元整体提升为 char，进而把 defaultValue 拆箱 —— 空串时抛 NPE，
+            // 与「转换失败返回默认值」的契约相反（G5 由 ConvertTest 发现并修复）。
+            return defaultValue;
+        }
+        return valueStr.charAt(0);
     }
 
     /**

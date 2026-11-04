@@ -11,6 +11,12 @@
 
     <artifactId>yu-framework</artifactId>
 
+    <properties>
+        <!-- JaCoCo 行覆盖率防回归棘轮（G5/V6.7 首次建基线）：全量单测复跑实测 15.23%（219/1438，23 例），
+             下限按「实测 − 2 点」取 0.13 -->
+        <jacoco.line.minimum>0.13</jacoco.line.minimum>
+    </properties>
+
     <description>
         framework框架核心
     </description>
