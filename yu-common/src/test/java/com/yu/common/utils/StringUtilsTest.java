@@ -89,7 +89,9 @@ class StringUtilsTest
     @DisplayName("hide：区间内字符替换成 *，越界与倒序区间返回空串")
     void hide()
     {
-        assertEquals("138****5678", StringUtils.hide("13812345678", 3, 7), "手机号打码是主要用途");
+        // 用合成号段 1380000xxxx（口径见 sql/desensitize-test-data.sql），
+        // 否则 bin/pii-scan.js 会把测试 fixture 当成真实手机号拦住 CI
+        assertEquals("138****1234", StringUtils.hide("13800001234", 3, 7), "手机号打码是主要用途");
         assertEquals("", StringUtils.hide(null, 0, 1));
         assertEquals("", StringUtils.hide("", 0, 1));
         assertEquals("", StringUtils.hide("ab", 5, 6), "起点越界必须返回空串，不能抛异常");

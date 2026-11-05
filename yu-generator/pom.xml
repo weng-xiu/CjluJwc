@@ -11,6 +11,17 @@
 
     <artifactId>yu-generator</artifactId>
 
+    <properties>
+        <!-- JaCoCo 行覆盖率防回归棘轮。V6.10 首次建基线：本模块此前无 src/test，
+             新增 GenUtilsTest / VelocityUtilsTest / GenTableServiceImplTest 共 45 例后
+             实测 78.80%（591/750 行；分支 75.96%），按「实测 − 2 点」取 0.76。
+             previewCode/downloadCode 走真 Velocity 渲染（不 mock 模板引擎），
+             因此这组数字代表「模板 + 上下文变量」确实被跑过而不是被绕过。
+             仍为零覆盖的大块：GenController（69 行，@Controller 层等 MockMvc 批次）、
+             GenConfig（12 行，@Value setter，只给 Spring 容器用）——不靠棘轮倒逼硬测。 -->
+        <jacoco.line.minimum>0.76</jacoco.line.minimum>
+    </properties>
+
     <description>
         generator代码生成
     </description>
@@ -33,6 +44,13 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid-spring-boot-4-starter</artifactId>
+        </dependency>
+
+        <!-- 单元测试 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

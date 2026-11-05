@@ -238,20 +238,30 @@ public class GenUtils
 
     /**
      * 获取字段长度
-     * 
+     *
+     * <p>只认括号内的第一个整数值（{@code varchar(64)} → 64、{@code decimal(10,2)} → 10）。
+     * 多参类型与非数字参数（{@code enum('a','b')}）一律回落 0：本方法的返回值只用于
+     * 「字符串列是不是长文本」这类判定，认不出来的应当退化成默认控件，而不是把
+     * 「表里有一个 decimal 列」升级成 {@code NumberFormatException} 打掉整条导入链路。</p>
+     *
      * @param columnType 列类型
-     * @return 截取后的列类型
+     * @return 字段长度；无法解析时返回 0
      */
     public static Integer getColumnLength(String columnType)
     {
         if (StringUtils.indexOf(columnType, "(") > 0)
         {
             String length = StringUtils.substringBetween(columnType, "(", ")");
-            return Integer.valueOf(length);
+            if (StringUtils.isNotEmpty(length))
+            {
+                String integerPart = StringUtils.substringBefore(length, ",").trim();
+                // 长度上限 9 位：避免超长数字串在 Integer.valueOf 上溢出抛异常
+                if (StringUtils.isNumeric(integerPart) && integerPart.length() <= 9)
+                {
+                    return Integer.valueOf(integerPart);
+                }
+            }
         }
-        else
-        {
-            return 0;
-        }
+        return 0;
     }
 }
