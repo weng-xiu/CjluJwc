@@ -14,9 +14,12 @@
     <properties>
         <!-- JaCoCo 行覆盖率防回归棘轮。V6.7 首次建基线 0.03（实测 5.08%，48 例）；
              V6.8 补 Convert / EscapeUtil / Base64 / StringUtils / DateUtils 五个纯函数工具类的契约测试后，
-             全量单测复跑实测 20.76%（945/4551，98 例），按「实测 − 2 点」上调到 0.18。
-             仍为零覆盖的大块：ExcelUtil（785 行，POI 全链路）、ReflectUtils、IpUtils、UserAgentUtils、HttpUtils。 -->
-        <jacoco.line.minimum>0.18</jacoco.line.minimum>
+             全量单测复跑实测 20.76%（945/4551，98 例），按「实测 − 2 点」上调到 0.18；
+             V6.12 补 ExcelUtil 导出/导入全链路与单元格读取的契约测试（42 例，真 POI 工作簿写盘再回读），
+             全量单测复跑实测 40.09%（1827/4557，140 例），其中 ExcelUtil 从 0 提升到 89.9%（709/789），
+             按「实测 − 2 点」上调到 0.38。
+             仍为零覆盖的大块：IpUtils、UserAgentUtils、HttpUtils；ReflectUtils 仅 24/139。 -->
+        <jacoco.line.minimum>0.38</jacoco.line.minimum>
     </properties>
 
     <description>

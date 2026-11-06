@@ -54,12 +54,17 @@ public class FileTypeUtils
     public static String getFileExtendName(byte[] photoByte)
     {
         String strFileExtendName = "JPG";
-        if ((photoByte[0] == 71) && (photoByte[1] == 73) && (photoByte[2] == 70) && (photoByte[3] == 56)
+        // 图片读取失败或字节被截断时按默认类型处理，否则下面的魔数比较会数组越界
+        if (photoByte == null || photoByte.length < 2)
+        {
+            return strFileExtendName;
+        }
+        if (photoByte.length >= 6 && (photoByte[0] == 71) && (photoByte[1] == 73) && (photoByte[2] == 70) && (photoByte[3] == 56)
                 && ((photoByte[4] == 55) || (photoByte[4] == 57)) && (photoByte[5] == 97))
         {
             strFileExtendName = "GIF";
         }
-        else if ((photoByte[6] == 74) && (photoByte[7] == 70) && (photoByte[8] == 73) && (photoByte[9] == 70))
+        else if (photoByte.length >= 10 && (photoByte[6] == 74) && (photoByte[7] == 70) && (photoByte[8] == 73) && (photoByte[9] == 70))
         {
             strFileExtendName = "JPG";
         }
@@ -67,7 +72,7 @@ public class FileTypeUtils
         {
             strFileExtendName = "BMP";
         }
-        else if ((photoByte[1] == 80) && (photoByte[2] == 78) && (photoByte[3] == 71))
+        else if (photoByte.length >= 4 && (photoByte[1] == 80) && (photoByte[2] == 78) && (photoByte[3] == 71))
         {
             strFileExtendName = "PNG";
         }

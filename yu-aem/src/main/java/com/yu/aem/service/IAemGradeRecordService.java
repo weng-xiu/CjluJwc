@@ -1,6 +1,7 @@
 package com.yu.aem.service;
 
 import java.util.List;
+import com.yu.aem.domain.AemGradeImportResult;
 import com.yu.aem.domain.AemGradeRecord;
 
 /**
@@ -33,15 +34,16 @@ public interface IAemGradeRecordService
 
     /**
      * 批量导入成绩（Excel）。
-     * 自动校验：必填字段、分数范围0-100；按平时30%+考试70%计算总成绩（若总成绩为空）；
-     * 按默认GPA算法计算绩点与等级；重复(学生+课程+学期+类型)执行更新。
+     * 自动校验：必填字段、分数范围0-100；总成绩为空时按权重计算；自动算绩点与等级。
+     * 重复(学生+课程+学期+类型)口径：未提交(0)/已驳回(3) 覆盖为新值；
+     * 已提交待审(1)/已锁定(2) 不覆盖，直接跳过并回显 Excel 行号。
      *
      * @param list           Excel解析后的成绩列表
      * @param operator       操作人
      * @param algorithmCode  GPA算法代码（空则用默认）
-     * @return 成功导入条数
+     * @return 导入结果（处理条数/跳过条数/跳过行号/数据库影响行数）
      */
-    public int importGrade(List<AemGradeRecord> list, String operator, String algorithmCode);
+    public AemGradeImportResult importGrade(List<AemGradeRecord> list, String operator, String algorithmCode);
 
     /** A5：教师提交成绩（批量） */
     public int submitGrade(Long[] gradeIds, String operator);

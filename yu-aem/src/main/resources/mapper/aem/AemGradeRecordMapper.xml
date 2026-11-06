@@ -194,7 +194,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select credit from tpm_course_library where course_id = #{courseId}
     </select>
 
-    <!-- 批量新增成绩（Excel导入），重复键(uk_grade_scset)时更新分数字段 -->
+    <!-- 批量新增成绩（Excel导入），重复键(uk_grade_scset)时更新分数字段。
+         覆盖口径：只有「未提交(0)/已驳回(3)」的成绩允许被覆盖；「已提交待审(1)/已锁定(2)」
+         属于已定稿成绩，保持原值不动（否则一次重复导入就能绕过审核把锁定成绩改掉）。
+         条件写成 if(ifnull(submit_status,'0') in ('0','3'), 新值, 原值)：ODKU 中的裸列名
+         指向当前行已有值，values(x) 指向本次待插入值；submit_status 不在赋值列表里，
+         因此逐列读取该值时不会被前面的赋值影响。未知状态按「受保护」处理。 -->
     <insert id="batchInsert" parameterType="java.util.List">
         insert into aem_grade_record
         (student_id, course_id, semester_id, exam_type, regular_score, exam_score,
@@ -207,15 +212,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
              #{item.createBy}, #{item.createTime})
         </foreach>
         on duplicate key update
-            regular_score = values(regular_score),
-            exam_score = values(exam_score),
-            total_score = values(total_score),
-            grade_point = values(grade_point),
-            grade_level = values(grade_level),
-            is_pass = values(is_pass),
-            update_by = values(create_by),
-            update_time = CURRENT_TIMESTAMP
+            regular_score = if(ifnull(submit_status, '0') in ('0', '3'), values(regular_score), regular_score),
+            exam_score    = if(ifnull(submit_status, '0') in ('0', '3'), values(exam_score), exam_score),
+            total_score   = if(ifnull(submit_status, '0') in ('0', '3'), values(total_score), total_score),
+            grade_point   = if(ifnull(submit_status, '0') in ('0', '3'), values(grade_point), grade_point),
+            grade_level   = if(ifnull(submit_status, '0') in ('0', '3'), values(grade_level), grade_level),
+            is_pass       = if(ifnull(submit_status, '0') in ('0', '3'), values(is_pass), is_pass),
+            update_by     = if(ifnull(submit_status, '0') in ('0', '3'), values(create_by), update_by),
+            update_time   = if(ifnull(submit_status, '0') in ('0', '3'), CURRENT_TIMESTAMP, update_time)
     </insert>
+
+    <!-- Excel 导入前置查询：取指定学期下「已提交待审(1)/已锁定(2)」的成绩键，
+         供 Service 剔除不可覆盖的行并回显跳过明细。走 idx_grade_semester_course。
+         exam_type 用 ifnull(...,'0') 归一：唯一索引不约束 NULL，而业务上 NULL 即正考，
+         不归一会让历史 NULL 行漏出跳过判定、被重复导入再插一行。 -->
+    <select id="selectLockedGradeKeys" resultMap="AemGradeRecordResult">
+        select grade_id, student_id, course_id, semester_id, ifnull(exam_type, '0') as exam_type, submit_status
+        from aem_grade_record
+        where semester_id in
+        <foreach collection="semesterIds" item="semesterId" open="(" separator="," close=")">#{semesterId}</foreach>
+        and submit_status in ('1', '2')
+    </select>
 
     <!-- A5：教师提交成绩（未提交/已驳回→已提交待审），锁定记录不受影响 -->
     <update id="submitGradeBatch">

@@ -28,6 +28,12 @@ public interface AemGradeRecordMapper
     /** 批量新增成绩记录（Excel导入使用） */
     public int batchInsert(List<AemGradeRecord> list);
 
+    /**
+     * Excel 导入前置查询：取指定学期下「已提交待审(1)/已锁定(2)」的成绩键。
+     * 导入不得覆盖这些行（成绩已定稿），Service 据此跳过并回显跳过明细。
+     */
+    public List<AemGradeRecord> selectLockedGradeKeys(@Param("semesterIds") List<Long> semesterIds);
+
     public Double selectCourseCreditByCourseId(Long courseId);
 
     /** A5：教师提交成绩（未提交/已驳回 → 已提交待审），锁定记录不受影响 */

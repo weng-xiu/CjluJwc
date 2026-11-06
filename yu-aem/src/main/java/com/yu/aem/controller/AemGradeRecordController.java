@@ -19,6 +19,7 @@ import com.yu.common.annotation.Log;
 import com.yu.common.core.controller.BaseController;
 import com.yu.common.core.domain.AjaxResult;
 import com.yu.common.enums.BusinessType;
+import com.yu.aem.domain.AemGradeImportResult;
 import com.yu.aem.domain.AemGradeRecord;
 import com.yu.aem.service.IAemGradeRecordService;
 import com.yu.common.utils.poi.ExcelUtil;
@@ -110,8 +111,15 @@ public class AemGradeRecordController extends BaseController
     {
         ExcelUtil<AemGradeRecord> util = new ExcelUtil<AemGradeRecord>(AemGradeRecord.class);
         List<AemGradeRecord> list = util.importExcel(file.getInputStream());
-        int count = aemGradeRecordService.importGrade(list, getUsername(), algorithmCode);
-        return success("导入成功，共处理 " + count + " 条成绩");
+        AemGradeImportResult result = aemGradeRecordService.importGrade(list, getUsername(), algorithmCode);
+        String message = "导入成功，共处理 " + result.getProcessed() + " 条成绩";
+        if (result.getSkipped() > 0)
+        {
+            // 跳过的是已定稿成绩：必须回显，否则用户会误以为已更新
+            message += "；跳过 " + result.getSkipped() + " 条已提交/已锁定成绩（Excel 第 "
+                    + result.skippedRowSummary(10) + " 行），如需修改请先驳回或解锁";
+        }
+        return success(message);
     }
 
     /**

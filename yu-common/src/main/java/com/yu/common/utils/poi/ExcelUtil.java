@@ -511,8 +511,13 @@ public class ExcelUtil<T>
                         }
                         else if (ColumnType.IMAGE == attr.cellType() && StringUtils.isNotEmpty(pictures))
                         {
-                            StringBuilder propertyString = new StringBuilder();
                             List<PictureData> images = pictures.get(row.getRowNum() + "_" + entry.getKey());
+                            if (images == null)
+                            {
+                                // 该行这一列没有图片（后续补传是常态），跳过赋值，不能让整批导入失败
+                                continue;
+                            }
+                            StringBuilder propertyString = new StringBuilder();
                             for (PictureData picture : images)
                             {
                                 byte[] data = picture.getData();
@@ -1163,6 +1168,11 @@ public class ExcelUtil<T>
                 for (String imagePath : imagePaths)
                 {
                     byte[] data = ImageUtils.getImage(imagePath);
+                    if (data == null)
+                    {
+                        // 附件被移走或路径失效时留空，不能因为一张图让整张表导不出去
+                        continue;
+                    }
                     getDrawingPatriarch(cell.getSheet()).createPicture(anchor, cell.getSheet().getWorkbook().addPicture(data, getImageType(data)));
                 }
             }

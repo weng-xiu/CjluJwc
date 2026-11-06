@@ -169,6 +169,7 @@ CREATE TABLE `aem_grade_record` (
   `submit_time` datetime DEFAULT NULL COMMENT '提交时间',
   `lock_time` datetime DEFAULT NULL COMMENT '锁定时间',
   PRIMARY KEY (`grade_id`),
+  UNIQUE KEY `uk_grade_scset` (`student_id`,`course_id`,`semester_id`,`exam_type`),
   KEY `idx_grade_submit_status` (`submit_status`),
   KEY `idx_grade_student_semester` (`student_id`,`semester_id`),
   KEY `idx_grade_semester_course` (`semester_id`,`course_id`)
@@ -676,6 +677,24 @@ CREATE TABLE `dis_interface_config` (
   PRIMARY KEY (`interface_id`),
   KEY `idx_system_id` (`system_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3002 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='接口配置表';
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `dis_source_priority`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `dis_source_priority` (
+  `priority_id` bigint NOT NULL AUTO_INCREMENT COMMENT '优先级配置ID',
+  `source_code` varchar(50) COLLATE utf8mb4_general_ci NOT NULL COMMENT '来源系统编码（与裁决候选 sourceCode 对齐）',
+  `source_name` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '来源系统名称',
+  `priority` int DEFAULT '0' COMMENT '权威优先级（数值越大越权威，未登记源回落0）',
+  `status` char(1) COLLATE utf8mb4_general_ci DEFAULT '0' COMMENT '状态（0正常 1停用）',
+  `create_by` varchar(64) COLLATE utf8mb4_general_ci DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) COLLATE utf8mb4_general_ci DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  `remark` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`priority_id`),
+  UNIQUE KEY `uk_source_code` (`source_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='主数据裁决数据源优先级配置';
 /*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dis_sync_task`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;

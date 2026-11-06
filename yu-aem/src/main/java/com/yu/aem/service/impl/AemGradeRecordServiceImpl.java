@@ -15,6 +15,7 @@ import com.yu.aem.mapper.AemGradeReviewMapper;
 import com.yu.aem.mapper.AemGpaAlgorithmConfigMapper;
 import com.yu.aem.domain.AemGradeRecord;
 import com.yu.aem.domain.AemGradeReview;
+import com.yu.aem.domain.AemGradeImportResult;
 import com.yu.aem.domain.AemGpaAlgorithmConfig;
 import com.yu.aem.service.IAemGradeRecordService;
 import com.yu.aem.service.IAemGradeWeightService;
@@ -24,8 +25,10 @@ import com.yu.common.utils.bean.FieldChange;
 import com.yu.common.utils.bean.FieldDiffUtils;
 import com.yu.system.service.IDataChangeAuditService;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -310,7 +313,7 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public int importGrade(List<AemGradeRecord> list, String operator, String algorithmCode)
+    public AemGradeImportResult importGrade(List<AemGradeRecord> list, String operator, String algorithmCode)
     {
         if (list == null || list.isEmpty())
         {
@@ -356,7 +359,72 @@ public class AemGradeRecordServiceImpl implements IAemGradeRecordService
             record.setCreateBy(operator);
             record.setCreateTime(now);
         }
-        return aemGradeRecordMapper.batchInsert(list);
+        // 重复导入口径（已拍板）：未提交/已驳回的成绩覆盖，已提交待审/已锁定的保持原值。
+        // 先在校验与算分之后剔除定稿行，再交给 batchInsert；SQL 侧同样有 if(...) 谓词兜底，
+        // 两道防线缺一不可（查询与写入之间存在并发提交/锁定的窗口）。
+        AemGradeImportResult result = new AemGradeImportResult();
+        List<AemGradeRecord> editable = excludeFinalizedRecords(list, result);
+        if (!editable.isEmpty())
+        {
+            result.setAffectedRows(aemGradeRecordMapper.batchInsert(editable));
+        }
+        return result;
+    }
+
+    /**
+     * 剔除本次导入中「已提交待审(1)/已锁定(2)」的成绩行，并把被跳过的 Excel 行号记入 result。
+     *
+     * <p>按学期批量查一次定稿键（走 idx_grade_semester_course），不在循环里逐行查库。
+     * 未命中定稿集合的行原样保留，保证「未提交/已驳回」仍可被重复导入覆盖。</p>
+     *
+     * @param list   已通过校验并算好分数/绩点的导入行
+     * @param result 导入结果（回填跳过条数与行号）
+     * @return 允许写入的行（可能为空）
+     */
+    private List<AemGradeRecord> excludeFinalizedRecords(List<AemGradeRecord> list, AemGradeImportResult result)
+    {
+        Set<Long> semesterIds = new LinkedHashSet<>();
+        for (AemGradeRecord record : list)
+        {
+            semesterIds.add(record.getSemesterId());
+        }
+        Set<String> finalizedKeys = new HashSet<>();
+        List<AemGradeRecord> finalized = aemGradeRecordMapper.selectLockedGradeKeys(new ArrayList<>(semesterIds));
+        if (finalized != null)
+        {
+            for (AemGradeRecord record : finalized)
+            {
+                finalizedKeys.add(gradeKey(record));
+            }
+        }
+        List<AemGradeRecord> editable = new ArrayList<>(list.size());
+        for (int i = 0; i < list.size(); i++)
+        {
+            AemGradeRecord record = list.get(i);
+            if (finalizedKeys.contains(gradeKey(record)))
+            {
+                // Excel 第 1 行是表头，列表下标 0 对应 Excel 第 2 行
+                result.addSkippedRow(i + 2);
+                continue;
+            }
+            editable.add(record);
+        }
+        result.setProcessed(editable.size());
+        return editable;
+    }
+
+    /**
+     * 成绩唯一键，列与唯一索引 uk_grade_scset 一致；exam_type 空值按正考 '0' 归一
+     * （唯一索引不约束 NULL，但业务上二者同属一条成绩）。
+     */
+    private String gradeKey(AemGradeRecord record)
+    {
+        String examType = record.getExamType();
+        if (examType == null || examType.isEmpty())
+        {
+            examType = "0";
+        }
+        return record.getStudentId() + "|" + record.getCourseId() + "|" + record.getSemesterId() + "|" + examType;
     }
 
     @Override
