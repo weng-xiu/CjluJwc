@@ -76,6 +76,11 @@ public class ReflectUtils
     @SuppressWarnings("unchecked")
     public static <E> E getFieldValue(final Object obj, final String fieldName)
     {
+        // getAccessibleField 对 null 目标返回 null，但下面的日志行会取 obj.getClass()，必须先挡住
+        if (obj == null)
+        {
+            return null;
+        }
         Field field = getAccessibleField(obj, fieldName);
         if (field == null)
         {
@@ -99,6 +104,11 @@ public class ReflectUtils
      */
     public static <E> void setFieldValue(final Object obj, final String fieldName, final E value)
     {
+        // 与 getFieldValue 同理：日志行会取 obj.getClass()，null 目标直接忽略
+        if (obj == null)
+        {
+            return;
+        }
         Field field = getAccessibleField(obj, fieldName);
         if (field == null)
         {

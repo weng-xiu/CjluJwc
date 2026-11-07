@@ -171,7 +171,9 @@ public class ServletUtils
         }
 
         String uri = request.getRequestURI();
-        if (StringUtils.inStringIgnoreCase(uri, ".json", ".xml"))
+        // 注意：inStringIgnoreCase 是「整串全等」比较，拿 uri 跟 ".json" 比永远为 false，
+        // 这段曾经是死分支，导致 /api/notice.json 这类请求被判成普通页面请求。
+        if (StringUtils.endsWithIgnoreCase(uri, ".json") || StringUtils.endsWithIgnoreCase(uri, ".xml"))
         {
             return true;
         }

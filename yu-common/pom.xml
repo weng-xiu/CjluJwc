@@ -17,9 +17,13 @@
              全量单测复跑实测 20.76%（945/4551，98 例），按「实测 − 2 点」上调到 0.18；
              V6.12 补 ExcelUtil 导出/导入全链路与单元格读取的契约测试（42 例，真 POI 工作簿写盘再回读），
              全量单测复跑实测 40.09%（1827/4557，140 例），其中 ExcelUtil 从 0 提升到 89.9%（709/789），
-             按「实测 − 2 点」上调到 0.38。
-             仍为零覆盖的大块：IpUtils、UserAgentUtils、HttpUtils；ReflectUtils 仅 24/139。 -->
-        <jacoco.line.minimum>0.38</jacoco.line.minimum>
+             按「实测 − 2 点」上调到 0.38；
+             V6.13 补 HTMLFilter / IpUtils / ReflectUtils / ServletUtils / UserAgentUtils 五个纯逻辑工具类
+             （131 例，不依赖容器与网络），全量复跑实测 51.43%（2349/4567，271 例），
+             五类分别达到 HTMLFilter 239/250、IpUtils 127/134、ReflectUtils 138/143、
+             ServletUtils 37/44、UserAgentUtils 109/110，按「实测 − 2 点」上调到 0.49。
+             仍未覆盖的大块只剩 HttpUtils（106 行，真实发 HTTP 请求，需另立批次用本地桩服务）。 -->
+        <jacoco.line.minimum>0.49</jacoco.line.minimum>
     </properties>
 
     <description>

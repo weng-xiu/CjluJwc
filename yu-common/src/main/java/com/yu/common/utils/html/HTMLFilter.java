@@ -197,6 +197,11 @@ public final class HTMLFilter
      */
     public String filter(final String input)
     {
+        if (input == null)
+        {
+            // EscapeUtil.clean 是异常消息的清洗入口，null 打进来不能把异常处理器自己拖崩
+            return null;
+        }
         reset();
         String s = input;
 
@@ -387,7 +392,8 @@ public final class HTMLFilter
                         {
                             paramValue = processParamProtocol(paramValue);
                         }
-                        params.append(' ').append(paramName).append("=\\\"").append(paramValue).append("\\\"");
+                        // 定界符必须是一对裸双引号：写成 \\\" 会让反斜杠进到属性值里，浏览器解析出的 href 变成 "\http://..."
+                        params.append(' ').append(paramName).append("=\"").append(paramValue).append("\"");
                     }
                 }
 

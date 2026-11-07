@@ -131,7 +131,8 @@ public class IpUtils
      */
     public static byte[] textToNumericFormatV4(String text)
     {
-        if (text.length() == 0)
+        // null 与空串同义：都是「给不出地址」，返回 null 由调用方按内网/不匹配处理
+        if (text == null || text.length() == 0)
         {
             return null;
         }
@@ -263,7 +264,8 @@ public class IpUtils
             {
                 if (false == isUnknown(subIp))
                 {
-                    ip = subIp;
+                    // 逗号后的空格必须去掉，否则带空格的 IP 落进登录日志后跟白名单永远对不上
+                    ip = subIp.trim();
                     break;
                 }
             }
@@ -308,7 +310,8 @@ public class IpUtils
         boolean isMatchedSeg = true;
         for (int i = 0; i < s1.length && !s1[i].equals("*"); i++)
         {
-            if (!s1[i].equals(s2[i]))
+            // 通配串的定值段多于目标 IP 的段数时直接判不匹配，不能靠 s2[i] 抛越界来表达
+            if (i >= s2.length || !s1[i].equals(s2[i]))
             {
                 isMatchedSeg = false;
                 break;
@@ -334,6 +337,11 @@ public class IpUtils
         String[] sips = iparea.substring(0, idx).split("\\.");
         String[] sipe = iparea.substring(idx + 1).split("\\.");
         String[] sipt = ip.split("\\.");
+        // 按 4 段取下标，任何一端段数不够都直接判不匹配；格式校验在 isIPSegment，这里只兜住数组边界
+        if (sips.length < 4 || sipe.length < 4 || sipt.length < 4)
+        {
+            return false;
+        }
         long ips = 0L, ipe = 0L, ipt = 0L;
         for (int i = 0; i < 4; ++i)
         {
@@ -360,6 +368,12 @@ public class IpUtils
     public static boolean isMatchedIp(String filter, String ip)
     {
         if (StringUtils.isEmpty(filter) || StringUtils.isEmpty(ip))
+        {
+            return false;
+        }
+        // 目标地址本身不是合法 IPv4 时一律不匹配：后续三个分支都按 4 段取下标，
+        // 放进来的 "10.1" 既可能越界，也可能被当成 "*.*.*.*" 的前缀而误放行
+        if (!isIP(ip))
         {
             return false;
         }
